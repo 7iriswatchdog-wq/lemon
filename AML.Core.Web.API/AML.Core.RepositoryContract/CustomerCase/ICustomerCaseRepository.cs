@@ -35,11 +35,11 @@ namespace AML.Core.RepositoryContract.CustomerCase
         ServiceResponse<int> UpdateCase(int caseid,int userid);
         ServiceResponse<int> Delete(int Id);
         ServiceResponse<List<CustomerMasterDTO>> GetUnscreenedCustomers();
-        ServiceResponse<List<CustomerCaseDTO>> GetAll(int userId, string startDate, string endDate, string cust_type);
+        ServiceResponse<List<CustomerCaseDTO>> GetAll(int userId, string startDate, string endDate, string cust_type, string matchscore,int createdBy,int caseStatus,string riskLevel, string caseStatusChange, string usergroupName);
 
         ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type);
 
-        ServiceResponse<List<CustomerCaseDTO>> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue);
+        ServiceResponse<List<CustomerCaseDTO>> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue,string usergroupName);
 
         ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue);
         ServiceResponse<List<CustomerCaseDTO>> GetAllSanctionDashboard(int clientid, string ctype);
@@ -94,7 +94,7 @@ namespace AML.Core.RepositoryContract.CustomerCase
 
         ServiceResponse<List<CustomerCaseDTO>> GetCompanyCode(string CompanyCode, int clientId);
 
-        ServiceResponse<List<ShareholderDTO>> GetAllShareHolders(int clientId);
+        ServiceResponse<List<ShareholderDTO>> GetAllShareHolders(int clientId,string companyCode);
 
 
     }

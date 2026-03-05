@@ -1100,9 +1100,15 @@ namespace AML.Core.Service.Common
                 _CustomerCaseDTO.MatchScore = (apiResp.users.results.matches.Count() > 0 ? apiResp.users.results.matches.FirstOrDefault().score : 0);
                 _CustomerCaseDTO.SourceUniqueId = Convert.ToString(apiResp.users.results.matches.Count() > 0 ? Convert.ToString(apiResp.users.results.matches.FirstOrDefault().qrCode) : null);
                 _CustomerCaseDTO.Status = _CustomerCaseDTO.MatchScore.IsNotNullOrEmpty() ? (_CustomerCaseDTO.MatchScore < checkThreshold ? 5 : 0) : 5;
+            //var firstMatch = apiResp.users.results.matches?.FirstOrDefault();
+            //var firstDataset = firstMatch?.datasets?.FirstOrDefault();
+            //_CustomerCaseDTO.CaseChangeStatus = firstDataset?.ToString();
             var firstMatch = apiResp.users.results.matches?.FirstOrDefault();
-            var firstDataset = firstMatch?.datasets?.FirstOrDefault();
-            _CustomerCaseDTO.CaseChangeStatus = firstDataset?.ToString();
+
+            _CustomerCaseDTO.CaseChangeStatus =
+                firstMatch?.datasets != null && firstMatch.datasets.Any()
+                    ? string.Join(", ", firstMatch.datasets)
+                    : "--";
             //}
 
             if (IsBlackListed.response != null &&  IsBlackListed.response.Count() != 0 || IsBlackListed.response2 != null && IsBlackListed.response2.Count() != 0 )
@@ -1206,7 +1212,8 @@ namespace AML.Core.Service.Common
                         matchrecord.MATCHIDNO = item.IDDETAILS.Count > 0 ? item.IDDETAILS[0].IDNUMBER : string.Empty;
                         matchrecord.MATCHDOB = item.DOB.Count > 0 ? item.DOB[0].DOB : string.Empty;
                         matchrecord.REMARKS = item.REMARKS;
-                        
+                        matchrecord.MATCHDATASETS = !string.IsNullOrWhiteSpace(item.TYPE) ? item.TYPE : "--";
+
 
                         // matchrecordsList.Add(matchrecords);
 
@@ -1232,6 +1239,7 @@ namespace AML.Core.Service.Common
                         matchrecord.MATCHNATIONALITY = item.NATIONALITY;
                         matchrecord.MATCHIDNO = item.IDDETAILS.Count > 0 ? item.IDDETAILS[0].IDNUMBER : string.Empty;
                         matchrecord.MATCHDOB = item.DOB.Count > 0 ? item.DOB[0].DOB : string.Empty;
+                        matchrecord.MATCHDATASETS = !string.IsNullOrWhiteSpace(item.TYPE) ? item.TYPE : "--";
                         //matchrecord.REMARKS = IsBlackListed.response2.REMARKS;
 
                         // matchrecordsList.Add(matchrecords);
@@ -1263,7 +1271,7 @@ namespace AML.Core.Service.Common
                             matchrecords.MATCHIDNO = item.qrCode.ToString();
                             matchrecords.MATCHDOB = item.datesOfBirth != null ? item.datesOfBirth.FirstOrDefault() : "";
                             matchrecords.MATCHRESOURCESID = item.resourceId;
-                            matchrecords.MATCHDATASETS = item.datasets != null ? item.datasets.FirstOrDefault() : "--";
+                            matchrecords.MATCHDATASETS = item.datasets != null && item.datasets.Any() ? string.Join(", ", item.datasets) : "--";
                             matchrecords.MATCHGENDER = item.gender != null ? item.gender : "";
 
 
@@ -1324,8 +1332,8 @@ namespace AML.Core.Service.Common
                             matchrecords.MATCHIDNO = item.qrCode.ToString();
                             matchrecords.MATCHDOB = item.datesOfBirth != null ? item.datesOfBirth.FirstOrDefault() : "";
                             matchrecords.MATCHRESOURCESID = item.resourceId;
-                        matchrecords.MATCHDATASETS = item.datasets != null ? item.datasets.FirstOrDefault() : "--";
-                        matchrecords.MATCHGENDER = item.gender != null ? item.gender : "";
+                            matchrecords.MATCHDATASETS = item.datasets != null && item.datasets.Any() ? string.Join(", ", item.datasets) : "--";
+                            matchrecords.MATCHGENDER = item.gender != null ? item.gender : "";
 
 
                         // matchrecordsList.Add(matchrecords);

@@ -72,6 +72,8 @@ namespace AML.DTO.DTO.CustomerCase
 
         public DateTime? IdExpiryDate { get; set; }
 
+        public string Residence { get; set; }
+
     }
 
     public class CustomeDetailsDTO

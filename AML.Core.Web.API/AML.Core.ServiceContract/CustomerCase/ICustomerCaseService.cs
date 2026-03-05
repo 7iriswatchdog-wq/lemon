@@ -34,13 +34,13 @@ namespace AML.Core.ServiceContract.CustomerCase
 
         ServiceResponse<int> UpdateCase(int caseid,int userid);
         ServiceResponse<int> Delete(int Id);
-        List<CustomerCaseDTO> GetAll(int userId, string startDate, string endDate, string cust_type);
+        List<CustomerCaseDTO> GetAll(int userId, string startDate, string endDate, string cust_type,string matchscore,int createdBy,int caseStatus,string riskLevel,string caseStatusChange, string usergroupName);
 
         List<CustomerCaseDTO> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type);
 
         List<CustomerCaseDTO> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string SearchValue);
 
-        List<CustomerCaseDTO> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type,string SearchValue);
+        List<CustomerCaseDTO> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type,string SearchValue,string usergroupName);
         List<CustomerCaseDTO> GetAllSanctionDashboard(int clientid, string ctype);
         ServiceResponse<List<EtlBatchDTO>> DataLoadReport(ETLDataLoadReportDTO _ETLDataLoadReportDTO);
         ServiceResponse<List<CustomerCaseDTO>> DataLoadReportByBatch(int BatchId, int clientId);
@@ -105,7 +105,7 @@ namespace AML.Core.ServiceContract.CustomerCase
 
         ServiceResponse<string> CreateShareholdersData(ShareholderDTO _customerCaseDTO);
 
-        List<ShareholderDTO> GetAllShareHolders(int clientid);
+        List<ShareholderDTO> GetAllShareHolders(int clientid,string shareholders);
 
         ServiceResponse<string> DeleteShareholders(int id);
 

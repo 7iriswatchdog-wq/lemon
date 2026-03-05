@@ -8,7 +8,7 @@ namespace AML.ViewModel.ViewModels.CaseDetail
     public class UsersModel
     {
         [JsonProperty("users")]
-        public User Users{get;set;}
+        public User Users { get; set; }
         public int Status { get; set; }
 
         public int caseid { get; set; }

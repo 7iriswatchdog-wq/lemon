@@ -50,8 +50,6 @@ namespace AML.Core.DataContract.Enum
         PendingCaseCreatedFromDailyScheduler = 6,
         Approved = 2,
         AutoApproved = 5,
-        Rejected = 3,
-        WhiteListed= 4
     }
 
     public enum SourceType

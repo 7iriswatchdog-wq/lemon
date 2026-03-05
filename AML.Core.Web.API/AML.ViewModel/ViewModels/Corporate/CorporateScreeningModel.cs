@@ -117,6 +117,8 @@ namespace AML.ViewModel.ViewModels.Corporate
 
         public string CIFNumber { get; set; }
 
+        
+
 
     }
 
@@ -255,6 +257,8 @@ namespace AML.ViewModel.ViewModels.Corporate
         public string ScreeningOptions { get; set; }
 
         public DateTime? IdExpiryDate { get; set; }
+
+        public string Residence { get; set; }
     }
 
     public class ShareholderModel

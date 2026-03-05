@@ -112,6 +112,9 @@
             display: none !important;
         }
 
+        /* [x-cloak] {
+            display: none !important;
+        } */
         .scrollbar-thin::-webkit-scrollbar {
             width: 5px;
         }
@@ -313,7 +316,7 @@
     files: [],
     isDragging: false,
     showSuccessModal: false,
-    matchParam: 75,
+    matchParam: 70,
     hasSearched: false,
     activeShareholderTab: 'shareholder',
     searchQuery: '',
@@ -407,7 +410,7 @@
                                     </div>
 
                                     <!-- Add Shareholders Card -->
-                                    
+                                        
                                     <div @@click="selectedMethod = 'shareholder';window.dispatchEvent(new Event('load-pending-shareholders'))"
                                         class="relative p-5 rounded-2xl border-2 transition-all cursor-pointer flex items-center gap-4 group"
                                         :class="selectedMethod === 'shareholder' ? 'border-blue-600 bg-white ring-1 ring-blue-600' : 'border-slate-100 bg-white hover:border-blue-200'">
@@ -793,7 +796,7 @@
 
                             <!-- CONTENT: MANUAL INPUT -->
                             <div x-show="selectedMethod === 'manual'" x-transition class="space-y-8">
-                                <form class="space-y-8" id="myForm" asp-controller="corporate" asp-action="CorporateScreening">
+                                <form class="space-y-8" id="myForm" asp-controller="corporate" asp-action="CorporateScreening" method="post" enctype="multipart/form-data">
                                     <div class="flex items-center justify-between">
                                         <h2 class="text-sm font-semibold text-slate-900">Manual Input</h2>
                                         <button type="reset" class="inline-flex items-center gap-2 h-8 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
@@ -854,21 +857,21 @@
                                                 <div class="flex gap-2">
                                                     <input type="text"
                                                            placeholder="Enter full name"
-                                                           asp-for="FirstName"
+                                                           asp-for="CorporateDetailList[0].FirstName"
+                                                           id="txtCompanyName"
                                                            maxlength="100"
-                                                           id="fullName"
                                                            class="flex-1 h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium
-focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all
-fullNameField"
+                                                                focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all
+                                                                fullNameField"
                                                            oninput="toggleDuplicateBtn()" />
 
                                                     <button type="button"
                                                             id="btnCheckDuplicate"
                                                             disabled
                                                             class="px-4 h-11 border-2 border-blue-600 text-blue-600 font-extrabold text-xs rounded-xl
- transition-all whitespace-nowrap
- disabled:opacity-50 disabled:cursor-not-allowed
- hover:bg-blue-50 active:scale-95"
+                                                                 transition-all whitespace-nowrap
+                                                                 disabled:opacity-50 disabled:cursor-not-allowed
+                                                                 hover:bg-blue-50 active:scale-95"
                                                             onclick="checkDuplicatefunction(this)">
                                                         Check Duplicate
                                                     </button>
@@ -890,10 +893,9 @@ fullNameField"
                                         <div class="space-y-2">
                                             <label class="text-xs font-semibold text-slate-700">Residence</label>
                                             <div class="relative">
-                                                <select x-model="manualForm.residence" id="residence" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm appearance-none outline-none">
+                                                    <select x-model="manualForm.residence" id="residence" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm appearance-none outline-none" asp-items="Model.Nationalities" asp-for="CorporateDetailList[0].Residence">
                                                     <option value="">Select</option>
-                                                    <option value="ae">UAE</option>
-                                                    <option value="in">India</option>
+                                                        <option value="">--@localizer["Select Country"]--</option>
                                                 </select>
                                                 <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-3 text-slate-400 pointer-events-none"></i>
                                             </div>
@@ -1005,7 +1007,7 @@ fullNameField"
                                                         <input type="file"
                                                                class="hidden"
                                                                x-ref="docUpload"
-                                                               asp-for="CorporateDetailList[0].CaseDocumentsL[0].Document"
+                                                                name="CorporateDetailList[0].CaseDocumentsL[0].Document"
                                                                x-on:change="
                                                                if ($event.target.files.length> 0) {
                                                         let fullName = $event.target.files[0].name;
@@ -1286,7 +1288,6 @@ fullNameField"
                                                                     <input type="file"
                                                                            class="hidden"
                                                                            x-ref="docUpload"
-                                                                           asp-for="CaseDocumentsL[0].Document"
                                                                            x-on:change="
                                                                            if ($event.target.files.length> 0) {
                                                                     let fullName = $event.target.files[0].name;
@@ -1319,7 +1320,7 @@ fullNameField"
                                                     <div class="flex justify-end pt-3">
                                                         <button x-show="forms.length > 1"
                                                                 @@click="removeForm(index)"
-                                                                class="text-red-500 text-xs font-semibold">
+                                                                class="h-9 px-8 text-white rounded-md bg-red-600">
                                                             Remove
                                                         </button>
                                                     </div>
@@ -1615,7 +1616,7 @@ fullNameField"
                                 <div x-data="{
                                                     files: [],
                                                     isDragging: false,
-                                                    matchParam: 75,
+                                                    matchParam: 70,
                                                     handleFiles(selectedFiles) {
                                                         this.files = Array.from(selectedFiles);
 
@@ -2365,11 +2366,57 @@ fullNameField"
             </div>
 
         </div>
-    
+        <div id="rollbackModal"
+             class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40">
+
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4">
+
+                <h3 class="text-lg font-bold text-slate-900">
+                    Pending Shareholders Found
+                </h3>
+
+                <p class="text-sm text-slate-600">
+                    You have pending shareholders for the following company.
+                </p>
+
+                <!-- Company List -->
+                <div id="pendingCompanyList"
+                     class="max-h-40 overflow-y-auto border rounded-md">
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4">
+
+                    <!-- Continue New Search -->
+                    <button onclick="continueNewSearch()"
+                            class="h-9 px-6 text-white rounded-md bg-red-600">
+                        Continue With New Search
+                    </button>
+
+                    <!-- Open Pending -->
+                    <button onclick="openPendingShareholder()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-9 px-6 rounded-md">
+                        Open Pending Shareholder
+                    </button>
+
+                </div>
+
+            </div>
+        </div>
 
     <script>
+
+
+                    document.addEventListener('alpine:init', () => {
+                Alpine.store('pendingShareholders', {
+                    showPendingModal: false,
+                    pendingCompanies: []
+                });
+            });
+            
+
+        
           function toggleDuplicateBtn() {
-    const input = document.getElementById('fullName');
+                const input = document.getElementById('txtCompanyName');
     const btn = document.getElementById('btnCheckDuplicate');
 
     if (input.value.trim().length > 0) {
@@ -2390,6 +2437,7 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
             });
 
         });
+                  
 
                 $(function () {
             console.log("Validation script loaded");
@@ -2980,6 +3028,8 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
 
             $("#loader").show();
 
+                        alert(CompanyCode);
+
             $.ajax({
                 url: '/corporate/searchcompanycode',
                 type: 'POST',
@@ -3024,6 +3074,8 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                             companyName: '',
                             hasPending: false,
                             isLoading: false,
+                            showPendingModal:false,
+                            skipPendingModal:false,
 
                             init() {
                                 // Listen company search
@@ -3043,62 +3095,198 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                                 });
 
                                 // Load shareholders
-                                window.addEventListener('load-pending-shareholders', async () => {
-                                    this.isLoading = true;
-                                    try {
-                                        let response = await fetch('/corporate/GetPendingShareholders');
-                                        let data = await response.json();
+           window.addEventListener('load-pending-shareholders', async (event) => {
+                debugger;
+                this.isLoading = true;
 
-                                             console.log(data);
+                try {
 
-                                        if (Array.isArray(data) && data.length > 0) {
-                                            this.hasPending = true;
-                                         this.companyCode = data[0].companyCode;
-                                    this.companyName = data[0].companyName;
-                                    this.thershold = data[0].thershold;
-                                            $('#CompanyCodeInput').val(this.companyCode);
-                                    $('#CompanyCode').val(this.companyCode);
-                                    $('#CompanyCodeHidden').val(this.companyCode);
-                                    $('#CompanyName').val(this.companyName);
-                                    $('#Thershold').val(this.thershold);
-                                             // $('#CompanyCodeInput').val(data.companyCode);
-                                             //  $('#CompanyCode').text(data.companyCode);
-                                             //  $('#CompanyCodeHidden').val(data.companyCode);
-                                             //  $('#CompanyName').text(this.companyName);
-                                            Alpine.store('screeningStore').screeningList = data.map(item => ({
-                                                id: Number(item.id),
-                                                name: item.name,
-                                                type: item.type,
-                                                parentId: item.parentId ? Number(item.parentId) : null,
-                                                initials: item.name.split(' ').map(x => x[0]).join('').toUpperCase(),
-                                                companyCode: item.companyCode || '',
-                                                tradeLicence:item.tradeLicence || '',
-                                                nationality:item.nationality || '',
-                                                registrationDate:item.registrationDate || '',
-                                                idType:item.idType || '',
-                                                idNumber:item.idNumber || '',
-                                                designation:item.designation || '',
-                                                share:item.share || 0,
-                                                issueDate: item.issueDate || null,
-                                                idExpiry:item.idExpiry || null,
-                                                cif:item.cif || ''
-                                            }));
+                    let response = await fetch(`/corporate/GetPendingShareholders?companyCode=${this.companyCode}`);
+                    let data = await response.json();
 
-                                            // Trigger tree refresh
-                                            window.dispatchEvent(new Event('store-updated'));
-                                        } else {
-                                            this.hasPending = false;
-                                            Alpine.store('screeningStore').screeningList = [];
-                                            window.dispatchEvent(new Event('store-updated'));
-                                        }
-                                    } catch (e) {
-                                        console.error(e);
+                    console.log(data);
+
+                    const skipModal = event?.detail?.skipModal ?? false;
+
+                    if (Array.isArray(data) && data.length > 0) {
+
+                        this.hasPending = true;
+
+                        // Save globally
+                        window.pendingShareholderData = data;
+
+                        // Populate modal list
+                        let html = "";
+
+                        data.forEach(item => {
+                            html += `
+                            <div class="px-3 py-2 border-b text-sm">
+                                ${item.companyCode}
+                            </div>`;
+                        });
+
+                        document.getElementById("pendingCompanyList").innerHTML = html;
+
+                        // Show modal ONLY if skipModal = false
+                                    if (!skipModal && !this.skipPendingModal) {
+                                        $('#rollbackModal').removeClass('hidden').addClass('flex');
+
+                                        // After first display, prevent future popup
+                                        this.skipPendingModal = true;
                                     }
-                                    this.isLoading = false;
-                                });
+
+                        this.companyCode = data[0].companyCode;
+                        this.companyName = data[0].companyName;
+                        this.thershold = data[0].thershold;
+
+                        $('#CompanyCodeInput').val(this.companyCode);
+                        $('#CompanyCode').val(this.companyCode);
+                        $('#CompanyCodeHidden').val(this.companyCode);
+                        $('#CompanyName').val(this.companyName);
+                        $('#Thershold').val(this.thershold);
+
+                        Alpine.store('screeningStore').screeningList = data.map(item => ({
+                            id: Number(item.id),
+                            name: item.name,
+                            type: item.type,
+                            parentId: item.parentId ? Number(item.parentId) : null,
+                            initials: item.name.split(' ').map(x => x[0]).join('').toUpperCase(),
+                            companyCode: item.companyCode || '',
+                            tradeLicence: item.tradeLicence || '',
+                            nationality: item.nationality || '',
+                            registrationDate: item.registrationDate || '',
+                            idType: item.idType || '',
+                            idNumber: item.idNumber || '',
+                            designation: item.designation || '',
+                            share: item.share || 0,
+                            issueDate: item.issueDate || null,
+                            idExpiry: item.idExpiry || null,
+                            cif: item.cif || ''
+                        }));
+
+                        // Trigger tree refresh
+                        window.dispatchEvent(new Event('store-updated'));
+
+                    } else {
+
+                        this.hasPending = false;
+
+                        $('#rollbackModal').addClass('hidden').removeClass('flex');
+
+                        Alpine.store('screeningStore').screeningList = [];
+
+                        window.dispatchEvent(new Event('store-updated'));
+                    }
+
+                } catch (e) {
+                    console.error(e);
+                }
+
+                this.isLoading = false;
+
+            });
+                //                 window.addEventListener('load-pending-shareholders', async () => {
+                //                     debugger;
+                //                     this.isLoading = true;
+                //                     try {
+                //                        let response = await fetch(`/corporate/GetPendingShareholders?companyCode=${this.companyCode}`);
+                //                         let data = await response.json();
+
+                //                              console.log(data);
+
+                //                         if (Array.isArray(data) && data.length > 0) {
+
+                //                                         this.hasPending = true;
+
+                // // Save globally
+                //                                         window.pendingShareholderData = data;
+
+                //                                         // Populate modal list
+                //                                         let html = "";
+
+                //                                         data.forEach(item => {
+                //                                             html += `
+                //                                             <div class="px-3 py-2 border-b text-sm">
+                //                                                 ${item.companyCode}
+                //                                             </div>`;
+                //                                         });
+
+                //                                         document.getElementById("pendingCompanyList").innerHTML = html;
+
+                //                                         // Show modal
+                //                                                        const skipModal = event.detail?.skipModal ?? false;
+
+                //                                                 if (Array.isArray(data) && data.length > 0) {
+
+                //                                                     if (!skipModal) {
+                //                                                         $('#rollbackModal').removeClass('hidden').addClass('flex');
+                //                                                     }
+                //                                             }
+                                                                  
+                //                                     this.hasPending = true;
+                //                                  this.companyCode = data[0].companyCode;
+                //                             this.companyName = data[0].companyName;
+                //                             this.thershold = data[0].thershold;
+                //                                     $('#CompanyCodeInput').val(this.companyCode);
+                //                             $('#CompanyCode').val(this.companyCode);
+                //                             $('#CompanyCodeHidden').val(this.companyCode);
+                //                             $('#CompanyName').val(this.companyName);
+                //                             $('#Thershold').val(this.thershold);
+                //                              // $('#CompanyCodeInput').val(data.companyCode);
+                //                              //  $('#CompanyCode').text(data.companyCode);
+                //                              //  $('#CompanyCodeHidden').val(data.companyCode);
+                //                              //  $('#CompanyName').text(this.companyName);
+                //                             Alpine.store('screeningStore').screeningList = data.map(item => ({
+                //                                 id: Number(item.id),
+                //                                 name: item.name,
+                //                                 type: item.type,
+                //                                 parentId: item.parentId ? Number(item.parentId) : null,
+                //                                 initials: item.name.split(' ').map(x => x[0]).join('').toUpperCase(),
+                //                                 companyCode: item.companyCode || '',
+                //                                 tradeLicence:item.tradeLicence || '',
+                //                                 nationality:item.nationality || '',
+                //                                 registrationDate:item.registrationDate || '',
+                //                                 idType:item.idType || '',
+                //                                 idNumber:item.idNumber || '',
+                //                                 designation:item.designation || '',
+                //                                 share:item.share || 0,
+                //                                 issueDate: item.issueDate || null,
+                //                                 idExpiry:item.idExpiry || null,
+                //                                 cif:item.cif || ''
+                //                             }));
+
+                //                             // Trigger tree refresh
+                //                             window.dispatchEvent(new Event('store-updated'));
+                //                         } else {
+
+                //                             this.hasPending = false;
+                //                                         $('#rollbackModal').addClass('hidden').removeClass('flex');
+                //                             Alpine.store('screeningStore').screeningList = [];
+                //                             window.dispatchEvent(new Event('store-updated'));
+                //                         }
+                                //     } catch (e) {
+                                //         console.error(e);
+                                //     }
+                                //     this.isLoading = false;
+                                // });
                             }
                         }
                     }
+
+            function continueNewSearch() {
+
+                $('#rollbackModal').addClass('hidden').removeClass('flex');
+
+                                                        $('#CompanyCodeInput').val('');
+                                                        $('#CompanyCode').val('');
+                                                        $('#CompanyCodeHidden').val('');
+                                                        $('#CompanyName').val('');
+                                                        $('#Thershold').val('');
+                Alpine.store('screeningStore').screeningList = [];
+
+                window.dispatchEvent(new Event('store-updated'));
+
+            }
 
 
     //  function companySearch() {
@@ -3361,7 +3549,10 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                             toastr.success("Saved Successfully");
 
                             // Refresh pending shareholders via event
-                            window.dispatchEvent(new Event('load-pending-shareholders'));
+                            //window.dispatchEvent(new Event('load-pending-shareholders'));
+                                        window.dispatchEvent(new CustomEvent('load-pending-shareholders', {
+                detail: { skipModal: true }
+            }));
 
                             // Optionally, clear forms after submit
                             this.forms = [{ type: this.activeShareholderTab }];

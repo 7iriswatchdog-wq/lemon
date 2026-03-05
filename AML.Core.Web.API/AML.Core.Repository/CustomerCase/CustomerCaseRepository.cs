@@ -2,26 +2,27 @@ using AML.Core.Common.StaticResource;
 using AML.Core.RepositoryContract.Branch;
 using AML.Core.RepositoryContract.CustomerCase;
 using AML.DTO.DTO.Branch;
+using AML.DTO.DTO.CodesMaster;
+using AML.DTO.DTO.Common;
 using AML.DTO.DTO.CustomerCase;
+using AML.DTO.DTO.EtlBatch;
+using AML.ViewModel.ViewModels.ApiAuthentication;
+using AML.ViewModel.ViewModels.Kyc;
 using Dapper;
+using ExcelDataReader;
+using iTextSharp.text.pdf.parser.clipper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using MySql.Data.MySqlClient;
+using MySqlX.XDevAPI;
+using NLog;
+using NLog.Fluent;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using ExcelDataReader;
-using AML.DTO.DTO.EtlBatch;
-using AML.DTO.DTO.Common;
 using System.Text;
-using AML.DTO.DTO.CodesMaster;
-using AML.ViewModel.ViewModels.ApiAuthentication;
 using System.Threading.Tasks;
-using MySqlX.XDevAPI;
-using AML.ViewModel.ViewModels.Kyc;
-using NLog.Fluent;
-using NLog;
-using iTextSharp.text.pdf.parser.clipper;
 
 namespace AML.Core.Repository.CustomerCase
  {
@@ -30,17 +31,47 @@ namespace AML.Core.Repository.CustomerCase
         private readonly Logger log = LogManager.GetCurrentClassLogger();
         public CustomerCaseRepository(IConfiguration configuration, IHttpContextAccessor context) : base(configuration, context)
         { }
-        public ServiceResponse<List<CustomerCaseDTO>> GetAll(int userId, string startDate, string endDate, string cust_type)
+        public ServiceResponse<List<CustomerCaseDTO>> GetAll(int userId, string startDate, string endDate, string cust_type, string matchScore,int createdBy,int caseStatus,string riskLevel, string caseStatusChange, string usergroupName)
         {
             ServiceResponse<List<CustomerCaseDTO>> serviceResponse = new ServiceResponse<List<CustomerCaseDTO>>();
             try
             {
+                int? matchFrom = null;
+                int? matchTo = null;
+
+                if (!string.IsNullOrWhiteSpace(matchScore))
+                {
+                    var parts = matchScore.Split('-');
+
+                    if (parts.Length == 2 &&
+                        int.TryParse(parts[0], out int from) &&
+                        int.TryParse(parts[1], out int to))
+                    {
+                        matchFrom = from;
+                        matchTo = to;
+                    }
+                }
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_userid", userId);
                 parameters.Add("c_from", Convert.ToDateTime(startDate));
                 parameters.Add("c_to", Convert.ToDateTime(endDate));
                 parameters.Add("cust_type", cust_type);
-                serviceResponse.Result = Get<CustomerCaseDTO>("get_all_customercase", parameters, commandType: CommandType.StoredProcedure).ToList();
+                parameters.Add("p_usergroup", usergroupName);
+                parameters.Add("p_matchfrom", matchFrom, DbType.Int32);
+                parameters.Add("p_matchto", matchTo, DbType.Int32);
+                parameters.Add("p_createdBy",createdBy);
+                parameters.Add("c_status", caseStatus);
+                parameters.Add("p_riskLevel", riskLevel);
+                parameters.Add("p_caseChangeStatus", caseStatusChange);
+                if (usergroupName == "Senior Management")
+                {
+                    serviceResponse.Result = Get<CustomerCaseDTO>("get_all_customercase_seniormanagement", parameters, commandType: CommandType.StoredProcedure).ToList();
+                }
+                else
+                {
+                    serviceResponse.Result = Get<CustomerCaseDTO>("get_all_customercase", parameters, commandType: CommandType.StoredProcedure).ToList();
+                }
+                    
                 serviceResponse.Message = "Customer cases fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
             }
@@ -74,7 +105,7 @@ namespace AML.Core.Repository.CustomerCase
             return serviceResponse;
         }
 
-        public ServiceResponse<List<CustomerCaseDTO>> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue)
+        public ServiceResponse<List<CustomerCaseDTO>> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue,string usergroupName)
         {
             ServiceResponse<List<CustomerCaseDTO>> serviceResponse = new ServiceResponse<List<CustomerCaseDTO>>();
             try
@@ -85,6 +116,7 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("c_to", Convert.ToDateTime(endDate));
                 parameters.Add("cust_type", cust_type);
                 parameters.Add("@p_searchvalue", searchValue);
+                parameters.Add("@p_usergroupname", usergroupName);
                 serviceResponse.Result = Get<CustomerCaseDTO>("get_all_customercase_by_searchvalue", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Customer cases fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
@@ -1320,14 +1352,14 @@ namespace AML.Core.Repository.CustomerCase
             return serviceResponse;
         }
 
-        public ServiceResponse<List<ShareholderDTO>> GetAllShareHolders(int clientid)
+        public ServiceResponse<List<ShareholderDTO>> GetAllShareHolders(int clientid,string companyCode)
         {
             ServiceResponse<List<ShareholderDTO>> serviceResponse = new ServiceResponse<List<ShareholderDTO>>();
             try
             {
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_clientid", clientid);
-               
+                parameters.Add("@p_companyCode", companyCode);
                 serviceResponse.Result = Get<ShareholderDTO>("get_all_shareholders", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Customer cases fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;

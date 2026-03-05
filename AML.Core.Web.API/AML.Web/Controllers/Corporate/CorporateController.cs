@@ -1020,6 +1020,7 @@ namespace AML.Web.Controllers.Corporate
                             customerCaseDTO.CIFNumber = corporateDetailsModel.CIFNumber;
                             customerCaseDTO.ScreeningOptions= string.Join(",", selectedScreeningOptions);
                             corporateDetailsModel.ScreeningOptions= string.Join(",", selectedScreeningOptions);
+                           
                              
                             //    model.CustomerCode = "0";
                             (responseList, customerCaseDTO) = _customerCaseService.SaveCorporateScreeningDetails(_mapper.Map<CorporateScreeningDTO>(corporateDetailsModel));
@@ -1995,10 +1996,10 @@ namespace AML.Web.Controllers.Corporate
             return Json(abc);
         }
 
-        public JsonResult GetPendingShareholders()
+        public JsonResult GetPendingShareholders(string companyCode)
         {
             var clientId = _clientHandler.GetClientId();
-            var result = _customerCaseService.GetAllShareHolders(clientId);
+            var result = _customerCaseService.GetAllShareHolders(clientId, companyCode);
 
             
 

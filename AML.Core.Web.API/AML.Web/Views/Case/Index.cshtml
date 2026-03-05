@@ -146,7 +146,7 @@
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Case Manager</h1>
-                <p class="text-slate-500 text-sm mt-1">Manage and review all individual and corporate cases.</p>
+                @* <p class="text-slate-500 text-sm mt-1">Manage and review all individual and corporate cases.</p> *@
             </div>
            @*  <div class="flex items-center gap-3 w-full md:w-auto">
                 <button onclick="ExportList(false)" ;
@@ -159,8 +159,124 @@
 
         <!-- Filters Section -->
         <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+
             <div class="flex items-center justify-between mb-5">
-                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-tight">Case Filter</h3>
+                <h3 class="text-sm font-bold text-slate-800 tracking-tight">Case Filter</h3>
+
+                <button onclick="clearFilters()"
+                        class="text-slate-500 hover:text-slate-700 h-8 px-3 text-sm font-medium">
+                    Reset
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-6 items-end">
+
+                <!-- Start Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-slate-500">Start Date</label>
+                    <input type="date" id="startDate" asp-for="StartDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"
+                           class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                </div>
+
+                <!-- End Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-slate-500">End Date</label>
+                    <input type="date" id="endDate" asp-for="EndDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"
+                           class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                </div>
+
+                <!-- Customer Type -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-slate-500">Customer Type</label>
+                    <select id="customertype" asp-items="@Model.CustomerCategories"
+                            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                        <option value="0">--SELECT--</option>
+                    </select>
+                </div>
+
+                <!-- Filter Type -->
+                <div id="extraFilters" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-slate-500">Filter Type</label>
+                    <select id="columnFilter"
+                            onchange="Colunmfilterfunction()"
+                            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                        <option value="">--Select--</option>
+                        <option value="CaseStatusChangeReason">Case Status Change Reason</option>
+                        <option value="ScreeningScore">Screening Score</option>
+                        <option value="RiskLevel">Risk Score</option>
+                        <option value="User">User</option>
+                        <option value="Status">Status</option>
+                    </select>
+                </div>
+
+                <!-- Case Status Change -->
+                <div id="CaseStatusChangeReasonField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-slate-500">Case Status Change Reason</label>
+                    <input type="text" id="caseStatusChange"
+                           class="h-10 w-full border border-slate-200 rounded-md px-3 text-sm">
+                </div>
+
+                <!-- Screening Score -->
+                <div id="ScreeningScoreField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-slate-500">Screening Score</label>
+                    <select id="screeningScore"
+                            class="h-10 w-full border border-slate-200 rounded-md px-3 text-sm">
+                        <option value="">--Select--</option>
+                        <option value="70-80">70-80</option>
+                        <option value="80-90">80-90</option>
+                        <option value="90-100">90-100</option>
+                    </select>
+                </div>
+
+                <!-- User -->
+                <div id="UserField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-slate-500">User</label>
+                    <select id="user"
+                            class="h-10 w-full border border-slate-200 rounded-md px-3 text-sm">
+                        <option value="0">--SELECT--</option>
+                    </select>
+                </div>
+               
+                <!-- Status -->
+                <div id="StatusField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-slate-500">Status</label>
+                    <select id="caseStatus"
+                            class="h-10 w-full border border-slate-200 rounded-md px-3 text-sm">
+                        <option value="10">--SELECT--</option>
+                    </select>
+                </div>
+
+                <!-- Risk Level -->
+                <div id="RiskLevelField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-slate-500">Risk Score</label>
+                    <select id="riskScore"
+                            class="h-10 w-full border border-slate-200 rounded-md px-3 text-sm">
+                        <option value="">--Select--</option>
+                        <option value="1">Low</option>
+                        <option value="2">Medium</option>
+                        <option value="3">High</option>
+                    </select>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-2 items-center">
+                    <button type="button"
+                            onclick="toggleExtraFilters()"
+                            class="h-10 w-10 flex items-center justify-center rounded-md border border-slate-300 hover:bg-slate-100 transition">
+                        <i data-lucide="filter" class="h-4 w-4 text-slate-600"></i>
+                    </button>
+
+                    <button onclick="applyFilters()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-4 rounded-md text-sm">
+                        Apply Filters
+                    </button>
+                </div>
+
+            </div>
+        </div>
+        @* <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-sm font-bold text-slate-800  tracking-tight">Case Filter</h3>
                 <div class="flex gap-2">
                     <button onclick="clearFilters()"
                             class="text-slate-500 hover:text-slate-700 h-8 px-3 text-sm font-medium transition-colors">
@@ -171,17 +287,17 @@
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                 <div class="space-y-2">
-                    <label class="text-[12px] font-bold text-slate-500 uppercase ml-0.5">Start Date</label>
+                    <label class="text-[12px] font-bold text-slate-500  ml-0.5">Start Date</label>
                     <input type="date" id="startDate" asp-for="StartDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"
                            class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm ring-offset-white focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-colors placeholder:text-slate-500">
                 </div>
                 <div class="space-y-2">
-                    <label class="text-[12px] font-bold text-slate-500 uppercase ml-0.5">End Date</label>
+                    <label class="text-[12px] font-bold text-slate-500  ml-0.5">End Date</label>
                     <input type="date" id="endDate" asp-for="EndDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"
                            class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm ring-offset-white focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-colors placeholder:text-slate-500">
                 </div>
                 <div class="space-y-2">
-                    <label class="text-[12px] font-bold text-slate-500 uppercase ml-0.5">Customer Type</label>
+                    <label class="text-[12px] font-bold text-slate-500  ml-0.5">Customer Type</label>
                     <div class="relative">
                         <select  asp-items=@Model.CustomerCategories id="customertype"
                                 class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm ring-offset-white focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-colors appearance-none text-slate-900">
@@ -191,14 +307,99 @@
                            class="absolute right-3 top-3 h-4 w-4 text-slate-400 pointer-events-none"></i>
                     </div>
                 </div>
-                <div class="flex gap-2">
+
+                <div class="flex gap-2 items-center">
+
+                    <!-- Filter Icon -->
+                    <button type="button"
+                            onclick="toggleExtraFilters()"
+                            class="h-10 w-10 flex items-center justify-center rounded-md border border-slate-300 hover:bg-slate-100 transition">
+                        <i data-lucide="filter" class="h-4 w-4 text-slate-600"></i>
+                    </button>
+
+                    <!-- Apply Button -->
                     <button onclick="applyFilters()"
-                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-4 py-2 rounded-md shadow-sm transition-colors text-sm">
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-4 py-2 rounded-md shadow-sm transition-colors text-sm">
                         Apply Filters
                     </button>
+
                 </div>
             </div>
-        </div>
+            <div id="extraFilters"
+                 class="hidden mt-6 p-4 border border-slate-200 rounded-md bg-slate-50">
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                    <!-- Status -->
+                    <div class="space-y-2">
+                        <label class="text-[12px] font-bold text-slate-500">Status</label>
+                        <select class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm" id="columnFilter"
+                                onchange="Colunmfilterfunction()">
+                            <option value="">--Select--</option>
+                            <option value="CaseStatusChangeReason">Case Status Change Reason</option>
+                            <option value="ScreeningScore">Screening Score</option>
+                            <option value="RiskLevel">Risk Score</option>
+                            <option value="User">User</option>
+                            <option value="Status">Status</option>
+                        </select>
+                    </div>
+
+                    
+                    <div class="space-y-2">
+
+                        <!-- Case Status Change Reason -->
+                        <div id="CaseStatusChangeReasonField" class="hidden">
+                            <label class="block text-sm font-medium mb-1">Case Status Change Reason</label>
+                            <input type="text" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" id="caseStatusChange"
+                                   placeholder="Enter reason" />
+                        </div>
+                    
+                    
+                        <!-- Screening Score -->
+                        <div id="ScreeningScoreField" class="hidden">
+                            <label class="block text-sm font-medium mb-1">Screening Score</label>
+                            <select class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm" id="screeningScore">
+                                <option value="">--Select--</option>
+                                <option value="70-80">70-80</option>
+                                <option value="80-90">80-90</option>
+                                <option value="90-100">90-100</option>
+                            </select>
+                        </div>
+                    
+                    
+                        <!-- User -->
+                        <div id="UserField" class="hidden">
+                            <label class="block text-sm font-medium mb-1">User</label>
+                            <select asp-items="@Model.Users" id="user"
+                                    class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm ring-offset-white focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-colors appearance-none text-slate-900">
+                                <option value="0">--@localizer["SELECT"]--</option>
+                            </select>
+                        </div>
+                    
+                    
+                        <!-- Status -->
+                        <div id="StatusField" class="hidden">
+                            <label class="block text-sm font-medium mb-1">Status</label>
+                            <select class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" asp-items="@Model.CaseStatusList" id="caseStatus">
+                                <option value="10">--@localizer["SELECT"]--</option>
+                            </select>
+                        </div>
+                        <div id="RiskLevelField" class="hidden">
+                            <label class="block text-sm font-medium mb-1">Risk Score</label>
+                            <select class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm"  id="riskScore">
+                                <option value="">--@localizer["SELECT"]--</option>
+                                <option value="1">Low</option>
+                                <option value="2">Medium</option>
+                                <option value="3">High</option>
+                            </select>
+                        </div>
+                    
+                   
+                    </div>
+                </div>
+            </div>
+        </div> *@
+        
 
         <!-- Table Section -->
         <div class="space-y-4">
@@ -242,7 +443,7 @@
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left whitespace-nowrap">
-                        <thead class="text-[10px] text-slate-500 uppercase bg-white border-b border-slate-200">
+                        <thead class="text-[10px] text-slate-500  bg-white border-b border-slate-200">
                             <tr>
                                 <th class="px-2 py-4 font-small h-12">Customer ID</th>
                                 <th class="px-2 py-4 font-small h-12">Created on</th>
@@ -300,7 +501,7 @@
     </body>
     </html>
     <script>
-                    lucide.createIcons();
+    lucide.createIcons();
 
     let filteredCases = [];
     let currentPage = 1;
@@ -324,6 +525,210 @@
             })
         };
     }
+
+
+        function toggleExtraFilters() {
+
+        const section = document.getElementById("extraFilters");
+
+        section.classList.toggle("hidden");
+
+        // Reset column filter
+        document.getElementById("columnFilter").value = "";
+
+        // Hide all dynamic fields
+        const dynamicFields = [
+            "CaseStatusChangeReasonField",
+            "ScreeningScoreField",
+            "UserField",
+            "StatusField",
+            "RiskLevelField"
+        ];
+
+        dynamicFields.forEach(id => {
+            document.getElementById(id).classList.add("hidden");
+        });
+
+        resetFieldValues();
+    }
+        function resetFieldValues(){
+
+        const fields = document.querySelectorAll("input, select");
+
+        fields.forEach(field => {
+
+            if (field.id === "user") {
+                field.value = "0";
+            }
+            else if (field.id === "caseStatus") {
+                field.value = "10";
+            }
+            else if (["screeningScore","caseStatusChange","riskScore"].includes(field.id)) {
+                field.value = "";
+            }
+
+        });
+
+    }
+    // function toggleExtraFilters() {
+    //     const section = document.getElementById("extraFilters");
+    //     section.classList.toggle("hidden");
+    // }
+    //         function toggleExtraFilters() {
+
+    //     const section = document.getElementById("extraFilters");
+
+    //     // toggle visibility
+    //     section.classList.toggle("hidden");
+
+    //     // clear all inputs, selects, textareas inside the section
+    //     const fields = section.querySelectorAll("input, select, textarea");
+
+    //         fields.forEach(field => {
+
+    //     if (field.id === "user") {
+    //         field.value = "0";
+    //     }
+    //     else if (field.id === "caseStatus") {
+    //         field.value = "10";
+    //     }
+    //     else if (["screeningScore","caseStatusChange","riskScore"].includes(field.id)) {
+    //         field.value = "";
+    //     }
+    //     else if (field.type === "checkbox" || field.type === "radio") {
+    //         field.checked = false;
+    //     }
+    //     else if (field.tagName === "SELECT") {
+    //         field.selectedIndex = 0;
+    //     }
+    //     else {
+    //         field.value = "";
+    //     }
+
+    // });
+
+    //     // reset column filter dropdown
+    //     const columnFilter = document.getElementById("columnFilter");
+    //     if (columnFilter) {
+    //         columnFilter.selectedIndex = 0;
+    //     }
+
+    //     // hide all dynamic fields
+    //     const dynamicFields = [
+    //         "CaseStatusChangeReasonField",
+    //         "ScreeningScoreField",
+    //         "UserField",
+    //         "StatusField",
+    //         "RiskLevelField"
+    //     ];
+
+    //     dynamicFields.forEach(id => {
+    //         const el = document.getElementById(id);
+    //         if (el) {
+    //             el.classList.add("hidden");
+    //         }
+    //     });
+    // }
+
+    function applyFilters() {
+        alert("Filters Applied");
+        // Your filter logic here
+    }
+        function Colunmfilterfunction() {
+
+        const selectedValue = document.getElementById("columnFilter").value;
+
+        const fields = [
+            "CaseStatusChangeReasonField",
+            "ScreeningScoreField",
+            "UserField",
+            "StatusField",
+            "RiskLevelField"
+        ];
+
+        // Hide and clear all fields
+        fields.forEach(fieldId => {
+
+            const field = document.getElementById(fieldId);
+
+            field.classList.add("hidden");
+
+            const inputs = field.querySelectorAll("input, select");
+
+            inputs.forEach(input => {
+
+                if (input.id === "user") {
+                    input.value = "0";
+                }
+                else if (input.id === "caseStatus") {
+                    input.value = "10";
+                }
+                else if (["screeningScore","caseStatusChange","riskScore"].includes(input.id)) {
+                    input.value = "";
+                }
+                else {
+                    input.value = "";
+                }
+
+            });
+
+        });
+
+        // Show selected field
+        if (selectedValue) {
+            document.getElementById(selectedValue + "Field").classList.remove("hidden");
+        }
+    }
+    //     function Colunmfilterfunction() {
+
+    //     var selectedValue = document.getElementById("columnFilter").value;
+
+    //     var fields = [
+    //         "CaseStatusChangeReasonField",
+    //         "ScreeningScoreField",
+    //         "UserField",
+    //         "StatusField",
+    //         "RiskLevelField"
+    //     ];
+
+    //     // Hide and clear all fields
+    //      fields.forEach(function (fieldId) {
+
+    //     var field = document.getElementById(fieldId);
+    //     field.classList.add("hidden");
+
+    //     var inputs = field.querySelectorAll("input, select");
+
+    //     inputs.forEach(function (input) {
+
+    //         if (input.id === "user") {
+    //             input.value = "0";
+    //         }
+    //         else if (input.id === "caseStatus") {
+    //             input.value = "10";
+    //         }
+    //         else if (["screeningScore", "caseStatusChange", "riskScore"].includes(input.id)) {
+    //             input.value = "";
+    //         }
+    //         else if (input.type === "checkbox" || input.type === "radio") {
+    //             input.checked = false;
+    //         }
+    //         else if (input.tagName === "SELECT") {
+    //             input.selectedIndex = 0;
+    //         }
+    //         else {
+    //             input.value = "";
+    //         }
+
+    //     });
+
+    // });
+
+    //     // Show selected field
+    //     if (selectedValue) {
+    //         document.getElementById(selectedValue + "Field").classList.remove("hidden");
+    //     }
+    // }
 
     function getStatusBadge(status) {
         let styles = "";
@@ -481,6 +886,8 @@
 
         $('#loadingCaseDetails').removeClass('hidden');
 
+        
+
         let searchValue = $('#searchInput').val() || '';
 
         $.ajax({
@@ -498,7 +905,12 @@
                 // ⭐ Filters
                 startDate: $('#startDate').val(),
                 endDate: $('#endDate').val(),
-                cust_type: $('#customertype').val()
+                cust_type: $('#customertype').val(),
+                createdBy:$('#user').val(),
+                matchScore:$('#screeningScore').val(),
+                caseStatus:$('#caseStatus').val(),
+                caseStatusChange:$('#caseStatusChange').val(),
+                riskLevel:$('#riskScore').val()
             },
 
             success: function (res) {
@@ -574,21 +986,28 @@
 
                 <td class="px-2 py-4 font-medium text-slate-600">${caseItem.customerId}</td>
 
-                 <td class="px-2 py-4">
-                    <!-- Created -->
-                    <div class="text-xs  text-slate-700">
-                        ${created?.date || '-'} ${created?.time || ''}
-                    </div>
-                </td>
-                <td class="px-2 py-4">
-                    <!-- Updated (only if exists) -->
-                    ${updated ? `
-                        
-                        <div class="text-xs text-slate-700">
-                            ${updated?.date || '-'} ${updated?.time || ''}
-                        </div>
-                    ` : ''}
-                </td>
+
+                        <td class="px-2 py-4">
+                            <!-- Created -->
+                            <div class="text-xs text-slate-700">
+                                <div>${created?.date || '-'}</div>
+                                <div class="ml-2">
+                                    ${created?.time ? created.time.replace(/\s?(AM|PM)/i, '') : ''}
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="px-2 py-4">
+                            <!-- Updated (only if exists) -->
+                            ${updated ? `
+                                <div class="text-xs text-slate-700">
+                                    <div>${updated?.date || '-'}</div>
+                                    <div class="ml-2">
+                                        ${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </td>
                 
 
                 <td class="px-2 py-4">
@@ -602,7 +1021,7 @@
 
                 <td class="px-2 py-4">${caseItem.caseChangeStatus}</td>
 
-                    <td class="item-center text-center px-2 py-4 ${
+                    <td class="px-2 py-4 ${
                         caseItem.matchScore < 70 ? 'text-green-600 font-semibold' :
                         caseItem.matchScore < 85 ? 'text-orange-500 font-semibold' :
                         'text-red-600 font-semibold'
@@ -664,9 +1083,16 @@
 
         $('#startDate').val('');
         $('#endDate').val('');
-        $('#customerType').val('');
+        $('#customertype').val(0);
         $('#searchInput').val('');
+        $('#user').val(0);
+        $('#caseStatus').val(10);
+        $('#screeningScore').val('');
+        $('#columnFilter').val('');
+        $('#riskScore').val('');
+        $('#caseStatusChange').val('');
 
+        
         loadCases(1);
     }
 

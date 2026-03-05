@@ -81,6 +81,7 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_comment", _CaseCommentDTO.Comment);
                 parameters.Add("@p_created_on", _CaseCommentDTO.CreatedOn);
                 parameters.Add("@p_created_by", _CaseCommentDTO.CreatedBy);
+                parameters.Add("@p_commenttype", _CaseCommentDTO.CommentType);
                 var response = ExecuteScalar("ins_case_comment", parameters, commandType: CommandType.StoredProcedure).ParseInt();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Case Comment added successfully.";

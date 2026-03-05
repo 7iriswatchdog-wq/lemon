@@ -2,6 +2,7 @@ using AML.Core.Common.StaticResource;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Configuration;
 using System.Text;
 
 namespace AML.DTO.DTO.CaseComment
@@ -20,6 +21,8 @@ namespace AML.DTO.DTO.CaseComment
         public string CreatedUser { get; set; }
         [Column("duration_in_words")]
         public string Duration { get; set; }
+        [Column("comment_type")]
+        public string CommentType { get; set; }
         [Column("created_on")]
         public DateTime? CreatedOnDB { get; set; }
         public string CreatedOn

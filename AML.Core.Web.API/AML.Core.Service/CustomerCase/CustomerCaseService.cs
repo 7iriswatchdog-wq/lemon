@@ -158,7 +158,8 @@ namespace AML.Core.Service.CustomerCase
                 ParentID = _CustomerCaseDT.ParentID,
                 ScreeningOptions=_CustomerCaseDT.ScreeningOptions,
                 IdIssueDate=_CustomerCaseDT.IdIssueDate,
-                IdExpiryDate=_CustomerCaseDT.IdExpiryDate
+                IdExpiryDate=_CustomerCaseDT.IdExpiryDate,
+                Residence=_CustomerCaseDT.Residence
 
                 //EstablishmentDate=_CustomerCaseDT.EstablishmentDate,
                 //Address= _CustomerCaseDT.Address
@@ -524,20 +525,20 @@ namespace AML.Core.Service.CustomerCase
             return _CustomerCaseRepository.GetCreatedByAndUpdateByNameFromId(createdById, updatedById).Result;
 
         }
-        public List<CustomerCaseDTO> GetAll(int userId, string startDate, string endDate, string cust_type)
+        public List<CustomerCaseDTO> GetAll(int userId, string startDate, string endDate, string cust_type, string matchscore, int createdBy,int caseStatus,string riskLevel, string caseStatusChange, string usergroupName)
         {
             //Perform business requirements here
-            return _CustomerCaseRepository.GetAll(userId, startDate, endDate, cust_type).Result;
+            return _CustomerCaseRepository.GetAll(userId, startDate, endDate, cust_type, matchscore, createdBy, caseStatus, riskLevel,caseStatusChange, usergroupName).Result;
         }
         public List<CustomerCaseDTO> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type)
         {
             //Perform business requirements here
             return _CustomerCaseRepository.GetAllCompletedCases(userId, startDate, endDate, cust_type).Result;
         }
-        public List<CustomerCaseDTO> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type,string searchValue)
+        public List<CustomerCaseDTO> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type,string searchValue, string usergroupName)
         {
             //Perform business requirements here
-            return _CustomerCaseRepository.GetAllBySearchValue(userId, startDate, endDate, cust_type,searchValue).Result;
+            return _CustomerCaseRepository.GetAllBySearchValue(userId, startDate, endDate, cust_type,searchValue,usergroupName).Result;
         }
         public List<CustomerCaseDTO> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue)
         {
@@ -946,8 +947,9 @@ namespace AML.Core.Service.CustomerCase
                 Modeofpayment=model.Modeofpayment,
                 CIFNumber=model.CIFNumber,
                 ScreeningOptions=model.ScreeningOptions,
-                IdExpiryDate=model.IdExpiryDate
-
+                IdExpiryDate=model.IdExpiryDate,
+                Residence=model.Residence
+                
             };
             //ServiceResponse<string> _corpCustomer = this.CreatePrefix(_CustomerCaseDT);
             ServiceResponse<string> _corpCustomer = this.Create(_CustomerCaseDT);
@@ -2122,10 +2124,10 @@ namespace AML.Core.Service.CustomerCase
             //Perform business requirements here
             return _customerMasterRepository.CreateShareholdersData(_shareholderDTO);
         }
-        public List<ShareholderDTO> GetAllShareHolders(int clientid)
+        public List<ShareholderDTO> GetAllShareHolders(int clientid,string companyCode)
         {
             //Perform business requirements here
-            return _CustomerCaseRepository.GetAllShareHolders(clientid).Result;
+            return _CustomerCaseRepository.GetAllShareHolders(clientid, companyCode).Result;
         }
 
         public ServiceResponse<string> DeleteShareholders(int id)

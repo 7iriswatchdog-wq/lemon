@@ -10,6 +10,8 @@ namespace AML.Core.RepositoryContract.Country
     {
         ServiceResponse<int> Create(CountryDTO _countryDTO);
         ServiceResponse<CountryDTO> GetDetails(int Id);
+
+        ServiceResponse<CountryDTO> GetCountryNameByCode(string isoCode, int clientid);
         ServiceResponse<int> Delete(int Id);
         ServiceResponse<int> Update(CountryDTO _countryDTO);
         ServiceResponse<List<CountryDTO>> GetAll(int ClientId);

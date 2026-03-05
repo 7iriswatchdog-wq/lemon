@@ -13,6 +13,8 @@ namespace AML.ViewModel.ViewModels.CaseComment
         public DateTime? CreatedOn { get; set; }
         public string CreatedUser { get; set; }
         public string Duration { get; set; }
+
+        public string CommentType { get; set; }
     }
     public class CaseCloseModel
     {

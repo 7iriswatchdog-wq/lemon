@@ -85,6 +85,25 @@ namespace AML.Core.Repository.Country
             }
             return serviceResponse;
         }
+        public ServiceResponse<CountryDTO> GetCountryNameByCode(string isoCode, int clientid)
+        {
+            ServiceResponse<CountryDTO> serviceResponse = new ServiceResponse<CountryDTO>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_iscode", isoCode);
+                parameters.Add("@p_clientid", clientid);
+                serviceResponse.Result = GetFirstOrDefault<CountryDTO>("get_country_name_by_code", parameters, commandType: CommandType.StoredProcedure);
+                serviceResponse.Message = "Country details fetched successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
 
         public ServiceResponse<int> Create(CountryDTO _countryDTO)
         {

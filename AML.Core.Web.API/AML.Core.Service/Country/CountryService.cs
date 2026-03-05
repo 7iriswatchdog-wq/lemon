@@ -35,6 +35,12 @@ namespace AML.Core.Service.Country
             //Perform business requirements here
             return _countryRepository.GetAll(ClientId).Result;
         }
+        public CountryDTO GetCountryNameByCode(string isoCode, int clientid)
+        {
+            //Perform business requirements here
+            return _countryRepository.GetCountryNameByCode(isoCode, clientid).Result;
+        }
+
         public List<CountryDTO> GetListAll()
         {
             //Perform business requirements here

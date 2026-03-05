@@ -227,6 +227,8 @@ namespace AML.DTO.DTO.CustomerCase
         public DateTime? IdIssueDate { get; set; }
         [Column("id_expiry_date")]
         public DateTime? IdExpiryDate { get; set; }
+        [Column("residence")]
+        public string Residence { get; set; }
     }
     public class CreatedAndUpdatedByNames
     {
@@ -446,6 +448,10 @@ namespace AML.DTO.DTO.CustomerCase
         public string CaseChangeStatus { get; set; }
         [Column("screeningoption")]
         public string ScreeningOptions { get; set; }
+
+        [Column("residence")]
+
+        public string Residence { get; set; }
 
         public string onb_cust_ref_id { get; set; }
 

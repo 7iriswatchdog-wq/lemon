@@ -64,6 +64,7 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_screeningoption", _CustomerMasterDTO.ScreeningOptions);
                 parameters.Add("@p_idissuedate", _CustomerMasterDTO.IdIssueDate);
                 parameters.Add("@p_idexpirydate", _CustomerMasterDTO.IdExpiryDate);
+                parameters.Add("@p_residence", _CustomerMasterDTO.Residence);
 
                 //parameters.Add("@p_address",_CustomerMasterDTO.Address);
                 //parameters.Add("@p_establishmentdate", _CustomerMasterDTO.EstablishmentDate);

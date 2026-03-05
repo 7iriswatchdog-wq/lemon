@@ -150,7 +150,7 @@
     showResults: false,
     isDuplicateModalOpen: false,
     isSuccessModalOpen: false,
-    matchParam: 75,
+    matchParam: 70,
     files: [],
     isDragging: false
 }">
@@ -463,17 +463,17 @@
                                                                maxlength="100"
                                                                id="fullName"
                                                                class="flex-1 h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium
-focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all
-fullNameField"
+                                                                    focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all
+                                                                    fullNameField"
                                                                oninput="toggleDuplicateBtn()" />
 
                                                         <button type="button"
                                                                 id="btnCheckDuplicate"
                                                                 disabled
                                                                 class="px-4 h-11 border-2 border-blue-600 text-blue-600 font-extrabold text-xs rounded-xl
- transition-all whitespace-nowrap
- disabled:opacity-50 disabled:cursor-not-allowed
- hover:bg-blue-50 active:scale-95"
+                                                                     transition-all whitespace-nowrap
+                                                                     disabled:opacity-50 disabled:cursor-not-allowed
+                                                                     hover:bg-blue-50 active:scale-95"
                                                                 onclick="checkDuplicatefunction(this)">
                                                             Check Duplicate
                                                         </button>
@@ -648,7 +648,7 @@ fullNameField"
                                                         <input type="file"
                                                                class="hidden"
                                                                x-ref="docUpload"
-                                                               
+                                                               name="CaseDocumentsL[0].Document"
                                                                x-on:change="
                                                                if ($event.target.files.length> 0) {
                                                                 let fullName = $event.target.files[0].name;
@@ -727,7 +727,7 @@ fullNameField"
                                         <div x-data="{
                                                     files: [],
                                                     isDragging: false,
-                                                    matchParam: 75,
+                                                    matchParam: 70,
                                                     handleFiles(selectedFiles) {
                                                         this.files = Array.from(selectedFiles);
 
@@ -1165,17 +1165,17 @@ fullNameField"
                                                                    maxlength="100"
                                                                    id="fullName"
                                                                    class="flex-1 h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium
-focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all
-fullNameField"
-                                                                   oninput="OCRtoggleDuplicateBtn()" />
+                                                                            focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all
+                                                                            fullNameField"
+                                                                    />
 
                                                             <button type="button"
                                                                     id="btnCheckDuplicate"
-                                                                    disabled
+                                                                    
                                                                     class="px-4 h-11 border-2 border-blue-600 text-blue-600 font-extrabold text-xs rounded-xl
- transition-all whitespace-nowrap
- disabled:opacity-50 disabled:cursor-not-allowed
- hover:bg-blue-50 active:scale-95"
+                                                                     transition-all whitespace-nowrap
+                                                                     disabled:opacity-50 disabled:cursor-not-allowed
+                                                                     hover:bg-blue-50 active:scale-95"
                                                                     onclick="checkDuplicatefunction(this)">
                                                                 Check Duplicate
                                                             </button>
@@ -1344,7 +1344,7 @@ fullNameField"
                                                         <input type="file"
                                                                class="hidden"
                                                                x-ref="docUpload"
-                                                               
+                                                               name="CaseDocumentsL[0].Document"
                                                                x-on:change="
                                                                if ($event.target.files.length> 0) {
                                                         let fullName = $event.target.files[0].name;
@@ -1755,18 +1755,7 @@ fullNameField"
         btn.disabled = true;
     }
 }
-document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
-             function OCRtoggleDuplicateBtn() {
-                const input = document.getElementById('fullName');
-                const btn = document.getElementById('btnCheckDuplicate');
 
-                if (input.value.trim().length > 0) {
-                    btn.disabled = false;
-                } else {
-                    btn.disabled = true;
-                }
-            }
-            document.addEventListener('DOMContentLoaded', OCRtoggleDuplicateBtn);
                     document.addEventListener('alpine:init', () => {
 
                 Alpine.store('screening', {
@@ -2791,82 +2780,98 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
 
                                          console.log(result);
 
-if (!result || !result.extracted_json) {
-    $('#loadingeffect').hide();
-    toastr.error("OCR Failed. Please fill the form manually");
-    $('#manualForm').show();
-    return;
-}
+                            if (!result || !result.extracted_json) {
+                                $('#loadingeffect').hide();
+                                toastr.error("OCR Failed. Please fill the form manually");
+                                $('#manualForm').show();
+                                return;
+                            }
 
-let mrzData = result.extracted_json || {};
+                            let mrzData = result.consolidated_document_data || {};
 
-console.log("MRZ DATA:", mrzData);
+                            console.log("MRZ DATA:", mrzData);
 
-if (Object.keys(mrzData).length === 0) {
-    $('#loadingeffect').hide();
-    toastr.error("MRZ data not found. Please fill the form manually");
-    $('#manualForm').show();
-    return;
-}
+                            if (Object.keys(mrzData).length === 0) {
+                                $('#loadingeffect').hide();
+                                toastr.error("MRZ data not found. Please fill the form manually");
+                                $('#manualForm').show();
+                                return;
+                            }
 
-$('#loadingeffect').hide();
-$('#manualForm').show();
+                            $('#loadingeffect').hide();
+                            $('#manualForm').show();
 
-let form = document.getElementById("myOCRForm");
+                            let form = document.getElementById("myOCRForm");
 
-/* =========================
-   FIELD MAPPING (FIXED)
-   ========================= */
+                            /* =========================
+                               FIELD MAPPING (FIXED)
+                               ========================= */
 
-form.querySelector("#fullName").value = mrzData.full_name || "";
-form.querySelector("#txtIdNumber").value = mrzData.document_number || "";
+                            form.querySelector("#fullName").value = mrzData.full_name || "";
+                            form.querySelector("#txtIdNumber").value = mrzData.document_number || "";
 
-/* Gender */
-let genderValue = (mrzData.gender || "").toUpperCase();
+                            /* Gender */
+                            let genderValue = (mrzData.gender || "").toUpperCase();
 
-if (genderValue === "M") {
-    form.querySelector("#gender").value = "Male";
-} 
-else if (genderValue === "F") {
-    form.querySelector("#gender").value = "Female";
-} 
-else {
-    form.querySelector("#gender").value = "";
-}
+                            if (genderValue === "M") {
+                                form.querySelector("#gender").value = "Male";
+                            } 
+                            else if (genderValue === "F") {
+                                form.querySelector("#gender").value = "Female";
+                            } 
+                            else {
+                                form.querySelector("#gender").value = "";
+                            }
 
-/* Nationality */
-let nationalityValue = (mrzData.nationality || "").trim();
-let natSelect = form.querySelector("#nationality");
-if (natSelect && nationalityValue) {
-    // Try exact match first
-    natSelect.value = nationalityValue;
+                            /* Nationality */
+                                        let nationalityCode = (mrzData.nationality || "").trim();
 
-    // If not selected, try case-insensitive match or code match
-    if (!natSelect.value || natSelect.selectedIndex <= 0) {
-        let found = false;
-        for (let i = 0; i < natSelect.options.length; i++) {
-            let opt = natSelect.options[i];
-            if (opt.value.toUpperCase() === nationalityValue.toUpperCase() || 
-                opt.text.toUpperCase() === nationalityValue.toUpperCase()) {
-                natSelect.value = opt.value;
-                found = true;
-                break;
-            }
-        }
-        if (!found) console.warn("Could not find matching nationality for:", nationalityValue);
-    }
-}
+                                    if (nationalityCode) {
+                                        fetch(`/Case/GetCountryNameByIso?isoCode=${nationalityCode}`)
+                                            .then(response => response.json())
+                                              .then(name => {
+                                                if (name) {
+                                                    let natSelect = form.querySelector("#nationality");
+                                                    if (natSelect) {
+                                                        natSelect.value = name;
+                                                    }
+                                                } else {
+                                                    console.warn("Country not found for ISO:", nationalityCode);
+                                                }
+                                            });
+                                    }
+                            // let nationalityValue = (mrzData.nationality || "").trim();
+                            // let natSelect = form.querySelector("#nationality");
+                            // if (natSelect && nationalityValue) {
+                            //     // Try exact match first
+                            //     natSelect.value = nationalityValue;
 
-/* Dates */
-setDateInput(form, "DOB", mrzData.dob);
-setDateInput(form, "expirydate", mrzData.expiry_date);
+                            //     // If not selected, try case-insensitive match or code match
+                            //     if (!natSelect.value || natSelect.selectedIndex <= 0) {
+                            //         let found = false;
+                            //         for (let i = 0; i < natSelect.options.length; i++) {
+                            //             let opt = natSelect.options[i];
+                            //             if (opt.value.toUpperCase() === nationalityValue.toUpperCase() || 
+                            //                 opt.text.toUpperCase() === nationalityValue.toUpperCase()) {
+                            //                 natSelect.value = opt.value;
+                            //                 found = true;
+                            //                 break;
+                            //             }
+                            //         }
+                            //         if (!found) console.warn("Could not find matching nationality for:", nationalityValue);
+                            //     }
+                            // }
 
-/* Optional: Issue Date (if field exists) */
-setDateInput(form, "issuedate", mrzData.issue_date);
+                            /* Dates */
+                            setDateInput(form, "DOB", mrzData.dob);
+                            setDateInput(form, "expirydate", mrzData.expiry_date);
 
-/* Final UI updates */
-this.loading = false;
-this.scrollToForm();
+                            /* Optional: Issue Date (if field exists) */
+                            setDateInput(form, "issuedate", mrzData.issue_date);
+
+                            /* Final UI updates */
+                            this.loading = false;
+                            this.scrollToForm();
 
                             //             console.log(result);
 
@@ -3029,7 +3034,7 @@ this.scrollToForm();
 
                 // --- Reset threshold slider (Alpine bound) ---
                 const threshold = form.querySelector("#threshold");
-                if (threshold) threshold.value = 75;
+                if (threshold) threshold.value = 70;
             }
 
 

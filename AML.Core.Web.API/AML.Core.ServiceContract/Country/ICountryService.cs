@@ -12,6 +12,8 @@ namespace AML.Core.ServiceContract.Country
         ServiceResponse<int> Delete(int Id);
         List<CountryDTO> GetAll(int ClientId);
         List<CountryDTO> GetListAll();
+
+        CountryDTO GetCountryNameByCode(string isoCode,int clientid);
         List<CountryDTO> GetListFATFAll();
         List<CountryDTO> GetAllCountryRiskConfig(string culture);
         List<CountryDTO> GetAllPartnerNationality(int ClientId);

@@ -19,6 +19,7 @@ using AML.Core.ServiceContract.Kyc;
 using AML.Core.ServiceContract.LovMaster;
 using AML.Core.ServiceContract.Risk;
 using AML.Core.ServiceContract.User;
+using AML.Core.ServiceContract.UserGroup;
 using AML.DTO.DTO.CaseAssignment;
 using AML.DTO.DTO.CaseComment;
 using AML.DTO.DTO.CaseDocument;
@@ -48,9 +49,11 @@ using AML.ViewModel.ViewModels.Risk;
 using AML.ViewModel.ViewModels.RiskAPI;
 using AML.ViewModel.ViewModels.Sanction;
 using AML.ViewModel.ViewModels.User;
+using AML.ViewModel.ViewModels.UserGroup;
 using AML.Web.CustomFilters;
 using AML.Web.Helper;
 using AutoMapper;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Drawing.Wordprocessing;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using iTextSharp.text;
@@ -81,6 +84,7 @@ using static AML.DTO.DTO.FreeSource.BlackListMongoDTO;
 using static AML.DTO.DTO.FreeSource.CaseLogsMongoDTO;
 using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
 using ApiResultModel = AML.DTO.DTO.CustomerCase.ApiResultModel;
+using Formatting = Newtonsoft.Json.Formatting;
 
 namespace AML.Web.Controllers.Case
 {
@@ -117,12 +121,13 @@ namespace AML.Web.Controllers.Case
         private IKycService _kycService;
         private ILovMasterService _lovMasterService;
         private IRiskService _riskService;
+        private IUserGroupService _UserGroupService;
 
         private readonly Logger log = LogManager.GetCurrentClassLogger();
 
         public CaseController(IMapper mapper,
             IToastNotification toastNotification, ICountryService countryService, ICaseDocumentService caseDocumentService, ICustomerMasterService customerMasterService,
-            IHttpClientHandler clientHandler, ICustomerCategoryService customerCategoryService, ICaseCommentService caseCommentService,
+            IHttpClientHandler clientHandler, ICustomerCategoryService customerCategoryService, ICaseCommentService caseCommentService, IUserGroupService UserGroupService,
             IConfiguration configuration, IIdentityTypeService idTypeService, IUserService userService, ICaseAssignmentService caseAssignmentService, ICommonService commonService, IKycService kycService, ILovMasterService lovMasterService, IRiskService RiskService,
             ICustomerCaseService CustomerCaseService, ICustomerScreeningService CustomerScreeningService, IFileUploader fileUploader, IExportDataService exportService, IViewRenderService viewRenderService, RiskAPIController riskAPIController, IFreeSourceRepository freeSourceRepository)
         {
@@ -159,6 +164,7 @@ namespace AML.Web.Controllers.Case
             _freeSourceRepository = freeSourceRepository;
             _riskService = RiskService;
             _lovMasterService = lovMasterService;
+            _UserGroupService = UserGroupService;
         }
 
         [HttpGet("/case")]
@@ -172,15 +178,34 @@ namespace AML.Web.Controllers.Case
             model.EndDate = System.DateTime.Now;
             model.CustomerCategories = new SelectList(_mapper.Map<List<CustomerCategoryModel>>(_customerCategoryService.GetAll().Result), "Code", "Name");
 
+            IEnumerable<SelectListItem> userList = from s in _mapper.Map<List<UserModel>>(_userService.GetAll(clientId))
+                                                   select new SelectListItem
+                                                   {
+                                                       Value = Convert.ToString(s.Id),
+                                                       Text = s.FName + " " + s.LName.ToString()
+                                                   };
+            model.Users = new SelectList(userList, "Value", "Text");
+            var items = from CaseStatus d in Enum.GetValues(typeof(CaseStatus))
+                        select new { Id = (int)d, Name = d.ToString() };
+            model.CaseStatusList = new SelectList(items, "Id", "Name");
+
 
 
             return View(model);
         }
         [HttpPost("/case/custompagination")]
         //ToDo
-        public JsonResult CustomPagination(DataTableModel model, string startDate, string endDate, string cust_type,string searchValue)
+        public JsonResult CustomPagination(DataTableModel model, string startDate, string endDate, string cust_type,string searchValue,int createdBy,string matchScore,int caseStatus,string caseStatusChange,string riskLevel)
         {
-            var userId = _clientHandler.GetUserId();
+            
+            var BranchId = _clientHandler.GetBranchId();
+            var GroupId = _clientHandler.GetGroupId();
+            
+            
+             var userId = _clientHandler.GetUserId();
+            
+
+            var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
             List<CaseModel> abc = new List<CaseModel>();
             if (endDate == null)
             {
@@ -194,14 +219,30 @@ namespace AML.Web.Controllers.Case
             {
                 cust_type = "I";
             }
+            
+                if(riskLevel == "1")
+                {
+                    riskLevel = "Low Risk";
+                }else if (riskLevel == "2")
+                {
+                    riskLevel = "Medium Risk";
+                }else if(riskLevel == "3")
+                {
+                    riskLevel = "High Risk";
+                }
+            if(caseStatusChange == "0")
+            {
+                caseStatusChange = null;
+            }
+            
             if (searchValue != "" && searchValue != null)
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllBySearchValue(userId, startDate, endDate, cust_type, searchValue));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllBySearchValue(userId, startDate, endDate, cust_type, searchValue, _UserGroupModel.Name));
 
             }
             else
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAll(userId, startDate, endDate, cust_type));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAll(userId, startDate, endDate, cust_type, matchScore,createdBy,caseStatus,riskLevel,caseStatusChange, _UserGroupModel.Name));
 
             }
                 int totalcount = abc.Count;
@@ -1205,11 +1246,16 @@ namespace AML.Web.Controllers.Case
             CaseProcessModel model = new CaseProcessModel();
             try
             {
-
+                var BranchId = _clientHandler.GetBranchId();
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+               
                 model.Case = new CaseModel();
+                
 
                 CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(CaseId);
                 model.Case = _mapper.Map<CaseModel>(_CustomerCaseDTO);
+                model.Case.UserGroupName = _UserGroupModel.Name;
                 var dob = model.Case.DOB;
                 var createddated = model.Case.CreatedOn;
                 string dobText;
@@ -1355,11 +1401,15 @@ namespace AML.Web.Controllers.Case
             CaseProcessModel model = new CaseProcessModel();
             try
             {
+                var BranchId = _clientHandler.GetBranchId();
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
 
                 model.Case = new CaseModel();
 
                 CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(CaseId);
                 model.Case = _mapper.Map<CaseModel>(_CustomerCaseDTO);
+                model.Case.UserGroupName = _UserGroupModel.Name;
                 var dob = model.Case.DOB;
                 var createddated = model.Case.CreatedOn;
                 string dobText;
@@ -2018,8 +2068,34 @@ namespace AML.Web.Controllers.Case
         [HttpPost("/case/assign")]
         public async Task<JsonResult> Assign(CaseAssignmentModel model)
         {
+            var BranchId = _clientHandler.GetBranchId();
+            var GroupId = _clientHandler.GetGroupId();
+            var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+
             model.CreatedBy = _clientHandler.GetUserId();
             model.CreatedOn = DateTime.Now;
+            CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(model.CaseId);
+            if (_UserGroupModel.Name == "Senior Management") 
+            {
+                if(_CustomerCaseDTO.MatchScore == 0)
+                {
+                    _CustomerCaseDTO.Status = 5;
+                }
+                else
+                {
+                    _CustomerCaseDTO.Status = 0;
+                }
+
+                    _CustomerCaseDTO.UpdatedBy = _clientHandler.GetUserId();
+                _CustomerCaseDTO.UpdatedOn = Convert.ToString(DateTime.Now);
+                _CustomerCaseDTO.Comments = model.Comment;
+
+                 _customerCaseService.Update(_CustomerCaseDTO);
+
+            }
+
+
+            
             var result = _caseAssignmentService.Create(_mapper.Map<CaseAssignmentDTO>(model));
             var userName = HttpContext.Session.GetString("SessUsername");
             var comment = string.Format("Transferred Case To {0}", model.TransferUser);
@@ -2050,6 +2126,32 @@ namespace AML.Web.Controllers.Case
             await Task.Run(() => SendCaseTransferedMailAsync(body, model));
 
             return Json(result);
+        }
+        [HttpPost("/case/onhold")]
+        public async Task<JsonResult> OnHold(CaseAssignmentModel model)
+        {
+            model.CreatedBy = _clientHandler.GetUserId();
+            model.CreatedOn = DateTime.Now;
+            
+            var userName = HttpContext.Session.GetString("SessUsername");
+            var comment = string.Format("Customer Case Onhold");
+
+            if (model.Comment != "" && model.Comment != null)
+            {
+                CaseCommentModel remarkModel = new CaseCommentModel();
+                remarkModel.CaseId = model.CaseId;
+                remarkModel.Comment = model.Comment;
+                remarkModel.CreatedBy = _clientHandler.GetUserId();
+                var remarkResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
+            }
+            CaseCommentModel commentModel = new CaseCommentModel();
+            commentModel.CaseId = model.CaseId;
+            commentModel.Comment = comment;
+            commentModel.CreatedBy = _clientHandler.GetUserId();
+            var commentResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(commentModel));
+
+
+            return Json(model);
         }
         [HttpPost("/case/document")]
         public JsonResult Document(CaseDocumentModel model)
@@ -2116,17 +2218,28 @@ namespace AML.Web.Controllers.Case
             //}
 
             string response = string.Empty;
+            string commenttype = string.Empty;
             if (model.Action == 2)
             {
                 response = "Customer case approved.";
+                commenttype = "Approved";
             }
             else if (model.Action == 3)
             {
                 response = "Customer case rejected.";
+                commenttype = "Rejected";
+            }
+            else if(model.Action == 4)
+            {
+                response = "Customer case is  forwarded to Senior Management.";
             }
             //response = model.Action == 2 ? "Customer case approved." : "Customer case rejected.";
             if (model.Action == 1)
+            {
+
                 response = "Customer Case Whitelisted";
+                commenttype = "whitelisted";
+            }
             //_toastNotification.AddErrorToastMessage(reposne);
             if (model.Comment != "" && model.Comment != null)
             {
@@ -2152,7 +2265,7 @@ namespace AML.Web.Controllers.Case
                     comment = string.Format("Rejected Case");
                     break;
                 case 4:
-                    //comment = string.Format("Transferred Case To {0}",model.TransferUser);
+                    comment = string.Format("Forwarded to Senior Management");
                     break;
                 default:
                     comment = "";
@@ -2160,6 +2273,7 @@ namespace AML.Web.Controllers.Case
             }
             commentModel.Comment = comment;
             commentModel.CreatedBy = _clientHandler.GetUserId();
+            commentModel.CommentType = commenttype;
             var commentResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(commentModel));
 
 
@@ -3301,7 +3415,7 @@ namespace AML.Web.Controllers.Case
 
                         formData.Add(streamContent, "file", file.FileName);
 
-                        string apiUrl = $"https://0efe-8-228-31-80.ngrok-free.app/process_document";
+                        string apiUrl = $"https://astrid-unpavilioned-pearlene.ngrok-free.dev/process_document";
 
                         var response = await client.PostAsync(apiUrl, formData);
 
@@ -3315,6 +3429,14 @@ namespace AML.Web.Controllers.Case
             {
                 return Json(new { success = false, error = ex.Message });
             }
+        }
+
+        [HttpGet]
+        public IActionResult GetCountryNameByIso(string isoCode)
+        {
+            var country = _countryService.GetCountryNameByCode(isoCode,1);
+
+            return Json(country?.Name);
         }
 
         //[HttpPost]

@@ -192,6 +192,9 @@ namespace AML.ViewModel.ViewModels.CustomerCase
 
         public DateTime? IdExpiryDate { get; set; }
 
+        public string UserGroupName { get; set; }
+
+        public string Residence { get; set; }
 
 
     }
