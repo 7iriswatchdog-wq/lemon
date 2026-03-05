@@ -1,0 +1,329 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Internal Watchlist Update Logs";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model AML.ViewModel.ViewModels.Report.ReportLogSearchModel
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Loader -->
+<div id="loadingInternalWatchlist" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+</div>
+
+<style>
+    .dt-loader {
+        position: relative;
+        width: 80px;
+        height: 20px;
+        display: inline-block;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0,1,1,0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+
+    /* Table & header-controls design */
+    table, th, td {
+        border: none !important;
+        border-radius: 0 !important;
+    }
+
+    table {
+        border-collapse: collapse;
+    }
+
+    th.sortable {
+        position: relative;
+        padding-right: 20px;
+        cursor: pointer;
+    }
+
+        th.sortable::after {
+            content: '▲\A▼';
+            white-space: pre;
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: #bbb;
+            line-height: 1;
+            text-align: center;
+        }
+
+        th.sortable.active.asc::after {
+            content: '▲';
+            color: #000;
+        }
+
+        th.sortable.active.desc::after {
+             content: '\A▼';
+            color: #000;
+        }
+</style>
+
+<!-- Page Heading -->
+@* <nav class="border-b mb-6">
+    <div class="flex justify-between p-5">
+        <h2 class="text-2xl font-bold">Watchlist Update Logs</h2>
+        <div class="hidden md:block"><img src="@Clientlogo" alt="Client Logo" width="50px" /></div>
+    </div>
+</nav> *@
+<div class="max-w-screen h-full items-center">
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Watchlist Update Logs
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+
+    <div class="h-auto bg-gray-50 items-center ">
+        <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4  mx-auto space-y-4">
+            <!-- Filter Section (unchanged) -->
+            <div class="w-full bg-white rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+                <h1 class="text-lg font-semibold mb-4">Filter Criteria</h1>
+                <form id="filterForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div><label class="block mb-2 text-sm">Start Date</label><input type="date" id="dtStartDate" name="StartDate" asp-for="StartDate" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm" max="@DateTime.Now:yyyy-MM-dd" /></div>
+                        <div><label class="block mb-2 text-sm">End Date</label><input type="date" id="dtEndDate" asp-for="EndDate" name="EndDate" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm" max="@DateTime.Now:yyyy-MM-dd" /></div>
+                        <div>
+                            <label class="block mb-2 text-sm">Source</label><select id="sourceTypeID" name="SourceType" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm">
+                                <option value="CBWL">Central Bank Watch List</option>
+                                <option value="BL">Black List</option>
+                                <option value="INTERNAL">Block List</option>
+                                <option value="UAE IEC LIST">UAE IEC List</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex flex-col md:flex-row md:justify-end mt-4 gap-4">
+                        <button type="button" id="btnSearch" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Search</button>
+                        <button type="reset" id="btnClear" class="px-6 py-2 border border-gray-300 bg-white rounded-md hover:bg-gray-100">Reset</button>
+                    </div>
+                </form>
+            
+            </div>
+
+    <!-- Table + Controls -->
+            <div class="w-full bg-white rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+                <div class="flex flex-col lg:flex-row justify-between items-center mb-4 gap-4 overflow-x-auto">
+                    <div class="flex flex-col lg:flex-row items-center gap-2">
+                        <label class="text-sm">Show</label>
+                            <select id="rowsPerPage" class="border border-gray-300 rounded-md px-6 text-sm">
+                                <option value="10">10 items</option>
+                                <option value="25">25 items</option>
+                                <option value="50">50 items</option>
+                                <option value="100">100 items</option>
+                            </select>
+                        <input type="text" id="searchInput" placeholder="Search anything..." class="h-10 border border-gray-300 rounded-md px-3 text-sm w-full " />
+                    </div>
+                    <button onclick="ExportList();" class="px-6 py-2 bg-white border border-gray-400 rounded-md text-sm hover:bg-gray-100">
+                            <i class="fas fa-file-excel mr-1"></i> Export to Excel
+                    </button>
+                </div>
+                <div class="w-full overflow-x-auto">
+                    <table id="example" class="w-full table-auto text-sm text-gray-800">
+                            <thead class="bg-[#E9EFFD] font-semibold">
+                                <tr>
+                                    <th data-column="UID" class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900 cursor-pointer">UID</th>
+                                    <th data-column="Type" class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900 cursor-pointer">Type</th>
+                                    <th data-column="Name" class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900 cursor-pointer">Name</th>
+                                    <th data-column="Nationality/Country" class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900 cursor-pointer">Nationality/Country</th>
+                                    <th data-column="DOB" class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900 cursor-pointer">DOB</th>
+                                    <th data-column="IDNumber" class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900 cursor-pointer">ID Number</th>
+                                    <th data-column="Source" class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900 cursor-pointer">Source</th>
+                                    <th data-column="Remarks" class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900 cursor-pointer">Remarks</th>
+                                    <th data-column="CreatedOn" class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900 cursor-pointer">Created On</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Edit</th>
+                    
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                    </table>
+                 </div>
+                <div class="pagination-controls mt-4 flex flex-col sm:flex-row justify-center gap-2"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    $(function(){
+      let pageSize = +$('#rowsPerPage').val(), currentPage = 1, totalPages = 1, draw = 1;
+      let sortCol = 'code', sortDir = 'asc';
+
+      function getColIndex(c) {
+        return ['code','name','description'].indexOf(c);
+      }
+
+      function fetchData(search='', page=1) {
+        pageSize = +$('#rowsPerPage').val();
+        $('#loadingInternalWatchlist').show();
+        $.ajax({
+          url:'/Report/InternalWatchlistUpdateList/',
+          method:'POST',
+          data:{
+            draw, start:(page-1)*pageSize, length:pageSize,
+            search:{value:search},
+            order:[{column:getColIndex(sortCol),dir:sortDir}],
+            columns:[{data:'code'},{data:'name'},{data:'description'}],
+            StartDate:$('#dtStartDate').val(), EndDate:$('#dtEndDate').val(),
+            SourceType:$('#sourceTypeID').val()
+          },
+              success:function (res) {
+                var data = res === '' ? [] : JSON.parse(res);
+
+                console.log(data);
+            renderTable(data);
+            totalPages = Math.max(1, Math.ceil((res.recordsFiltered||0)/pageSize));
+                renderPager(page);
+                draw++;
+            },
+          error(){ alert('Error loading logs') },
+          complete(){ $('#loadingInternalWatchlist').hide(); }
+        });
+      }
+
+      function renderTable(rows){
+        const tb = $('#example tbody').empty();
+        if(!rows||!rows.length){
+              tb.append('<tr><td colspan="10" class="text-center py-4">No data found</td></tr>'); return;
+        }
+        rows.forEach(r => {
+             var nationality = (r.nationality === '') || (r.nationality === '0') ? '-' : r.nationality;
+                    var dob = (r.dob === '') || (r.dob === '0') ? '-' : r.dob;
+                    var idnumber = (r.idnumber === '')  ? '-' : r.idnumber;
+                    var remarks = (r.remarks === '') ? '-' : r.remarks;
+          tb.append(`
+            <tr>
+              <td class="px-6 py-4 text-sm">${r.uid}</td>
+              <td class="px-6 py-4 text-sm">${r.category}</td>
+              <td class="px-6 py-4 text-sm">${r.fullname}</td>
+              <td class="px-6 py-4 text-sm">${nationality}</td>
+              <td class="px-6 py-4 text-sm">${dob}</td>
+              <td class="px-6 py-4 text-sm">${idnumber}</td>
+               <td class="px-6 py-4 text-sm">${r.type}</td>
+              <td class="px-6 py-4 text-sm">${remarks}</td>
+              <td class="px-6 py-4 text-sm">${r.createdon}</td>
+              <td class="px-6 py-4 text-sm"><a href="/InternalWatchList/Edit/${r.uid}" class="text-blue-600 underline"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M4.16536 16.667H15.832C16.053 16.667 16.265 16.7548 16.4213 16.9111C16.5776 17.0673 16.6654 17.2793 16.6654 17.5003C16.6654 17.7213 16.5776 17.9333 16.4213 18.0896C16.265 18.2459 16.053 18.3337 15.832 18.3337H4.16536C3.94435 18.3337 3.73239 18.2459 3.57611 18.0896C3.41983 17.9333 3.33203 17.7213 3.33203 17.5003C3.33203 17.2793 3.41983 17.0673 3.57611 16.9111C3.73239 16.7548 3.94435 16.667 4.16536 16.667ZM3.33203 12.5003L11.6654 4.16699L14.1654 6.66699L5.83203 15.0003H3.33203V12.5003ZM12.4987 3.33366L14.1654 1.66699L16.6654 4.16699L14.9979 5.83449L12.4987 3.33366Z" fill="#64748B"/>
+</svg></a></a></td>
+            
+            </tr>`);
+        });
+      }
+
+      function renderPager(page){
+        const pg = $('.pagination-controls').empty();
+        const btn = (l,p,d,a)=>`<button class="px-3 py-1 border rounded ${a?'bg-blue-600 text-white':'bg-white text-blue-600'}${d?' opacity-50':''}" data-page="${p}" ${d?'disabled':''}>${l}</button>`;
+        pg.append(btn('First',1,page===1)).append(btn('Prev',page-1,page===1));
+        for(let i=Math.max(1,page-2); i<=Math.min(totalPages,page+2); i++){
+          pg.append(btn(i,i,false,i===page));
+        }
+        pg.append(btn('Next',page+1,page===totalPages)).append(btn('Last',totalPages,page===totalPages));
+      }
+
+      $('#btnSearch').click(()=> fetchData($('#searchInput').val(),1));
+      $('#btnClear').click(()=>{ $('#filterForm')[0].reset(); fetchData('',1); });
+      $('#rowsPerPage, #searchInput').on('change keyup', ()=> fetchData($('#searchInput').val(),1));
+      $('.pagination-controls').on('click','button',function(){
+        const p = +$(this).data('page'); if(!isNaN(p)) fetchData($('#searchInput').val(), p);
+      });
+      $('#example thead').on('click','th.sortable',function(){
+        const col = $(this).data('column');
+        if (sortCol===col) sortDir = (sortDir==='asc'?'desc':'asc');
+        else { sortCol=col; sortDir='asc'; }
+        $('#example th.sortable').removeClass('active asc desc');
+        $(this).addClass(`active ${sortDir}`);
+        fetchData($('#searchInput').val(),1);
+      });
+      $('#example').on('click','.delete-btn', function(e){
+        e.preventDefault();
+        const id=$(this).data('id');
+        if (!confirm('Delete this log?')) return;
+        $.ajax({ url:`/branch/delete/${id}`, type:'DELETE', success:()=>fetchData($('#searchInput').val(), currentPage) });
+      });
+
+      function ExportList() {
+        const q = $.param({
+          StartDate:$('#dtStartDate').val(),
+          EndDate:$('#dtEndDate').val(),
+          SourceType:$('#sourceTypeID').val()
+        });
+        window.location='/branch/export?'+q;
+      }
+
+      // init
+      $('#example th.sortable[data-column="' + sortCol + '"]').addClass(`active ${sortDir}`);
+      fetchData('',1);
+    });
+</script>

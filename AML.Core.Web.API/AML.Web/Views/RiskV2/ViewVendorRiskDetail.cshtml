@@ -1,0 +1,331 @@
+﻿@{
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+    var clientId = HttpContextAccessor.HttpContext.Session.GetString("SessClientId");
+    var logo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@model AML.ViewModel.ViewModels.Risk.RiskAssessmentVendorModel
+<style>
+    .risk-header {
+        text-align: center;
+    }
+
+    .risk-assessment-div {
+        margin-top: 20px;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .subcategory tr td {
+        border-top: none !important;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .row {
+        display: -ms-flexbox;
+        display: flex;
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+        margin-right: 7.5px;
+        margin-left: -7.5px;
+    }
+
+    .subcategory tr td {
+        border-top: none !important;
+        /* border-bottom: 1px solid #ddd; */
+    }
+
+    .subcategory tr td {
+        /* border-top: none !important; */
+        border-bottom: none !important;
+    }
+
+    .grid-select {
+        width: 300px !important;
+    }
+
+    .pulse-button {
+        position: relative;
+        width: 34px;
+        height: 34px;
+        border: none;
+        box-shadow: 0 0 0 0 rgba(232, 76, 61, 0.7);
+        border-radius: 50%;
+        background-color: #e84c3d;
+        background-size: cover;
+        background-repeat: no-repeat;
+        cursor: pointer;
+        -webkit-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+        -moz-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+        -ms-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+        animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+    }
+
+        .pulse-button:hover {
+            -webkit-animation: none;
+            -moz-animation: none;
+            -ms-animation: none;
+            animation: none;
+        }
+
+
+    @@-webkit-keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    @@-moz-keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    @@-ms-keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    @@keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    #container {
+        display: block;
+        position: relative
+    }
+
+    .ui-autocomplete {
+        position: absolute;
+    }
+</style>
+@*<input name="b_print" type="button" onClick="printdiv('reportViewDetails');" value=" Print " style="float:right;margin:20px;">
+    <br />
+    <br />
+    <br />
+    <div class="card-primary" id="reportViewDetails">*@
+<div style="width:100% !important;height:70px !important;" align="right">
+    <a asp-controller="Risk" asp-action="GetRiskReport"> <button type="button" id="btnBack" class="btn btn-primary center" align="right">Back</button></a>
+<input name="b_print" type="button" onClick="printdiv('reportViewDetails');" value="Print">
+</div>
+
+<div class="card-primary" id="reportViewDetails">
+    <br />
+    <div style="width:100%;display:none" id="logodiv">
+        <div style="width:98%;text-align:center;">
+            <h2>@companyName</h2>
+            <img src=@logo style="width:8%;float:right;" />
+        </div>
+        <br />
+    </div>
+    <br />
+    <br />
+
+    @if (Model != null)
+    {
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card card-primary card-body">
+                    <div class="card-header">
+                        <h3 class="card-title">RISK ASSESSMENT FOR VENDORS/SERVICE PROVIDERS</h3>
+                    </div>
+                    <div class="risk-assessment-div">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="txtRegistrationNumber">Registration Number</label>
+                                    <input type="text" class="form-control" asp-for="RegistrationNumber" id="txtRegistrationNumber" maxlength="12" readonly>
+                                    <span asp-validation-for="RegistrationNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="txtName">Vendor/Service provider Name</label>
+                                    <input type="text" asp-for="VendorName" class="form-control" id="txtVendorName" placeholder="Vendor Name" readonly>
+                                    <span asp-validation-for="VendorName" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label>Country</label>
+                                    <input type="text" asp-for="Country" class="form-control" id="countryTxt" placeholder="Country Name" readonly>
+                                    <span asp-validation-for="Country" class="text-danger"></span>
+                                    <input type="hidden" asp-for="CountryCode" id="ddlCountry" />
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="dtLegalNameOfEntity">Registered Date</label>
+                                    <input type="date" asp-for="RegisteredDate" class="form-control mandatory" max="3000-12-31" id="dtRegisteredDate" placeholder="Regstered Date" readonly>
+                                    <span asp-validation-for="RegisteredDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-primary card-body">
+                    <div class="card-header">
+                        <h3 class="card-title">Risk Assessment Rating</h3>
+                    </div>
+                    <br>
+                    <div class="col-sm">
+                        @*<button id="btnRiskAssessmentRating" disabled class="dt-button-info form-control" type="button">Low</button>*@
+                        <label for="dtLegalNameOfEntity">Final Risk Score</label><br />
+                        <input type="text" asp-for="RiskAssessmentRating" id="riskAssessmentRatingTxt" class="form-control" readonly />
+                        <br />
+                        <label for="dtLegalNameOfEntity">Risk Score Before Override</label><br />
+                        <input type="text" asp-for="RiskAssessmentRatingWithoutOverride" id="riskAssessmentRatingWithoutOverrideTxt" class="form-control" readonly />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card card-body">
+            <div>
+                <table class="table">
+                    <thead>
+                        <tr class="row">
+                            <th class="col-md-2">
+                                Categorization
+                            </th>
+                            <th class="col-md-6" style=" padding-left: 98px;">
+                                Particulars
+                            </th>
+                            <th class="col-md-2">
+                                Select Drop Down
+                            </th>
+                            <th class="col-md-2" style="padding-left: 71px;">
+                                Rating Scale
+                            </th>
+                        </tr>
+                    </thead>
+
+                    @{
+                        int a = 0;
+                    }
+
+                    @foreach (var i in Model.RiskTypeCategoryDTO)
+                    {
+                        <tr class="row">
+                            <td class="col-md-2">
+                                @i.RiskCategory
+                            </td>
+                            <td class="col-md-10 row">
+                                <table class=" subcategory" id="RiskSubTable">
+                                    <tbody>
+                                        @foreach (var j in i.RiskTypes)
+                                        {
+                                            <tr>
+                                                <td style="width: 592px;">
+                                                    @j.RiskType
+                                                </td>
+                                                <td>
+                                                    <input type="text" asp-for="@j.ItemTxt" id="RiskItemTxt_@a" class="form-control" readonly />
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    @if (j.ItemScore == 0)
+                                                    {
+                                                        <button id="clrScore_@a" type="submit" class="btn btn-block btn-secondary riskscorebtn">@j.ItemScore</button>
+                                                    }
+                                                    else if (j.ItemScore == 1)
+                                                    {
+                                                        <button id="clrScore_@a" type="submit" class="btn btn-block btn-success riskscorebtn">@j.ItemScore</button>
+                                                    }
+                                                    else if (j.ItemScore == 2)
+                                                    {
+                                                        <button id="clrScore_@a" type="submit" class="btn btn-block btn-warning riskscorebtn">@j.ItemScore</button>
+                                                    }
+                                                    else if (j.ItemScore == 3)
+                                                    {
+                                                        if (j.OverrideScore == 3)
+                                                        {
+                                                            <button id="clrScore_@a" type="submit" class="btn btn-block btn-danger pulse-button riskscorebtn">@j.ItemScore</button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button id="clrScore_@a" type="submit" class="btn btn-block btn-danger riskscorebtn">@j.ItemScore</button>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <button id="clrScore_@a" type="submit" class="btn btn-block btn-danger riskscorebtn">@j.ItemScore</button>
+                                                    }
+                                                </td>
+                                            </tr>
+                                            a = a + 1;
+                                        }
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    }
+
+
+
+                </table>
+            </div>
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-sm">
+                        <h3 class="card-title">Total Selected :    <button id="btntotal" class="dt-button-info" type="submit">@Model.RiskScoreCount</button></h3>  <h3 class="card-title">Total score :    <button id="btntotalscore" class="dt-button-info" type="submit">@Model.RiskScoreSum</button></h3>
+                    </div>
+                    @*<div class="col-sm">
+                        <h3 class="card-title" style="padding-top: 13px;"><b>RISK SCORE &nbsp;</b></h3><button type="button" class="btn btn-success" style="padding: 8px 30px;" id="lowTxt">0</button><button type="button" class="btn btn-warning" style="padding: 8px 30px;" id="mediumTxt">0</button><button class="btn btn-danger" style="padding: 8px 30px;" id="highTxt">0</button>
+                    </div>*@
+                </div>
+            </div>
+        </div>
+        <!-- /.card-body -->
+        <br />
+        <div style="width:90%;display:none;padding-left:2%;" id="footdiv">
+            <p>Computer generated report; hence no signature is required.</p>
+        </div>
+        }
+        else{
+
+        @Html.Partial("../Shared/AdminLTE/PageNotFound.cshtml");
+    }
+        </div>
+    
+    <script type="text/javascript">
+    //function printdiv(printpage) {
+    //    var headstr1 = "<html><head>";
+    //    var headstr2 = "<title></title></head><body class='printDiv'>";
+    //    var footstr = "</body>";
+    //    var newstr = document.all.item(printpage).innerHTML;
+    //    var oldstr = document.body.innerHTML;
+    //    document.body.innerHTML = headstr1 + headstr2 + newstr + footstr;
+    //    window.print();
+    //    document.body.innerHTML = oldstr;
+    //    return false;
+    //}
+    function printdiv(printpage) {
+        var headstr1 = "<html><head>";
+        var headstr2 = "<title></title></head><body class='printDiv'>";
+        var footstr = "</body>";
+        var newstr = document.all.item(printpage).innerHTML;
+        var oldstr = document.body.innerHTML;
+        document.body.innerHTML = headstr1 + headstr2 + newstr + footstr;
+        document.getElementById("logodiv").style.display = "";
+        document.getElementById("footdiv").style.display = "";
+        window.print();
+        document.body.innerHTML = oldstr;
+        return false;
+    }
+</script>
+
+
+
+
+
+

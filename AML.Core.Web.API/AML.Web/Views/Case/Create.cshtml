@@ -1,0 +1,3045 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Newtonsoft.Json;
+@{
+	ViewData["Title"] = @localizer["Customer Screening"];
+	Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+	var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+	var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+	var userModules = HttpContextAccessor.HttpContext.Session.GetString("SessModules");
+	 var allowedModules = new List<int>();
+    if (!string.IsNullOrEmpty(userModules))
+    {
+        var modules = JsonConvert.DeserializeObject<List<dynamic>>(userModules);
+        allowedModules = modules.Select(m => (int)m.Menu_Id).ToList();
+    }
+    var codesList = Model.CodesTable
+        .Select(x => new
+        {
+            value = x.Value,
+            text = x.Text
+        }).ToList();
+
+    var codesJson = JsonConvert.SerializeObject(codesList);
+}
+@model AML.ViewModel.ViewModels.CustomerCase.CaseModel
+
+
+
+<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.0.min.js" type="text/javascript"></script>
+<script src="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/jquery-ui.min.js" type="text/javascript"></script>
+<link href="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/themes/blitzer/jquery-ui.css" rel="Stylesheet" type="text/css" />
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Individual Case Creation - WatchDog</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .validstyle{
+            color:red;
+            font-size:small;
+        }
+
+    </style>
+    <style>
+        .dt-loader {
+            display: inline-block;
+            position: relative;
+            width: 80px;
+            height: 20px;
+        }
+
+            .dt-loader div {
+                position: absolute;
+                top: 8px;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: #2563eb;
+                animation-timing-function: cubic-bezier(0, 1, 1, 0);
+            }
+
+                .dt-loader div:nth-child(1) {
+                    left: 8px;
+                    animation: dt-anim1 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(2) {
+                    left: 8px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(3) {
+                    left: 32px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(4) {
+                    left: 56px;
+                    animation: dt-anim3 0.6s infinite;
+                }
+
+        @@keyframes dt-anim1 {
+            0% {
+                transform: scale(0);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @@keyframes dt-anim2 {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(24px);
+            }
+        }
+
+        @@keyframes dt-anim3 {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(0);
+            }
+        }</style>
+</head>
+
+<body class="bg-[#f8fafc] text-slate-900 overflow-hidden" x-data="{
+    sidebarOpen: true,
+    selectedMethod: 'manual',
+    showResults: false,
+    isDuplicateModalOpen: false,
+    isSuccessModalOpen: false,
+    matchParam: 75,
+    files: [],
+    isDragging: false
+}">
+    <div x-data="{
+    isSuccessModalOpen: @(Model?.IsCaseCreated.ToString().ToLower() ?? "false"),
+    caseRefId: '@Model?.CaseRefId',
+    copied: false
+}">
+    <div class="flex h-screen overflow-hidden">
+            <div id="loadingeffect" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+                <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+            </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
+            <!-- Header -->
+           
+               @*  <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-40 shrink-0">
+                    <div class="flex items-center gap-4">
+                        <button @@click ="sidebarOpen = !sidebarOpen"
+                                class="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500">
+                            <i data-lucide="panel-left-close" class="w-5 h-5"></i>
+                        </button>
+
+                        <h2 class="text-xl font-bold text-slate-900 tracking-tight">
+                            Case Creation
+                        </h2>
+                    </div>
+
+                    <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-3 cursor-pointer group px-3 py-1.5 hover:bg-slate-50 rounded-lg transition-all">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
+                                <i data-lucide="user" class="w-4 h-4 text-slate-600"></i>
+                            </div>
+                            <span class="text-sm font-semibold text-slate-700">Client Logo</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                        </div>
+                    </div>
+                </header> *@
+
+            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-40 shrink-0">
+                <div class="flex items-center gap-4">
+                    <button onclick="sidebarOpen = !sidebarOpen"
+                            class="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500">
+                        <i data-lucide="panel-left-close" class="w-5 h-5"></i>
+                    </button>
+                    <h2 class="text-xl font-bold text-slate-900 tracking-tight">Case Creation</h2>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-3 cursor-pointer group px-3 py-1.5 hover:bg-slate-50 rounded-lg transition-all">
+                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
+                            <i data-lucide="user" class="w-4 h-4 text-slate-600"></i>
+                        </div>
+                        <span class="text-sm font-semibold text-slate-700">Client Logo</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Body -->
+            <main class="flex-1 overflow-hidden p-8">
+                <div class="flex h-full gap-8 max-w-[1600px] mx-auto">
+
+                    <!-- Left: Method Selection -->
+                    <div class="w-full lg:w-1/4 flex flex-col gap-6 shrink-0 overflow-y-auto pr-2 scrollbar-thin">
+                        <div class="space-y-1">
+                            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Case Creation</h1>
+                            <p class="text-slate-500 text-sm font-medium leading-relaxed">
+                                Select an input method to get
+                                started.
+                            </p>
+                        </div>
+
+                        <div class="grid gap-3">
+                            <!-- OCR Card -->
+                            <div @@click="selectedMethod = 'ocr'; showResults = false"
+                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-4 group"
+                                 :class="selectedMethod === 'ocr' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'">
+                                <div class="p-2 rounded-lg shrink-0 transition-colors"
+                                     :class="selectedMethod === 'ocr' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                    <i data-lucide="clock" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-bold text-sm tracking-tight"
+                                        :class="selectedMethod === 'ocr' ? 'text-blue-900' : 'text-slate-900'">
+                                        OCR
+                                        Upload
+                                    </h3>
+                                    <p class="text-[11px] font-medium text-slate-500 mt-0.5 leading-relaxed">
+                                        Upload
+                                        document image for automatic extraction
+                                    </p>
+                                </div>
+                                <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-600 absolute top-4 right-4"
+                                   x-show="selectedMethod === 'ocr'"></i>
+                            </div>
+
+                            <!-- Manual Card -->
+                            <div @@click="selectedMethod = 'manual'; showResults = false"
+                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-4 group"
+                                 :class="selectedMethod === 'manual' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'">
+                                <div class="p-2 rounded-lg shrink-0 transition-colors"
+                                     :class="selectedMethod === 'manual' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                    <i data-lucide="pen-line" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-bold text-sm tracking-tight"
+                                        :class="selectedMethod === 'manual' ? 'text-blue-900' : 'text-slate-900'">
+                                        Manual
+                                        Input
+                                    </h3>
+                                    <p class="text-[11px] font-medium text-slate-500 mt-0.5 leading-relaxed">
+                                        Enter case
+                                        details manually
+                                    </p>
+                                </div>
+                                <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-600 absolute top-4 right-4"
+                                   x-show="selectedMethod === 'manual'"></i>
+                            </div>
+
+                            <!-- Bulk Card -->
+                            <div @@click="selectedMethod = 'bulk'; showResults = false"
+                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-4 group"
+                                 :class="selectedMethod === 'bulk' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'">
+                                <div class="p-2 rounded-lg shrink-0 transition-colors"
+                                     :class="selectedMethod === 'bulk' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                    <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-bold text-sm tracking-tight"
+                                        :class="selectedMethod === 'bulk' ? 'text-blue-900' : 'text-slate-900'">
+                                        Bulk
+                                        Upload
+                                    </h3>
+                                    <p class="text-[11px] font-medium text-slate-500 mt-0.5 leading-relaxed">
+                                        Upload CSV
+                                        or Excel file with multiple cases
+                                    </p>
+                                </div>
+                                <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-600 absolute top-4 right-4"
+                                   x-show="selectedMethod === 'bulk'"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Dynamic Content Area -->
+                    <div class="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                        <div class="flex-1 overflow-y-auto p-8 scrollbar-thin">
+
+                            <!-- State: Results View -->
+                            <div x-show="showResults" x-transition:enter="transition ease-out duration-300 transform"
+                                 x-transition:enter-start="opacity-0 translate-y-4"
+                                 x-transition:enter-end="opacity-100 translate-y-0" class="space-y-8">
+                                <div class="flex items-center justify-between pb-6 border-b border-slate-100">
+                                    <button @@click="showResults = false"
+                                            class="flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold transition-colors">
+                                        <i data-lucide="arrow-left" class="w-5 h-5"></i> <span class="text-sm">
+                                            Back to
+                                            Creation
+                                        </span>
+                                    </button>
+                                    <span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-4 py-1.5 rounded-full ring-1 ring-emerald-200/50">
+                                        Screening
+                                        Completed
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h2 class="text-sm font-bold text-slate-900">Manual Input</h2>
+                                        <p class="text-sm text-slate-500 font-medium">Enter case details manually</p>
+                                    </div>
+                                    <button @@click="showResults = false"
+                                            class="h-8 px-4 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-2">
+                                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Clear Form
+                                    </button>
+                                </div>
+
+                                <!-- Success Form Content -->
+                                <div class="space-y-8 pt-4">
+                                    <div class="bg-[#FEFCE8] border border-[#FEF08A] rounded-xl p-4 flex items-center gap-3 text-[#854D0E] text-[13px] font-medium leading-none">
+                                        <i data-lucide="info" class="w-4 h-4 text-[#A16207]"></i>
+                                        Fields marked with <span class="text-red-500 font-bold">*</span> are mandatory
+                                        for screening
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+                                        <!-- Re-rendering the form in disabled or result state -->
+                                        <div class="space-y-2 col-span-2">
+                                            <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                                Screening
+                                                Option <span class="text-red-500">*</span>
+                                            </label>
+                                            <div class="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl px-4 flex items-center text-sm font-bold text-slate-900">
+                                                All
+                                            </div>
+                                        </div>
+                                        <div class="space-y-2">
+                                            <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider" >
+                                                Full
+                                                Name <span class="text-red-500">*</span>
+                                            </label>
+                                            <div class="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl px-4 flex items-center text-sm font-bold text-slate-900">
+                                                Mohan Sai
+                                            </div>
+                                        </div>
+                                        <div class="space-y-2 text-center pt-6">
+                                            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
+                                                Duplicate
+                                                Check Passed
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- State: Creation Forms -->
+                            <div x-show="!showResults" class="space-y-6">
+
+                                <!-- FORM HEADER -->
+                                <div class="pb-6 border-b mb-6">
+                                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight"
+                                        x-text="selectedMethod === 'manual' ? 'Manual Input' : (selectedMethod === 'ocr' ? 'OCR Document Upload' : 'Bulk Data Import')">
+                                    </h2>
+                                    <p class="text-sm text-slate-500 font-medium mt-1"
+                                       x-text="selectedMethod === 'manual' ? 'Enter individual case details manually.' : (selectedMethod === 'ocr' ? 'Upload document image for automatic extraction' : 'Upload CSV or Excel file with multiple cases')">
+                                    </p>
+                                </div>
+
+                                <!-- MANUAL INPUT FORM -->
+                                <div x-show="selectedMethod === 'manual'" x-transition:enter="transition duration-300"
+                                     x-transition:enter-start="opacity-0 translate-x-4" class="space-y-8">
+                                    <div class="bg-[#FEFCE8] border border-[#FEF08A] rounded-xl p-4 flex items-center gap-3 text-[#854D0E] text-[13px] font-medium">
+                                        <i data-lucide="info" class="w-4 h-4 text-[#A16207]"></i>
+                                        Fields marked with <span class="text-red-500">*</span> are mandatory for
+                                        screening
+                                    </div>
+                                    @* <form class="space-y-8" @@submit.prevent="isSuccessModalOpen = true"> *@
+                                        <form class="space-y-8" id="myForm" asp-controller="Case" asp-action="Create" method="post" enctype="multipart/form-data">
+                                        <!-- Screening Option -->
+                                        @* //<div class="space-y-2.5 max-w-sm"> *@
+                                            <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-slate-700">
+                                                Screening Option <span class="text-red-500">*</span>
+                                            </label>
+                                            <div class="relative">
+                                                <!-- Trigger Button -->
+                                                <button 
+                                                    id="trigger-btn"
+                                                    type="button" 
+                                                    role="combobox" 
+                                                    aria-expanded="false" 
+                                                    class="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus:ring-slate-300 font-normal trigger-btn"
+                                                >
+                                                    <span id="trigger-text" class="text-sm pointer-events-none">Select screening options</span>
+                                                    <svg class="ml-2 h-4 w-4 shrink-0 opacity-50 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                </button>
+
+                                                <!-- Popover Content (Hidden by default) -->
+                                                <div 
+                                                    id="popover-content" 
+                                                    class="hidden absolute top-full left-0 z-50 mt-1 w-[400px] rounded-md border border-slate-200 bg-white p-4 text-slate-950 shadow-md outline-none animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50"
+                                                >
+                                                    <div class="space-y-3 max-h-[300px] overflow-y-auto">
+                                                        <!-- ALL Option -->
+                                                        <div class="flex items-center space-x-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                                                            <input
+                                                                type="checkbox"
+                                                                id="corporate-all"
+                                                                class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:ring-offset-slate-950"
+                                                            />
+                                                            <label
+                                                                for="corporate-all"
+                                                                class="text-sm font-bold leading-none cursor-pointer text-slate-900 dark:text-slate-100"
+                                                            >
+                                                                ALL
+                                                            </label>
+                                                        </div>
+                                                        
+
+                                                        <!-- Individual Options Container -->
+                                                        <div id="options-container" class="space-y-3">
+                                                            <!-- Options will be injected here by JS -->
+                                                        </div>
+                                                        <div id="codesHiddenContainer"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @* <div class="relative">
+                                                <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-bold text-slate-900 appearance-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" asp-items="Model.CodesTable">
+                                                    <option value="all">All</option>
+                                                    <option value="pep">PEP</option>
+                                                    <option value="sanction">Sanction</option>
+                                                </select>
+                                                @* <i data-lucide="chevron-down"
+                                                    class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                            @* </div> *@ 
+                                        </div>
+
+                                        <!-- Grid Fields -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700" >
+                                                    Full Name <span class="text-red-500">*</span>
+                                                </label>
+                                                    <div class="flex gap-2">
+                                                        <input type="text"
+                                                               placeholder="Enter full name"
+                                                               asp-for="FirstName"
+                                                               maxlength="100"
+                                                               id="fullName"
+                                                               class="flex-1 h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium
+focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all
+fullNameField"
+                                                               oninput="toggleDuplicateBtn()" />
+
+                                                        <button type="button"
+                                                                id="btnCheckDuplicate"
+                                                                disabled
+                                                                class="px-4 h-11 border-2 border-blue-600 text-blue-600 font-extrabold text-xs rounded-xl
+ transition-all whitespace-nowrap
+ disabled:opacity-50 disabled:cursor-not-allowed
+ hover:bg-blue-50 active:scale-95"
+                                                                onclick="checkDuplicatefunction(this)">
+                                                            Check Duplicate
+                                                        </button>
+                                                    </div>
+                                                    <span asp-validation-for="FirstName" class="validstyle" style="color:red"></span>
+                                            </div>
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">Nationality</label>
+                                                <div class="relative">
+                                                    <select id="nationality" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium appearance-none outline-none focus:ring-2 focus:ring-blue-500/10" asp-items="Model.Nationalities" asp-for="Nationality">
+                                                        <option value="">Select</option>
+                                                    </select>
+                                                    @* <i data-lucide="chevron-down"
+                                                        class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">
+                                                    Date of
+                                                    Birth
+                                                </label>
+                                                <input type="date" id="DOB"
+                                                       class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10" asp-for="DOB" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                            </div>
+                                                
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">ID Type</label>
+                                                <div class="relative">
+                                                    <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium appearance-none outline-none focus:ring-2 focus:ring-blue-500/10" id="ddlIdType" onchange="customeridtypefunction()" asp-for="CustomerIdType">
+                                                        <option value="">Select</option>
+                                                        <option value="Passport">Passport</option>
+                                                        <option value="Emirates ID">Emirates ID</option>
+                                                    </select>
+                                                    @* <i data-lucide="chevron-down"
+                                                        class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                </div>
+                                            </div>
+                                              
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">ID Number</label>
+                                                <input type="text" placeholder="Enter ID Number" id="txtIdNumber" asp-for="CustomerIdNumber" maxlength="20"
+                                                       class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none">
+                                            </div>
+                                                
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">ID Issue Date</label>
+                                                <div class="relative">
+                                                    <input type="date" id=""
+                                                           class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10" asp-for="IdIssueDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                </div>
+                                            </div>
+                                           
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">ID Expiry Date</label>
+                                                <input type="date" id="expirydate"
+                                                       class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10" asp-for="IdExpiryDate" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                            </div>
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">Gender</label>
+                                                <div class="relative">
+                                                    <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" asp-for="Gender"id="gender">
+                                                        <option value="">Select</option>
+                                                        <option value="Male">Male</option>
+                                                        <option value="Female">Female</option>
+                                                    </select>
+                                                    @* <i data-lucide="chevron-down"
+                                                       class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                </div>
+                                            </div>
+                                               
+                                            <!-- Additional fields matching the source exactly -->
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">
+                                                    Profession <span class="text-red-500">*</span>
+                                                </label>
+                                                <div class="relative">
+                                                        <select  class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" id="ddlOccupation" asp-items="Model.ProfessionalList" asp-for="OccupatinTypeTxt">
+                                                        <option value="">Select</option>
+                                                    </select>
+                                                    @* <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@  
+                                                </div>
+                                                    <span asp-validation-for="OccupatinTypeTxt" class="validstyle" style="color:red"></span>
+                                            </div>
+                                             
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">Residence Status <span class="text-red-500">*</span>
+                                                </label>
+                                                <div class="relative">
+                                                        <select  class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" id="ddlResidenceStatus" asp-items="Model.ResidentialStatusList" asp-for="ResidenceStatus">
+                                                        <option value="">Select</option>
+                                                    </select>
+                                                    @* <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                </div>
+                                                    <span asp-validation-for="ResidenceStatus" class="validstyle" style="color:red"></span>
+                                            </div>
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">
+                                                    Product,Service & Activity <span class="text-red-500">*</span>
+                                                </label>
+
+                                                <div class="relative">
+                                                        <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" id="ddlProductType" asp-items="Model.ProductTypeList" asp-for="ProductName">
+                                                        <option value="">Select</option>
+                                                    </select>
+                                                    @* <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                </div>
+                                                    <span asp-validation-for="ProductName" class="validstyle" style="color:red"></span>
+                                            </div>
+                                               
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">
+                                                    Delivery Channel<span class="text-red-500">*</span>
+                                                </label>
+                                                <div class="relative">
+                                                        <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" id="ddlDeliveryChannel" asp-items="Model.DeliveryChannelList" asp-for="DeliveryChannelName">
+                                                        <option value="">Select</option>
+                                                    </select>
+                                                    @*  <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                </div>
+                                                    <span asp-validation-for="DeliveryChannelName" class="validstyle" style="color:red"></span>
+                                            </div>
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">
+                                                    Mode Of Payment<span class="text-red-500">*</span>
+                                                </label>
+                                                <div class="relative">
+                                                        <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" id="ddlModeofpayment" asp-items="Model.ModeofpaymentList" asp-for="Modeofpayment">
+                                                        <option value="">Select</option>
+                                                    </select>
+                                                    @*  <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                </div>
+                                                    <span asp-validation-for="Modeofpayment" class="validstyle" style="color:red"></span>
+                                            </div>
+                                               
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">
+                                                    Customer CIF No
+                                                </label>
+                                                <div class="relative">
+                                                    <input type="text" placeholder="Enter CIF Number" asp-for="CIFNumber" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="cifnumber">
+                                                </div>
+                                            </div>
+                                                
+                                            <div class="space-y-2.5">
+                                                <div class="flex justify-between mb-2">
+                                                    <span class="text-[13px] font-extrabold text-slate-700">
+                                                        Match Parameter
+                                                    </span>
+                                                    <span class="text-sm font-extrabold text-blue-600"
+                                                          x-text="matchParam + '%'"></span>
+                                                </div>
+                                                <div class="relative flex items-center h-11">
+                                                       @*  <input type="range" x-model="matchParam" min="50" max="100" id="threshold" asp-for="Threshold" class="w-full h-2 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                                               :style="'background: linear-gradient(to right, #2563eb ' + matchParam + '%, #f1f5f9 ' + matchParam + '%)'"> *@
+                                                        <input type="range"
+                                                               x-model="matchParam"
+                                                               min="50"
+                                                               max="100"
+                                                               id="threshold"
+                                                               asp-for="Threshold"
+                                                               class="w-full h-2 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                                               :style="`background: linear-gradient(to right, #2563eb ${((matchParam-50)/(100-50))*100}%, #f1f5f9 ${((matchParam-50)/(100-50))*100}%)`">
+                                                </div>
+                                            </div>
+                                                <div x-data="{ fileName: 'No file chosen' }" class="space-y-2">
+                                                    <label class="text-xs font-semibold text-slate-700">Document</label>
+
+                                                    <div class="relative flex items-center">
+
+                                                        <!-- Hidden File Input -->
+                                                        <input type="file"
+                                                               class="hidden"
+                                                               x-ref="docUpload"
+                                                               
+                                                               x-on:change="
+                                                               if ($event.target.files.length> 0) {
+                                                                let fullName = $event.target.files[0].name;
+                                                                fileName = fullName.length > 10 ? fullName.substring(0, 10) + '...' : fullName;
+                                                                } else {
+                                                                fileName = 'No file chosen';
+                                                                }
+                                                        ">
+
+                                                        <!-- Custom UI -->
+                                                        <div x-on:click="$refs.docUpload.click()"
+                                                             class="w-full h-10 bg-white border border-slate-200 rounded-md px-3 py-2 text-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
+
+                                                            <!-- Short Display Name -->
+                                                            <span class="text-slate-500 text-xs" x-text="fileName"></span>
+
+                                                            <span class="text-[11px] text-blue-600 font-bold border border-blue-600 rounded-md px-3 py-0.5">
+                                                                Choose file
+                                                            </span>
+
+                                                        </div>
+                                                    </div>
+
+                                                    
+                                                </div>
+
+
+                                            </div>
+                                          @*   <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">
+                                                    Document
+                                                </label>
+                                                <div class="relative">
+                                                    <input type="file" name="CaseDocumentsL[0].Document" class="w-full bg-[#F0F4FF] px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-gray-600 flex items-center justify-center gap-2 font-extralight" asp-for="CaseDocumentsL[0].Document" id="txtFile">
+                                                </div>
+                                            </div> *@
+                                        
+
+                                        <div class="grid grid-cols-4 gap-4 mt-12 pt-8 border-t border-slate-100">
+                                                <button type="submit" id="btn-ld"
+                                                    class="col-span-3 h-14 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-2xl shadow-xl shadow-blue-500/30 transition-all active:scale-[0.98]">
+                                                Create Case
+                                            </button>
+                                            <button type="reset" @@click="location.href='@Url.Action("Create", "Case")'"
+                                                    class="h-14 bg-white border-2 border-slate-200 text-slate-600 font-extrabold rounded-2xl hover:bg-slate-50 transition-all">
+                                                Reset
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- BULK UPLOAD VIEW -->
+                                <div x-show="selectedMethod === 'bulk'" x-transition class="space-y-8 pt-4">
+                                    <div class="bg-blue-50/80 border border-blue-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
+                                        <div class="flex items-center gap-5">
+                                            <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600">
+                                                <i data-lucide="info" class="w-6 h-6"></i>
+                                            </div>
+                                            <div class="space-y-1">
+                                                <h3 class="text-[15px] font-extrabold text-blue-900 leading-none">
+                                                    Need a
+                                                    template?
+                                                </h3>
+                                                <p class="text-xs text-blue-700 font-bold opacity-80">
+                                                    Download our
+                                                    template to ensure proper formatting and faster processing.
+                                                </p>
+                                            </div>
+                                        </div>
+                                            <input type="hidden" asp-for="TypeId" id="typeid" />
+                                        <button class="px-6 h-11 bg-blue-600 text-white font-extrabold rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-2 text-sm leading-none" onclick="DownloadSample()">
+                                            <i data-lucide="download" class="w-4 h-4"></i> Download
+                                        </button>
+                                    </div>
+
+                                        <div x-data="{
+                                                    files: [],
+                                                    isDragging: false,
+                                                    matchParam: 75,
+                                                    handleFiles(selectedFiles) {
+                                                        this.files = Array.from(selectedFiles);
+
+                                                        // Assign files to hidden ASP.NET input
+                                                        this.$refs.realFileInput.files = selectedFiles;
+                                                    }
+                                                }">
+
+                                            <!-- Drag & Drop -->
+                                            <div @@dragover.prevent="isDragging = true"
+                                                 @@dragleave.prevent="isDragging = false"
+                                                 @@drop.prevent="isDragging = false; handleFiles($event.dataTransfer.files)"
+                                                 @@click="$refs.fileInput.click()"
+                                                 class="border-2 border-dashed rounded-[32px] p-20 text-center transition-all cursor-pointer group"
+                                                 :class="isDragging ? 'border-blue-500 bg-blue-50/50 scale-[0.99]' : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50/50'">
+
+                                                <!-- UI File Input -->
+                                                <input type="file"
+                                                       x-ref="fileInput"
+                                                       class="hidden"
+                                                       multiple
+                                                       @@change="handleFiles($event.target.files)">
+
+                                                <div class="w-20 h-20 bg-slate-100 rounded-[24px] flex items-center justify-center mx-auto mb-8 transition-transform group-hover:scale-110 duration-500">
+                                                    <i data-lucide="file-spreadsheet"
+                                                       class="w-10 h-10 text-slate-400 group-hover:text-blue-500 transition-colors"></i>
+                                                </div>
+
+                                                <h3 class="text-xl font-extrabold text-slate-900 tracking-tight">
+                                                    Drag and drop your file here
+                                                </h3>
+
+                                                <p class="text-sm font-bold text-slate-400 mt-2 mb-8 uppercase tracking-widest">
+                                                    or
+                                                </p>
+
+                                                <button type="button"
+                                                        class="bg-blue-600 text-white font-extrabold px-12 h-14 rounded-2xl shadow-xl shadow-blue-500/20 hover:scale-105 transition-transform">
+                                                    Browse Files
+                                                </button>
+
+                                                <p class="text-[11px] font-extrabold text-slate-400 mt-8 uppercase tracking-widest opacity-60">
+                                                    Supported formats: CSV, XLSX, XLS
+                                                </p>
+                                            </div>
+
+
+                                            <!-- ================= FORM ================= -->
+                                            <form id="uploadForm"
+                                                  class="space-y-6"
+                                                  role="form"
+                                                  asp-controller="ClientCase"
+                                                  asp-action="UploadExcel"
+                                                  enctype="multipart/form-data"
+                                                  method="post">
+
+                                                <!-- REAL ASP.NET FILE INPUT (Hidden but bound) -->
+                                                <input type="file"
+                                                       asp-for="fileUpload"
+                                                       x-ref="realFileInput"
+                                                       name="fileUpload"
+                                                       hidden
+                                                       multiple />
+
+                                                <!-- Hidden Fields -->
+                                                <input type="hidden" asp-for="branchId" />
+                                                <input type="hidden" asp-for="itemId" />
+                                                <input type="hidden" asp-for="TypeId" />
+
+
+                                                <!-- Uploaded Files List -->
+                                                <div x-show="files.length > 0"
+                                                     class="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+
+                                                    <template x-for="file in files" :key="file.name">
+                                                        <div class="bg-white border-2 border-blue-50 relative overflow-hidden rounded-2xl p-5 flex items-center justify-between shadow-sm">
+
+                                                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div>
+
+                                                            <div class="flex items-center gap-4">
+                                                                <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                                                                    <i data-lucide="file-text" class="w-6 h-6 text-blue-600"></i>
+                                                                </div>
+
+                                                                <div>
+                                                                    <p class="font-extrabold text-slate-900 text-[15px]"
+                                                                       x-text="file.name"></p>
+
+                                                                    <p class="text-xs font-bold text-slate-400"
+                                                                       x-text="(file.size / 1024).toFixed(2) + ' KB'"></p>
+                                                                </div>
+                                                            </div>
+
+                                                            <span class="text-xs font-extrabold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
+                                                                Upload Completed
+                                                            </span>
+                                                        </div>
+                                                    </template>
+
+
+                                                    <!-- Match Parameter -->
+                                                    <div class="space-y-2.5">
+                                                        <div class="flex justify-between mb-2">
+                                                            <span class="text-[13px] font-extrabold text-slate-700">
+                                                                Match Parameter
+                                                            </span>
+
+                                                            <span class="text-sm font-extrabold text-blue-600"
+                                                                  x-text="matchParam + '%'"></span>
+                                                        </div>
+
+                                                        <div class="relative flex items-center h-11">
+                                                            @* <input type="range"
+                                                                   x-model="matchParam"
+                                                                   min="0"
+                                                                   max="100"
+                                                                   asp-for="Threshold"
+                                                                   class="w-full h-2 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                                                   :style="'background: linear-gradient(to right, #2563eb ' + matchParam + '%, #f1f5f9 ' + matchParam + '%)'"> *@
+                                                            <input type="range"
+                                                                   x-model="matchParam"
+                                                                   min="50"
+                                                                   max="100"
+                                                                   id="threshold"
+                                                                   asp-for="Threshold"
+                                                                   class="w-full h-2 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                                                   :style="`background: linear-gradient(to right, #2563eb ${((matchParam-50)/(100-50))*100}%, #f1f5f9 ${((matchParam-50)/(100-50))*100}%)`">
+                                                        </div>
+                                                    </div>
+
+
+                                                    <!-- Buttons -->
+                                                    <div class="flex gap-4 pt-4">
+
+                                                        <!-- SUBMIT BUTTON -->
+                                                        <button type="submit"
+                                                                class="flex-1 h-14 bg-blue-600 text-white font-extrabold rounded-2xl shadow-xl shadow-blue-500/20">
+                                                            Run Screening
+                                                        </button>
+
+                                                        <button type="button"
+                                                                @@click="files = []; $refs.realFileInput.value = ''"
+                                                                class="px-8 h-14 border-2 border-slate-200 text-slate-600 font-extrabold rounded-2xl">
+                                                            Remove All
+                                                        </button>
+
+                                                    </div>
+
+                                                </div>
+
+                                            </form>
+
+                                        </div>
+
+                                 
+                                    @* <div @@dragover.prevent="isDragging = true" @@dragleave.prevent="isDragging = false"
+                                         @@drop.prevent="isDragging = false; files = Array.from($event.dataTransfer.files)"
+                                         @@click="$refs.fileInput.click()"
+                                         class="border-2 border-dashed rounded-[32px] p-20 text-center transition-all cursor-pointer group"
+                                         :class="isDragging ? 'border-blue-500 bg-blue-50/50 scale-[0.99]' : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50/50'">
+                                        <input type="file" x-ref="fileInput" class="hidden" multiple 
+                                               @@change="files = Array.from($event.target.files)">
+                                        <div class="w-20 h-20 bg-slate-100 rounded-[24px] flex items-center justify-center mx-auto mb-8 transition-transform group-hover:scale-110 duration-500">
+                                            <i data-lucide="file-spreadsheet"
+                                               class="w-10 h-10 text-slate-400 group-hover:text-blue-500 transition-colors"></i>
+                                        </div>
+                                        <h3 class="text-xl font-extrabold text-slate-900 tracking-tight">
+                                            Drag and drop
+                                            your file here
+                                        </h3>
+                                        <p class="text-sm font-bold text-slate-400 mt-2 mb-8 uppercase tracking-widest">
+                                            or
+                                        </p>
+                                        <button class="bg-blue-600 text-white font-extrabold px-12 h-14 rounded-2xl shadow-xl shadow-blue-500/20 hover:scale-105 transition-transform">
+                                            Browse
+                                            Files
+                                        </button>
+                                        <p class="text-[11px] font-extrabold text-slate-400 mt-8 uppercase tracking-widest opacity-60">
+                                            Supported formats: CSV, XLSX, XLS
+                                        </p>
+                                    </div>
+
+                                    <!-- Uploaded Files List -->
+                                   <form id="uploadForm" class="space-y-6" role="form" asp-controller="ClientCase" asp-action="UploadExcel" enctype="multipart/form-data" method="post"> 
+                                    <div x-show="files.length > 0"
+                                         class="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                                        <template x-for="file in files" :key="file.name">
+                                            <div class="bg-white border-2 border-blue-50 relative overflow-hidden rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                                                <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div>
+                                                <div class="flex items-center gap-4">
+                                                    <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                                                        <i data-lucide="file-text" class="w-6 h-6 text-blue-600"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-extrabold text-slate-900 text-[15px]" 
+                                                           x-text="file.name"></p>
+                                                        <p class="text-xs font-bold text-slate-400"
+                                                           x-text="(file.size / 1024).toFixed(2) + ' KB'"></p>
+                                                                <input class="file-upload d-none" x-text="file.name" type="file" hidden accept=".xlsx" asp-for="fileUpload" id="fileUpload" class="drop-zoon__file-input" onchange="files = Array.from($event.target.files)" />
+                                                                <input type="hidden" asp-for="branchId" />
+                                                                <input type="hidden" asp-for="itemId" />
+                                                                <input type="hidden" asp-for="TypeId" />
+                                                    </div>
+                                                </div>
+                                                <span class="text-xs font-extrabold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
+                                                    Upload
+                                                    Completed
+                                                </span>
+                                            </div>
+                                        </template>
+                                            <div class="space-y-2.5">
+                                                <div class="flex justify-between mb-2">
+                                                    <span class="text-[13px] font-extrabold text-slate-700">
+                                                        Match Parameter
+                                                    </span>
+                                                    <span class="text-sm font-extrabold text-blue-600"
+                                                          x-text="matchParam + '%'"></span>
+                                                </div>
+                                                <div class="relative flex items-center h-11">
+                                                    <input type="range" x-model="matchParam" min="0" max="100" asp-for="Threshold" class="w-full h-2 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                                           :style="'background: linear-gradient(to right, #2563eb ' + matchParam + '%, #f1f5f9 ' + matchParam + '%)'">
+                                                </div>
+                                            </div>
+                                        <div class="flex gap-4 pt-4">
+                                            <button @@click="showResults = true"
+                                                    class="flex-1 h-14 bg-blue-600 text-white font-extrabold rounded-2xl shadow-xl shadow-blue-500/20">
+                                                Run
+                                                Screening
+                                            </button>
+                                            <button @@click="files = []"
+                                                    class="px-8 h-14 border-2 border-slate-200 text-slate-600 font-extrabold rounded-2xl">
+                                                Remove
+                                                All
+                                            </button>
+                                        </div>
+                                    </div>
+                                        </form> *@
+                                   
+
+
+
+                                    <!-- Instructions Block -->
+                                    <div class="bg-slate-50 border border-slate-200 rounded-[24px] p-6 shadow-sm">
+                                        <h3 class="text-sm font-black text-slate-900 mb-4 uppercase tracking-tighter">
+                                            Upload Instructions:
+                                        </h3>
+                                        <ul class="space-y-4">
+                                            <li class="flex items-start gap-3 text-xs text-slate-600 font-bold leading-none">
+                                                <div class="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-0.5 shrink-0">
+                                                </div>
+                                                <span>
+                                                    Ensure your file includes: <strong class="text-slate-900">
+                                                        Full
+                                                        Name, ID Type, ID Number
+                                                    </strong>
+                                                </span>
+                                            </li>
+                                            <li class="flex items-start gap-3 text-xs text-slate-600 font-bold leading-none">
+                                                <div class="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-0.5 shrink-0">
+                                                </div>
+                                                <span>
+                                                    Optional fields: <strong class="text-slate-900">
+                                                        Date of Birth,
+                                                        Nationality, Address
+                                                    </strong>
+                                                </span>
+                                            </li>
+                                            <li class="flex items-start gap-3 text-xs text-slate-600 font-bold leading-none">
+                                                <div class="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-0.5 shrink-0">
+                                                </div>
+                                                <span>
+                                                    Maximum file size: <strong class="text-slate-900">10MB</strong>
+                                                </span>
+                                            </li>
+                                            <li class="flex items-start gap-3 text-xs text-slate-600 font-bold leading-none">
+                                                <div class="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-0.5 shrink-0">
+                                                </div>
+                                                <span>Ensure data is properly formatted before upload</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                               
+                                <!-- OCR UPLOAD VIEW -->
+                                    <div x-data="mrzUploader()"
+                                         x-show="selectedMethod === 'ocr'"
+                                         x-transition
+                                         class="space-y-8 pt-10">
+
+                                        <div class="max-w-xl mx-auto">
+
+                                        <!-- Hidden File Input -->
+                                        <input type="file"
+                                               x-ref="fileInput"
+                                               class="hidden"
+                                               accept="image/*,.pdf"
+                                               @@change="uploadFile($event)">
+
+                                        <!-- Upload Card -->
+                                        <div @@click="$refs.fileInput.click()"
+                                             class="border-2 border-dashed border-slate-200 rounded-[32px] p-16 text-center transition-all cursor-pointer hover:border-blue-400 hover:bg-slate-50 relative overflow-hidden group">
+
+                                            <!-- Loader Overlay -->
+                                            <div x-show="isUploading"
+                                                 class="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-[32px]">
+
+                                                <div class="flex flex-col items-center gap-2">
+                                                    <div class="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
+                                                    <span class="text-sm font-bold text-blue-600">Processing OCR...</span>
+                                                </div>
+
+                                            </div>
+
+                                            <!-- Icon -->
+                                            <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-8 transition-transform group-hover:scale-110 duration-300">
+                                                <i data-lucide="upload-cloud" class="w-10 h-10 text-blue-600"></i>
+                                            </div>
+
+                                            <!-- Text -->
+                                            <h3 class="text-xl font-extrabold text-slate-900">
+                                                Click to Upload Document
+                                            </h3>
+
+                                            <p class="text-sm text-slate-400 font-semibold mt-2">
+                                                Passport, Emirates ID, Driving License supported
+                                            </p>
+
+                                            <!-- Button -->
+                                            <button type="button"
+                                                    class="mt-10 px-10 h-12 border-2 border-blue-600 text-blue-600 font-extrabold rounded-2xl hover:bg-blue-50 transition-all">
+                                                Select Image
+                                            </button>
+
+                                        </div>
+
+                                        @* <div @@click="showResults = true"
+                                             class="border-2 border-dashed border-slate-200 rounded-[32px] p-16 text-center transition-all cursor-pointer hover:border-blue-400 hover:bg-slate-50 relative overflow-hidden group">
+                                            <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-8 transition-transform group-hover:scale-110 duration-500">
+                                                <div class="relative">
+                                                    <i data-lucide="clock" class="w-10 h-10 text-blue-600"></i>
+                                                    <div class="absolute -bottom-1 -right-1 bg-white rounded-full p-1 border border-blue-100 shadow-sm">
+                                                        <i data-lucide="upload-cloud" class="w-4 h-4 text-blue-600"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <h3 class="text-xl font-extrabold text-slate-900 tracking-tight">
+                                                Click to
+                                                Upload Document
+                                            </h3>
+                                            <p class="text-sm font-bold text-slate-400 mt-2 max-w-[240px] mx-auto">
+                                                High-precision OCR for Passports, Emirates ID, and Licenses.
+                                            </p>
+                                            <button class="mt-10 px-10 h-13 border-2 border-blue-600 text-blue-600 font-extrabold rounded-2xl hover:bg-blue-50 transition-all">
+                                                Select
+                                                Image
+                                            </button>
+                                        </div> *@
+                                    </div>
+                                        <div id="manualForm" x-transition:enter="transition duration-300" hidden
+                                             x-transition:enter-start="opacity-0 translate-x-4" class="space-y-8">
+                                            <div class="bg-[#FEFCE8] border border-[#FEF08A] rounded-xl p-4 flex items-center gap-3 text-[#854D0E] text-[13px] font-medium">
+                                                <i data-lucide="info" class="w-4 h-4 text-[#A16207]"></i>
+                                                Fields marked with <span class="text-red-500">*</span> are mandatory for
+                                                screening
+                                            </div>
+                                            @* <form class="space-y-8" @@submit.prevent="isSuccessModalOpen = true"> *@
+                                            <form class="space-y-8" id="myOCRForm" asp-controller="Case" asp-action="Create" method="post" enctype="multipart/form-data">
+                                                <!-- Screening Option -->
+                                                @* //<div class="space-y-2.5 max-w-sm"> *@
+                                                <div class="space-y-2">
+                                                    <label class="text-[13px] font-bold text-slate-700">
+                                                        Screening Option <span class="text-red-500">*</span>
+                                                    </label>
+                                                   
+                                                    
+                                                    
+                                                    
+                                                    
+                                                    <div class="relative">
+                                                        <!-- Trigger Button -->
+                                                        <button id="trigger-btn-OCR"
+                                                                type="button"
+                                                                role="combobox"
+                                                                aria-expanded="false"
+                                                                class="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus:ring-slate-300 font-normal">
+                                                            <span id="trigger-text-OCR" class="text-sm pointer-events-none">Select screening options</span>
+                                                            <svg class="ml-2 h-4 w-4 shrink-0 opacity-50 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                        </button>
+
+                                                        <!-- Popover Content (Hidden by default) -->
+                                                        <div id="popover-content-OCR"
+                                                             class="hidden absolute top-full left-0 z-50 mt-1 w-[400px] rounded-md border border-slate-200 bg-white p-4 text-slate-950 shadow-md outline-none animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50">
+                                                            <div class="space-y-3 max-h-[300px] overflow-y-auto">
+                                                                <!-- ALL Option -->
+                                                                <div class="flex items-center space-x-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                                                                    <input type="checkbox"
+                                                                           id="corporate-all-OCR"
+                                                                           class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:ring-offset-slate-950" />
+                                                                    <label for="corporate-all-OCR"
+                                                                           class="text-sm font-bold leading-none cursor-pointer text-slate-900 dark:text-slate-100">
+                                                                        ALL
+                                                                    </label>
+                                                                </div>
+
+
+                                                                <!-- Individual Options Container -->
+                                                                <div id="options-container-OCR" class="space-y-3">
+                                                                    <!-- Options will be injected here by JS -->
+                                                                </div>
+                                                                <div id="codesHiddenOCRContainer"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    @* <div class="relative">
+                                                <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-bold text-slate-900 appearance-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" asp-items="Model.CodesTable">
+                                                    <option value="all">All</option>
+                                                    <option value="pep">PEP</option>
+                                                    <option value="sanction">Sanction</option>
+                                                </select>
+                                                @* <i data-lucide="chevron-down"
+                                                    class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                    @* </div> *@ 
+                                        </div>
+
+                                                <!-- Grid Fields -->
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">
+                                                            Full Name <span class="text-red-500">*</span>
+                                                        </label>
+                                                        <div class="flex gap-2">
+                                                            <input type="text"
+                                                                   placeholder="Enter full name"
+                                                                   asp-for="FirstName"
+                                                                   maxlength="100"
+                                                                   id="fullName"
+                                                                   class="flex-1 h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium
+focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all
+fullNameField"
+                                                                   oninput="OCRtoggleDuplicateBtn()" />
+
+                                                            <button type="button"
+                                                                    id="btnCheckDuplicate"
+                                                                    disabled
+                                                                    class="px-4 h-11 border-2 border-blue-600 text-blue-600 font-extrabold text-xs rounded-xl
+ transition-all whitespace-nowrap
+ disabled:opacity-50 disabled:cursor-not-allowed
+ hover:bg-blue-50 active:scale-95"
+                                                                    onclick="checkDuplicatefunction(this)">
+                                                                Check Duplicate
+                                                            </button>
+
+                                                        </div>
+                                                        <span asp-validation-for="FirstName" class="validstyle" style="color:red"></span>
+                                                    </div>
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">Nationality</label>
+                                                        <div class="relative">
+                                                            <select id="nationality" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium appearance-none outline-none focus:ring-2 focus:ring-blue-500/10" asp-items="Model.Nationalities" asp-for="Nationality">
+                                                                <option value="">Select</option>
+                                                            </select>
+                                                            @* <i data-lucide="chevron-down"
+                                                        class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">
+                                                            Date of
+                                                            Birth
+                                                        </label>
+                                                        <input type="date" id="DOB"
+                                                               class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10" asp-for="DOB" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                    </div>
+
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">ID Type</label>
+                                                        <div class="relative">
+                                                            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium appearance-none outline-none focus:ring-2 focus:ring-blue-500/10" id="ddlIdType" onchange="customeridtypefunction()" asp-for="CustomerIdType">
+                                                                <option value="">Select</option>
+                                                                <option value="Passport">Passport</option>
+                                                                <option value="Emirates ID">Emirates ID</option>
+                                                            </select>
+                                                            @* <i data-lucide="chevron-down"
+                                                        class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">ID Number</label>
+                                                        <input type="text" placeholder="Enter ID Number" id="txtIdNumber" asp-for="CustomerIdNumber" maxlength="20"
+                                                               class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none">
+                                                    </div>
+
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">ID Issue Date</label>
+                                                        <div class="relative">
+                                                            <input type="date" id="issuedate"
+                                                                   class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10" asp-for="IdIssueDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">ID Expiry Date</label>
+                                                        <input type="date" id="expirydate"
+                                                               class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10" asp-for="IdExpiryDate" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                    </div>
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">Gender</label>
+                                                        <div class="relative">
+                                                            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" asp-for="Gender" id="gender">
+                                                                <option value="">Select</option>
+                                                                <option value="Male">Male</option>
+                                                                <option value="Female">Female</option>
+                                                            </select>
+                                                            @* <i data-lucide="chevron-down"
+                                                       class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Additional fields matching the source exactly -->
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">
+                                                            Profession <span class="text-red-500">*</span>
+                                                        </label>
+                                                        <div class="relative">
+                                                            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" id="ddlOccupation" asp-items="Model.ProfessionalList" asp-for="OccupatinTypeTxt">
+                                                                <option value="">Select</option>
+                                                            </select>
+                                                            @* <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@  
+                                                </div>
+                                                        <span asp-validation-for="OccupatinTypeTxt" class="validstyle" style="color:red"></span>
+                                                    </div>
+
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">
+                                                            Residence Status <span class="text-red-500">*</span>
+                                                        </label>
+                                                        <div class="relative">
+                                                            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" id="ddlResidenceStatus" asp-items="Model.ResidentialStatusList" asp-for="ResidenceStatus">
+                                                                <option value="">Select</option>
+                                                            </select>
+                                                            @* <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                        </div>
+                                                        <span asp-validation-for="ResidenceStatus" class="validstyle" style="color:red"></span>
+                                                    </div>
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">
+                                                            Product,Service & Activity <span class="text-red-500">*</span>
+                                                        </label>
+
+                                                        <div class="relative">
+                                                            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" id="ddlProductType" asp-items="Model.ProductTypeList" asp-for="ProductName">
+                                                                <option value="">Select</option>
+                                                            </select>
+                                                            @* <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                        </div>
+                                                        <span asp-validation-for="ProductName" class="validstyle" style="color:red"></span>
+                                                    </div>
+
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">
+                                                            Delivery Channel<span class="text-red-500">*</span>
+                                                        </label>
+                                                        <div class="relative">
+                                                            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" id="ddlDeliveryChannel" asp-items="Model.DeliveryChannelList" asp-for="DeliveryChannelName">
+                                                                <option value="">Select</option>
+                                                            </select>
+                                                            @*  <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                        </div>
+                                                        <span asp-validation-for="DeliveryChannelName" class="validstyle" style="color:red"></span>
+                                                    </div>
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">
+                                                            Mode Of Payment<span class="text-red-500">*</span>
+                                                        </label>
+                                                        <div class="relative">
+                                                            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" id="ddlModeofpayment" asp-items="Model.ModeofpaymentList" asp-for="Modeofpayment">
+                                                                <option value="">Select</option>
+                                                            </select>
+                                                            @*  <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                        </div>
+                                                        <span asp-validation-for="Modeofpayment" class="validstyle" style="color:red"></span>
+                                                    </div>
+
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">
+                                                            Customer CIF No
+                                                        </label>
+                                                        <div class="relative">
+                                                            <input type="text" placeholder="Enter CIF Number" asp-for="CIFNumber" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="cifnumber">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="space-y-2.5">
+                                                        <div class="flex justify-between mb-2">
+                                                            <span class="text-[13px] font-extrabold text-slate-700">
+                                                                Match Parameter
+                                                            </span>
+                                                            <span class="text-sm font-extrabold text-blue-600"
+                                                                  x-text="matchParam + '%'"></span>
+                                                        </div>
+                                                        <div class="relative flex items-center h-11">
+                                                            <input type="range" x-model="matchParam" min="50" max="100" id="threshold" asp-for="Threshold" class="w-full h-2 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                                                   :style="`background: linear-gradient(to right, #2563eb ${((matchParam-50)/(100-50))*100}%, #f1f5f9 ${((matchParam-50)/(100-50))*100}%)`">
+                                                        </div>
+                                                    </div>
+                                                    <div x-data="{ fileName: 'No file chosen' }" class="space-y-2">
+                                                    <label class="text-xs font-semibold text-slate-700">Document</label>
+
+                                                    <div class="relative flex items-center">
+
+                                                        <!-- Hidden File Input -->
+                                                        <input type="file"
+                                                               class="hidden"
+                                                               x-ref="docUpload"
+                                                               
+                                                               x-on:change="
+                                                               if ($event.target.files.length> 0) {
+                                                        let fullName = $event.target.files[0].name;
+                                                        fileName = fullName.length > 10 ? fullName.substring(0, 10) + '...' : fullName;
+                                                        } else {
+                                                        fileName = 'No file chosen';
+                                                        }
+                                                        ">
+
+                                                        <!-- Custom UI -->
+                                                        <div x-on:click="$refs.docUpload.click()"
+                                                             class="w-full h-10 bg-white border border-slate-200 rounded-md px-3 py-2 text-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
+
+                                                            <!-- Short Display Name -->
+                                                            <span class="text-slate-500 text-xs" x-text="fileName"></span>
+
+                                                            <span class="text-[11px] text-blue-600 font-bold border border-blue-600 rounded-md px-3 py-0.5">
+                                                                Choose file
+                                                            </span>
+
+                                                        </div>
+                                                    </div>
+                                                    @*   <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">
+                                                    Document
+                                                </label>
+                                                <div class="relative">
+                                                    <input type="file" name="CaseDocumentsL[0].Document" class="w-full bg-[#F0F4FF] px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-gray-600 flex items-center justify-center gap-2 font-extralight" asp-for="CaseDocumentsL[0].Document" id="txtFile">
+                                                </div>
+                                            </div> *@
+                                                </div>
+
+                                                <div class="grid grid-cols-4 gap-4 mt-12 pt-8 border-t border-slate-100">
+                                                    <button type="submit" id="btn-ld"
+                                                            class="col-span-3 h-14 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-2xl shadow-xl shadow-blue-500/30 transition-all active:scale-[0.98]">
+                                                        Create Case
+                                                    </button>
+                                                    <button type="reset" @@click="location.href='@Url.Action("Create", "Case")'"
+                                                            class="h-14 bg-white border-2 border-slate-200 text-slate-600 font-extrabold rounded-2xl hover:bg-slate-50 transition-all">
+                                                        Reset
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+
+                                    <!-- Instructions Block -->
+                                    <div class="bg-slate-50 border border-slate-200 rounded-[24px] p-6 shadow-sm">
+                                        <h3 class="text-sm font-black text-slate-900 mb-4 uppercase tracking-tighter">
+                                            Upload Instructions:
+                                        </h3>
+                                        <ul class="space-y-4">
+                                            <li class="flex items-start gap-3 text-xs text-slate-600 font-bold leading-none">
+                                                <div class="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-0.5 shrink-0">
+                                                </div>
+                                                <span>
+                                                    Ensure your file includes: <strong class="text-slate-900">
+                                                        Full
+                                                        Name, ID Type, ID Number
+                                                    </strong>
+                                                </span>
+                                            </li>
+                                            <li class="flex items-start gap-3 text-xs text-slate-600 font-bold leading-none">
+                                                <div class="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-0.5 shrink-0">
+                                                </div>
+                                                <span>
+                                                    Optional fields: <strong class="text-slate-900">
+                                                        Date of Birth,
+                                                        Nationality, Address
+                                                    </strong>
+                                                </span>
+                                            </li>
+                                            <li class="flex items-start gap-3 text-xs text-slate-600 font-bold leading-none">
+                                                <div class="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-0.5 shrink-0">
+                                                </div>
+                                                <span>
+                                                    Maximum file size: <strong class="text-slate-900">10MB</strong>
+                                                </span>
+                                            </li>
+                                            <li class="flex items-start gap-3 text-xs text-slate-600 font-bold leading-none">
+                                                <div class="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-0.5 shrink-0">
+                                                </div>
+                                                <span>Ensure data is properly formatted before upload</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL: DUPLICATE CHECK -->
+        <!-- MODAL -->
+        <div x-show="isDuplicateModalOpen" id="isDuplicateModalOpen"
+             x-cloak
+             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md transition-all duration-200"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+
+            <!-- Modal Container -->
+            <div @@click.away ="closeDuplicateModal()"
+                 class="bg-white rounded-[24px] shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+
+                <!-- Header -->
+                <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="text-lg font-extrabold text-slate-900">
+                        Search Duplicates
+                    </h3>
+
+                    <button @@click="closeDuplicateModalClose"
+                            class="p-2 text-slate-400 hover:text-slate-900">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Content -->
+                <div class="p-8 overflow-y-auto">
+
+                    <div class="overflow-auto max-h-[400px] border border-slate-100 rounded-2xl">
+
+                        <table class="w-full text-left text-sm">
+
+                            <!-- Sticky Header -->
+                            <thead class="bg-slate-50 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-6 py-4">Ref ID</th>
+                                    <th class="px-6 py-4">Created On</th>
+                                    <th class="px-6 py-4">Customer Name</th>
+                                    <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4">Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="duplicateTableBody" class="divide-y divide-slate-50">
+                                <!-- Dynamic rows -->
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <div x-data="{ isExcelUploadModalOpen: @Model.ShowExcelUploadModal.ToString().ToLower() }" id="isExcelUploadModalOpen"
+             x-show="isExcelUploadModalOpen"
+             x-cloak
+             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md transition-all duration-200"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+
+            <!-- Modal Container -->
+            <div @@click.away="closeUploadModalOpen()"
+                 class="bg-white rounded-[24px] shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+
+                <!-- Header -->
+                <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="text-lg font-extrabold text-slate-900">
+                        Upload Details
+                    </h3>
+
+                    <button @@click="closeUploadModalOpen()"
+                            class="p-2 text-slate-400 hover:text-slate-900">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Content -->
+                <div class="p-8 overflow-y-auto">
+
+                    <div class="overflow-auto max-h-[400px] border border-slate-100 rounded-2xl">
+
+                        <table class="w-full text-left text-sm">
+
+                            <!-- Sticky Header -->
+                            <thead class="bg-slate-50 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-6 py-4">Customer ID</th>
+                                    <th class="px-6 py-4">Full Name of Customer</th>
+                                    <th class="px-6 py-4">Country</th>
+                                    <th class="px-6 py-4">DOB</th>
+                                    <th class="px-6 py-4">Status</th>
+                                    
+                                    
+                                    @* //<th class="px-6 py-4">Action</th> *@
+                                </tr>
+                            </thead>
+
+                            <tbody id="uploadexcelBody" class="divide-y divide-slate-50">
+                                @foreach (var row in Model.ExcelUploadedData)
+                                {
+                                    <tr class="@((row.Status == 1 && row.Id != 0) ? "bg-success" : "bg-danger")">
+                                        <td class="px-4 py-3">@row.CustomerID</td>
+                                        <td class="px-4 py-3">@row.LastName</td>
+                                        <td class="px-4 py-3">@row.Nationality</td>
+                                        <td class="px-4 py-3">@row.DOB</td>
+                                        <th class="px-6 py-4">@row.ScreeningStatus</th>
+                                    </tr>
+                                }
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    @* <div x-show="isDuplicateModalOpen" x-cloak id="isDuplicateModalOpen"
+         class="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100">
+
+        <!-- Modal Container -->
+        <div onclick.away="isDuplicateModalOpen = false"
+             class="bg-white rounded-[24px] shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200">
+
+            <!-- Header -->
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">
+                    Search Duplicates
+                </h3>
+
+                <button @@click="closeDuplicateModalClose"
+                        class="p-2 text-slate-400 hover:text-slate-900 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="p-8 overflow-y-auto">
+
+                <div class="overflow-x-auto overflow-y-auto max-h-[400px] border border-slate-100 rounded-2xl">
+
+                    <table class="w-full text-left text-sm">
+
+                        <!-- Sticky Header -->
+                        <thead class="bg-slate-50 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest border-b border-slate-100 sticky top-0 z-10">
+                            <tr>
+                                <th class="px-6 py-4">Ref ID</th>
+                                <th class="px-6 py-4">Created on</th>
+                                <th class="px-6 py-4">Cust. Name</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4">Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="duplicateTableBody" class="divide-y divide-slate-50">
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+
+        </div>
+    </div> *@
+
+   @*  <div x-show="isDuplicateModalOpen" x-cloak id="isDuplicateModalOpen"
+         class="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100">
+        <div onclick.away="isDuplicateModalOpen = false"
+             class="bg-white rounded-[24px] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Search Duplicates</h3>
+                <button @@click="closeDuplicateModalClose"
+                        class="p-2 text-slate-400 hover:text-slate-900 transition-colors">
+                    <i data-lucide="x"
+                       class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-8">
+                <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest border-b border-slate-100">
+                            <tr>
+                                <th class="px-6 py-4">Ref ID</th>
+                                <th class="px-6 py-4">Created on</th>
+                                <th class="px-6 py-4">Cust. Name</th>
+                                <!-- <th class="px-6 py-4 text-center">Match Score (%)</th> -->
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="duplicateTableBody" class="divide-y divide-slate-50">
+                        </tbody>
+                        @* <tbody class="divide-y divide-slate-50">
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                <td class="px-6 py-6 font-bold text-slate-900 leading-none">CSC102</td>
+                                <td class="px-6 py-6 text-slate-600 font-medium">
+                                    20/06/2024 <br><span class="text-[10px] text-slate-400">15:59</span>
+                                </td>
+                                <td class="px-6 py-6 font-bold text-slate-700">John</td>
+                                <td class="px-6 py-6">
+                                    <span class="bg-emerald-100 text-emerald-700 text-[10px] font-extrabold px-3 py-1 rounded-full border border-emerald-200/50">Approved</span>
+                                </td>
+                                <td class="px-6 py-6">
+                                    <button class="text-blue-600 font-extrabold hover:underline">
+                                        View
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody> *@
+                  @*   </table>
+                </div>
+            </div>
+        </div>
+    </div> *@
+
+    <!-- MODAL: SUCCESS -->
+        <div x-data="successModal(@(Model?.IsCaseCreated == true ? "true" : "false"), '@Model?.CaseRefId')">
+        <div x-show="isSuccessModalOpen"  x-cloak
+             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md transition-all duration-200"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+        <div onclick.away="isSuccessModalOpen = false"
+             class="bg-white rounded-[32px] shadow-2xl w-full max-w-md p-10 text-center relative overflow-hidden">
+                <button @@click="closeSuccess()"
+                        class="absolute top-5 right-5 text-slate-400 hover:text-slate-700 transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            <div class="absolute top-0 left-0 right-0 h-2 bg-emerald-500"></div>
+            <div class="flex flex-col items-center gap-8">
+                <div class="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center ring-8 ring-emerald-50/50">
+                    <i data-lucide="check-circle" class="w-12 h-12 text-emerald-500"></i>
+                </div>
+                <div class="space-y-3">
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Case Created Successful!</h2>
+                        <p class="text-xl font-bold text-slate-700">Ref Id: <span class="text-blue-600" x-text="caseRefId"></span>
+                    <p class="text-sm font-medium text-slate-500 leading-relaxed px-4">
+                        Your case has been successfully
+                        created and submitted for screening and risk assessment.
+                    </p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 w-full pt-4">
+                        <button class="h-14 border-2 border-slate-200 rounded-2xl font-extrabold text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2"
+                                @@click="navigator.clipboard.writeText(caseRefId);copied=true;setTimeout(()=>copied = false, 2000);">
+
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                            <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                        </button>
+                        @*  <button class="h-14 border-2 border-slate-200 rounded-2xl font-extrabold text-slate-700 hover:bg-slate-50"
+                                @@click="closeSuccess()">
+                        Close
+                    </button> *@
+
+                        <a href="/case"
+                           class="h-14 bg-blue-600 text-white font-extrabold rounded-2xl flex items-center justify-center w-full">
+                            Go to Case
+                        </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+
+        @* <script>
+            $("form").submit(function () {
+                // $(".se-pre-con").show();
+                $('#loadingeffect').show();
+                document.getElementById('btn-ld').disabled = true;
+                $('#loadingeffect').hide();
+                //$('.se-pre-con1').show();
+                // $('.se-pre-con').fadeOut(2000);
+                //setTimeout(function () {
+                //	// Hide the loader after submission is complete
+                //	loader.style.display = "none";
+                //	alert("Form submitted successfully!");
+                //	form.reset();
+                //}, 2000);
+            });
+            // window.onload = function () {
+            //     document.getElementById('btn-ld').disabled = false;
+            // };
+        </script> *@
+
+    <script>
+        function toggleDuplicateBtn() {
+    const input = document.getElementById('fullName');
+    const btn = document.getElementById('btnCheckDuplicate');
+
+    if (input.value.trim().length > 0) {
+        btn.disabled = false;
+    } else {
+        btn.disabled = true;
+    }
+}
+document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
+             function OCRtoggleDuplicateBtn() {
+                const input = document.getElementById('fullName');
+                const btn = document.getElementById('btnCheckDuplicate');
+
+                if (input.value.trim().length > 0) {
+                    btn.disabled = false;
+                } else {
+                    btn.disabled = true;
+                }
+            }
+            document.addEventListener('DOMContentLoaded', OCRtoggleDuplicateBtn);
+                    document.addEventListener('alpine:init', () => {
+
+                Alpine.store('screening', {
+                    selectedMethod: 'manual'   // default selection
+                });
+
+            });
+
+                        $(function () {
+
+                initCaseFormValidation("#myForm");
+                initCaseFormValidation("#myOCRForm");
+
+            });
+
+
+            function initCaseFormValidation(formSelector) {
+
+                const $form = $(formSelector);
+
+                $form.off("submit.customValidation")
+                    .on("submit.customValidation", function (e) {
+
+                        console.log("Validation running for:", formSelector);
+
+                        // Clear previous errors inside current form ONLY
+                        $form.find("span[data-valmsg-for]").text('').removeClass('field-validation-error');
+                        $form.find(".is-invalid").removeClass('is-invalid');
+
+                        let isValid = true;
+                        let $firstErrorElement = null;
+
+                        // Get values from CURRENT form only
+                        const fullName = ($form.find("#fullName").val() || "").trim();
+                        const occupation = ($form.find("#ddlOccupation").val() || "").trim();
+                        const producttype = ($form.find("#ddlProductType").val() || "").trim();
+                        const deliverychannel = ($form.find("#ddlDeliveryChannel").val() || "").trim();
+                        const modeofpayment = ($form.find("#ddlModeofpayment").val() || "").trim();
+                        const residentStatus = ($form.find("#ddlResidenceStatus").val() || "").trim();
+
+                        function markInvalid(valFor, selector, message) {
+
+                            $form.find(`span[data-valmsg-for='${valFor}']`)
+                                .text(message)
+                                .addClass('field-validation-error');
+
+                            const $element = $form.find(selector);
+                            $element.addClass('is-invalid');
+
+                            if (!$firstErrorElement) $firstErrorElement = $element;
+
+                            isValid = false;
+                        }
+
+                        // Required validations
+                        if (fullName === "")
+                            markInvalid("FirstName", "#fullName", "Full Name is required.");
+
+                        if (!occupation || occupation === "0")
+                            markInvalid("OccupatinTypeTxt", "#ddlOccupation", "Occupation Type is required.");
+
+                        if (!producttype || producttype === "0")
+                            markInvalid("ProductName", "#ddlProductType", "Product Type is required.");
+
+                        if (!deliverychannel || deliverychannel === "0")
+                            markInvalid("DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
+
+                        if (!modeofpayment || modeofpayment === "0")
+                            markInvalid("Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
+
+                        if (!residentStatus || residentStatus === "0")
+                            markInvalid("ResidenceStatus", "#ddlResidenceStatus", "Resident Status is required.");
+
+                        // Emirates validation
+                        if (!validateIdNumber($form, true)) {
+
+                            toastr.clear();
+                            toastr.error("Emirates ID must start with 784.");
+
+                            isValid = false;
+                        }
+
+                        // Scroll to error
+                        if (!isValid) {
+
+                            if ($firstErrorElement) {
+
+                                $("html, body").animate({
+                                    scrollTop: $firstErrorElement.offset().top - 150
+                                }, 400);
+
+                                $firstErrorElement.focus();
+                            }
+
+                            e.preventDefault();
+                            return false;
+                        }
+
+                        // Loader
+                        $('#loadingeffect').show();
+                        $form.find('#btn-ld').prop('disabled', true);
+
+                        const thresholdValue = $form.find("#threshold").val();
+
+                        $form.off("submit.customValidation");
+
+                        setTimeout(() => {
+                            $form.find('#btn-ld').prop('disabled', false);
+                            $form.find("#threshold").val(thresholdValue);
+                        }, 2000);
+
+                    });
+            }
+                        function validateIdNumber($form, isSubmit = false) {
+
+                const $idType = $form.find("#ddlIdType");
+                const $idNumber = $form.find("#txtIdNumber");
+
+                if (!$idType.length || !$idNumber.length) return true;
+
+                const idType = ($idType.val() || "").trim();
+                const idNumber = ($idNumber.val() || "").trim();
+
+                $idNumber.removeClass("is-invalid");
+                $form.find("span[data-valmsg-for='CustomerIdNumber']")
+                    .text("")
+                    .removeClass("field-validation-error");
+
+                if (idType === "Emirates ID" && idNumber !== "") {
+
+                    if (!idNumber.startsWith("784")) {
+
+                        $idNumber.addClass("is-invalid");
+
+                        $form.find("span[data-valmsg-for='CustomerIdNumber']")
+                            .text("Emirates ID must start with 784.")
+                            .addClass("field-validation-error");
+
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+
+            // $(function () {
+            //     const $form = $("#myForm");
+
+            //     $form.off("submit.customValidation").on("submit.customValidation", function (e) {
+            //         console.log("Form submit validation started");
+
+            //         // Clear previous errors
+            //         $("span[data-valmsg-for]").text('').removeClass('field-validation-error');
+            //         $(".is-invalid").removeClass('is-invalid');
+
+            //         let isValid = true;
+            //         let $firstErrorElement = null;
+
+            //         const fullName = ($("#fullName").val() || "").trim();
+            //         const occupation = ($("#ddlOccupation").val() || "").trim();
+            //         const producttype = ($("#ddlProductType").val() || "").trim();
+            //         const deliverychannel = ($("#ddlDeliveryChannel").val() || "").trim();
+            //         const modeofpayment = ($("#ddlModeofpayment").val() || "").trim();
+            //         const residentStatus = ($("#ddlResidenceStatus").val() || "").trim();
+
+            //         function markInvalid(valFor, selector, message) {
+            //             $("span[data-valmsg-for='" + valFor + "']").text(message).addClass('field-validation-error');
+            //             $(selector).addClass('is-invalid');
+            //             if (!$firstErrorElement) $firstErrorElement = $(selector);
+            //             isValid = false;
+            //         }
+
+            //         // --- Required field checks ---
+            //         if (fullName === "") markInvalid("FirstName", "#fullName", "Full Name is required.");
+            //         if (!occupation || occupation === "0") markInvalid("OccupatinTypeTxt", "#ddlOccupation", "Occupation Type is required.");
+            //         if (!producttype || producttype === "0") markInvalid("ProductName", "#ddlProductType", "Product Type is required.");
+            //         if (!deliverychannel || deliverychannel === "0") markInvalid("DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
+            //         if (!modeofpayment || modeofpayment === "0") markInvalid("Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
+            //         if (!residentStatus || residentStatus === "0") markInvalid("ResidenceStatus", "#ddlResidenceStatus", "Resident Status is required.");
+
+            //         // --- Emirates ID validation ---
+            //         if (!validateIdNumber(true)) {
+            //             toastr.clear();
+            //             toastr.error("Please correct the Emirates ID before submitting. Emirates ID must start with 784.");
+            //             isValid = false;
+            //         }
+
+            //         // --- Scroll to first error if invalid ---
+            //         if (!isValid) {
+            //             if ($firstErrorElement && $firstErrorElement.length) {
+            //                 $("html, body").animate({ scrollTop: $firstErrorElement.offset().top - 150 }, 400);
+            //                 $firstErrorElement.focus();
+            //             }
+            //             e.preventDefault(); // Stop submission only if invalid
+            //             return false;
+            //         }
+
+            //         // --- Form is valid: show loader and allow submission ---
+            //         $('#loadingeffect').show();          // Show loader
+            //         $('#btn-ld').prop('disabled', true); // Disable submit button
+
+            //         // --- Preserve threshold value ---
+            //         const thresholdValue = $("#threshold").val();
+
+            //         // Remove the custom submit handler temporarily to allow real form submission
+            //         $form.off("submit.customValidation");
+
+            //         // Delay reset until after submission is complete
+            //         // If you want page reloads: do not reset here, the page reload will clear fields
+            //         // If you want AJAX submission: use $.ajax and then reset all except threshold
+            //         setTimeout(() => {
+            //             $('#btn-ld').prop('disabled', false);
+            //             $("#threshold").val(thresholdValue);
+            //         }, 2000);
+            //     });
+
+            //     function validateIdNumber(isSubmit = false) {
+            //         const $idType = $("#ddlIdType");
+            //         const $idNumber = $("#txtIdNumber");
+
+            //         if (!$idType.length || !$idNumber.length) return true;
+
+            //         const idType = ($idType.val() || "").trim();
+            //         const idNumber = ($idNumber.val() || "").trim();
+
+            //         $idNumber.removeClass("is-invalid");
+            //         $("span[data-valmsg-for='CustomerIdNumber']").text("").removeClass("field-validation-error");
+
+            //         if (idType === "Emirates ID" && idNumber !== "") {
+            //             if (!idNumber.startsWith("784")) {
+            //                 $idNumber.addClass("is-invalid");
+            //                 $("span[data-valmsg-for='CustomerIdNumber']")
+            //                     .text("Emirates ID must start with 784.")
+            //                     .addClass("field-validation-error");
+
+            //                 if (isSubmit) {
+            //                     setTimeout(() => {
+            //                         const $firstError = $(".is-invalid:visible").first();
+            //                         if ($firstError.length) {
+            //                             $("html, body").animate({ scrollTop: $firstError.offset().top - 150 }, 400);
+            //                             $firstError.focus();
+            //                         }
+            //                     }, 50);
+            //                 }
+            //                 return false;
+            //             }
+            //         }
+            //         return true;
+            //     }
+            // });
+
+            //             $(function () {
+            //                const $form = $("#myOCRForm");
+
+            //                 $form.off("submit.customValidation").on("submit.customValidation", function (e) {
+            //                     console.log("Form submit validation started");
+
+            //                     // Clear previous errors
+            //                     $("span[data-valmsg-for]").text('').removeClass('field-validation-error');
+            //                     $(".is-invalid").removeClass('is-invalid');
+
+            //                     let isValid = true;
+            //                     let $firstErrorElement = null;
+
+            //                     const fullName = ($("#fullName").val() || "").trim();
+            //                     const occupation = ($("#ddlOccupation").val() || "").trim();
+            //                     const producttype = ($("#ddlProductType").val() || "").trim();
+            //                     const deliverychannel = ($("#ddlDeliveryChannel").val() || "").trim();
+            //                     const modeofpayment = ($("#ddlModeofpayment").val() || "").trim();
+            //                     const residentStatus = ($("#ddlResidenceStatus").val() || "").trim();
+
+            //                     function markInvalid(valFor, selector, message) {
+            //                         $("span[data-valmsg-for='" + valFor + "']").text(message).addClass('field-validation-error');
+            //                         $(selector).addClass('is-invalid');
+            //                         if (!$firstErrorElement) $firstErrorElement = $(selector);
+            //                         isValid = false;
+            //                     }
+
+            //                     // --- Required field checks ---
+            //                     if (fullName === "") markInvalid("FirstName", "#fullName", "Full Name is required.");
+            //                     if (!occupation || occupation === "0") markInvalid("OccupatinTypeTxt", "#ddlOccupation", "Occupation Type is required.");
+            //                     if (!producttype || producttype === "0") markInvalid("ProductName", "#ddlProductType", "Product Type is required.");
+            //                     if (!deliverychannel || deliverychannel === "0") markInvalid("DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
+            //                     if (!modeofpayment || modeofpayment === "0") markInvalid("Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
+            //                     if (!residentStatus || residentStatus === "0") markInvalid("ResidenceStatus", "#ddlResidenceStatus", "Resident Status is required.");
+
+            //                     // --- Emirates ID validation ---
+            //                     if (!validateIdNumber(true)) {
+            //                         toastr.clear();
+            //                         toastr.error("Please correct the Emirates ID before submitting. Emirates ID must start with 784.");
+            //                         isValid = false;
+            //                     }
+
+            //                     // --- Scroll to first error if invalid ---
+            //                     if (!isValid) {
+            //                         if ($firstErrorElement && $firstErrorElement.length) {
+            //                             $("html, body").animate({ scrollTop: $firstErrorElement.offset().top - 150 }, 400);
+            //                             $firstErrorElement.focus();
+            //                         }
+            //                         e.preventDefault(); // Stop submission only if invalid
+            //                         return false;
+            //                     }
+
+            //                     // --- Form is valid: show loader and allow submission ---
+            //                     $('#loadingeffect').show();          // Show loader
+            //                     $('#btn-ld').prop('disabled', true); // Disable submit button
+
+            //                     // --- Preserve threshold value ---
+            //                     const thresholdValue = $("#threshold").val();
+
+            //                     // Remove the custom submit handler temporarily to allow real form submission
+            //                     $form.off("submit.customValidation");
+
+            //                     // Delay reset until after submission is complete
+            //                     // If you want page reloads: do not reset here, the page reload will clear fields
+            //                     // If you want AJAX submission: use $.ajax and then reset all except threshold
+            //                     setTimeout(() => {
+            //                         $('#btn-ld').prop('disabled', false);
+            //                         $("#threshold").val(thresholdValue);
+            //                     }, 2000);
+            //                 });
+
+            //                 function validateIdNumber(isSubmit = false) {
+            //                     const $idType = $("#ddlIdType");
+            //                     const $idNumber = $("#txtIdNumber");
+
+            //                     if (!$idType.length || !$idNumber.length) return true;
+
+            //                     const idType = ($idType.val() || "").trim();
+            //                     const idNumber = ($idNumber.val() || "").trim();
+
+            //                     $idNumber.removeClass("is-invalid");
+            //                     $("span[data-valmsg-for='CustomerIdNumber']").text("").removeClass("field-validation-error");
+
+            //                     if (idType === "Emirates ID" && idNumber !== "") {
+            //                         if (!idNumber.startsWith("784")) {
+            //                             $idNumber.addClass("is-invalid");
+            //                             $("span[data-valmsg-for='CustomerIdNumber']")
+            //                                 .text("Emirates ID must start with 784.")
+            //                                 .addClass("field-validation-error");
+
+            //                             if (isSubmit) {
+            //                                 setTimeout(() => {
+            //                                     const $firstError = $(".is-invalid:visible").first();
+            //                                     if ($firstError.length) {
+            //                                         $("html, body").animate({ scrollTop: $firstError.offset().top - 150 }, 400);
+            //                                         $firstError.focus();
+            //                                     }
+            //                                 }, 50);
+            //                             }
+            //                             return false;
+            //                         }
+            //                     }
+            //                     return true;
+            //                 }
+            //             });
+
+            $('#uploadForm').on('submit', function () {
+
+                            $('#loadingeffect').show();
+
+            });
+             
+        //      $(function () {
+        // console.log("Validation script loaded");
+
+        // const $form = $("#myForm");
+
+        // // --- Inline validation on blur for Issue Date ---
+        // // $(document).off("blur", "#passportexpirydate").on("blur", "#passportexpirydate", function () {
+        // //     validateIssueDate(false); // false → do not scroll/focus
+        // // });
+
+        // // --- Inline validation on blur for Emirates ID ---
+        // $(document).off("blur", "#txtIdNumber").on("blur", "#txtIdNumber", function () {
+        //     validateIdNumber(false); // false → do not scroll/focus
+        // });
+
+        // // --- Main Form Submit Validation ---
+        // $form.off("submit.customValidation").on("submit.customValidation", function (e) {
+        //     e.preventDefault();
+
+        //     console.log("Form submit validation started");
+
+        //     // Clear all old messages and invalid classes
+        //     $("span[data-valmsg-for]").text('').removeClass('field-validation-error');
+        //     $(".is-invalid").removeClass('is-invalid');
+
+        //     let isValid = true;
+        //     let $firstErrorElement = null;
+
+        //      const fullName = ($("#fullName").val() || "").trim();
+        //      const nationality = ($("#nationality").val() || "").trim();
+        //      const idtype = ($("#ddlIdType").val() || "").trim();
+        //     // const Dob = ($("#DOB").val() || "").trim();
+        //     // const idNumber = ($("#txtIdNumber").val() || "").trim();
+        //     const occupation = ($("#ddlOccupation").val() || "").trim();
+        //     const producttype = ($("#ddlProductType").val() || "").trim();
+        //     const deliverychannel = ($("#ddlDeliveryChannel").val() || "").trim();
+        //     const modeofpayment = ($("#ddlModeofpayment").val() || "").trim();
+        //     const residentStatus = ($("#ddlResidenceStatus").val() || "").trim();
+
+               
+        //     // --- Helper to mark fields invalid ---
+        //     function markInvalid(valFor, selector, message) {
+        //         $("span[data-valmsg-for='" + valFor + "']").text(message).addClass('field-validation-error');
+        //         $(selector).addClass('is-invalid');
+        //         if (!$firstErrorElement) $firstErrorElement = $(selector);
+        //         isValid = false;
+        //     }
+
+        //     // --- Required field checks ---
+        //          if (fullName === "") markInvalid("FirstName", "#fullName", "Full Name is required.");
+        //      //if (nationality === "" || nationality === "0") markInvalid("Nationality", "#nationality", "Nationality is required.");
+        //      //if (Dob === "" || Dob.startsWith("1/1/0001")) markInvalid("DOB", "#DOB", "DOB is required.");
+        //      //if (!idtype) markInvalid("CustomerIdType", "#ddlIdType", "Id Type is required.");
+        //     if (!occupation || occupation === "0") markInvalid("OccupatinTypeTxt", "#ddlOccupation", "Occupation Type is required.");
+        //     if (!producttype || producttype === "0") markInvalid("ProductName", "#ddlProductType", "Product Type is required.");
+        //     if (!deliverychannel || deliverychannel === "0") markInvalid("DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
+        //     if (!modeofpayment || modeofpayment === "0") markInvalid("Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
+        //     if (!residentStatus || residentStatus === "0") markInvalid("ResidenceStatus", "#ddlResidenceStatus", "Resident Status is required.");
+
+        //     // --- Emirates ID validation ---
+        //     if (!validateIdNumber(true)) {
+        //         toastr.clear();
+        //         toastr.error("Please correct the Emirates ID before submitting. Emirates ID must start with 784.");
+        //         isValid = false;
+        //     }
+
+        //     // --- Issue Date validation ---
+        //     // if (!validateIssueDate(true)) {
+        //     //     toastr.clear();
+        //     //     toastr.error("Issue Date cannot be before Date of Birth.");
+        //     //     isValid = false;
+        //     // }
+
+        //     // --- Scroll to first error if invalid ---
+        //     if (!isValid) {
+        //         if ($firstErrorElement && $firstErrorElement.length) {
+        //             $("html, body").animate({ scrollTop: $firstErrorElement.offset().top - 150 }, 400);
+        //             $firstErrorElement.focus();
+        //         }
+        //         return false; // prevent submission
+        //     }
+
+        //     // --- Form valid: show loader and submit ---
+        //     $('.se-pre-con').show().fadeOut(3000);
+        //     $form.off("submit.customValidation").trigger("submit");
+        // });
+        //     // --- Emirates ID validation function ---
+        // function validateIdNumber(isSubmit = false) {
+        //     const $idType = $("#ddlIdType");
+        //     const $idNumber = $("#txtIdNumber");
+
+        //     if (!$idType.length || !$idNumber.length) return true;
+
+        //     const idType = ($idType.val() || "").trim();
+        //     const idNumber = ($idNumber.val() || "").trim();
+
+        //     $idNumber.removeClass("is-invalid");
+        //     $("span[data-valmsg-for='CustomerIdNumber']").text("").removeClass("field-validation-error");
+
+        //     // Only validate if type is Emirates and value not empty
+        //     if (idType === "Emirates ID" && idNumber !== "") {
+        //         if (!idNumber.startsWith("784")) {
+        //             $idNumber.addClass("is-invalid");
+        //             $("span[data-valmsg-for='CustomerIdNumber']")
+        //                 .text("Emirates ID must start with 784.")
+        //                 .addClass("field-validation-error");
+
+
+
+        //         if (isSubmit) {
+        //         setTimeout(() => {
+        //             const $firstError = $(".is-invalid:visible").first();
+        //             if ($firstError.length) {
+        //                 $("html, body").animate({ scrollTop: $firstError.offset().top - 150 }, 400);
+        //                 $firstError.focus();
+        //             }
+        //         }, 50);
+        //         }
+
+
+        //             return false;
+        //         }
+        //     }
+        //     return true;
+        // }
+                     
+        // });
+
+        document.addEventListener('alpine:init', () => {
+            // Initializing icons after alpine loads to ensure logic is ready
+            lucide.createIcons();
+        });
+        // Watch for Alpine changes to re-run icons
+        window.addEventListener('scroll', () => { }); // Dummy listener
+
+        // Custom hack to re-init icons on Alpine transitions
+        setInterval(() => {
+            lucide.createIcons();
+        }, 1000);
+
+            function customeridtypefunction(){
+
+             var val=$('#ddlIdType').val();
+
+             // alert(val);
+
+            if(val == "Emirates ID"){
+
+                $('#txtIdNumber').val('784');
+
+            }else{
+                $('#txtIdNumber').val('');
+            }
+        }
+
+        function closeDuplicateModalClose(){
+
+             $('#isDuplicateModalOpen').hide();
+
+        }
+        function closeUploadModalOpen(){
+
+                                     $('#isExcelUploadModalOpen').hide();
+
+                    }
+
+
+         function successModal(isOpen, refId) {
+                return {
+                    isSuccessModalOpen: isOpen,
+                    caseRefId: refId,
+                    copied: false,
+
+                    closeSuccess() {
+                                      $('#fullName').val('');
+                                                        $('#nationality').val('');
+                                                        $('#DOB').val('');
+                                                        $('#ddlIdType').val('');
+                                                        $('#txtIdNumber').val('');
+                                                        $('#issuedate').val('');
+                                                        $('#expirydate').val('');
+                                                        $('#gender').val('');
+                                                        $('#ddlOccupation').val('');
+                                                        $('#ddlResidenceStatus').val('');
+                                                        $('#ddlDeliveryChannel').val('');
+                                                        $('#ddlProductType').val('');
+                                                         $('#ddlModeofpayment').val('');
+                                                         $('#cifnumber').val('');
+                                                                     
+
+                        this.isSuccessModalOpen = false;
+                    }
+                }
+            }
+
+
+
+            function checkDuplicatefunction(buttonElement) {
+
+                            let form = $(buttonElement).closest('form');
+            let fullname = form.find('.fullNameField').val();
+                        var type='I';
+
+                $.ajax({
+                    url: '/case/Checkduplicatenames',
+                    type: 'POST',
+                    data: {fullname : fullname,type:type},
+
+                    success: function (data) {
+
+                        let tbody = $('#duplicateTableBody');
+                        tbody.empty();
+
+                        if (data.length > 0) {
+
+                            data.forEach(function (item) {
+
+                                let createdDate = new Date(item.createdOn);
+
+                                    let row = `
+                                  <tr class="hover:bg-slate-50/50 transition-colors">
+                                    <td class="px-6 py-6 font-bold text-slate-900">${item.customerId}</td>
+
+                                    <td class="px-6 py-6 text-slate-600 font-medium">
+                                        ${createdDate.toLocaleDateString('en-GB')}
+                                        <br>
+                                        <span class="text-[10px] text-slate-400">
+                                            ${createdDate.toLocaleTimeString()}
+                                        </span>
+                                    </td>
+
+                                    <td class="px-6 py-6 font-bold text-slate-700">
+                                        ${[item.firstName, item.middleName, item.lastName].filter(Boolean).join(' ')}
+                                    </td>
+
+                                    <td class="px-6 py-6">
+                                        <span class="bg-emerald-100 text-emerald-700 text-[10px] font-extrabold px-3 py-1 rounded-full">
+                                            ${item.caseStatus}
+                                        </span>
+                                    </td>
+
+                                    <td class="px-6 py-6">
+                                                    <a href="/report/ViewIndividualCaseDetail?id=${item.customerId}&type=${item.customerType}"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="text-blue-600 font-extrabold hover:underline">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+
+                        `;
+                                    // <td class="px-6 py-6">
+                                    //     <div class="flex items-center justify-center gap-2">
+                                    //         <div class="w-16 bg-slate-100 rounded-full h-1.5">
+                                    //             <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${item.matchScore}%"></div>
+                                    //         </div>
+                                    //         <span class="text-xs font-bold text-slate-600">${item.matchScore}%</span>
+                                    //     </div>
+                                    // </td>
+                                tbody.append(row);
+                            });
+
+                        } else {
+                            tbody.append(`<tr><td colspan="5">No duplicates found</td></tr>`);
+                        }
+
+                        $('#isDuplicateModalOpen').show();
+                    }
+                });
+            }
+            
+        // function checkDuplicatefunction(){
+
+        //    // alert("hai");
+
+        //     var fullname=$('#fullName').val();
+        //     var type='I';
+
+        //     //alert(fullname);
+
+        //     $.ajax({
+        //     url: '/case/Checkduplicatenames',
+        //     type: 'POST',
+        //             data: {fullname : fullname,type:type},
+        //     success: function (data) {
+        //         console.log(data);
+
+        //         let tbody = $('#duplicateTableBody');
+        //     tbody.empty(); // clear old rows
+
+        //     if (data.length > 0) {
+
+        //         data.forEach(function (item) {
+
+        //             let createdDate = new Date(item.createdOn);
+
+        //             let row = `
+        //                       <tr class="hover:bg-slate-50/50 transition-colors">
+        //                         <td class="px-6 py-6 font-bold text-slate-900">${item.customerId}</td>
+
+        //                         <td class="px-6 py-6 text-slate-600 font-medium">
+        //                             ${createdDate.toLocaleDateString('en-GB')}
+        //                             <br>
+        //                             <span class="text-[10px] text-slate-400">
+        //                                 ${createdDate.toLocaleTimeString()}
+        //                             </span>
+        //                         </td>
+
+        //                         <td class="px-6 py-6 font-bold text-slate-700">
+        //                             ${[item.firstName, item.middleName, item.lastName].filter(Boolean).join(' ')}
+        //                         </td>
+
+        //                         <td class="px-6 py-6">
+        //                             <span class="bg-emerald-100 text-emerald-700 text-[10px] font-extrabold px-3 py-1 rounded-full">
+        //                                 ${item.caseStatus}
+        //                             </span>
+        //                         </td>
+
+        //                         <td class="px-6 py-6">
+        //                                         <a href="/report/ViewIndividualCaseDetail?id=${item.customerId}&type=${item.customerType}"
+        //                                target="_blank"
+        //                                rel="noopener noreferrer"
+        //                                class="text-blue-600 font-extrabold hover:underline">
+        //                                 View
+        //                             </a>
+        //                         </td>
+        //                     </tr>
+
+        //             `;
+
+        //             tbody.append(row);
+        //         });
+
+        //     } else {
+        //         tbody.append(`<tr><td colspan="5" class="text-center py-4">No duplicates found</td></tr>`);
+        //     }
+
+        //         $('#isDuplicateModalOpen').show();
+                 
+        //     },
+        //     error: function (xhr) {
+        //         console.error('Error:', xhr.responseText);
+        //         alert('Error loading data');
+        //     },
+        //     complete: function () {
+        //         $("#loader").hide();
+        //     }
+        // });
+        // }
+                                 document.addEventListener("DOMContentLoaded", function () {
+
+                    const allOptions = @Html.Raw(codesJson);
+
+                    // Manual Form Dropdown
+                    initScreeningDropdown({
+                        options: allOptions,
+                        triggerBtnId: "trigger-btn",
+                        triggerTextId: "trigger-text",
+                        popoverContentId: "popover-content",
+                        allCheckboxId: "corporate-all",
+                        optionsContainerId: "options-container",
+                        hiddenContainerId: "codesHiddenContainer",
+                        postPrefix: ""
+                    });
+
+                    // OCR Form Dropdown
+                    initScreeningDropdown({
+                        options: allOptions,
+                        triggerBtnId: "trigger-btn-OCR",
+                        triggerTextId: "trigger-text-OCR",
+                        popoverContentId: "popover-content-OCR",
+                        allCheckboxId: "corporate-all-OCR",
+                        optionsContainerId: "options-container-OCR",
+                        hiddenContainerId: "codesHiddenOCRContainer",
+                        postPrefix: "OCR"
+                    });
+
+                });
+
+                function initScreeningDropdown(config) {
+
+                    const allOptions = config.options;
+                    let selectedOptions = allOptions.map(x => x.value);
+
+                    const triggerBtn = document.getElementById(config.triggerBtnId);
+                    const triggerText = document.getElementById(config.triggerTextId);
+                    const popoverContent = document.getElementById(config.popoverContentId);
+                    const allCheckbox = document.getElementById(config.allCheckboxId);
+                    const optionsContainer = document.getElementById(config.optionsContainerId);
+                    const hiddenContainer = document.getElementById(config.hiddenContainerId);
+
+                    if (!triggerBtn || !popoverContent || !optionsContainer || !hiddenContainer || !allCheckbox)
+                        return;
+
+                    /* -------------------------
+                       Render Options
+                    --------------------------*/
+                    function renderOptions() {
+
+                        optionsContainer.innerHTML = '';
+
+                        allOptions.forEach(option => {
+
+                            const div = document.createElement('div');
+                            div.className = 'flex items-center space-x-2';
+
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.value = option.value;
+                            checkbox.className = 'h-4 w-4 rounded border-slate-300 text-blue-600';
+                            checkbox.checked = selectedOptions.includes(option.value);
+
+                            checkbox.addEventListener('change', (e) => {
+                                if (e.target.checked) {
+                                    if (!selectedOptions.includes(option.value)) {
+                                        selectedOptions.push(option.value);
+                                    }
+                                } else {
+                                    selectedOptions = selectedOptions.filter(x => x !== option.value);
+                                }
+
+                                // Update ALL checkbox when individual changes
+                                allCheckbox.checked = selectedOptions.length === allOptions.length;
+
+                                updateUI();
+                            });
+
+                            const label = document.createElement('label');
+                            label.className = 'text-sm font-medium cursor-pointer';
+                            label.textContent = option.text;
+
+                            div.appendChild(checkbox);
+                            div.appendChild(label);
+                            optionsContainer.appendChild(div);
+                        });
+                    }
+
+                    /* -------------------------
+                       Update UI
+                    --------------------------*/
+                    function updateUI() {
+
+                        const isAllSelected = selectedOptions.length === allOptions.length;
+                        allCheckbox.checked = isAllSelected;
+
+                        if (isAllSelected) {
+                            triggerText.textContent = 'ALL';
+                        } else if (selectedOptions.length > 0) {
+                            triggerText.textContent = `${selectedOptions.length} option(s) selected`;
+                        } else {
+                            triggerText.textContent = 'Select screening options';
+                        }
+
+                        updateCodesForPost();
+                    }
+
+                    /* -------------------------
+                       Hidden Inputs for POST
+                    --------------------------*/
+                    function updateCodesForPost() {
+
+                        hiddenContainer.innerHTML = '';
+
+                        const prefix = config.postPrefix ? config.postPrefix + "." : "";
+
+                        allOptions.forEach((option, index) => {
+
+                            const isSelected = selectedOptions.includes(option.value);
+
+                            // CodeNames
+                            const codeName = document.createElement('input');
+                            codeName.type = 'hidden';
+                            codeName.name = `${prefix}CodeNames[${index}]`;
+                            codeName.value = option.value;
+                            hiddenContainer.appendChild(codeName);
+
+                            // IsChecked
+                            const isChecked = document.createElement('input');
+                            isChecked.type = 'hidden';
+                            isChecked.name = `${prefix}IsChecked[${index}]`;
+                            isChecked.value = isSelected;
+                            hiddenContainer.appendChild(isChecked);
+                        });
+                    }
+
+                    /* -------------------------
+                       ALL Checkbox Logic
+                    --------------------------*/
+                    allCheckbox.addEventListener('change', (e) => {
+
+                        if (e.target.checked) {
+                            selectedOptions = allOptions.map(x => x.value);
+                        } else {
+                            selectedOptions = [];
+                        }
+
+                        // Update each checkbox visually
+                        optionsContainer.querySelectorAll("input[type='checkbox']").forEach(cb => {
+                            cb.checked = selectedOptions.includes(cb.value);
+                        });
+
+                        updateUI();
+                    });
+
+                    /* -------------------------
+                       Toggle Popover
+                    --------------------------*/
+                    triggerBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        popoverContent.classList.toggle('hidden');
+                    });
+
+                    /* -------------------------
+                       Close on Outside Click
+                    --------------------------*/
+                    if (!popoverContent.dataset.listenerAttached) {
+
+                        document.addEventListener('click', (e) => {
+
+                            if (!triggerBtn.contains(e.target) &&
+                                !popoverContent.contains(e.target)) {
+
+                                popoverContent.classList.add('hidden');
+                            }
+                        });
+
+                        popoverContent.dataset.listenerAttached = "true";
+                    }
+
+                    // Initial Load
+                    renderOptions();
+                    updateUI();
+                }
+
+
+
+
+        
+
+                        function DownloadSample() {
+
+                var type = $('#typeid').val();
+
+                fetch('/ClientCase/DownloadCustomerUploadSample?type=' + type)
+                    .then(response => {
+
+                        if (!response.ok) throw new Error("Download failed");
+
+                        let fileName = "Download.xlsx";
+
+                        const disposition = response.headers.get('Content-Disposition');
+
+                        if (disposition) {
+
+                            // FIRST try filename*
+                            const fileNameStarMatch = disposition.match(/filename\*=UTF-8''([^;]+)/);
+
+                            if (fileNameStarMatch && fileNameStarMatch[1]) {
+                                fileName = decodeURIComponent(fileNameStarMatch[1]);
+                            }
+                            else {
+
+                                // fallback to filename
+                                const fileNameMatch = disposition.match(/filename="?([^"]+)"?/);
+
+                                if (fileNameMatch && fileNameMatch[1]) {
+                                    fileName = fileNameMatch[1];
+                                }
+                            }
+                        }
+
+                        return response.blob().then(blob => ({ blob, fileName }));
+                    })
+                    .then(({ blob, fileName }) => {
+
+                        const link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = fileName;
+
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+
+                        window.URL.revokeObjectURL(link.href);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert("Download failed");
+                    });
+            }
+
+                         
+                function fileUploadComponent() {
+                    return {
+                        files: [],
+                        matchParam: 80,
+                        showResults: false,
+
+                        handleFileChange(event) {
+                            const file = event.target.files[0];
+
+                            if (file) {
+                                this.files = [file];
+                            }
+                        },
+
+                        removeFile() {
+                            this.files = [];
+                            this.showResults = false;
+                            this.$refs.realFileInput.value = "";
+                        },
+
+                        runScreening() {
+
+                            if (this.files.length === 0) {
+                                alert("Please select file");
+                                return;
+                            }
+
+                            this.showResults = true;
+
+                            // submit form
+                            document.getElementById("uploadForm").submit();
+                        }
+                    }
+                }
+
+                function mrzUploader() {
+
+                    return {
+
+                        loading: false,
+                        fileName: "",
+                        errorMessage: "",
+                   
+                        async uploadFile(event) {
+
+                            let file = event.target.files[0];
+                            if (!file) return;
+
+                            this.fileName = file.name;
+
+                            let formData = new FormData();
+                            formData.append("file", file);
+
+                            this.loading = true;
+                                         $('#loadingeffect').show();
+
+                            try {
+
+                                let response = await fetch("/Case/UploadMRZ", {
+                                    method: "POST",
+                                    body: formData
+                                });
+
+                                         let result = await response.json();
+
+                                         console.log(result);
+
+if (!result || !result.extracted_json) {
+    $('#loadingeffect').hide();
+    toastr.error("OCR Failed. Please fill the form manually");
+    $('#manualForm').show();
+    return;
+}
+
+let mrzData = result.extracted_json || {};
+
+console.log("MRZ DATA:", mrzData);
+
+if (Object.keys(mrzData).length === 0) {
+    $('#loadingeffect').hide();
+    toastr.error("MRZ data not found. Please fill the form manually");
+    $('#manualForm').show();
+    return;
+}
+
+$('#loadingeffect').hide();
+$('#manualForm').show();
+
+let form = document.getElementById("myOCRForm");
+
+/* =========================
+   FIELD MAPPING (FIXED)
+   ========================= */
+
+form.querySelector("#fullName").value = mrzData.full_name || "";
+form.querySelector("#txtIdNumber").value = mrzData.document_number || "";
+
+/* Gender */
+let genderValue = (mrzData.gender || "").toUpperCase();
+
+if (genderValue === "M") {
+    form.querySelector("#gender").value = "Male";
+} 
+else if (genderValue === "F") {
+    form.querySelector("#gender").value = "Female";
+} 
+else {
+    form.querySelector("#gender").value = "";
+}
+
+/* Nationality */
+let nationalityValue = (mrzData.nationality || "").trim();
+let natSelect = form.querySelector("#nationality");
+if (natSelect && nationalityValue) {
+    // Try exact match first
+    natSelect.value = nationalityValue;
+
+    // If not selected, try case-insensitive match or code match
+    if (!natSelect.value || natSelect.selectedIndex <= 0) {
+        let found = false;
+        for (let i = 0; i < natSelect.options.length; i++) {
+            let opt = natSelect.options[i];
+            if (opt.value.toUpperCase() === nationalityValue.toUpperCase() || 
+                opt.text.toUpperCase() === nationalityValue.toUpperCase()) {
+                natSelect.value = opt.value;
+                found = true;
+                break;
+            }
+        }
+        if (!found) console.warn("Could not find matching nationality for:", nationalityValue);
+    }
+}
+
+/* Dates */
+setDateInput(form, "DOB", mrzData.dob);
+setDateInput(form, "expirydate", mrzData.expiry_date);
+
+/* Optional: Issue Date (if field exists) */
+setDateInput(form, "issuedate", mrzData.issue_date);
+
+/* Final UI updates */
+this.loading = false;
+this.scrollToForm();
+
+                            //             console.log(result);
+
+                            //             if (!result.success) {
+                            //                 $('#loadingeffect').hide();
+                            //                 toastr.error("OCR Failed.Please Fill the form Manually");
+                            //                 $('#manualForm').show();
+                            //                 return;
+                            //             }
+
+                            //             let mrzData = result.fields || {};
+
+                            //             console.log("MRZ DATA:", mrzData);
+
+                            //             if (Object.keys(mrzData).length === 0) {
+                            //                     $('#loadingeffect').hide();
+                            //                 toastr.error("MRZ data not found.Please Fill the form Manually");
+                            //                 $('#manualForm').show();
+                            //                 return;
+                            //             }
+                            //                 $('#loadingeffect').hide();
+                            //             $('#manualForm').show();
+
+
+                            //             let form = document.getElementById("myOCRForm");
+
+                            //             form.querySelector("#fullName").value = mrzData.full_name || "";
+                            //             form.querySelector("#txtIdNumber").value = mrzData.document_number || "";
+                            //                        let genderValue = (mrzData.gender || "").toUpperCase();
+
+                            //             if (genderValue === "M") {
+                            //                 form.querySelector("#gender").value = "Male";
+                            //             }
+                            //             else if (genderValue === "F") {
+                            //                 form.querySelector("#gender").value = "Female";
+                            //             }
+                            //             else {
+                            //                 form.querySelector("#gender").value = "";
+                            //             }
+                            //             form.querySelector("#nationality").value =(mrzData.nationality || "").toUpperCase();
+                            //             setDateInput(form, "DOB", mrzData.dob);
+                            //             setDateInput(form, "expirydate", mrzData.expiry_date);
+
+                            
+
+                            // this.loading = false;
+                            // this.scrollToForm();
+
+
+                            }
+                            catch (e) {
+
+                                console.error(e);
+
+                                this.loading = false;
+
+                                toastr.error("Upload failed");
+
+                                Alpine.store('screening').selectedMethod = 'manual';
+                                this.scrollToForm();
+                            }
+                        },
+
+                        scrollToForm() {
+
+                            setTimeout(() => {
+                                document.getElementById("myForm")
+                                    ?.scrollIntoView({ behavior: "smooth" });
+                            }, 200);
+
+                        }
+
+                    }
+                }
+                        function setDateInput(form, inputId, dateValue) {
+                const input = form.querySelector(`#${inputId}`);
+                if (!input) return;
+
+                if (!dateValue) {
+                    input.value = "";
+                    return;
+                }
+
+                console.log(`Setting date for ${inputId}:`, dateValue);
+
+                let parsedDate = null;
+                // Check if it's in DD/MM/YYYY format
+                if (typeof dateValue === 'string' && dateValue.includes('/')) {
+                    const parts = dateValue.split('/');
+                    if (parts.length === 3) {
+                        const day = parseInt(parts[0], 10);
+                        const month = parseInt(parts[1], 10) - 1; // 0-indexed
+                        const year = parseInt(parts[2], 10);
+                        parsedDate = new Date(year, month, day);
+                    }
+                }
+
+                // Fallback to native parsing
+                if (!parsedDate || isNaN(parsedDate.getTime())) {
+                    parsedDate = new Date(dateValue);
+                }
+
+                if (!isNaN(parsedDate.getTime())) {
+                    const year = parsedDate.getFullYear();
+                    const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
+                    const day = String(parsedDate.getDate()).padStart(2, "0");
+
+                    input.value = `${year}-${month}-${day}`;
+                    console.log(`Successfully set ${inputId} to ${input.value}`);
+                } else {
+                    input.value = "";
+                    console.warn(`Invalid date format for ${inputId}:`, dateValue);
+                }
+            }
+
+
+                        function clearOCRForm() {
+                const form = document.querySelector("#myOCRForm");
+                if (!form) return;
+
+                // --- Reset native form ---
+                form.reset();
+
+                // --- Identify screening elements ---
+                const optionsContainer = form.querySelector("#options-container-OCR");
+                const allCheckbox = form.querySelector("#corporate-all-OCR");
+
+                // --- Force clear ALL inputs manually, excluding screening options ---
+                form.querySelectorAll("input, select, textarea").forEach(el => {
+
+                    // Skip OCR screening checkboxes
+                    if (
+                        el === allCheckbox ||                   // "ALL" checkbox
+                        (optionsContainer && optionsContainer.contains(el)) // dropdown checkboxes
+                    ) {
+                        return; // do not clear
+                    }
+
+                    // if (el.type === "checkbox" || el.type === "radio") {
+                    //     el.checked = false; // Only clears non-screening checkboxes
+                    // }
+                    else if (el.type === "file") {
+                        el.value = "";
+                    }
+                    else {
+                        el.value = "";
+                    }
+                });
+
+                // --- Clear validation messages (optional) ---
+                form.querySelectorAll("span[data-valmsg-for]").forEach(span => {
+                    span.textContent = "";
+                    span.classList.remove("field-validation-error");
+                });
+
+                // --- Remove invalid styling ---
+                form.querySelectorAll(".is-invalid").forEach(el => {
+                    el.classList.remove("is-invalid");
+                });
+
+                // --- Reset threshold slider (Alpine bound) ---
+                const threshold = form.querySelector("#threshold");
+                if (threshold) threshold.value = 75;
+            }
+
+
+
+                          
+            
+
+
+
+    </script>
+</body>
+
+</html>

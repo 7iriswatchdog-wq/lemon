@@ -1,0 +1,961 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+    var companyLog = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+
+}
+@model AML.ViewModel.ViewModels.Kyc.KycIndividualModel
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- printThis plugin -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<script src="~/plugins/datatables/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.4/css/jquery.dataTables.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
+<style>
+    .page {
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .head-section {
+        display: flex;
+        justify-content: space-between; /* Better than flex-start + auto margin */
+        align-items: center;
+        width: 100%;
+        height: 72px;
+        overflow-x: hidden;
+        padding: 0 16px; /* Add horizontal padding if needed */
+        box-sizing: border-box;
+        background-color: white !important;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .card1 {
+        max-width: 100%; /* Ensures it never overflows parent */
+        border-radius: 8px;
+        overflow: hidden; /* Contains all child elements */
+        background-color: white !important;
+        margin: 30px 30px;
+        padding: 20px;
+        box-shadow: 0 0 #0000, /* fallback ring-offset-shadow */
+        0 0 #0000, /* fallback ring-shadow */
+        0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* typical shadow-md */
+    }
+
+    .heading {
+        font-size: 1.25rem;
+    }
+
+    #printBtnDiv {
+        display: flex;
+        width: 90%;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+
+    .go {
+        background-color: rgb(37,99,235);
+        border-radius: 8px;
+        padding: 8px 20px;
+        color: white;
+    }
+
+    .clear {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 8px 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .firstrow {
+        display: flex;
+        width: 100%; /* Full width of its parent */
+    }
+
+    .flex-item1 {
+        flex: 1;
+    }
+
+        .flex-item1 input {
+            width: 100%; /* full width of the parent */
+            min-width: 40%;
+            box-sizing: border-box; /* includes padding in the width */
+            padding: 8px;
+            border-radius: 4px; /* spacing between inputs */
+        }
+
+    input, select, textarea {
+        border: 1px solid #dee2e6 !important;
+        font-weight: lighter;
+    }
+
+        input:focus {
+            border: 1px solid rgb(37,99,235) !important;
+        }
+
+        select:focus , textarea:focus {
+            border: 1px solid rgb(37,99,235) !important;
+        }
+
+    select {
+        font-weight: lighter;
+    }
+
+    form {
+        width: 100%;
+    }
+
+    .flex-box {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        margin: 10px 0px;
+    }
+
+        .flex-box > .flex-item {
+            flex: 1 1 250px !important;
+            text-align: center !important;
+        }
+
+    .flex-item input, .flex-item textarea {
+        width: 95%; /* full width of the parent */
+        min-width: 40%;
+        box-sizing: border-box; /* includes padding in the width */
+        padding: 8px;
+        border-radius: 4px; /* spacing between inputs */
+    }
+
+    .flex-box2 {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    @@media (max-width: 768px) {
+        .flex-box2 {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page {
+            width: 80vw;
+        }
+    }
+</style>
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+</style>
+
+<div class=" page bg-gray-50">
+    @* <div class="page-heading">
+            <div class="sas-card rounded-card br-20 mb-2 bg-blue head-section">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 heading"><b>KYC View</b></h4>
+                    <div class="menu-icon">
+                        <i class="lni lni-microsoft"></i>
+                    </div>
+                </div>
+                <div class="md:block">
+                    <img src="@companyLog" alt="Client Logo" width="50px" />
+                </div>
+            </div>
+        </div> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-white">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                KYC View
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@companyLog" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+    <div class="card1 relative">
+        <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        </div>
+        <div id="printthisform">
+
+            <form asp-controller="Kyc" asp-action="CreateIndividualKyc" class="form-horizontal" enctype="multipart/form-data" method="post">
+
+
+
+                <div class="form-row">
+                    <h6 class="mb-2">
+                        <b>
+                            @localizer["Individual Customer Registration"]
+                        </b>
+                    </h6>
+                </div>
+                <div id="printDetails" class="row justify-content-end mb-2" style="width:100%">
+                    <div class="gap-2" style="width:100% !important;" id="printBtnDiv" align="right">
+                        <a asp-controller="Report" asp-action="KycReport"> <button type="button" id="btnBack" class="sas-button p-8-25 color-white bg-color-2 clear hover:bg-gray-200" align="right" onclick="$('#loader').show();">Back</button></a>
+                        <input class="sas-button p-8-25 color-white bg-color-1 ml-2 go hover:bg-blue-600" name="b_print" type="button" id="printform" onclick="$('#loader').show(); setTimeout(function() { $('#loader').hide(); }, 2000);" value=@localizer["Print"]><br />
+                    </div>
+                    <div style="width:150%;display:none" id="logodiv">
+                        <div style="width:150%;text-align:center;">
+                            <h2>@companyName</h2>
+                            <img src="~/img/Watchdog Logo.png" style="width:100%;float:right;" />
+                        </div>
+
+                        @*<div style="float:right;width:20%;padding-left:2%;padding-top:5%">
+                            @*<div style="float:right;width:20%;padding-left:2%;padding-top:5%">
+                            <img src="~/img/logo.png" style="width:35%" />
+                            </div>*@
+                    </div>
+                </div>
+
+                <div class="form-row mb-4">
+                    <p>
+                        @localizer["Applicant's Personal Details"]
+                    </p>
+                </div>
+
+
+                <div class="flex-box form-row mb-4">
+                    <div class="col-6 flex-item ">
+                        <div class="form-group">
+                            <label for="fullName">@localizer["Name (Same as Emirates ID)"] <span class="text-red-500">*</span> </label>
+                            <input class="form-control br-50" type="text" asp-for="FullName" id="fullName" onkeypress="alphaCheck(event)" readonly />
+                        </div>
+                    </div>
+                    <div class="flex-item"></div>
+                </div> 
+                
+
+
+                <div class="form-row mb-4 flex-box">
+
+
+
+
+
+
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <label for="DOB">@localizer["Date of Birth"] </label>
+
+
+
+
+                            @* <div class="col-sm-3 ">*@
+
+                            @if (@Model.DOB.ToString() == "1/1/0001 12:00:00 AM")
+                            {
+                                <input class="form-control br-50" type="date" value="" id="DOB" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" onchange="dobOnChange()" readonly />
+                            }
+                            else
+                            {
+                                <input class="form-control br-50" type="date" asp-for="DOB" id="DOB" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" onchange="dobOnChange()" readonly />
+                            }
+
+                            <input type="hidden" asp-for="DOB" id="hdnDOB" />
+
+                        </div>
+                    </div>
+
+
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <label for="nationality">@localizer["Nationality"]</label>
+
+                            @*<select id="ddlCountryList" class="form-control" asp-items="Model.CountryList" asp-for="Nationality">
+                                <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>*@
+                            <input class="form-control br-50" type="text" readonly asp-for="Nationality" id="nationality" />
+                        </div>
+                    </div>
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <label for="Placeofbirth">@localizer["Place of Birth"]</label>
+                            <input class="form-control" type="text" readonly asp-for="PlaceOfBirth" id="Placeofbirth" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-4 flex-box">
+
+
+
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <label for="ResidenceStatus">@localizer["Residence Status"]</label>
+
+                            <input class="form-control br-50" type="text" readonly asp-for="ResidenceStatus" id="ResidenceStatus" />
+                        </div>
+                    </div>
+
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <label for="maritalstatus">@localizer["Marital Status"]</label>
+                            <input class="form-control " type="text" readonly asp-for="MaritalStatus" id="maritalstatus" />
+                        </div>
+                    </div>
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <span>@localizer["Id Type"] @*<span class="text-danger">*</span>*@</span>
+                            @*<select id="ddlIdType" class="form-control" asp-for="CustomerIdType">
+                                <option value="Emirates ID">Emirates ID</option>
+                                <option value="Passport">Passport</option>
+                                <option value="National ID">National ID</option>
+                                </select>*@
+                            <input class="form-control br-50" type="text" readonly asp-for="CustomerIdType" id="CustomerIdType" />
+                            @*<span asp-validation-for="CustomerIdType" class="text-danger"></span>*@
+                        </div>
+                    </div>
+
+
+
+
+
+                </div>
+
+                <div class="row mb-2 flex-box">
+
+
+
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <span for="txtIdNumber">@localizer["Id Number"] @*<span class="text-danger">*</span>*@</span>
+                            <input type="text" asp-for="CustomerIdNumber" class="form-control br-50" readonly id="txtIdNumber" placeholder=@localizer["Id Number"] maxlength="20" onkeypress="alphaNumericCheck(event)">
+                            @*<span asp-validation-for="CustomerIdNumber" class="text-danger"></span>*@
+                        </div>
+                    </div>
+
+
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <label for="passportexpirydate">@localizer["Id Expiry Date"]</label>
+                            <input class="form-control " type="text" readonly asp-for="IdExpdate" id="passportexpirydate" />
+                        </div>
+                    </div>
+
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <label for="sourcofincomes">@localizer["Source of Income"]</label>
+                            <input class="form-control " type="text" readonly asp-for="Sourceofincome" id="sourcofincomes" />
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+                <div class="flex-box row mb-4">
+
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <span>@localizer["Occupation Type"]</span>
+
+
+
+
+                            <!--<select id="ddlOccupation" class="form-control">-->
+                            @*<option value="0">--@localizer["EMPTY"]--</option>
+                                <option value="Salaried">Salaried</option>
+                                <option value="Self-Employed">Self-Employed</option>
+                                <option value="Professional">Professional</option>
+                                <option value="Other">Other</option>*@
+                            <!--<option value="0">--@localizer["EMPTY"]--</option>
+                                <option value="Salaried (Private Sector)">Salaried (Private Sector)</option>
+                                <option value="Self-Employed">Self-Employed</option>
+                                <option value="Salaried (Public Sector)">Salaried (Public Sector)</option>
+                                <option value="Freelancer ">Freelancer</option>
+                            </select>-->
+                            <input class="form-control br-50" type="text" readonly asp-for="OccupatinTypeTxt" id="ddlOccupation" />
+                        </div>
+                    </div>
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <span>@localizer["Product Type"]</span>
+                            <input id="ddlProductType" type="text" readonly class="form-control br-50" asp-for="ProductName" />
+                        </div>
+
+                    </div>
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <span>@localizer["Delivery Channel"]</span>
+                            <input id="ddlDeliveryChannel" type="text" readonly class="form-control br-50" asp-for="DeliveryChannelName" />
+                        </div>
+                    </div>
+
+                </div>
+                <div class="flex-box row mb-2">
+
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <label for="modeofpayment">@localizer["Mode of Payment"]</label>
+                            <input id="ddlmodeofpayment" type="text" readonly class="form-control br-50" asp-for="Modeofpayment" />
+                        </div>
+                    </div>
+                    <div class="flex-item"></div>
+                    <div class="flex-item"></div>
+
+
+                </div>
+
+                <div class="form-group row" style="display:none;" id="OccupOther">
+                    <div class="col-sm-3">
+                        <label for="other_ps">@localizer["Other (Please Specify)"] :</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control mb-2 mt-2 br-50" id="ddlFundSourcehdn" placeholder=@localizer["Other"] asp-for="OccupatinTypeTxt">
+
+                    </div>
+
+                </div>
+                <div class="flex-box row mb-2">
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <label for="bankacc">@localizer["Bank Account No"]</label>
+                            <input class="form-control " type="text" readonly asp-for="BankAccountNo" id="bankacc" />
+                        </div>
+                    </div>
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <label for="Bankname">@localizer["Bank Name"]</label>
+                            <input class="form-control " type="text" readonly asp-for="BankAccountName" id="Bankname" />
+                        </div>
+                    </div>
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <label for="Bankbranch">@localizer["Bank Branch"]</label>
+                            <input class="form-control " type="text" readonly asp-for="BankAccountBranch" id="Bankbranch" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-box row mb-2">
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <label for="pep">@localizer["Pep Declaration"]</label>
+                            <input class="form-control " type="text" readonly asp-for="PEPStatus" id="pep" />
+                        </div>
+                    </div>
+                    <div class="col-sm-4 flex-item">
+                        <div class="form-group">
+                            <label for="address">@localizer["Address"]</label>
+                            <input class="form-control " type="text" readonly asp-for="Address" id="address" />
+                        </div>
+                    </div>
+                    <div class="flex-item"></div>
+                </div>
+
+                <br />
+                <div class="row mb-4">
+
+                    <div class="col">
+                        <span>
+                            @localizer["Name and Address of Employer (If  Salaried)"]
+
+                        </span> <br>
+                    </div>
+                </div>
+                <div class="flex-box row mb-lg-5">
+
+                    <div class="col-md-4 flex-item">
+                        <div class="form-group">
+                            <span>@localizer["Name"]   :</span>
+                            <input class="form-control br-50" type="text" asp-for="EmployerName" readonly onkeypress="alphaCheck(event)" /><br />
+                        </div>
+                    </div>
+
+
+
+                    <div class="col-md-4 flex-item">
+                        <div class="form-group">
+                            <span>@localizer["Address"]:</span>
+
+                            <textarea rows="2" asp-for="EmployerAddress" readonly class="form-control br-50 resize-none" id="EmployerAddress" name="EmployerAddress" placeholder=@localizer["Employer Address"]></textarea>
+                            @*<input class="form-control" type="text" asp-for="EmployerAddress" />*@
+                        </div>
+                    </div>
+
+
+
+
+
+                    <div class="col-md-4 flex-item">
+                        <div class="form-group">
+                            <span>@localizer["Residence Address"] </span>
+
+
+
+
+                            <textarea rows="2" asp-for="ResidenceAddress" readonly class="form-control br-50 resize-none" id="ResidenceAddress" name="ResidenceAddress" placeholder=@localizer["Address"]></textarea>
+                            @*<input class="form-control" type="text" asp-for="ResidenceAddress" />*@
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+                <div class="flex-box row mb-4">
+
+                    <div class="col-md-4 flex-item">
+                        <div class="form-group">
+                            <span>@localizer["Email Address"] </span>
+
+
+
+
+                            <input class="form-control br-50" type="text" readonly asp-for="Email" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 flex-item">
+                        <div class="form-group">
+                            <span>@localizer["Mob. No"].</span>
+
+
+
+
+                            <input class="form-control br-50" type="text" readonly asp-for="Mobile" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 flex-item">
+                        <div class="form-group">
+                            <span>@localizer["Remarks"]</span>
+
+                            <textarea rows="2" asp-for="Remarks" class="form-control br-50 resize-none" id="txtRemarks" placeholder="Remarks" readonly name="Remarks"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+                <br>
+                @{
+                    if (@Model.GuardianName != null)
+                    {
+                        <div class="form-row text-center" style="background-color: #347B98">
+                            <p style="color:white" ;>
+                                @localizer["For Minor and Incompetent Applicant Only"]
+                            </p>
+                        </div>
+                        <br />
+                        <div class="form-row ">
+
+                            <div class="col ">
+                                <span> @localizer["Name of the Guardian"]</span>
+                                <input class="form-control br-50" type="text" asp-for="GuardianName" readonly onkeypress="alphaCheck(event)" />
+                                <span> Relationship with Applicant</span>
+                                <span> Relationship with Applicant</span>
+                                <input class="form-control br-50" type="text" asp-for="GuardianRelation" readonly onkeypress="alphaCheck(event)" />
+                            </div>
+
+
+
+
+
+                        </div>
+
+                    }
+                }
+                <br />
+
+                <br />
+
+                @foreach (var item in @Model.CaseDocumentsL)
+                {
+                    <div class="row">
+                        <div class="col-4">
+                            <div class="form-group">
+                                <label for="txDocNo">Document Reference</label>
+                                <input type="text" class="form-control br-50" id="txtDocNo" asp-for="@item.DocumentName" readonly name="DocumentName" placeholder="Document Reference">
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-group">
+                                <label for="txIssuedDate">Issued Date</label>
+                                <input type="date" class="form-control br-50" id="txtIssuedDate" asp-for="@item.IssuedDateOnDB" readonly name="IssuedDate" max="3000-12-31" placeholder="Document Issued Date">
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-group">
+                                <label for="txtExpiryDate">Expiry Date</label>
+
+                                <input type="text" class="form-control br-50" id="txtExpiryDate" asp-for="@item.ExpiryDateOnDB" readonly name="ExpiryDate" max="4444-12-31" placeholder="Document Expiry Date">
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="txtDetails">Document Details</label>
+                                <textarea rows="3" class="form-control br-50 resize-none" id="txtDetails" name="DocumentDetails" placeholder="Document Details" readonly>@item.DocumentDetails</textarea>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="txtRemarks">Remarks</label>
+                                <textarea rows="3" class="form-control br-50 resize-none" id="txtRemarks" name="Remarks" placeholder="Remarks" readonly>@item.Remarks </textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <hr />
+                }
+                @if (@Model.CaseDocumentsL.Count() != 0)
+                {
+                    <div class="row">
+                        <div class="col-2">
+
+                            <button type="button" class="btn btn-primary br-50 bg-color-2" data-toggle="modal" data-target="#docModal">
+                                View Uploaded Documents
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                <div class="row" style="display:none">
+                    <button type="submit" id="btnSubmit" class="btn btn-primary">@localizer["Submit"]</button>
+                </div>
+                @*<div class="form-row " style="background-color: #347B98">
+                    <h4 style="color:white" ;>
+                    Undertaking statement
+                    </h4>
+                    </div>
+                    <br />
+                    <div class="form-row ">
+                    <p>
+                    I, the undersigned hereby undertake full responsibility to advise MEDGULF UAE of any change in the above information and accept that any misrepresentation or
+                    inaccurate information is a violation of applicable laws to MEDGULF UAE and take full responsibility for any legal consequences.
+                    </p>
+                    </div>*@
+                <br />
+
+                <div class="flex-box form-row">
+                    <div class="col-4 flex-item">
+                        <div class="form-group">
+                            <span class="form_label" for="match_para">@localizer["Match Parameter"]</span>
+                            <input type="number" readonly class="form-control" asp-for="Threshold" id="textInput" min="50" max="100" placeholder=@localizer["70"] />
+                        </div>
+                    </div>
+                    <div class="flex-item"></div>
+                    <div class="flex-item"></div>
+                    @*<div class="col-md-7">
+                        <div class="form-group range-slider-div">
+                        <label for="js-range-slider">@localizer["Threshold"]</label><br />
+                        <span class="min-value">50</span>
+                        <input type="range" min="50" max="100" name="my_range" value="85" oninput="updateTextInput(this.value);" style="width:90%">
+                        <span class="max-value" style="right: 90px;">100</span>
+                        <input type="text" asp-for="Threshold" id="textInput" value="" readonly style="width:30px">
+                        </div>
+                        </div>*@
+                </div>
+                @*<div class="form-row" style="background-color: #347B98">
+
+                       <div class="col" style="color:white">
+                           <label>@localizer["Signature"]</label> <br><br>
+
+                       </div>
+
+                       <div class="col " style="color:white">
+
+                           <label> Date : @DateTime.Now</label>
+
+                       </div>
+                    </div>*@
+                <br />
+
+                <div class="form-row justify-content-between flex-box2">
+
+
+                    <label>@localizer["Signature"]</label> <br><br>
+
+
+
+                    <label> Date : @DateTime.Now</label>
+
+                </div>
+
+
+            </form>
+
+
+
+
+
+
+            <br />
+            <div style="width:100%;display:none" id="footdiv">
+                <p>@localizer["Computer generated report; hence no signature is required."]</p>
+            </div>
+        </div>
+    </div>
+    <br />
+    <!-- Modal -->
+    @*<div class="modal fade" id="docModal" tabindex="-1" role="dialog" aria-labelledby="docModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="docModalLabel">Documents</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <ul>
+                            @foreach (var item in Model.CaseDocumentsL)
+                            {
+                            <li><a href='/Case/DownloadCaseDocument?filePath=@item.DocumentFullPath&fileName=@item.DocumentFileName' download='@item.DocumentFileName'>@item.DocumentFileName</a></li>
+                            }
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>*@
+</div>
+
+
+<script>
+    $('#printform').on("click", function () {
+        $(this).hide();
+        $('#btnBack').hide();
+        $('#printthisform').printThis({
+            importCSS: true,
+            loadCSS: "/css/print.css",
+            header: '<div style="background: linear-gradient(180deg, #33394e 0%, #2F3961 100%);"><h1 style="color:white">@companyName <img src="@companyLog" style="width:10%;float: right;" /></h1></div>',
+            afterPrint: function () {
+                $('#printform').show();
+                $('#btnBack').show();
+            }
+        });
+
+    });
+
+
+</script> 
+@* <script>
+        $('#printform').on("click", function () {
+
+            // Hide the buttons that trigger the print function and the back button
+            $(this).hide();
+            $('#btnBack').hide();
+
+            // Define the stylesheets that should be applied to the printed content
+            var stylesheets = [
+                '/css/adminlte.min.css',
+                '/css/StyleSheetRef.css'
+            ];
+
+            // Print the content using the printThis plugin
+            $('#printthisform').printThis({
+                importCSS: true,
+                printDelay: 500,
+                header: '<h1 style="text-align:center;">@companyName <div><img src="/img/logo.png" style="width:8%;float:right;" /></div></h1>',
+                stylesheet: stylesheets.join(","),
+                afterPrint: function () {
+                    console.log('Printing completed!');
+
+                    // Show the buttons that trigger the print function and the back button
+                    $('#printform').show();
+                    $('#btnBack').show();
+
+                    // Code to execute after the print dialog is closed
+                }
+            });
+
+        });
+    </script> *@
+<script>
+
+    //$('#printform').on("click", function () {
+    //    document.getElementById("printform").style.display = "none";
+    //    document.getElementById("btnBack").style.display = "none";
+    //    $('#printthisform').printThis({
+
+    //        stylesheets: [
+
+    //            '/css/adminlte.min.css',
+    //            '/css/StyleSheetRef.css'
+
+    //        ],
+
+    //        importCSS: true, // if set to true, it will try to import external stylesheets
+
+    //        printDelay: 500, // delay in milliseconds before printing
+
+    //        header: '<h1 style="text-align:center;">@companyName <div><img src="/img/logo.png" style="width:8%;float:right;" /></div></h1>', // HTML content for the header section
+    //        afterPrint: function () {
+
+    //            console.log('Printing completed1234!');
+    //            document.getElementById("printform").style.display = "block";
+    //            document.getElementById("btnBack").style.display = "block";
+    //            // Code to execute after the print dialog is closed
+
+    //        }
+
+            /* footer: '<h1>Footer content</h1>', */// HTML content for the footer section
+
+            /* pageTitle: 'Page title',*/ // text to use as the page title
+
+            // canvas: true, // whether to include <canvas> elements
+
+            // base: false, // whether to include <base> tag
+
+            // removeScripts: true // whether to remove <script> elements
+
+    //    });
+
+    //});
+
+</script>
+<script type="text/javascript">
+
+
+    function alphaNumericCheck(e) {
+        var key = e.keyCode;
+        if (!(key > 47 && key < 58) && !(key > 64 && key < 91) && !(key > 96 && key < 123)) {
+            if (key == 34 || key == 32) {
+
+            } else {
+                e.preventDefault();
+            }
+        }
+    }
+
+
+    $('#ddlCountryList').change(function () {
+        $('#nationality').val($('#ddlCountryList :selected').text());
+
+    });
+
+
+    $('#btnSubmit').click(function () {
+        $('.se-pre-con').show();
+        $('.se-pre-con').fadeOut(5000);
+    });
+    function alphaCheck(e) {
+        var key = e.keyCode;
+        if (!(key > 64 && key < 91) && !(key > 96 && key < 123)) {
+            if (key == 34 || key == 32) {
+
+            } else {
+                e.preventDefault();
+            }
+        }
+    }
+    $('#ddlOccupation').change(function () {
+        if ($('#ddlOccupation :selected').text() == "Other") {
+            var x = document.getElementById('OccupOther');
+
+            x.style.display = "";
+            $('#ddlFundSourcehdn').val('');
+        }
+        else {
+            var x = document.getElementById('OccupOther');
+            x.style.display = "none";
+
+            $('#ddlFundSourcehdn').val($('#ddlOccupation :selected').text());
+        }
+    });
+    $(document).ready(function () {
+        //$(document).find("input[type=text]").val('');
+        //$(document).find("input[type=number]").val('');
+        //$('#ResidenceAddress').val('');
+        //$('#EmployerAddress').val('');
+        //$(document).find("select").val('0');
+        //$('#ddlIdType').val('Emirates ID');
+        //$('#ddlResidenceStatus').val('Resident');
+    });
+    function dobOnChange() {
+        $('#hdnDOB').val($('#DOB').val());
+    }
+
+</script>
+

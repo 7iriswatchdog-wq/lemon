@@ -1,0 +1,156 @@
+﻿
+@{
+    ViewData["Title"] = "Customer Master";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+<script src="~/plugins/jquery/jquery.min.js"></script>
+
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">List</h3>
+                        <a href="@Url.Action("AddUpdate", "CustomerMaster")" type="button" class="btn btn-info btn-sm float-right">Add New</a>
+                    </div>
+                    <div class="card-body">
+                        <div style="width: 100%; padding-left: -10px;">
+                            <div class="table-responsive">
+                                <table id="customerMasterTable" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>Customer ID</th>
+                                            <th>Name</th>
+                                            <th>DOB</th>
+                                            <th>Nationality</th>
+                                            <th>Type</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<script type="text/javascript">
+    var table;
+    $(document).ready(function () {
+        LoadTable();
+    });
+
+    function LoadTable() {
+        table = $('#customerMasterTable').DataTable({
+            "processing": true, // for show progress bar
+            "serverSide": true, // for process server side
+            "filter": true, // this is for disable filter (search box)
+            "orderMulti": false, // for disable multiple column at once
+            "order": [[5, 'desc']], // default sorting column(1 = "id") and sorting order
+            "iDisplayLength": 25,
+            "destroy": true,
+            "ajax": {
+                "url": "/CustomerMaster/CustomPaginationPosition",
+                "type": "POST",
+                "datatype": "json"
+            },
+            "columnDefs":
+                [{
+                    "defaultContent": "-",
+                    "targets": "_all",
+                }],
+            "columns": [
+                {
+                    "data": "customerReferenceId", "name": "Reference ID", "autoWidth": true,
+                    "render": function (data, type, row) {
+                        return row.customerReferenceId;
+                    }
+                },
+                {
+                    "data": "fName", "name": "Name", "autoWidth": true,
+                    "render": function (data, type, row) {
+                        var name = row.firstName;
+                        if (row.middleName != '' && row.middleName != 'null' && row.middleName != null) {
+                            name += ' ' + row.middleName;
+                        }
+                        if (row.lastName != '' && row.lastName != 'null' && row.lastName != null) {
+                            name += ' ' + row.lastName;
+                        }
+                        return name;
+                    }
+                },
+                {
+                    "data": "dob", "name": "dob", "autoWidth": true,
+                    "render": function (data, type, full) {
+                        if (full.dob != '') {
+                            var doa = full.dob.split('T')[0];
+                            var dArr = doa.split("-");
+                            if (dArr[0] == "0001")
+                                return "NA";
+                            else
+                                return dArr[2] + "-" + dArr[1] + "-" + dArr[0];
+                            //return dArr[2] + "-" + dArr[1] + "-" + dArr[0];
+                        } else {
+                            return full.dob;
+                        }
+                    }
+                },
+                {
+                    "data": "nationality", "name": "nationality", "autoWidth": true,
+                    "render": function (data, type, row) {
+                        return row.nationality;
+                    }
+                },
+                {
+                    "data": "customerType", "name": "customerType", "autoWidth": true,
+                    "render": function (data, type, row) {
+                        return row.customerType;
+                    }
+                },
+                {
+                    "data": "id", "name": "id", "autoWidth": true,
+                    "render": function (data, type, row) {
+                        var htmlString = '';
+                        htmlString += "<a href='AddUpdate?id=" + row.id + "' class='btn btn-info' >Edit</a> ";
+
+                        if (row.whiteListed == 'YES') {
+                            htmlString += '<a class="btn btn-success" onclick="UpdateWhiteList(' + row.id + ', \'' + row.customerReferenceId + '\', 0)">Whitelist(ON)</a>';
+                        } else {
+                            htmlString += '<a class="btn btn-default" onclick="UpdateWhiteList(' + row.id + ', \'' + row.customerReferenceId + '\', 1)">Whitelist(OFF)</a>';
+                        }
+
+                        return htmlString;
+                    }
+                },
+            ]
+
+        });
+    }
+
+    function UpdateWhiteList(id, refId, isWhiteList) {
+        $.ajax({
+            url: "/CustomerMaster/UpdateWhiteList",
+            type: "POST",
+            data: {
+                Id: id,
+                CustomerReferenceId: refId,
+                IsWhiteListed: (isWhiteList == 0 ? 'NO' : 'YES')
+            },
+            datatype: 'json',
+            success: function (result) {
+                LoadTable();
+            },
+            error: function (error) {
+                alert(JSON.stringify(result))
+                console.log(error);
+            }
+        });
+    }
+</script>
+

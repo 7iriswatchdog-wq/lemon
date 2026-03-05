@@ -1,0 +1,371 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Customer Master";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model AML.ViewModel.ViewModels.CustomerMaster.CustomerMasterModel
+<style>
+    /* #container {
+        display: block;
+        position: relative
+    } */
+
+    .ui-autocomplete {
+        position: absolute;
+    }
+    /* #loader{
+        position:fixed !important;
+    } */
+
+        
+</style>
+<style>
+    .hw-25 {
+        height: 25px !important;
+        width: 25px !important;
+    }
+
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+</style>
+@* <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.0.min.js" type="text/javascript"></script>
+<script src="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/jquery-ui.min.js" type="text/javascript"></script>
+<link href="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/themes/blitzer/jquery-ui.css" rel="Stylesheet" type="text/css" /> *@
+<script src="~/plugins/jquery/jquery.min.js"></script>
+
+
+<div class="max-w-screen h-full items-center ">
+    @*<div class="sas-breadcrumbs mt-2">
+        <ul class="mb-0 pl-0 d-flex">
+            <li><a href="#">Home</a></li>/
+            <li><a href="#">Master</a></li>/
+            <li><a href="#">Customer Master</a></li>
+        </ul>
+    </div>
+    <div class="page-heading">
+        <div class="sas-card rounded-card br-50 mb-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><b>Add Customer</b></h4>
+                <div class="menu-icon">
+                    <i class="lni lni-microsoft"></i>
+                </div>
+            </div>
+        </div>
+    </div>*@
+    @* <nav class="border-b">
+        <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+            <div>
+                <h2 class="text-2xl font-bold">Add Customer</h2>
+            </div>
+            <div class="md:block hidden">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-white">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Add Customer
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+    <!-- /.card-header -->
+    <!-- form start -->
+    <div class="h-auto bg-gray-50 items-center  ">
+        <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4  mx-auto">
+            <div class="w-full bg-white rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100 ">
+                <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+                    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                </div>
+    <form role="form" asp-controller="CustomerMaster" asp-action="AddUpdate" class="form-horizontal" enctype="multipart/form-data" method="post">
+        <input type="hidden" asp-for="CreatedBy" />
+        <input type="hidden" asp-for="Id" />
+                    <div class="sas-card rounded-card mb-2">
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div >
+                    <div class="form-group">
+                                    <label for="txtCustomerID" class="block text-sm font-medium text-gray-700 mb-1">Customer ID<span class="text-red-500">*</span></label>
+                        @if (Model.Id > 0)
+                        {
+                                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" id="txtCustomerID" placeholder="Customer Id" readonly>
+                        }else{
+                                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" id="txtCustomerID" placeholder="Customer Id">
+                        }
+                        <div id="container">
+                        </div>
+                                    <span asp-validation-for="CustomerReferenceId" class="text-red-500 text-sm"></span>
+
+                        <input type="hidden" asp-for="CustomerReferenceId" id="hfCustomerID">
+                    </div>
+                </div>
+                            <div >
+                    <div class="form-group">
+                                    <label for="txtFName" class="block text-sm font-medium text-gray-700 mb-1">First Name <span class="text-red-500">*</span></label>
+                                    <input type="text" asp-for="FirstName" class="form-control br-50 mandatory w-full px-3 py-2 border border-gray-300 rounded-md" id="txtFName" placeholder="First Name">
+                                    <span asp-validation-for="FirstName" class="text-red-500 text-sm"></span>
+                    </div>
+                </div>
+                            <div >
+                    <div class="form-group">
+                                    <label for="txtMiddleName" class="block text-sm font-medium text-gray-700 mb-1">Middle Name</label>
+                                    <input type="text" asp-for="MiddleName" class="form-control br-50 mandatory w-full px-3 py-2 border border-gray-300 rounded-md" id="txtMName" placeholder="Middle Name">
+                    </div>
+                </div>
+                            <div >
+                    <div class="form-group">
+                                    <label for="txtLName" class="block text-sm font-medium text-gray-700 mb-1">Last Name  <span class="text-red-500">*</span></label>
+                                    <input type="text" asp-for="LastName" class="form-control br-50 mandatory w-full px-3 py-2 border border-gray-300 rounded-md" id="txtLName" placeholder="Last Name">
+                                    <span asp-validation-for="LastName" class="text-red-500 text-sm"></span>
+                    </div>
+                </div>
+
+            
+
+               
+                            <div >
+                    <div class="form-group">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nationality @*<span class="text-danger">*</span>*@</label>
+                                    <select id="ddlNationalities" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" asp-for="Nationality" asp-items="Model.Nationalities">
+                            <option value="">--EMPTY--</option>
+                        </select>
+                                    <span asp-validation-for="Nationality" class="text-red-500 text-sm"></span>
+                        <input type="hidden" asp-for="Nationality" id="hfNationality" />
+                    </div>
+                </div>
+                            <div >
+                    <div class="form-group">
+                                    <label for="dtDOB" class="block text-sm font-medium text-gray-700 mb-1">Date of Birth @*<span class="text-danger">*</span>*@</label>
+                                    <input type="date" asp-for="DOB" class="form-control br-50 mandatory w-full px-3 py-2 border border-gray-300 rounded-md" id="dtDOB" max="3000-12-31" placeholder="Date of Birth">
+                                    <span asp-validation-for="DOB" class="text-red-500 text-sm"></span>
+                    </div>
+                </div>
+                            <div >
+                    <div class="form-group">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Customer Type <span class="text-red-500">*</span></label>
+                                    <select id="ddlCustType" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" asp-for="CustomerType" asp-items="Model.CustomerCategories">
+                            <option value="">--EMPTY--</option>
+                        </select>
+                                    <span asp-validation-for="CustomerType" class="text-red-500 text-sm"></span>
+                    </div>
+                </div>
+                            <div >
+                    <div class="form-group">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Id Type @*<span class="text-danger">*</span>*@</label>
+                                    <select id="ddlIdType" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" asp-for="CustomerIdType" asp-items="Model.IdTypes">
+                            <option value="">--EMPTY--</option>
+                        </select>
+                                    <span asp-validation-for="CustomerIdType" class="text-red-500 text-sm"></span>
+                    </div>
+                </div>
+            
+                        
+
+
+                            <div >
+                    <div class="form-group">
+                                    <label for="txtIdNumber" class="block text-sm font-medium text-gray-700 mb-1">Id Number @*<span class="text-danger">*</span>*@</label>
+                                    <input type="text" asp-for="CustomerIdNumber" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" id="txtIdNumber" placeholder="Id Number">
+                                    <span asp-validation-for="CustomerIdNumber" class="text-red-500 text-sm"></span>
+                    </div>
+                </div>
+                            <div >
+                    <div class="form-group">
+                                    <label for="txtMobile" class="block text-sm font-medium text-gray-700 mb-1">Mobile</label>
+                                    <input type="text" asp-for="Mobile" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" id="txtMobile" placeholder="Mobile">
+                                    <span asp-validation-for="Mobile" class="text-red-500 text-sm"></span>
+                    </div>
+                </div>
+            
+            @if (Model.Id > 0)
+            {
+
+                                <div >
+                                    <label for="txtCustomerFinalRiskScore" class="block text-sm font-medium text-gray-700 mb-1">Risk Score</label>
+                                    <input type="text" asp-for="CustomerFinalRiskScore" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" id="txtCustomerFinalRiskScore" placeholder="Risk Score">
+                                    <span asp-validation-for="CustomerFinalRiskScore" class="text-red-500 text-sm"></span>
+                    </div>
+                                <div >
+                                    <label for="txtCustomerMatchScore" class="block text-sm font-medium text-gray-700 mb-1">Match Score</label>
+                                    <input type="text" asp-for="CustomerScreenMatchScore" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" id="txtCustomerMatchScore" placeholder="Match Score">
+                                    <span asp-validation-for="CustomerScreenMatchScore" class="text-red-500 text-sm"></span>
+                    </div>
+                
+            }
+            
+ 
+                @if (Model.Id == 0)
+                {
+                                <div >
+                                    <label for="txtBatchId" class="block text-sm font-medium text-gray-700 mb-1">Batch ID</label>
+                                    <input type="text" asp-for="BatchId" class="form-control w-full px-3 py-2 border border-gray-300 rounded-md" id="txtBatchId" placeholder="Batch Id">
+                                    <span asp-validation-for="BatchId" class="text-red-500 text-sm"></span>
+                    </div>
+                                <div class=" flex items-center justify-center gap-2">
+                                    <center><label for="isDeleted" class="text-sm font-medium text-gray-700">Is Deleted?</label></center>
+                                    <input type="checkbox" class="form-control w-5 h-5 border-gray-300" id="isDeletedc">
+                        <input type="hidden" asp-for="IsDeleted" />
+                    </div>
+                }
+                <div class=" d-flex justify-content-start ">
+                                <div class=" flex items-center justify-center gap-2">
+                                    <center><label for="statuss" class="text-sm font-medium text-gray-700">InActive?</label></center>
+                                    <input type="checkbox" class="form-control w-5 h-5 border-gray-300" id="statuss">
+                    <input type="hidden" asp-for="Status" />
+                </div>
+            </div>
+        </div>
+        
+        <!-- /.card-body -->
+
+        @*                 <div class="flex justify-center mt-6 gap-4">
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow" onclick="fnSubmit()">Submit</button>
+                            <button type="button" class="bg-gray-300 hover:bg-gray-400 text-black px-6 py-2 rounded-lg shadow" onclick="location.href='/customermaster/list'">Cancel</button>
+        </div> *@
+
+                        <div class="flex flex-col md:flex-row justify-center mt-10 gap-4">
+                            <button type="submit" class="px-6 py-2 bg-[#2563EB] text-white rounded-md hover:bg-blue-700" onclick="fnSubmit()">Submit</button>
+                            <button type="button" class="px-6 py-2 border border-gray-300 rounded-md text-gray-700  hover:bg-gray-100 text-center transition duration-200" onclick="$('#loader').show(); location.href='/customermaster/list'">Cancel</button>
+        </div>
+        </div>
+    </form>
+    </div>
+    </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+        var itemContent = [];
+    $(function () {
+
+        if ('@Model.CustomerReferenceId' != '0') {
+            $('#txtCustomerID').val('@Model.CustomerReferenceId')
+        }
+        if ('@Model.IsDeleted' == '1') {
+            $('#isDeletedc').prop('checked', true);
+        }
+        if ('@Model.Status' == '1') {
+            $('#statuss').prop('checked', true);
+        }
+
+            $("#txtCustomerID").autocomplete({
+                source: function (request, response) {
+                    $.ajax({
+                        url: '/Case/AutoCompleteCustomer/',
+                        data: { "prefix": request.term },
+                        type: "POST",
+                        success: function (data) {
+                            itemContent = data;
+                            response($.map(data, function (item) {
+                                return item.customerId;
+                            }))
+                        },
+                        error: function (response) {
+                            alert(response.responseText);
+                        },
+                        failure: function (response) {
+                            alert(response.responseText);
+                        }
+                    });
+                },
+                appendTo: "#container",
+                select: function (e, i) {
+                    var code = i.item.value;
+                    $("#hfCustomerID").val(code);
+                },
+                minLength: 3
+            });
+        });
+
+        $(document).on('change', '#txtCustomerID', function () {
+            $('#hfCustomerID').val($("#txtCustomerID").val());
+        });
+    $(document).on('change', '#isDeletedc', function () {
+        var checkVal = ($('#isDeletedc').is(":checked") ? 1 : 0);
+        $('#IsDeleted').val(checkVal);
+    });
+
+    $(document).on('change', '#statuss', function () {
+        var checkVal = ($('#statuss').is(":checked") ? 1 : 0);
+        $('#Status').val(checkVal);
+    });
+    function fnSubmit() {
+        // $(".se-pre-con").show();
+        $('#loader').show();
+    }
+
+</script>

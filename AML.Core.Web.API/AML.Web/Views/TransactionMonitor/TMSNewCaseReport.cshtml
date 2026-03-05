@@ -1,0 +1,208 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    ViewData["Title"] = @localizer["TMS Case Report"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+
+@model AML.ViewModel.ViewModels.Report.ReportLogSearchModel
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="~/plugins/jquery/jquery.min.js"></script>
+
+@*<div class="se-pre-con1"></div>*@
+<div class="custom-container">
+    <div class="sas-breadcrumbs pb-3">
+        <ul class="mb-0 pl-0 d-flex">
+            <li><a href="#">Home</a></li>/
+            <li><a href="#">Reports</a></li>/
+            <li><a href="#">TMS Case Report</a></li>
+        </ul>
+    </div>
+    <div class="page-heading">
+        <div class="sas-card rounded-card br-50 mb-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><b>TMS Case Report</b></h4>
+                <div class="menu-icon">
+                    <i class="lni lni-microsoft"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="sas-card rounded-card mb-2">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">TMS Case Report Filter</h6>
+        </div>
+        <hr />
+                        <div class="row" id="datediv">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="dtTxnStartDate">@localizer["Transaction Start Date"]</label>
+
+                                    <input type="date" asp-for="TransactionStartDate" class="form-control br-50" id="dtTxnStartDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder="Start Date">
+                                    <span asp-validation-for="TransactionStartDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="dtTxnEndDate">@localizer["Transaction End Date"]</label>
+                                    <input type="date" asp-for="TransactionEndDate" class="form-control br-50" id="dtTxnEndDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder="End Date">
+                                    @*<input type="date" asp-for="EndDate" class="form-control" id="dtEndDate" min="@(DateTime.Now.ToString("yyyy-MM-dd"))" max="3000-12-30" placeholder="End Date">*@
+                                    <span asp-validation-for="TransactionEndDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        
+                        
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="dtStartDate">@localizer["Created From"]</label>
+
+                                    <input type="date" asp-for="StartDate" class="form-control br-50" id="dtStartDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder="Start Date">
+                                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+        <div class="row" id="Creatdatediv">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="dtEndDate">@localizer["Created To"]</label>
+                                    <input type="date" asp-for="EndDate" class="form-control br-50" id="dtEndDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder="End Date">
+                                    @*<input type="date" asp-for="EndDate" class="form-control" id="dtEndDate" min="@(DateTime.Now.ToString("yyyy-MM-dd"))" max="3000-12-30" placeholder="End Date">*@
+                                    <span asp-validation-for="EndDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+        <div class="row justify-content-end">
+            <button type="submit" id="btnSearch" class="sas-button p-8-25 bg-color-2" onclick="LoadTable();">@localizer["Go"]</button>
+            <button type="reset" id="btnReset" class="sas-button p-8-25 bg-color-3 ml-3">Reset</button>
+                        </div>
+
+                    </div>
+
+    <div class="sas-card rounded-card mb-2">
+       
+        
+    
+    <div style="width: 100%; padding-left: -10px;">
+        <div class="table-responsive">
+            <table id="example" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>@localizer["Transaction Ref.No"]</th>
+                        <th>@localizer["Transaction Date"]</th>
+                        <th>@localizer["Customer Ref.No"]</th>
+                        <th>@localizer["Customer Name"]</th>
+                        <th>@localizer["Rule Violated"]</th>
+                        <th>@localizer["Created On"]</th>
+                        <th>@localizer["Status"]</th>
+                        <th>@localizer["Action"]</th>
+                    </tr>
+                </thead>
+
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+
+
+<script type="text/javascript">
+
+    var table;
+    $(document).ready(function () {
+
+
+        if ($('#dtStartDate').val() == '0001-01-01') {
+            $('#dtStartDate').val('');
+            $('#dtEndDate').val('');
+        }
+        LoadTable();
+    });
+
+    function LoadTable() {
+
+        table = $('#example').DataTable({
+            "serverSide": true, "processing": true,
+            "columnDefs": [{
+                "defaultContent": "-",
+                "targets": "_all"
+            }],
+            ajax: {
+                url: '/tmscasereport/casemanagement',
+                type: 'POST',
+
+
+                data: function (d) {
+
+                    d.startDate = $('#dtStartDate').val(),
+                        console.log("this is creation startDate", JSON.stringify(d.startDate));
+                    d.endDate = $('#dtEndDate').val(),
+                        console.log("this is creation endDate", JSON.stringify(d.endDate));
+                    d.txnStartDate = $('#dtTxnStartDate').val(),
+                        console.log("this is transaction startDate", JSON.stringify(d.txnStartDate));
+                    d.txnEndDate = $('#dtTxnEndDate').val(),
+                        console.log("this is transaction endDate", JSON.stringify(d.txnendDate));
+                    //d.status = $('#caseStatusID').val()
+
+                },
+                complete: function (data) {
+                    console.log(data);
+                    wait = false;
+                }
+            },
+            columns: [
+
+                {
+                    data: "tranRefno"
+                },
+                {
+                    data: "tranDate"
+                },
+                {
+                    data: "customerId"
+                },
+                {
+                    data: "customerName"
+                },
+                {
+                    data: "ruleViolated",
+                },
+                {
+                    data: "created_on"
+                },
+                {
+                    data: "statusDescription"
+                },
+                {
+                    "render": function (data, type, full, meta) { return '<a class="btn btn-info" href="/tmscasereport/caseprocess/' + full.tranRefno + '">@localizer["View"]</a>'; }
+                }
+
+
+
+            ],
+            error: function (e, message) {
+                jQuery("#filterTable").dataTable({
+
+                }),
+                    alert(message);
+            },
+
+            destroy: true
+
+        });
+        $.fn.dataTable.ext.errMode = 'throw';
+    };
+    $("#btnReset").click(function () {
+        var date = new Date();
+        var day = date.getDate();
+        var month = date.getMonth() + 1;
+        var year = date.getFullYear();
+        if (month < 10) month = "0" + month;
+        if (day < 10) day = "0" + day;
+        var today = year + "-" + month + "-" + day;
+        $('#dtStartDate').val(today);
+        $('#dtEndDate').val(today);
+        $('#dtTxnStartDate').val(today);
+        $('#dtTxnEndDate').val(today);
+        LoadTable();
+    });
+</script>

@@ -1,0 +1,1156 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+
+@using AML.ViewModel.ViewModels.Common;
+@using AML.Web.Helpers;
+@using static AML.Web.Helpers.NavigationIndicatorHelper;
+
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var culture = System.Threading.Thread.CurrentThread.CurrentUICulture.Name.ToLowerInvariant();
+    var userModules = HttpContextAccessor.HttpContext.Session.GetString("SessModules");
+    var jsonModules = JsonConvert.DeserializeObject<List<ClientRightsModel>>(userModules);
+    var ristype = jsonModules;
+    var clientId = HttpContextAccessor.HttpContext.Session.GetString("SessClientId");
+    var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+    
+
+}
+
+@model AML.DTO.DTO.CustomerCase.MainDashboard
+
+
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<!--<script src="~/plugins/chart.js/chartdonut.js"></script>-->
+<!-- RIGHT SIDE -->
+<div class="max-w-screen h-full items-center">
+    <!-- RIGHT SIDE NAV -->
+    @* <nav class="border-b">
+        <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+            <div>
+                <h2 class="text-2xl font-bold">Dashboard</h2>
+            </div>
+            <div class="md:block hidden">
+               <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Dashboard
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+    <div class="h-fill bg-gray-50 items-center ">
+        <div class="grid xl:grid-cols-2 grid-cols-1 items-center md:p-8 p-4 md:gap-6 gap-4  mx-auto">
+            <!-- CUSTOMER COUNT -->
+            <div class="bg-white p-6 rounded-lg shadow-sm h-full w-full border border-blue-100 overflow-x-auto">
+                <h2 class="text-lg font-semibold mb-4">Customer Count</h2>
+                <div class="flex items-center flex md:flex-row flex-col">
+                    <div class="relative md:w-[190px] md:h-[160px] w-[100px] h-[100px] pt-2 items-center justify-center md:ml-14 mb-2 md:mx-12 mx-8">
+                        <svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 110">
+                            <defs>
+                                <filter id="light-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                                    <fegaussianblur in="SourceAlpha" stddeviation="2"></fegaussianblur>
+                                    <feoffset dx="1" dy="1" result="offsetblur"></feoffset>
+                                    <feflood flood-color="rgba(0, 0, 0, 0.1)"></feflood>
+                                    <fecomposite in2="offsetblur" operator="in"></fecomposite>
+                                    <femerge>
+                                        <femergenode></femergenode>
+                                        <femergenode in="SourceGraphic"></femergenode>
+                                    </femerge>
+                                </filter>
+                            </defs>
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#38BDF8" stroke-width="10"></circle>
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#38BDF8" stroke-width="10" stroke-dasharray="282.74" stroke-dashoffset="106.03"></circle>
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#2563EB" stroke-width="20" stroke-dasharray="282.74" stroke-dashoffset="176.71" filter="url(#light-shadow)"></circle>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center md:mr-4 mr-2">
+                            <span class="text-gray-500 text-xs md:mt-0 mt-1 mb-1">Total</span> <span id="hAllCases" class="md:text-2xl text-md font-bold">@ViewBag.totalcount</span>
+                            
+                        </div>
+                        <div class="absolute md:-right-4 -right-8 top-1/2 -translate-y-1/2 bg-white md:px-2 py-0 px-2 py-1 rounded-sm shadow-sm z-10">
+                            <span class="md:text-sm text-xs font-bold">@ViewBag.individualcustomertype</span>
+                        </div>
+                    </div>
+                    <div class="space-y-4 md:ml-12 md:mt-0 mt-2">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 rounded-full bg-[#2563EB]"></div><span class="text-gray-500 gap-3">Individuals:</span><span>@ViewBag.individualcustomertype</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 rounded-full bg-[#38BDF8]"></div><span class="text-gray-500 gap-3">Corporates:</span><span>@ViewBag.corporatecustomertype</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CUSTOMER ONBOARDING STATUS -->
+            <div class="bg-white p-6 rounded-lg shadow-sm h-full w-full border border-blue-100 overflow-x-auto">
+                <h2 class="text-lg font-semibold mb-4">Customer Onboarding Status</h2>
+                <div class="text-3xl font-bold mb-4">
+                    @ViewBag.totalcount
+                </div>
+                <div class="h-10 bg-gray-200 rounded-md overflow-hidden">
+                    <div class="flex h-full">
+                        <div class="bg-orange-400 w-[15%]"></div>
+                        <div class="bg-blue-400 w-[35%]"></div>
+                        <div class="bg-purple-500 w-[50%]"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 mt-4">
+                    <div>
+                        <div class="text-sm text-gray-500">
+                            Approved 15%
+                        </div>
+                        <div class="font-semibold">
+                            @ViewBag.Toatalapprovedcount
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">
+                            Rejected 35%
+                        </div>
+                        <div class="font-semibold">
+                            @ViewBag.rejectvalcount
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">
+                            On Hold 50%
+                        </div>
+                        <div class="font-semibold">
+                            @ViewBag.PotentialMatch
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NAME SCREENING RESULTS -->
+            <div class="bg-white p-6 rounded-lg shadow-sm h-full w-full border border-blue-100 mx-auto">
+                <h2 class="text-lg font-semibold mb-4">Name Screening Results</h2>
+                <div class="flex items-center justify-between grid lg:grid-cols-2 grid-cols-1 gap-4">
+                    <div class="relative w-40 h-40 mx-auto">
+                        <div class="donut-chart size-full md:mt-4">
+                            <div class="donut-hole"></div>
+                            <div class="percentage percent-20">
+                                20%
+                            </div>
+                            <div class="percentage percent-65">
+                                65%
+                            </div>
+                            <div class="percentage percent-15">
+                                15%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md:space-y-6 space-y-2 mt-8 mb-8 mx-auto overflow-hidden">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-3 h-3 rounded-full bg-[#38BDF8]"></div><span class="text-gray-500 text-md">Auto Approved</span>
+                            </div><span class="text-slate-900 text-md font-medium">@ViewBag.autoapproved</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-3 h-3 rounded-full bg-[#2563EB]"></div><span class="text-gray-500 text-md">Manually Approved</span>
+                            </div><span class="text-slate-900 text-md font-medium">@ViewBag.ManuallyApproved</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-3 h-3 rounded-full bg-[#AD87FF]"></div><span class="text-gray-500 text-md">Potential Match</span>
+                            </div><span class="text-slate-900 text-md font-medium">@ViewBag.PotentialMatch</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+           @*  @foreach (var item in jsonModules)
+            {
+
+                if (item.Menu_Id == 4)
+                {*@
+                    <!-- RISK TYPE -->
+                        <div class="bg-white p-6 rounded-lg shadow-sm h-full w-full border border-blue-100 overflow-hidden">
+                            <h2 class="text-lg font-semibold mb-4">Risk Type</h2>
+                        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                            <div class="bg-red-600 rounded-2xl p-6 text-white">
+                                <div class="flex justify-center mb-4">
+                                    <div class="w-16 h-16 rounded-full flex items-center justify-center border-2 border-white/30">
+                                        <div class="w-12 h-12 rounded-full flex items-center justify-center border-2 border-white/30">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentcolor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h2 class="text-lg font-medium text-center mb-2">High</h2>
+                                <p class="text-4xl font-bold text-center overflow-hidden">@ViewBag.totalhighrisk</p>
+                            </div>
+                            <div class="bg-yellow-400 rounded-2xl p-6 text-white">
+                                <div class="flex justify-center mb-4">
+                                    <div class="w-16 h-16 rounded-full flex items-center justify-center border-2 border-white/30">
+                                        <div class="w-12 h-12 rounded-full flex items-center justify-center border-2 border-white/30">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentcolor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                        <h2 class="text-lg font-medium text-center mb-2 overflow-hidden">Medium</h2>
+                                <p class="text-4xl font-bold text-center overflow-hidden">@ViewBag.totalmediumrisk</p>
+                            </div>
+                            <div class="bg-green-500 rounded-2xl p-6 text-white">
+                                <div class="flex justify-center mb-4">
+                                    <div class="w-16 h-16 rounded-full flex items-center justify-center border-2 border-white/30">
+                                        <div class="w-12 h-12 rounded-full flex items-center justify-center border-2 border-white/30">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentcolor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h2 class="text-lg font-medium text-center mb-2 overflow-hidden">Low</h2>
+                                <p class="text-4xl font-bold text-center overflow-hidden">@ViewBag.totallowrisk</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-2xl p-6 text-gray-500 border border-gray-200">
+                                <div class="flex justify-center mb-4">
+                                    <div class="w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-200">
+                                        <div class="w-12 h-12 rounded-full flex items-center justify-center border-2 border-gray-200">
+                                            <div class="w-4 h-4 rounded-full bg-gray-200"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h2 class="text-lg font-medium text-center mb-2">Unclassified</h2>
+                                <p class="text-4xl font-bold text-center overflow-hidden">@ViewBag.Unclassifiedriskcount</p>
+                            </div>
+                        </div>
+                    </div>
+                @*}
+            }*@
+
+            <!-- TIME STAMP -->
+            <div class=" hidden bg-white p-6 rounded-lg shadow-sm h-full w-full border border-blue-100 md:col-span-2 overflow-hidden">
+                <h2 class="text-lg font-semibold mb-4">Time Stamp</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-lg p-6 shadow-sm">
+                        <div class="flex items-start space-x-4">
+                            <div class="bg-amber-50 p-3 rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-amber-500" fill="none" viewbox="0 0 24 24" stroke="currentcolor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-sm text-gray-500 font-medium mb-1">Last Screening</h3>
+                                <p class="text-gray-900 font-semibold">25-06-2024 12:15:20 AM</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg p-6 shadow-sm">
+                        <div class="flex items-start space-x-4">
+                            <div class="bg-blue-50 p-3 rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-500" fill="none" viewbox="0 0 24 24" stroke="currentcolor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-sm text-gray-500 font-medium mb-1">Last Ongoing Screening</h3>
+                                <p class="text-gray-900 font-semibold">25-06-2024 12:15:20 AM</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg p-6 shadow-sm">
+                        <div class="flex items-start space-x-4">
+                            <div class="bg-pink-50 p-3 rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-pink-500" fill="none" viewbox="0 0 24 24" stroke="currentcolor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-sm text-gray-500 font-medium mb-1">Last Post-Implementation Test</h3>
+                                <p class="text-gray-900 font-semibold">25-06-2024 12:15:20 AM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(window).ready(function () {
+        var result = "@ViewBag.count";
+
+        //        alert('Cases');
+
+        //    $.ajax({
+        //        url: '/Home/CaseReportCustompagination',
+        //        type: 'Post',
+        //        //contextType: "application/json; charset=utf-8",
+        //        //data: { type: type, code: code },
+        //        dataType: "json",
+        //        cache: false,
+        //        success: function (data) {
+        //            console.log(data);
+
+
+
+        //        }
+        //    });
+
+
+
+    });
+
+    
+
+
+    $(document).ready(function () {
+
+
+        $('#sanScreen').DataTable();
+        GetCount(10, $('#hAllCases'), $('#totalcustomer')); //All customerCases
+        GetCount(0, $('#hOpenCases'), $('#opencustomer'));
+        GetCount(2, $('#hApprovedCases'), $('#approvedcustomer'));
+        GetCount(3, $('#hRejectedCases'), $('#rejectedcustomer'));
+
+    });
+
+    function GetCount(status, that, e) {
+        $.ajax({
+            type: "POST",
+            url: "/Home/GetCustomerCaseCount/",
+            data: {
+                caseStatus: status
+            },
+            success: function (result) {
+                that.text(result.data);
+                e.val(result.data);
+                
+                /* Case Details Chart */ 
+               /* var ctx = document.getElementById("dashboard-cases-chart").getContext('2d');
+                var myChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ["Customers", "Pending Cases", "Approved Cases", "Rejected Cases"],
+                        datasets: [{
+                            backgroundColor: [
+                                "#FCC02E",
+                                "#ff8a48",
+                                "#07C695",
+                                "#E91F63"
+                            ],
+                            data: [68,57,9,2]
+                        }]
+                    }
+                });*/
+
+                /* Risk Chart */
+                /*var ctx = document.getElementById('risk-classified-chart').getContext('2d');
+                var myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['High', 'Medium', 'Low', 'Unclassified'],
+                        datasets: [{
+                            label: 'Corporate',
+                            data: [12, 19, 3, 17],
+                            backgroundColor: "rgba(252,192,46,0.6)"
+                        }, {
+                            label: 'Individuals',
+                            data: [2, 29, 5, 10],
+                            backgroundColor: "rgba(233,31,99,0.6)"
+                        }]
+                    }
+                });*/
+            },
+            error: function (result) {
+                alert('error');
+            }
+        });
+    }
+    /*const ctx = document.getElementById('myChart');
+    console.log(ctx);*/
+
+
+    var table;
+    var table1;
+    //$(document).ready(function () {
+
+    //    LoadTable();
+    //    //LoadTable1();
+    //    LoadTable2();
+
+    //});
+
+    //function LoadTable() {
+    //    $.ajax({
+    //        type: "GET",
+    //        url: "/home/custompagination",
+    //        data: {
+    //            Type: 'I'
+    //        },
+    //        success: function (data) {
+    //            console.log(data);
+    //            for (i = 0; i <= data.length; i++) {
+
+    //                var tr = "<tr>";
+    //                tr += "<td class='text-center'>" + data[i].customerId + "</td>"
+    //                tr += "<td class='text-center'>" + data[i].createdUser + "</td>";
+    //                tr += "<td class='text-center'>" + data[i].createdOn + "</td>";
+    //                tr += "<td class='text-center'>" + data[i].nationality + "</td>";
+
+    //                tr + "</tr>"; $('#bodyExampleSactionIndividual').append(tr);
+    //            }
+    //        },
+    //    });
+    //}
+    //function LoadTable2() {
+
+
+    //    $.ajax({
+    //        type: "GET",
+    //        url: "/home/custompagination",
+    //        data: {
+    //            Type: 'C'
+    //        },
+    //        success: function (data) {
+    //            console.log(data);
+    //            for (i = 0; i <= data.length; i++) {
+
+    //                var tr = "<tr>";
+    //                tr += "<td class='text-center'>" + data[i].customerId + "</td>"
+    //                tr += "<td class='text-center'>" + data[i].createdUser + "</td>";
+    //                tr += "<td class='text-center'>" + data[i].createdOn + "</td>";
+    //                tr += "<td class='text-center'>" + data[i].nationality + "</td>";
+
+    //                tr + "</tr>"; $('#bodyExampleSactionCorporate').append(tr);
+    //            }
+    //        },
+    //    });
+
+
+    //}
+
+        //function LoadTable1() {
+
+
+
+        //    $.ajax({
+        //        type: "GET",
+        //        url: "/home/CaseManagement",
+
+        //        success: function (data) {
+        //            console.log(data);
+        //            for (i = 0; i <= data.length; i++) {
+
+        //                var tr = "<tr>";
+        //                tr += "<td class='text-center'>" + data[i].customerId + "</td>"
+        //                tr += "<td class='text-center'>" + data[i].customerName + "</td>";
+        //                tr += "<td class='text-center'>" + data[i].tranType + "</td>";
+        //                tr += "<td class='text-center'>" + data[i].ruleViolated + "</td>";
+        //                tr += "<td class='text-center'>" + data[i].createdOn + "</td>";
+        //                tr += "<td class='text-center'>" + data[i].remitterNationality + "</td>";
+        //                tr + "</tr>";
+        //                $('#bodyExampleTransaction').append(tr);
+        //            }
+        //        },
+        //    });
+
+        //}
+
+
+    function Runscheduler()
+    {
+        document.getElementById("runscheduler").disabled = true;
+
+        var clientid=@clientId;
+
+
+        //alert(clientid);
+        
+        $.ajax({
+            type: "GET",
+            url: "/Home/ApprovedScreeningApi",
+            data: { clientid: clientid },
+            
+        });
+
+        setTimeout(enbaleButton, 3600000);
+    }
+
+    function enbaleButton()
+    {
+
+        document.getElementById("runscheduler").disabled = false;
+    
+    }
+</script>
+
+@*<style>
+    .info-card {
+        background: #fff;
+        padding: 16px 20px !important;
+        overflow: hidden;
+        border-radius: 20px;
+        -webkit-box-shadow: 1px 1px 6px 0px rgb(0 0 0 / 16%);
+        -moz-box-shadow: 1px 1px 6px 0px rgba(0, 0, 0, 0.16);
+        box-shadow: 1px 1px 6px 0px rgb(0 0 0 / 16%);
+    }
+
+    progress[value] {
+        /*width: 250px;*/
+        height: 30px;
+    }
+
+    progress {
+        /*background-image: linear-gradient(to right,#BB85F7, #EFEFF3);*/
+        /* background-color: #eee;*/
+        accent-color: #b700ff;
+    }
+
+    .progress1 {
+        accent-color: rgb(186 112 19);
+    }
+
+    .progress2 {
+        accent-color: #069a45;
+    }
+
+    .progress3 {
+        accent-color: #ff0036;
+    }
+</style>*@
+
+
+@*<div class="sas-breadcrumbs aml-breadcrumbs mt-2">
+    <ul class="mb-0 pl-0 d-flex">
+        <li><a href="#">Home</a></li>/
+        <li><a href="#">Dashboard</a></li>
+    </ul>
+</div>
+
+<div class="sas-card bg-blue br-20 d-flex mb-2">
+    <div class="page_header mr-auto">
+        <h4 class="mb-0">Dashboard</h4>
+    </div>
+    <div class="menu-icon">
+        <i class="lni lni-microsoft"></i>
+    </div>
+   @* <div class="">
+        <button class="sas-button submit_btn yellow-btn" type="submit" id="runscheduler" onclick="Runscheduler()">Run Scheduler</buttonclass>
+    </div>*@
+@*</div>*@
+
+
+
+@*<div class="se-pre-con1"></div>
+<div class="row">
+    <div class="col-4">
+        <div class="sas-card bg-blue review-box p-25">
+            <div class="container">
+                <div class="d-flex justify-content-between mb-3 bb-div">
+                    <h4 class="m-0"><b>Total Customers</b></h4>
+                    <h4 class="m-0" id="hAllCases"><b>50</b></h4>
+                </div>
+                <div class="d-flex justify-content-between mb-2 bb-div">
+                    <h5 class="m-0">Approved</h5>
+                    <h5 class="m-0" id="hApprovedCases">40</h5>
+                </div>
+                <div class="d-flex justify-content-between mb-2 bb-div">
+                    <h5 class="m-0">Rejected</h5>
+                    <h5 class="m-0" id="hRejectedCases">2</h5>
+                </div>
+                <div class="d-flex justify-content-between mb-2 bb-div">
+                    <h5 class="m-0">On Hold</h5>
+                    <h5 class="m-0" id="hOpenCases">8</h5>
+                </div>
+
+            </div>*@
+            <!--<div class="col-md-3">
+                <div class="sas-color-card icon-box sas-color-card-bg4 mb-2">
+                    <div class="overlay">
+                        <img src="/img/cardCorner.png" alt="">
+                    </div>
+                    <div class="contents">
+                        <div class="icon">
+                            <span class="icon-container">
+                                <i class="lni lni-atlassian"></i>
+                            </span>
+                        </div>
+                        <h6 class="icon-box-no" id="hAllCases" font-size="35px">0</h6>
+                        <h6 class="icon-box-title">Customers</h6>
+                        <div class="txt-center">
+                            <a class="white-btn btn" href="Report/CustomerListingLogs?type=1">View More</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="sas-color-card icon-box sas-color-card-bg3 mb-2">
+                    <div class="overlay">
+                        <img src="/img/cardCorner.png" alt="">
+                    </div>
+                    <div class="contents">
+                        <div class="icon">
+                            <span class="icon-container">
+                                <i class="lni lni-firefox-original"></i>
+                            </span>
+                        </div>
+                        <h6 class="icon-box-no" id="hOpenCases" font-size="35px">0</h6>
+                        <h6 class="icon-box-title">Pending Cases</h6>
+                        <div class="txt-center">
+                            <a class="white-btn btn" href="Report/CaseReport?type=1">View More</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="sas-color-card icon-box sas-color-card-bg2 mb-2">
+                    <div class="overlay">
+                        <img src="/img/cardCorner.png" alt="">
+                    </div>
+                    <div class="contents">
+                        <div class="icon">
+                            <span class="icon-container">
+                                <i class="lni lni-tumblr"></i>
+                            </span>
+                        </div>
+                        <h6 class="icon-box-no" id="hApprovedCases" font-size="35px">0</h6>
+                        <h6 class="icon-box-title">Approved Cases</h6>
+                        <div class="txt-center">
+                            <a class="white-btn btn" href="Report/CaseReport?type=2">View More</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="sas-color-card icon-box sas-color-card-bg1 mb-2">
+                    <div class="overlay">
+                        <img src="/img/cardCorner.png" alt="">
+                    </div>
+                    <div class="contents">
+                        <div class="icon">
+                            <span class="icon-container">
+                                <i class="lni lni-xbox"></i>
+                            </span>
+                        </div>
+                        <h6 class="icon-box-no" id="hRejectedCases" font-size="35px">0</h6>
+                        <h6 class="icon-box-title">Rejected Cases</h6>
+                        <div class="txt-center">
+                            <a class="white-btn btn" href="Report/CaseReport?type=3">View More</a>
+                        </div>
+                    </div>
+                </div>
+            </div>-->
+        @*</div>
+    </div>
+    <div class="col-md-4 w-100">
+        <div class="sas-card bg-blue range-box range">
+            <div class="container">
+                <div class="mb-3 bb-div">
+                    <h4 class="m-0"><b>Name Screening</b></h4>
+                </div>
+                <div class="d-flex justify-content-between mb-2 bb-div">
+                    <h5 class="m-0">Auto Approved</h5>
+                    <h5 class="m-0">@ViewBag.autoapproved</h5>
+                </div>
+                <div class="d-flex justify-content-between mb-2 bb-div">
+                    <h5 class="m-0">Manually Approved</h5>
+                    <h5 class="m-0">@ViewBag.ManuallyApproved</h5>
+                </div>
+                <div class="d-flex justify-content-between mb-2 bb-div">
+                    <h5 class="m-0">Potential Match</h5>
+                    <h5 class="m-0">@ViewBag.PotentialMatch</h5>
+                </div>
+            </div>*@
+            <!--<div class="range">
+                <div class="cust d-flex justify-content-center mt-3 mb-3">
+                    <h5>Risk</h5>
+                </div>
+                @*<br />*@
+                <div class="bar pl-2 pr-2">
+                    <form>
+                        <div class="form-group d-flex">
+                            <label class="pr-2 mr-2" for="formControlRange">Individual</label>
+                            <a href="#" title="@ViewBag.indvidualval">
+                                <progress max="200" value="@ViewBag.indvidualval"></progress>
+                            </a>
+                            @*<input type="range" class="form-control-range color-rangeslider" id="formControlRange">*@
+                        </div>
+
+
+                    </form>
+
+                    <form>
+                        <div class="form-group d-flex">
+                            <label class="pr-2" for="formControlRange">Corporate</label>
+                            <a href="#" title="@ViewBag.corporateval">
+                                <progress class="progress1" max="200" value="@ViewBag.corporateval"></progress>
+                            </a>
+                            @*<input type="range" class="form-control-range color-rangeslider" id="formControl">*@
+                        </div>
+                    </form>
+
+                    <form>
+                        <div class="form-group d-flex">
+                            <label class="pr-2" for="formControlRange" style="margin-right:36px">Bank</label>
+                            <a href="#" title="@ViewBag.bankval">
+                                <progress class="progress2" max="200" value="@ViewBag.bankval"></progress>
+                            </a>
+                            @*<input type="range" class="form-control-range color-rangeslider" id="formController">*@
+                        </div>
+                    </form>
+
+                    <form>
+                        <div class="form-group d-flex">
+                            <label class="pr-2" for="formControlRange" style="margin-right:20px">Vendor</label>
+                            <a href="#" title="@ViewBag.vendorval">
+                                <progress class="progress3" max="200" value="@ViewBag.vendorval"></progress>
+                            </a>
+                            @*<input type="range" class="form-control-range color-rangeslider" id="form">*@
+                        </div>
+                    </form>
+                    <br />
+                </div>
+            </div>-->
+      @*  </div>
+    </div>*@
+   @* @if ((userModules.IndexOf('4')))
+    {*@
+    @*@foreach (var item in jsonModules)
+    {
+
+        if (item.Menu_Id == 4)
+        {
+
+
+            <div class="col-md-4 w-100">
+                <div class="sas-card bg-blue range-box range">
+                <div class="container">
+                    <div class="mb-3 bb-div">
+                        <h4 class="m-0"><b>Risk Type</b></h4>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 bb-div">
+                        <h5 class="m-0">High</h5>
+                                <h5 class="m-0">@ViewBag.totalhighrisk</h5>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 bb-div">
+                        <h5 class="m-0">Medium</h5>
+                        <h5 class="m-0">@ViewBag.totalmediumrisk</h5>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 bb-div">
+                        <h5 class="m-0">Low</h5>
+                        <h5 class="m-0">@ViewBag.totallowrisk</h5>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 bb-div">
+                        <h5 class="m-0">Unclassified</h5>
+                        <h5 class="m-0">@ViewBag.Unclassifiedriskcount</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+        }
+      }*@
+        @*}*@
+    
+    @*<div class="col-md-6">
+        <div class="row">
+            @* <div class="col-md-4 w-100">
+                <div class="sas-card bg-blue review-box p-25">
+                    <div class="star d-flex justify-content-center mb-3 mt-2">
+                        <img src="img/star.png">
+                    </div>
+                    <br />
+                    <div class="card1 br-50 d-flex justify-content-center mb-3 mt-2 mr-4">
+                        <span>Last Screening Performed</span>
+                    </div>
+                    <br />
+                    <div class="date d-flex justify-content-center">
+                        <h4>@ViewBag.date</h4>
+                    </div>
+                    <hr />
+                    <div class="row mb-2 justify-content-center">
+                        <div>
+                            <div class="card1 br-50 d-flex justify-content-center">
+                                <div class="case">
+                                    <span>Last Week Pending Cases</span>
+                                </div>
+                            </div>
+                            <div class="num d-flex justify-content-center mt-3">
+                                <h6>@ViewBag.count</h6>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                        <div class="card3 br-50 d-flex justify-content-center ml-2">
+                        <div class="alert">
+                        <span>Alerts Pending</span>
+                        </div>
+                        </div>
+                        <div class="num d-flex justify-content-center mt-3">
+                        <h6>06</h6>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div classs="col-md-4">
+            <div class="sas-card">
+            <div class="star_image  d-flex justify-content-center">
+            <img src="~/img/star.png" />
+            </div>
+            <div class="content_2">
+            <div class="info-card bg-color-1 d-flex justify-content-center">
+            <a> Last Screening Performed </a>
+            </div>
+            </div>
+            <div class="content_3  d-flex justify-content-center ">
+            <p>08/04/2023</p>
+            </div>
+            <span class="mb-2"> <hr /> </span>
+            <div class="content_4">
+            <div class="row">
+            <div class="col-md-6">
+            <div class="info-card bg-color-1  d-flex justify-content-center">
+            <a> Last Screening Performed </a>
+            </div>
+            <div class="num_content  d-flex justify-content-center">
+            <p>08/04/2023</p>
+            </div>
+            </div>
+            <div class="col-md-6">
+            <div class="info-card bg-color-1  d-flex justify-content-center">
+            <a> Last Screening Performed </a>
+            </div>
+            <div class="num_content  d-flex justify-content-center">
+            <p>08/04/2023</p>
+            </div>
+
+            </div>
+            </div>
+            </div>
+
+            </div>
+            </div>*@
+            
+            <!--<div class="col-md-6 w-100">
+                <div class="sas-card bg-blue donut">
+                    <div class="d-flex justify-content-center">
+                        <h4>Customer Cases</h4>
+                    </div>
+                    <div class="dougnut mt-4 mb-2">
+                        <canvas id="myChart" style="width:100%;max-width:400px;margin:auto;"></canvas>
+                    </div>
+
+                </div>
+            </div>-->
+    @*</div>
+
+    </div>*@
+</div>
+@*<div class="block2">
+    <div class="row mt-2 mb-2">
+        <div class="col-md-6">
+            <div class="sas-card bg-blue overflow-auto">
+                <h6 class=" d-flex justify-content-center text-center">Last 10 Individual Screening Details</h6>
+                <div style="width: 100%;height: 550px;">
+                    <div class="table-responsive">
+                        <table id="exampleSaction" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>CUSTOMER ID</th>
+                                    <th>CUSTOMER NAME</th>
+                                    <th>DATE OF CREATION</th>
+                                    <th>NATIONALITY</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyExampleSactionIndividual"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="sas-card bg-blue overflow-auto">
+                <h6 class=" d-flex justify-content-center text-center text-center">Last 10 Corporate Screening Details</h6>
+                <div style="width: 100%;height: 550px;">
+                    <div class="table-responsive">
+                        <table id="exampleTransaction" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>CUSTOMER ID</th>
+                                    <th>CUSTOMER NAME</th>
+                                    <th>DATE OF CREATION</th>
+                                    <th>NATIONALITY</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyExampleSactionCorporate"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+          <div class="col-md-6">
+        <div class="sas-card">
+        <h6 class=" d-flex justify-content-center text-center text-center">Last 10 Transaction Monitoring Details</h6>
+        <div style="width: 100%; height: 550px;">
+        <div class="">
+        <table id="exampleTransaction" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
+
+        <thead>
+        <tr>
+        <th>CUSTOMER ID</th>
+        <th>CUSTOMER NAME</th>
+        <th>Transaction TYPE</th>
+        <th>RULES VIOLATED</th>
+        <th>DATE OF CREATION</th>
+        <th>NATIONALITY</th>
+        </tr>
+        </thead>
+        <tbody id="bodyExampleTransaction"></tbody>
+
+        </table>
+        </div>
+        </div>
+        </div>
+
+        </div>
+    </div>
+        </div>*@
+
+@*<div class="row @Url.DisplayNavLink(1,userModules)">
+    <div class="col-lg-12 col-12">
+        <div class="card">
+            @*<div id="piechart" style="text-align: -webkit-center;"></div>*@
+            @*<input type="hidden" id="totalcustomer" value="0" />
+            <input type="hidden" class="getval" id="opencustomer" value="0" />
+            <input type="hidden" class="getval" id="approvedcustomer" value="0" />
+            <input type="hidden" class="getval" id="rejectedcustomer" value="0" />
+        </div>
+
+    </div>
+</div>*@
+
+@*<script type="text/javascript">
+    $(window).ready(function () {
+        var result = "@ViewBag.count";*@
+
+       @* //        alert('Cases');
+
+        //    $.ajax({
+        //        url: '/Home/CaseReportCustompagination',
+        //        type: 'Post',
+        //        //contextType: "application/json; charset=utf-8",
+        //        //data: { type: type, code: code },
+        //        dataType: "json",
+        //        cache: false,
+        //        success: function (data) {
+        //            console.log(data);
+
+
+
+        //        }
+        //    });
+
+
+
+    });
+
+    
+
+
+    $(document).ready(function () {
+
+
+        $('#sanScreen').DataTable();
+        GetCount(10, $('#hAllCases'), $('#totalcustomer')); //All customerCases
+        GetCount(0, $('#hOpenCases'), $('#opencustomer'));
+        GetCount(2, $('#hApprovedCases'), $('#approvedcustomer'));
+        GetCount(3, $('#hRejectedCases'), $('#rejectedcustomer'));
+
+    });
+
+    function GetCount(status, that, e) {
+        $.ajax({
+            type: "POST",
+            url: "/Home/GetCustomerCaseCount/",
+            data: {
+                caseStatus: status
+            },
+            success: function (result) {
+                that.text(result.data);
+                e.val(result.data);
+                
+                /* Case Details Chart */ 
+               /* var ctx = document.getElementById("dashboard-cases-chart").getContext('2d');
+                var myChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ["Customers", "Pending Cases", "Approved Cases", "Rejected Cases"],
+                        datasets: [{
+                            backgroundColor: [
+                                "#FCC02E",
+                                "#ff8a48",
+                                "#07C695",
+                                "#E91F63"
+                            ],
+                            data: [68,57,9,2]
+                        }]
+                    }
+                });*/
+
+                /* Risk Chart */
+                /*var ctx = document.getElementById('risk-classified-chart').getContext('2d');
+                var myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['High', 'Medium', 'Low', 'Unclassified'],
+                        datasets: [{
+                            label: 'Corporate',
+                            data: [12, 19, 3, 17],
+                            backgroundColor: "rgba(252,192,46,0.6)"
+                        }, {
+                            label: 'Individuals',
+                            data: [2, 29, 5, 10],
+                            backgroundColor: "rgba(233,31,99,0.6)"
+                        }]
+                    }
+                });*/
+            },
+            error: function (result) {
+                alert('error');
+            }
+        });
+    }
+    /*const ctx = document.getElementById('myChart');
+    console.log(ctx);*/
+
+
+    var table;
+    var table1;
+    //$(document).ready(function () {
+
+    //    LoadTable();
+    //    //LoadTable1();
+    //    LoadTable2();
+
+    //});
+
+    //function LoadTable() {
+    //    $.ajax({
+    //        type: "GET",
+    //        url: "/home/custompagination",
+    //        data: {
+    //            Type: 'I'
+    //        },
+    //        success: function (data) {
+    //            console.log(data);
+    //            for (i = 0; i <= data.length; i++) {
+
+    //                var tr = "<tr>";
+    //                tr += "<td class='text-center'>" + data[i].customerId + "</td>"
+    //                tr += "<td class='text-center'>" + data[i].createdUser + "</td>";
+    //                tr += "<td class='text-center'>" + data[i].createdOn + "</td>";
+    //                tr += "<td class='text-center'>" + data[i].nationality + "</td>";
+
+    //                tr + "</tr>"; $('#bodyExampleSactionIndividual').append(tr);
+    //            }
+    //        },
+    //    });
+    //}
+    //function LoadTable2() {
+
+
+    //    $.ajax({
+    //        type: "GET",
+    //        url: "/home/custompagination",
+    //        data: {
+    //            Type: 'C'
+    //        },
+    //        success: function (data) {
+    //            console.log(data);
+    //            for (i = 0; i <= data.length; i++) {
+
+    //                var tr = "<tr>";
+    //                tr += "<td class='text-center'>" + data[i].customerId + "</td>"
+    //                tr += "<td class='text-center'>" + data[i].createdUser + "</td>";
+    //                tr += "<td class='text-center'>" + data[i].createdOn + "</td>";
+    //                tr += "<td class='text-center'>" + data[i].nationality + "</td>";
+
+    //                tr + "</tr>"; $('#bodyExampleSactionCorporate').append(tr);
+    //            }
+    //        },
+    //    });
+
+
+    //}
+
+        //function LoadTable1() {
+
+
+
+        //    $.ajax({
+        //        type: "GET",
+        //        url: "/home/CaseManagement",
+
+        //        success: function (data) {
+        //            console.log(data);
+        //            for (i = 0; i <= data.length; i++) {
+
+        //                var tr = "<tr>";
+        //                tr += "<td class='text-center'>" + data[i].customerId + "</td>"
+        //                tr += "<td class='text-center'>" + data[i].customerName + "</td>";
+        //                tr += "<td class='text-center'>" + data[i].tranType + "</td>";
+        //                tr += "<td class='text-center'>" + data[i].ruleViolated + "</td>";
+        //                tr += "<td class='text-center'>" + data[i].createdOn + "</td>";
+        //                tr += "<td class='text-center'>" + data[i].remitterNationality + "</td>";
+        //                tr + "</tr>";
+        //                $('#bodyExampleTransaction').append(tr);
+        //            }
+        //        },
+        //    });
+
+        //}
+
+
+    function Runscheduler()
+    {
+        document.getElementById("runscheduler").disabled = true;
+
+        var clientid=@clientId;
+
+
+        //alert(clientid);
+        
+        $.ajax({
+            type: "GET",
+            url: "/Home/ApprovedScreeningApi",
+            data: { clientid: clientid },
+            
+        });
+
+        setTimeout(enbaleButton, 3600000);
+    }
+
+    function enbaleButton()
+    {
+
+        document.getElementById("runscheduler").disabled = false;
+    
+    }
+</script>*@
+
+
+
+
+

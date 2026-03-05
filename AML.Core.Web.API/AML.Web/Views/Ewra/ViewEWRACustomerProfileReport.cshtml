@@ -1,0 +1,394 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+}
+@model AML.DTO.DTO.EWRA.EWRAModelDTO
+<style>
+    #table-scroll {
+        overflow: scroll;
+        margin-top: 20px;
+    }
+
+    .table {
+        width: 150%;
+    }
+
+    #FraudTable {
+        width: 120%;
+        margin-left: 1.8px;
+        overflow: scroll;
+    }
+
+    .table td, .table th {
+        padding: .65rem;
+    }
+
+    table, th {
+        text-align: center;
+    }
+
+    td {
+        vertical-align: bottom;
+        text-align: left !important;
+    }
+
+    .form-control {
+        width: 100%;
+    }
+</style>
+@*<div style="width:100% !important;height:70px !important;">
+
+    </div>*@
+<div id="printDetails" style="width:100%">
+    <br />
+    <div style="width:100%;display:none" id="logodiv">
+        <div style="width:98%;text-align:center;">
+            <h2>@companyName</h2>
+            <img src="~/img/logo.png" style="width:8%;float:right;" />
+        </div>
+        <br />
+    </div>
+    <br />
+    <div class="card-primary" id="reportViewDetails" style="width:100%;padding-left:1%;">
+        <div class="row" style="width:100%;padding-left:1%;">
+            <h3 style="width:90%">EWRA Report Of @companyName</h3>
+            <input name="b_print" id="b_print" type="button" onClick="printdiv('printDetails');" value=" Print " style="float:right;margin:20px;width:50px;"><br />
+        </div>
+        <div id="customerVolume" class="card card-body tab-pane active" role="tabpanel" style="padding-bottom:0px;padding-top:10px;">
+            <div class="card card-header" style="width:100%;float:left;background-color: darkgrey;">
+                <h3 class="card-title">
+                    @localizer["Customer Risk"]
+                </h3>
+            </div><div class="card-footer row">
+                <div style="width:50%;">
+                    <label>@localizer["Overall Average Score"]</label>
+                    <div class="form-group" style="width:70%;">
+                        <button id="btnCustomerAvgScore" disabled class="dt-button-info form-control risk-button" type="button">@Model.CustOverallScore</button>
+                    </div>
+                </div>
+                <div style="width:50%;float:right">
+                    <label>@localizer["Overall Risk Assessement Level"]</label>
+                    <div class="form-group" style="width:70%;">
+                        @if (@Model.CustOverallRisk == "Low")
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button btn-success" type="button">@Model.CustOverallRisk</button>
+                        }
+                        else if (@Model.CustOverallRisk == "Medium")
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button btn-warning" type="button">@Model.CustOverallRisk</button>
+                        }
+                        else if (@Model.CustOverallRisk == "High")
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button btn-danger" type="button">@Model.CustOverallRisk</button>
+                        }
+                        else
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button" type="button">@Model.CustOverallRisk</button>
+                        }
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div class="customerDivs">
+                <div id="customerVolume" class="card card-body ">
+                    <div class="card card-header" style="width:100%;float:left;background-color:lightgray;">
+                        <h3 class="card-title">@localizer["Risk based segregation - Volume"]</h3>
+                    </div>
+                    <div style="width:100% !important;">
+                        <table class="table" id="customerVolumeTable" style="width:100% !important;">
+                            <thead style="display:table-header-group;background-color: white;opacity: 100;">
+                                <tr class="row" style="width:100%;background-color:white">
+                                    <th style="vertical-align:middle;width:25% !important;align-items:center;display:flex;">
+                                        @localizer["Customer Type"]
+                                    </th>
+                                    <th style="width:45% !important">
+                                        <table style="width:100%">
+                                            <tr>
+                                                <td colspan="3">
+                                                    @localizer["Risk Level Assessed"]
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    @localizer["High"]
+                                                </td>
+                                                <td>
+                                                    @localizer["Medium"]
+                                                </td>
+                                                <td>
+                                                    @localizer["Low"]
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </th>
+                                    <th style="vertical-align:middle;width:15% !important;align-items:center;display:flex;">
+                                        @localizer["Total"]
+                                    </th>
+                                    <th style="vertical-align:middle;width:15% !important;align-items:center;display:flex;">
+                                        @localizer["Risk Score"]
+                                    </th>
+                                </tr>
+                            </thead>
+                            @for (var i = 0; i < Model.EWRACustomerVolume.Count; i++)
+                            {
+                                <tr class="row" style="text-align:left !important">
+                                    <td style="width:25%;">
+                                        @Model.EWRACustomerVolume[i].Type
+                                    </td>
+                                    <td style="width:15%">
+                                        <input type="text" class="form-control" id="volumeHigh_@i" value="@Model.EWRACustomerVolume[i].High" placeholder="0" disabled />
+                                    </td>
+                                    <td style="width:15%">
+                                        <input type="text" class="form-control" id="volumeMedium_@i" value="@Model.EWRACustomerVolume[i].Medium" placeholder="0" disabled />
+                                    </td>
+                                    <td style="width:15%">
+                                        <input type="text" class="form-control" id="volumeLow_@i" value="@Model.EWRACustomerVolume[i].Low" placeholder="0" disabled />
+                                    </td>
+                                    <td style="width:15%">
+                                        <input type="text" class="form-control" id="volumeTotal_@i" disabled value="@Model.EWRACustomerVolume[i].Total" />
+                                    </td>
+                                    <td style="width:15%">
+                                        @if (Convert.ToDouble(@Model.EWRACustomerVolume[i].RiskScore) < 1)
+                                        {
+                                            <button id="volumeRiskScore_@i" disabled class="dt-button-info form-control risk-button btn-success" type="button">@Model.EWRACustomerVolume[i].RiskScore</button>
+                                        }
+                                        else if (Convert.ToDouble(@Model.EWRACustomerVolume[i].RiskScore) >= 1 && Convert.ToDouble(@Model.EWRACustomerVolume[i].RiskScore) < 2)
+                                        {
+                                            <button id="volumeRiskScore_@i" disabled class="dt-button-info form-control risk-button btn-warning" type="button">@Model.EWRACustomerVolume[i].RiskScore</button>
+                                        }
+                                        else if (Convert.ToDouble(@Model.EWRACustomerVolume[i].RiskScore) >= 2)
+                                        {
+                                            <button id="volumeRiskScore_@i" disabled class="dt-button-info form-control risk-button btn-danger" type="button">@Model.EWRACustomerVolume[i].RiskScore</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                    <div class="row">
+                        <div style="width:100% !important;float:right;padding-right: 1%;">
+                            <h3 class="card-title" style="font-weight: bold; text-align: left; width: 30%; float: right;">
+                                @localizer["Assessment Score"] :
+                                <input type="text" id="volumeScore" value="@Model.CustVolumeScore" class="form-control" style="width:43%;float:right;" disabled />
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+                <div id="customerCount" class="card card-body ">
+                    <div class="card card-header" style="width:100%;float:left;background-color:lightgray;">
+                        <h3 class="card-title">@localizer["Risk based segregation - Count of customers"]</h3>
+                    </div>
+                    <div style="width:100% !important;">
+                        <table class="table" id="customerCountTable" style="width:100% !important;">
+                            <thead style="display:table-header-group;background-color: white;opacity: 100;">
+                                <tr class="row" style="width:100%;background-color:white">
+                                    <th style="vertical-align:middle;width:25% !important;align-items:center;display:flex;">
+                                        @localizer["Customer Type"]
+                                    </th>
+                                    <th style="width:45% !important">
+                                        <table style="width:100%">
+                                            <tr>
+                                                <td colspan="3">
+                                                    @localizer["Risk Level Assessed"]
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    @localizer["High"]
+                                                </td>
+                                                <td>
+                                                    @localizer["Medium"]
+                                                </td>
+                                                <td>
+                                                    @localizer["Low"]
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </th>
+                                    <th style="vertical-align:middle;width:15% !important;align-items:center;display:flex;">
+                                        @localizer["Total"]
+                                    </th>
+                                    <th style="vertical-align:middle;width:15% !important;align-items:center;display:flex;">
+                                        @localizer["Risk Score"]
+                                    </th>
+                                </tr>
+                            </thead>
+                            @for (var i = 0; i < Model.EWRACustomerCount.Count; i++)
+                            {
+                                <tr class="row" style="text-align:left !important">
+                                    <td style="width:25%;">
+                                        @Model.EWRACustomerCount[i].Type
+                                    </td>
+                                    <td style="width:15%">
+                                        <input type="text" class="form-control" id="countHigh_@i" value="@Model.EWRACustomerCount[i].High" placeholder="0" />
+                                    </td>
+                                    <td style="width:15%">
+                                        <input type="text" class="form-control" id="countMedium_@i" value="@Model.EWRACustomerCount[i].Medium" placeholder="0" />
+                                    </td>
+                                    <td style="width:15%">
+                                        <input type="text" class="form-control" id="countLow_@i" value="@Model.EWRACustomerCount[i].Low" placeholder="0" />
+                                    </td>
+                                    <td style="width:15%">
+                                        <input type="text" class="form-control" id="countTotal_@i" disabled value="@Model.EWRACustomerCount[i].Total" />
+                                    </td>
+                                    <td style="width:15%">
+                                        @*<button id="countRiskScore_@i" disabled class="dt-button-info form-control risk-button" type="button">@Model.EWRACustomerCount[i].RiskScore</button>*@
+                                        @if (Convert.ToDouble(@Model.EWRACustomerCount[i].RiskScore) < 1)
+                                        {
+                                            <button id="volumeRiskScore_@i" disabled class="dt-button-info form-control risk-button btn-success" type="button">@Model.EWRACustomerCount[i].RiskScore</button>
+                                        }
+                                        else if (Convert.ToDouble(@Model.EWRACustomerCount[i].RiskScore) >= 1 && Convert.ToDouble(@Model.EWRACustomerCount[i].RiskScore) < 2)
+                                        {
+                                            <button id="volumeRiskScore_@i" disabled class="dt-button-info form-control risk-button btn-warning" type="button">@Model.EWRACustomerCount[i].RiskScore</button>
+                                        }
+                                        else if (Convert.ToDouble(@Model.EWRACustomerCount[i].RiskScore) >= 2)
+                                        {
+                                            <button id="volumeRiskScore_@i" disabled class="dt-button-info form-control risk-button btn-danger" type="button">@Model.EWRACustomerCount[i].RiskScore</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                    <div class="row">
+                        <div style="width:100% !important;float:right;padding-right: 1%;">
+                            <h3 class="card-title" style="font-weight: bold; text-align: left; width: 30%; float: right;">
+                                @localizer["Assessment Score"] :
+                                <input type="text" id="countScore" value="@Model.CustCountScore" class="form-control" style="width:43%;float:right;" disabled />
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+                <div id="customerTransaction" class="card card-body">
+                    <div class="card card-header" style="width:100%;float:left;background-color:lightgray;">
+                        <h3 class="card-title">@localizer["Risk based segregation - Number of transactions"]</h3>
+                    </div>
+                    <div style="width:100% !important;">
+                        <table class="table" id="customerTransactionTable" style="width:100% !important;">
+                            <thead style="display:table-header-group;background-color: white;opacity: 100;">
+                                <tr class="row" style="width:100%;background-color:white">
+                                    <th style="vertical-align:middle;width:25% !important;align-items:center;display:flex;">
+                                        @localizer["Customer Type"]
+                                    </th>
+                                    <th style="width:45% !important">
+                                        <table style="width:100%">
+                                            <tr>
+                                                <td colspan="3">
+                                                    @localizer["Risk Level Assessed"]
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    @localizer["High"]
+                                                </td>
+                                                <td>
+                                                    @localizer["Medium"]
+                                                </td>
+                                                <td>
+                                                    @localizer["Low"]
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </th>
+                                    <th style="vertical-align:middle;width:15% !important;align-items:center;display:flex;">
+                                        @localizer["Total"]
+                                    </th>
+                                    <th style="vertical-align:middle;width:15% !important;align-items:center;display:flex;">
+                                        @localizer["Risk Score"]
+                                    </th>
+                                </tr>
+                            </thead>
+                            @for (var i = 0; i < Model.EWRACustomerTransaction.Count; i++)
+                            {
+                                <tr class="row" style="text-align:left !important">
+                                    <td style="width:25%;">
+                                        @Model.EWRACustomerTransaction[i].Type
+                                    </td>
+                                    <td style="width:15%">
+                                        <input type="text" class="form-control" id="transactionHigh_@i" value="@Model.EWRACustomerTransaction[i].High" placeholder="0" />
+                                    </td>
+                                    <td style="width:15%">
+                                        <input type="text" class="form-control" id="transactionMedium_@i" value="@Model.EWRACustomerTransaction[i].Medium" placeholder="0" />
+                                    </td>
+                                    <td style="width:15%">
+                                        <input type="text" class="form-control" id="transactionLow_@i" value="@Model.EWRACustomerTransaction[i].Low" placeholder="0" />
+                                    </td>
+                                    <td style="width:15%">
+                                        <input type="text" class="form-control" id="transactionTotal_@i" disabled value="@Model.EWRACustomerTransaction[i].Total" />
+                                    </td>
+                                    <td style="width:15%">
+                                        @*<button id="transactionRiskScore_@i" disabled class="dt-button-info form-control risk-button" type="button">@Model.EWRACustomerTransaction[i].RiskScore</button>*@
+                                        @if (Convert.ToDouble(@Model.EWRACustomerTransaction[i].RiskScore) < 1)
+                                        {
+                                            <button id="volumeRiskScore_@i" disabled class="dt-button-info form-control risk-button btn-success" type="button">@Model.EWRACustomerTransaction[i].RiskScore</button>
+                                        }
+                                        else if (Convert.ToDouble(@Model.EWRACustomerTransaction[i].RiskScore) >= 1 && Convert.ToDouble(@Model.EWRACustomerTransaction[i].RiskScore) < 2)
+                                        {
+                                            <button id="volumeRiskScore_@i" disabled class="dt-button-info form-control risk-button btn-warning" type="button">@Model.EWRACustomerTransaction[i].RiskScore</button>
+                                        }
+                                        else if (Convert.ToDouble(@Model.EWRACustomerTransaction[i].RiskScore) >= 2)
+                                        {
+                                            <button id="volumeRiskScore_@i" disabled class="dt-button-info form-control risk-button btn-danger" type="button">@Model.EWRACustomerTransaction[i].RiskScore</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                    <div class="row">
+                        <div style="width:100% !important;float:right;padding-right: 1%;">
+                            <h3 class="card-title" style="font-weight: bold; text-align: left; width: 30%; float: right;">
+                                @localizer["Assessment Score"] :
+                                <input type="text" id="transactionScore" value="@Model.CustTransactionScore" class="form-control" style="width:43%;float:right;" disabled />
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+        <div class="row" style="width:98%;">
+            <div class="col-sm-4">
+                <div class="form-group">
+                    <label for="dtCreatedBy">@localizer["Created By"]</label>
+                    <input type="text" asp-for="@Model.CreatedBy" class="form-control mandatory" id="dtCreatedBy" placeholder="" maxlength="200" readonly>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="form-group">
+                    <label for="dtCreatedOn">@localizer["Created On"]</label>
+                    <input type="text" asp-for="@Model.CreatedOn" class="form-control mandatory" id="dtCreatedOn" placeholder="" maxlength="200" readonly>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+    <div style="width:90%;display:none;padding-left:2%;" id="footdiv">
+        <p>@localizer["Computer generated report; hence no signature is required."]</p>
+    </div>
+</div>
+<script type="text/javascript">
+    function printdiv(printpage) {
+        var headstr1 = "<html><head>";
+        var headstr2 = "<title></title></head><body class='printDiv'>";
+        var footstr = "</body>";
+        var newstr = document.all.item(printpage).innerHTML;
+        var oldstr = document.body.innerHTML;
+        document.body.innerHTML = headstr1 + headstr2 + newstr + footstr;
+        document.getElementById("logodiv").style.display = "";
+        document.getElementById("footdiv").style.display = "";
+        document.getElementById("b_print").style.display = "none";
+        window.print();
+        document.body.innerHTML = oldstr;
+        return false;
+    }
+</script>

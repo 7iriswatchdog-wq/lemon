@@ -1,0 +1,201 @@
+﻿@using AML.Web.Helpers;
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    ViewData["Title"] = @localizer["Create"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+@model AML.ViewModel.ViewModels.InternalWathcList.WatchListModel
+<div class="card card-primary">
+    <div class="card-header">
+        <h3 class="card-title">@localizer["Block List"]</h3>
+    </div>
+    <form role="form" asp-controller="InternalWatchList" asp-action="Create" class="form-horizontal" enctype="multipart/form-data" method="post">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="CreatedBy" />
+        <div class="card-body">
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label>@localizer["Type"]<span class="text-danger">*</span></label>
+                        <select id="ddlType" class="form-control" asp-for="Type">
+                            <option value="CORPORATE">@localizer["Corporate"]</option>
+                            <option value="INDIVIDUAL">@localizer["Individual"]</option>
+                        </select>
+                        <span asp-validation-for="Type" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label for="txtFName">@localizer["Name"]<span class="text-danger">*</span></label>
+                        <input type="text" asp-for="FullName" class="form-control" id="txtFName" placeholder=@localizer["First Name"]>
+                        <span asp-validation-for="FullName" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label>@localizer["Nationality/Country of Incorporation"]<span class="text-danger">*</span></label>
+                        <select id="ddlNationalities" class="form-control" asp-for="NationalityId" asp-items="Model.Nationalities">
+                            <option value="">--@localizer["EMPTY"]--</option>
+                        </select>
+                        <span asp-validation-for="Nationality" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label for="dtDOB">@localizer["Date of Birth/Date of Incorporation"]<span class="text-danger">*</span></label>
+                        <input type="date" asp-for="DOB" class="form-control" id="dtDOB" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder=@localizer["Date of Birth"]>
+                        <span asp-validation-for="DOB" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label>@localizer["Source"]<span class="text-danger">*</span></label>
+                        <select id="ddlSource" class="form-control" asp-for="Source">
+                            <option value="CBWL">@localizer["Central Bank Watch List"]</option>
+                            <option value="BL">@localizer["Black List"]</option>
+                            <option value="INTERNAL">@localizer["Block List"]</option>
+                            @*<option value="WL">White List</option>*@
+                        </select>
+                        <span asp-validation-for="Source" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label for="txtIdNo">@localizer["Id Number"]</label>
+                        <input type="text" asp-for="IdNumber" class="form-control" id="txtIdNo" placeholder=@localizer["Id Number"]>
+                        <span asp-validation-for="IdNumber" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /.card-body -->
+
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary" onclick="fnSubmit()">@localizer["Submit"]</button>
+        </div>
+
+
+    </form>
+</div>
+<div class="card card-primary">
+    <div class="card-header">
+        <h3 class="card-title">@localizer["Bulk Upload"]</h3>
+    </div>
+    <form role="form" asp-controller="InternalWatchList" asp-action="Upload" class="form-horizontal" enctype="multipart/form-data" method="post">
+        @*<form role="form" class="form-horizontal" enctype="multipart/form-data" method="post">*@
+
+        <div class="card-body">
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+
+                        <label for="flDocument">@localizer["Bulk Upload"]</label>
+                        <a class="btn btn-info btn-sm float-right" id="link" onclick="DownloadOtherSample();" style="margin-left:20px;margin-bottom:20px">@localizer["Other Download"]</a>
+                        <a class="btn btn-info btn-sm float-md-right" id="link " onclick="DownloadInternalWatchList();">@localizer["Internal WatchList Download"]</a>
+                     
+                        <input type="file" asp-for="Document.fileUpload" class="form-control" id="flDocument" placeholder=@localizer["Upload Excel"]>
+                        <span asp-validation-for="Document.fileUpload" class="text-danger"></span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!-- /.card-body -->
+
+        <div class="card-footer">
+            <button type="submit" id="submit" onclick="fnSubmit()" class="btn btn-primary">@localizer["Upload"]</button>
+            <button asp-action="Screen" id="screen" onclick="screenFromExcel()" class="btn btn-primary">@localizer["Upload and screen"]</button>
+        </div>
+
+
+    </form>
+</div>
+@if (Model.ExcelData != null && Model.ExcelData.Count > 0)
+{
+    <h4>@localizer["Preview"]</h4>
+    <table id="filterTable" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
+        <thead>
+            <tr>
+                <th>@localizer["Customer ID"]</th>
+                <th>@localizer["Source"]</th>
+                <th>@localizer["Customer Name"]</th>
+                <th>@localizer["Type"]</th>
+                <th>@localizer["Nationality/Country"]</th>
+                <th>@localizer["Date of Birth/Incorporation"]</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (AML.ViewModel.ViewModels.InternalWathcList.ExcelData items in Model.ExcelData)
+            {
+                <tr>
+                    <th>@items.CustomerId</th>
+                    <th>@items.Source</th>
+                    <th>@items.FullName</th>
+                    <th>@items.Type</th>
+                    <th>@items.Nationality</th>
+                    <th>@items.DOB</th>
+                </tr>
+            }
+
+        </tbody>
+    </table>
+}
+<script type="text/javascript">
+    function fnSubmit() {
+        $(".se-pre-con").show();
+    }
+    
+    function screenFromExcel() {
+        $(".se-pre-con").show();
+         $.ajax({
+            type: "POST",
+            url: "/InternalWatchList/Screen",
+            data: { filename: filename },
+            success: function (data) {
+                window.location = '/InternalWatchList/DownloadInternalWatchList';
+            },
+            error: function (result) {
+                alert('error');
+            }
+        });
+    }
+
+    function DownloadInternalWatchList(filename) {
+        var type = $('#filename').val();
+        $.ajax({
+            type: "GET",
+            url: "/InternalWatchList/DownloadInternalWatchList",
+            data: { filename: filename },
+            success: function (data) {
+                window.location = '/InternalWatchList/DownloadInternalWatchList';
+            },
+            error: function (result) {
+                alert('error');
+            }
+        });
+    }
+    function DownloadOtherSample(filename) {
+        var type = $('#filename').val();
+        $.ajax({
+            type: "GET",
+            url: "/InternalWatchList/DownloadOtherSample",
+            data: { filename: filename },
+            success: function (data) {
+                window.location = '/InternalWatchList/DownloadOtherSample';
+            },
+            error: function (result) {
+                alert('error');
+            }
+        });
+    }
+    document.getElementById("submit").onclick = function (e) {
+        if (document.getElementById("flDocument").value == "") {
+            e.preventDefault();
+            alert("Please select a file.");
+        }
+    }
+</script>

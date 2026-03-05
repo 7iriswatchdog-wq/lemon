@@ -1,0 +1,708 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Customer Listing";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model AML.ViewModel.ViewModels.Report.ReportLogSearchModel
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<style>
+    select {
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.41 0L6 4.59L10.59 0L12 1.42L6 7.42L0 1.42L1.41 0Z' fill='black'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position-x: calc(100% - 20px) !important;
+        background-position-y: 50% !important;
+        background-size: 12px 8px !important;
+        padding-right: 2rem;
+    }
+
+    heading {
+        font-size: 1.25rem;
+    }
+
+    .page {
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    input, select {
+        border: 1px solid #dee2e6 !important;
+        font-weight: lighter;
+    }
+
+    .head-section {
+        display: flex;
+        justify-content: space-between; /* Better than flex-start + auto margin */
+        align-items: center;
+        width: 100%;
+        height: 72px;
+        overflow-x: hidden;
+        padding: 0 16px; /* Add horizontal padding if needed */
+        box-sizing: border-box;
+        background-color: white !important;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .card1 {
+        max-width: 100%; /* Ensures it never overflows parent */
+        border-radius: 8px;
+        overflow: hidden; /* Contains all child elements */
+        background-color: white !important;
+        margin: 30px 30px;
+        padding: 20px;
+        box-shadow: 0 0 #0000, /* fallback ring-offset-shadow */
+        0 0 #0000, /* fallback ring-shadow */
+        0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
+
+    .flex-box {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 10px 0px;
+    }
+
+        .flex-box > .flex-item {
+            flex: 1 1 250px;
+            text-align: center;
+        }
+
+    .form-group {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .flex-item input {
+        width: 90%; /* full width of the parent */
+        min-width: 40%;
+        box-sizing: border-box; /* includes padding in the width */
+        padding: 8px;
+        border-radius: 4px; /* spacing between inputs */
+    }
+
+    select {
+        width: 90%; /* full width of the parent */
+        min-width: 40%;
+        box-sizing: border-box; /* includes padding in the width */
+        padding: 8px;
+        border-radius: 4px; /* spacing between inputs */
+    }
+
+    .flex-box1 {
+        width: 80%;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .go {
+        background-color: rgb(37,99,235);
+        border-radius: 8px;
+        padding: 8px 20px;
+        color: white;
+    }
+
+    .clear {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 8px 20px;
+    }
+
+    input:focus {
+        border: 1px solid rgb(37,99,235) !important;
+    }
+
+    select:focus {
+        border: 1px solid rgb(37,99,235) !important;
+    }
+
+    .export {
+        background-color: none;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 8px 20px;
+    }
+
+    .flex-box2 {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    table {
+        @* width: 75vw; *@
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    thead {
+        background-color: rgb(233,239,253);
+        width: 100%;
+    }
+
+    th {
+        padding: 15px 0px;
+        font-weight: 500;
+    }
+
+    thead th {
+        width: calc(100% / 8); /* Replace with actual number */
+        word-wrap: break-word; /* Wrap long words */
+        white-space: normal; /* Allow wrapping */
+        text-align: center;
+        padding: 8px;
+    }
+
+    td {
+        width: calc(100% / 8); /* Replace with actual number */
+        word-wrap: break-word; /* Wrap long words */
+        white-space: normal; /* Allow wrapping */
+        text-align: center;
+        padding: 8px;
+    }
+
+    tr {
+        text-align: center;
+    }
+
+    thead th:first-child {
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+    }
+
+    thead th:last-child {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+
+    th, td {
+        width: calc(100% / 8);
+        word-wrap: break-word;
+        text-align: center;
+    }
+
+    tr {
+        border: none !important;
+    }
+
+    td {
+        padding: 15px;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        align-items: center;
+    }
+
+        .pagination-container select {
+            width: 100px;
+        }
+
+
+
+    @@media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .search {
+            margin: 10px 0px;
+        }
+
+        .page {
+            width: 79vw;
+        }
+
+        .items-center select {
+            width: 115px;
+        }
+
+        .export {
+            margin: 10px;
+        }
+    }
+
+    th.sort-asc i.fa-sort {
+        color: #000 !important;
+    }
+
+    th.sort-desc i.fa-sort {
+        color: #000 !important;
+    }
+
+    th.sort-asc i.fa-sort:before {
+        content: "\f0de"; /* arrow up */
+    }
+
+    th.sort-desc i.fa-sort:before {
+        content: "\f0dd"; /* arrow down */
+    }
+</style>
+@* for the loading effect like data tables ... *@
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+</style>
+<div class="page bg-gray-50">
+    <div class="custom-container aml-customer-listing">
+        @* <div class="page-heading">
+            <div class="sas-card rounded-card br-20 mb-2 bg-blue head-section">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 heading"><b>Customer Listing</b></h4>
+                    <div class="menu-icon">
+                        <i class="lni lni-microsoft"></i>
+                    </div>
+                </div>
+                <div class="md:block ">
+                    <img src="@Clientlogo" alt="Client Logo" width="50px" />
+                </div>
+            </div>
+        </div> *@
+        <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-white">
+            <div class="flex items-center justify-between w-full">
+                <!-- Title -->
+                <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                    Customer Listing
+                </h2>
+
+                <!-- Right-side content -->
+                <div class="text-sm md:text-base text-right">
+                    <img src="@Clientlogo" alt="Client Logo" width="50px" />
+                </div>
+            </div>
+        </nav>
+        <!-- /.card-header -->
+        <!-- form start -->
+        <!--form role="form" asp-controller="Case" asp-action="SanctionScreening" class="form-horizontal" enctype="multipart/form-data" method="post"-->
+        <div class="cont1 relative">
+            <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+                <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+            </div>
+            <div class="sas-card rounded-card mb-2 bg-blue card1">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><b>Customer Listing Filter</b></h6>
+                </div>
+                <div class="row flex-box">
+                    <div class="col-sm flex-item">
+                        <div class="form-group">
+                            <label for="dtDOB">Start Date</label>
+                            <input type="date" asp-for="StartDate" class="form-control br-50" id="dtStartDate" max="@DateTime.Now.ToString("yyyy-MM-dd")" placeholder="Start Date">
+                            <span asp-validation-for="StartDate" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-sm flex-item">
+                        <div class="form-group">
+                            <label for="dtDOB">End Date</label>
+                            <input type="date" asp-for="EndDate" class="form-control br-50" id="dtEndDate" max="@DateTime.Now.ToString("yyyy-MM-dd")" placeholder="End Date">
+                            <span asp-validation-for="EndDate" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-sm flex-item">
+                        <div class="form-group">
+                            <label for="matchTypeID">Matching</label>
+                            <select asp-for="MatchType" class="form-control br-50" asp-items="@Model.MatchTypeList" id="matchTypeID">
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row justify-content-end">
+
+                    <div class="d-flex justify-content-between align-items-center flex-box2">
+                        <button type="submit" id="btnSearch" class="sas-button p-8-25 color-white bg-color-2 go" onclick="fetchData('', 1);">GO</button>
+                        <button type="reset" id="btnReset" class="sas-button p-8-25 color-white bg-color-3 ml-2 mr-3 clear">Clear All</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- /.card-body -->
+            <!--/form-->
+
+
+            <div class=" relative custom-container aml-customer-listing">
+
+                <div class="sas-card rounded-card mb-2 bg-blue card1">
+                    <div class="flex-box">
+                        <div style="margin : 10px;">
+                            <h1 class="text-xl font-semibold text-gray-900" style="display : inline">Filter Results</h1>
+                        </div>
+                        <div class="flex gap-4 flex-box flex-box1">
+                            <div class="relative w-96 ">
+                                <input type="text"
+                                       placeholder="Search anything..."
+                                       class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+
+                                </svg>
+                            </div>
+                            <div>
+                                <button type="button" onclick="ExportList(true);" class="sas-button p-8-25 bg-color-2 ml-2 export">Export PDF</button>
+                                <button type="button" onclick="ExportList(false);" class="sas-button p-8-25 bg-color-1 ml-3 export">Export CSV</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="width: 100%;">
+                        <div class="table-responsive">
+
+                            <table id="filterTable" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
+                                <div class="loader-container" style="display: none;">
+                                    <div class="loader"></div>
+                                </div>
+                                <thead>
+                                    <tr>
+                                        <th onclick="sortTable(0)" style="text-align: left;">Customer Type <i class="fa fa-sort"></i></th>
+                                        <th onclick="sortTable(1)" style="text-align: left;">Customer ID <i class="fa fa-sort"></i></th>
+                                        <th onclick="sortTable(2)" style="text-align: left;">Customer Name <i class="fa fa-sort"></i></th>
+                                        <th onclick="sortTable(3)" style="text-align: left;">Dob <i class="fa fa-sort"></i></th>
+                                        <th onclick="sortTable(4)" style="text-align: left;">Nationality <i class="fa fa-sort"></i></th>
+                                        <th onclick="sortTable(5)" style="text-align: left;">Matched <i class="fa fa-sort"></i></th>
+                                        <th onclick="sortTable(6)" style="text-align: left;">Created By <i class="fa fa-sort"></i></th>
+                                        <th onclick="sortTable(7)" style="text-align: left;">Date <i class="fa fa-sort"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                        @* <div class="pagination-container d-flex justify-content-between mt-4 flex-wrap gap-2">
+                            <div class="rows-per-page mr-4 mb-2">
+                                <label for="rowsPerPage" class="mr-2 text-sm">Show rows:</label>
+                                <select id="rowsPerPage" class="rounded border px-2 py-1 text-sm">
+                                    <option value="5">5 items</option>
+                                    <option value="10" selected>10 items</option>
+                                    <option value="25">25 items</option>
+                                    <option value="50">50 items</option>
+                                </select>
+                            </div>
+                            <div class="pagination-buttons flex flex-wrap gap-2 mb-2"></div>
+                        </div> *@
+                        <div class="pagination-container mt-4 flex flex-col sm:flex-row sm:justify-between gap-2">
+
+                            <!-- Rows per page -->
+                            <div class="rows-per-page mb-2 sm:mb-0">
+                                <label for="rowsPerPage" class="mr-2 text-sm">Show rows:</label>
+                                <select id="rowsPerPage" class="rounded border px-2 py-1 text-sm">
+                                    <option value="5">5 items</option>
+                                    <option value="10" selected>10 items</option>
+                                    <option value="25">25 items</option>
+                                    <option value="50">50 items</option>
+                                </select>
+                            </div>
+
+                            <!-- Pagination -->
+                            <div class="pagination-buttons w-full flex flex-col sm:flex-row justify-center gap-2"></div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    // ========== UTILITY FUNCTIONS ==========
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    }
+
+    // ========== CORE FUNCTIONS ==========
+    let draw = 1;
+    let currentPage = 1;
+    let totalPages = 1;
+    let allData;
+    let currentSortColumn = 0;
+    let currentSortDirection = 'asc';
+
+    function sortTable(columnIndex) {
+        $('#filterTable th').removeClass('sort-asc sort-desc');
+        $('#filterTable th i.fa-sort').css('color', '#ccc');
+
+        if (currentSortColumn === columnIndex) {
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortColumn = columnIndex;
+            currentSortDirection = 'asc';
+        }
+
+        const $header = $('#filterTable th').eq(columnIndex);
+        $header.addClass(`sort-${currentSortDirection}`);
+        $header.find('i.fa-sort').css('color', '#2563eb');
+
+        fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+    }
+
+    function fetchData(searchValue = '', page = 1) {
+        $('#loader').show();
+        const pageSize = parseInt($('#rowsPerPage').val()) || 10;
+        const start = (page - 1) * pageSize;
+
+        $.ajax({
+            url: '/Report/CustomerListing',
+            type: 'POST',
+            headers: {
+                'RequestVerificationToken': $('meta[name="csrf-token"]').attr('content')
+            },
+            data: {
+                draw: draw++,
+                start: start,
+                length: pageSize,
+                search: { value: searchValue },
+                orderColumn: currentSortColumn,
+                orderDirection: currentSortDirection,
+                startDate: $('#dtStartDate').val(),
+                endDate: $('#dtEndDate').val(),
+                match: $('#matchTypeID').val()
+            },
+            success: function (resp) {
+                const rows = resp.data || [];
+                const totalRecords = resp.recordsFiltered || 0;
+                allData = resp.allRows;
+                totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+
+                renderTable(rows);
+                renderPager(page);
+
+                if ($('#dtStartDate').val() == '0001-01-01') {
+                    $('#dtStartDate').val('');
+                    $('#dtEndDate').val('');
+                }
+                $('#loader').hide();
+            },
+            error: function (xhr) {
+                console.error('Error fetching data:', xhr.statusText);
+                $('#loader').hide();
+            }
+        });
+    }
+
+    function renderTable(rows) {
+        const $tbody = $('#filterTable tbody').empty();
+
+        if (!rows.length) {
+            $tbody.append('<tr><td colspan="8" class="text-center py-4">No data available</td></tr>');
+            return;
+        }
+
+        rows.forEach(item => {
+            $tbody.append(`<tr>
+                <td>${item.customerType || ''}</td>
+                <td>${item.customerID || ''}</td>
+                <td>${item.customerName || ''}</td>
+                <td>${formatDate(item.dob) || ''}</td>
+                <td>${item.nationality || ''}</td>
+                <td>${item.match || ''}</td>
+                <td>${item.createdBy || ''}</td>
+                <td>${formatDate(item.createdOn) || ''}</td>
+            </tr>`);
+        });
+    }
+
+    function renderPager(page) {
+        const $pagerButtons = $('.pagination-buttons').empty();
+        if (totalPages <= 1) return;
+
+        const btn = (lbl, pg, disabled, active) =>
+            `<button class="px-3 py-1 border rounded
+                ${active ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'}
+                ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}"
+                data-page="${pg}" ${disabled ? 'disabled' : ''}>
+                ${lbl}
+            </button>`;
+
+        $pagerButtons.append(btn('First', 1, page === 1));
+        $pagerButtons.append(btn('Previous', page - 1, page === 1));
+
+        const maxVisible = 5;
+        let start = Math.max(1, page - Math.floor(maxVisible / 2));
+        let end = start + maxVisible - 1;
+
+        if (end > totalPages) {
+            end = totalPages;
+            start = Math.max(1, end - maxVisible + 1);
+        }
+
+        for (let i = start; i <= end; i++) {
+            $pagerButtons.append(btn(i, i, false, i === page));
+        }
+
+        $pagerButtons.append(btn('Next', page + 1, page === totalPages));
+        $pagerButtons.append(btn('Last', totalPages, page === totalPages));
+    }
+
+    function ExportList(isPDF) {
+        $.ajax({
+            type: "GET",
+            url: "/Report/ExportCustomerList/",
+            data: {
+                startDate: $('#dtStartDate').val(),
+                endDate: $("#dtEndDate").val(),
+                match: $("#matchTypeID").val(),
+                IsPDF: isPDF
+            },
+            success: function (data) {
+                window.location = '/Report/ExportCustomerList?startDate=' +
+                    $('#dtStartDate').val() + '&endDate=' +
+                    $("#dtEndDate").val() + '&match=' +
+                    $("#matchTypeID").val() + '&IsPDF=' + isPDF;
+            },
+            error: function (result) {
+                alert('error');
+            }
+        });
+    }
+
+    // ========== EVENT HANDLERS ==========
+    $(document).ready(function () {
+        fetchData('', 1);
+
+        $('#btnRefresh').on('click', function () {
+            fetchData('', 1);
+        });
+
+        $('#rowsPerPage').on('change', () => {
+            currentPage = 1;
+            fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+        });
+
+        $('input[placeholder="Search anything..."]').on('input', function () {
+            const keyword = $(this).val().toLowerCase();
+            currentPage = 1;
+            clientSideSearch(keyword, currentPage);
+        });
+
+        function clientSideSearch(keyword, page = 1) {
+            const filtered = allData.filter(item =>
+                (item.customerType || '').toLowerCase().includes(keyword) ||
+                (item.customerID + '').toLowerCase().includes(keyword) ||
+                (item.customerName || '').toLowerCase().includes(keyword) ||
+                (formatDate(item.dob) || '').toLowerCase().includes(keyword) ||
+                (item.nationality || '').toLowerCase().includes(keyword) ||
+                (item.match || '').toLowerCase().includes(keyword) ||
+                (item.createdBy || '').toLowerCase().includes(keyword) ||
+                (formatDate(item.createdOn) || '').toLowerCase().includes(keyword)
+            );
+
+            const pageSize = parseInt($('#rowsPerPage').val()) || 10;
+            totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+            const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+            renderTable(paginated);
+            renderPager(page);
+        }
+
+        $(document).on('click', '.pagination-buttons button', function () {
+            const pg = parseInt($(this).data('page'));
+            console.log('Page clicked:', pg);
+            if (!isNaN(pg) && pg >= 1 && pg <= totalPages) {
+                currentPage = pg;
+                fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+            }
+        });
+
+        $('#dtStartDate, #dtEndDate, #matchTypeID').on('change', function () {
+            currentPage = 1;
+            fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+        });
+
+        $("#btnReset").click(function () {
+            const date = new Date();
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const today = `${year}-${month}-${day}`;
+            $('#dtStartDate').val(today);
+            $('#dtEndDate').val(today);
+            $('#matchTypeID').val(1);
+            fetchData('', 1);
+        });
+    });
+</script>

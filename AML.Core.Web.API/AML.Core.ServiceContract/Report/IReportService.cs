@@ -1,0 +1,28 @@
+using AML.DTO.DTO.Report;
+using AML.ViewModel.ViewModels.Report;
+using System.Collections.Generic;
+
+namespace AML.Core.ServiceContract.Report
+{
+    public interface IReportService
+    {
+        List<CaseReportListDTO> GetCaseReportList(CaseReportRequestDTO model);
+
+        List<CaseReportListDTO> GetCaseManagementReportList(CaseReportRequestDTO model);
+        List<CaseReportListDTO> GetCompletedCaseReportList(CaseReportRequestDTO model);
+        List<CaseReportListDTO> GetCasePreviousWeekReportList(CaseReportRequestDTO model);
+        int GetCustomerCaseCount(int status,int clientId);
+
+        int GetCustomerTypeCount(string customertype, int clientId);
+
+        int GetapprovedCaseCount(int status, int clientId);
+        List<CaseReportListDTO> GetCustomerReportList(ReportLogSearchModel model);
+
+        int GetClientCountReportList(CaseReportRequestDTO model);
+        List<UploadLogsListDTO> GetUploadLogstList();
+        List<DigiSchedulerLogsDTO> GetDigiSchedulerList(int clientId); 
+        List<RiskDashboardDTO> GetRiskCount(int status,int clientId);
+        List<CaseReportListDTO> GetKycReportList(CaseReportRequestDTO model);
+        List<CaseReportListDTO> GetLatestDate(int clientid);
+    }
+}

@@ -1,0 +1,2160 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var jsonItems = Newtonsoft.Json.JsonConvert.SerializeObject(Model.PartnerNationalityList);
+        var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+        var userModules = HttpContextAccessor.HttpContext.Session.GetString("SessModules");
+	var allowedModules = new List<int>();
+	 if (!string.IsNullOrEmpty(userModules))
+    {
+        var modules = JsonConvert.DeserializeObject<List<dynamic>>(userModules);
+        allowedModules = modules.Select(m => (int)m.Menu_Id).ToList();
+    }
+}
+@model AML.ViewModel.ViewModels.Kyc.CorporateKycModel
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<script src="~/plugins/datatables/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.4/css/jquery.dataTables.css">
+<style type="text/css">
+    /* .se-pre-con1 {
+        position: fixed;
+        left: 0px;
+        top: 0px;
+        width: 100%;
+        height: 100%;
+        z-index: 9999;
+        background: url(/img/loader1.gif) center no-repeat #fff;
+        opacity: 0.8
+    } */
+
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+
+    /* Drag-and-Drop Styles for Shareholders */
+    .shareholder-drag-handle {
+        cursor: move;
+        padding: 0.5rem;
+        transition: color 0.2s ease;
+    }
+
+    .shareholder-drag-handle:hover {
+        color: #1e40af;
+    }
+
+    .shareholder-ghost {
+        opacity: 0.4;
+        background: #f0f9ff;
+        border: 2px dashed #3b82f6;
+    }
+
+    .shareholder-drag {
+        opacity: 1;
+        transform: rotate(2deg);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        cursor: grabbing;
+    }
+
+    .shareholder-chosen {
+        background: #eff6ff;
+        border-color: #3b82f6;
+    }
+
+    .shareholders-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+</style>
+<body>
+    <div id="loading"
+             class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
+            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        </div>
+    @* <nav class="border-b">
+        <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+            <div>
+                <h2 class="text-2xl font-bold">Corporate KYC</h2>
+            </div>
+            <div class="md:block hidden">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                @localizer["Corporate KYC"]
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+
+    <div class="h-auto bg-gray-50 items-center  ">
+
+        <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4  mx-auto">
+
+            <form asp-controller="Kyc" asp-action="CreateCorporateKyc" class="space-y-6 form-horizontal" enctype="multipart/form-data" method="post">
+                <div class="w-full bg-white rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100 mb-2">
+                    <div class="border-b mb-6 w-fit">
+                        <nav class="flex  flex-col md:flex-row md:space-x-2  gap-4">
+                          @if (allowedModules.Contains(1)) // Check if menu ID is allowed
+								{
+									<a asp-controller="Corporate" asp-action="CorporateScreening" class="text-[#64748B] font-extralight rounded-t-lg pb-4" onclick="showLoadingAndRedirect(event, this)">Name Screening</a>
+								}
+								@if (allowedModules.Contains(11)) // Check if menu ID is allowed
+								{
+								  <a asp-controller="Kyc" asp-action="CreateCorporateKyc" class="border-b-2 rounded-t-lg border-blue-600 pb-4 font-normal text-md" onclick="showLoadingAndRedirect(event, this)">KYC Profile Screening</a>
+								}
+								@if (allowedModules.Contains(1)) // Check if menu ID is allowed
+								{
+									<a asp-controller="ClientCase" asp-route-type="C" asp-action="UploadExcelCorporate" class="text-[#64748B] font-extralight rounded-t-lg pb-4" onclick="showLoadingAndRedirect(event, this)">Bulk Upload Screening</a>
+								}
+                        </nav>
+                    </div>
+                    <div class="space-y-6">
+                        <h2 class="text-lg font-semibold pb-2">@localizer["Corporate KYC Details"]</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Full Name"]<span class="text-red-500">*</span></label>
+                                <input type="text" asp-for="FullName" id="fname" onkeypress="alphaCheck(event)" maxlength="100" required class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Date of Incorporation"]</label>
+                                <input type="date" id="date_incorporation" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" onchange="doiOnChange()" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                                <input type="hidden" asp-for="DateofIncorporation" id="hdnDOI" />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Country of Incorporation"]</label>
+                                <select asp-for="PlaceofIncorporation" asp-items="Model.CountryofIncorporationList" id="ddl_placeofincorporation_1" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight"></select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Type of Entity/ Legal Status"]</label>
+                                <select asp-items="Model.EntityType" id="ddlpublic_l_Company" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>
+                            </div>
+
+                            <div id="entityTypeOther" style="display:none;">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Others (Please specify)"]</label>
+                                <input type="text" id="EntityType" asp-for="EntityTypeTxt" onkeypress="alphaCheck(event)" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["City"]</label>
+                                <input type="text" id="city" asp-for="EntityAddress.City" maxlength="20" onkeypress="alphaCheck(event)" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Emirate"]</label>
+                                <input type="text" id="emirate" asp-for="EntityAddress.Emirate" maxlength="20" onkeypress="alphaCheck(event)" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Country"]</label>
+                                <select asp-for="EntityAddress.Country" asp-items="Model.EntityAddress.CountryList" id="ddlCountryList" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>
+                                <input type="hidden" id="country" asp-for="EntityAddress.Country" />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">P.O. Box</label>
+                                <input type="number" id="p_o_box" asp-for="EntityAddress.POBox" max="20" oninput="POXboxInputSize(this)" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Corporate Website"]</label>
+                                <input type="text" id="corporate_website" asp-for="CorporateWebsite" maxlength="20" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Tel. No"]</label>
+                                <input type="number" id="telephone_no" asp-for="Telephone" minlength="9" maxlength="20" onkeypress="isNumber(event)" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Email ID"]</label>
+                                <input type="email" id="email_id" asp-for="Email" maxlength="50" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                            </div>
+
+                        </div>
+                    </div><br />
+                    <div class="space-y-6">
+                        <h2 class="text-lg font-semibold pb-2">@localizer["Commercial License Details"]</h2>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium  text-gray-700 mb-1">@localizer["License Number"]</label>
+                                <input type="text" id="license_no" asp-for="CommercialLicense.LicenseNumber" maxlength="20" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium  text-gray-700 mb-1">@localizer["License Issue Date"]</label>
+                                <input type="date" id="licence_issue_date" asp-for="CommercialLicense.LicenseIssueDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["License Issuing Authority"]</label>
+                                <input type="text" id="licence_issuing_authority" asp-for="CommercialLicense.LicenseIssuingAuthority" maxlength="20" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["License Expiry Date"]</label>
+                                <input type="date" id="licence_exp_date" asp-for="CommercialLicense.LicenseExpiryDate" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Place of Issue"]</label>
+                                <input type="text" id="place_of_issue" asp-for="CommercialLicense.PlaceofIssue" maxlength="20" onkeypress="alphaCheck(event)" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["License Type"]</label>
+                                <select id="ddlLicenseType" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                    <option value="Trading">@localizer["Trading"]</option>
+                                    <option value="Commercial">@localizer["Commercial"]</option>
+                                    <option value="Industrial">@localizer["Industrial"]</option>
+                                    <option value="Professional">@localizer["Professional"]</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="ddlLicenseTypehdn" asp-for="CommercialLicense.LicenseTypeTxt" />
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Business Activity"]</label>
+                                <select id="ddlBusinessType" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-items="Model.BusinessTypeList">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>
+                            </div>
+                            <div id="BusinessOther" class="hidden">
+                                <input type="text" id="ddlBusinessTypehdn" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="BusinessType" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Product Type"]</label>
+                                <select id="ddlProductType" asp-for="ProductName" asp-items="Model.ProductTypeList" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Delivery Channel"]</label>
+                                <select id="ddlDeliveryChannel" asp-for="DeliveryChannelName" asp-items="Model.DeliveryChannelList" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Mode of Payment"]</label>
+                                <select asp-for="Modeofpayment" asp-items="Model.ModeofpaymentList" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["VAT Registration Number"]</label>
+                                <input type="text" id="vat_registration" asp-for="VATRegistrationNumber" maxlength="15" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Source of funds"]</label>
+                                <select id="ddlFundSource" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                    <option value="Operations/Trading">@localizer["Operations/Trading"]</option>
+                                    <option value="Investments/Dividends">@localizer["Investments/Dividends"]</option>
+                                    <option value="Finance">@localizer["Finance"]</option>
+                                    <option value="Other">@localizer["Other"]</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Pep Declaration"]</label>
+                                <select id="ddlpepstatus" asp-for="PEPStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                    <option value="Unsure">Unsure</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Address"]</label>
+                                <textarea rows="2" asp-for="Address" id="Address" name="Address" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight resize-none" placeholder=@localizer["Address"]></textarea>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">@localizer["Other (Please Specify)"]</label>
+                                <input type="text" id="ddlFundSourcehdn" asp-for="FundSourceOther" placeholder="Other" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <br/>
+                    <div id="groupEntityContainer">
+                        <div class="rounded-xl shadow-md border p-4 bg-white mb-6 group-entity-card">
+                            <div class="flex flex-col md:flex-row gap-4 md:justify-between md:items-center mb-4">
+                                <h2 class="text-lg font-semibold text-gray-800">Group Entity Information</h2>
+                                <div class="flex flex-col md:flex-row gap-2 ">
+                                    <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded add-entity">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                    <button type="button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded remove-entity">
+                                        <i class="fas fa-minus-circle"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Entity Name</label>
+                                    <input type="text" name="GroupEntities[0].Name" asp-for="GroupEntity[0].EntityName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Country</label>
+                                    <select id="ddl_placeofincorporation_0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" asp-items="Model.EntityAddress.CountryList">
+                                                <option value="0">--@localizer["EMPTY"]--</option>
+                                            </select>
+                                            <input type="hidden" id="group_placeofincorporate_0" asp-for="GroupEntity[0].PlaceofIncorporation" />
+                                    
+                                </div>
+                            </div>
+
+                            <div class="mt-6">
+                                <div class="flex flex-col md:flex-row gap-4 md:justify-between md:items-center mb-2">
+                                    <h3 class="text-md font-semibold text-gray-700">Documents</h3>
+                                    <button type="button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded add-document">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+
+                                <div class="document-upload-table space-y-4">
+                                    <div class="grid grid-cols-1 gap-4 document-row">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            <!-- Document Reference -->
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Document Reference</label>
+                                                <input type="text" name="GroupEntities[0].Documents[0].DocumentReference" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                            </div>
+
+                                            <!-- Issue Date -->
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Issue Date</label>
+                                                <input type="date" name="GroupEntities[0].Documents[0].IssueDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                            </div>
+
+                                            <!-- Expiry Date -->
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Expiry Date</label>
+                                                <input type="date" name="GroupEntities[0].Documents[0].ExpiryDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                            </div>
+
+                                            <div class="md:col-span-2 space-y-1">
+                                                <label class="block text-sm font-medium text-gray-700">Upload</label>
+                                                <input type="file" name="GroupEntities[0].Documents[0].File" class="w-full bg-[#F0F4FF] px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-gray-600 flex items-center justify-center gap-2 font-extralight" id="upload_0" />
+                                                @* <label for="upload_0" class="mt-1 w-full flex flex-col items-center px-4 py-2 bg-white text-blue-500 rounded-md shadow-sm tracking-wide border border-blue-500 cursor-pointer hover:bg-blue-500 hover:text-white">
+                                                    <i class="fas fa-upload text-lg mb-1"></i>
+                                                    <span class="text-sm leading-normal">Upload Document</span>
+                                                </label> *@
+                                            </div>
+
+                                            <!-- Remove Button -->
+                                            <div class="flex items-end justify-end md:col-start-2 lg:col-start-3">
+                                                <button type="button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded remove-document">
+                                                    <i class="fas fa-minus-circle mr-1"></i> Remove
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Upload Field Row -->
+                                        @* <div class="grid grid-cols-4 gap-4">
+                                            <div class="col-span-4">
+                                                <label class="block text-sm font-medium text-gray-700">Upload</label>
+                                                <input type="file" name="GroupEntities[0].Documents[0].File" class="hidden" id="upload_0" />
+                                                <label for="upload_0" class="mt-1 w-full flex flex-col items-center px-4 py-2 bg-white text-blue-500 rounded-md shadow-sm tracking-wide border border-blue-500 cursor-pointer hover:bg-blue-500 hover:text-white">
+                                                    <i class="fas fa-upload text-lg mb-1"></i>
+                                                    <span class="text-sm leading-normal">Upload Document</span>
+                                                </label>
+                                            </div>
+                                        </div> *@
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div id="shareholdersContainer">
+                        <div class="rounded-xl shadow-md border p-4 bg-white mb-6 shareholders-card">
+                            <div class="flex flex-col md:flex-row gap-4 md:justify-between md:items-center mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="shareholder-drag-handle text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-grip-vertical"></i>
+                                    </div>
+                                    <h2 class="text-lg font-semibold text-gray-800">Name of Shareholders</h2>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded add-shareholder">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                    <button type="button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded remove-shareholder">
+                                        <i class="fas fa-minus-circle" id="remove_0"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Name</label>
+                                    <input type="text" name="Shareholders[0].Name" asp-for="Partners[0].Name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Share</label>
+                                    <input type="text" name="Shareholders[0].Share" asp-for="Partners[0].Percentage" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Nationality</label>
+                                    <select name="Shareholders[0].Nationality" asp-items="Model.PartnerNationalityList"  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                        <option>--Select Country--</option>
+                                    </select>
+                                    <input type="hidden" id="nationality_0" asp-for="Partners[0].Nationality" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Emirates ID Number</label>
+                                    <input type="text" name="Shareholders[0].EmiratesID" id="emirates_id_0" asp-for="Partners[0].EmiratesID" placeholder="784-XXXX-XXXXXXX-X" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">ID Expiry Date</label>
+                                    <input type="date" name="Shareholders[0].IDExpiryDate" id="expiry_date_0" asp-for="Partners[0].EmiratesIDExpiry" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Passport Number</label>
+                                    <input type="text" name="Shareholders[0].PassportNumber" id="passport_number_0" asp-for="Partners[0].PassportNumber" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Passport Expiry Date</label>
+                                    <input type="date" name="Shareholders[0].PassportExpiryDate" id="passport_expiry_0" asp-for="Partners[0].PassportExpiry" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                            </div>
+
+                            <div class="mt-6">
+                                <div class="flex flex-col md:flex-row gap-4 md:justify-between md:items-center mb-2">
+                                    <h3 class="text-md font-semibold text-gray-700">Documents</h3>
+                                    <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded add-document">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+
+                                <div class="document-upload-table space-y-4">
+                                    <div class="grid grid-cols-1 gap-4 document-row">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Document Reference</label>
+                                                <input type="text" name="Shareholders[0].Documents[0].DocumentReference" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Issue Date</label>
+                                                <input type="date" name="Shareholders[0].Documents[0].IssueDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Expiry Date</label>
+                                                <input type="date" name="Shareholders[0].Documents[0].ExpiryDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                            </div>
+                                            <div class="md:col-span-2 space-y-1">
+                                                <label class="block text-sm font-medium text-gray-700">Upload</label>
+                                                <input type="file" name="Shareholders[0].Documents[0].File" class="w-full bg-[#F0F4FF] px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-gray-600 flex items-center justify-center gap-2 font-extralight" id="upload_shareholder_0_0" />
+                                                </div>
+                                            <div class="flex items-end justify-end md:col-start-2 lg:col-start-3">
+                                                <button type="button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded remove-document">
+                                                    <i class="fas fa-minus-circle mr-1"></i> Remove
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        @* <div class="grid grid-cols-4 gap-4">
+                                            <div class="col-span-4">
+                                                <label class="block text-sm font-medium text-gray-700">Upload</label>
+                                                <input type="file" name="Shareholders[0].Documents[0].File" class="hidden" id="upload_shareholder_0_0" />
+                                                <label for="upload_shareholder_0_0" class="mt-1 w-full flex flex-col items-center px-4 py-2 bg-white text-blue-500 rounded-md shadow-sm tracking-wide border border-blue-500 cursor-pointer hover:bg-blue-500 hover:text-white">
+                                                    <i class="fas fa-upload text-lg mb-1"></i>
+                                                    <span class="text-sm leading-normal">Upload Document</span>
+                                                </label>
+                                            </div> *@
+                                        @* </div> *@
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div id="managementContainer">
+                        <div class="rounded-xl shadow-md border p-4 bg-white mb-6 senior-management-card">
+                            <div class="flex flex-col md:flex-row gap-4 md:justify-between md:items-center mb-4">
+                                <h2 class="text-lg font-semibold text-gray-800">Name of Senior Management</h2>
+                                <div class="flex flex-col md:flex-row gap-2 ">
+                                    <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded add-management">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                    <button type="button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded remove-management">
+                                        <i class="fas fa-minus-circle"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Name</label>
+                                    <input type="text" name="SeniorManagements[0].Address" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" asp-for="SeniorManagements[0].Name" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Designation</label>
+                                    <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" id="management_designation_0" asp-for="SeniorManagements[0].Designation" maxlength="20" />
+                                  
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Nationality</label>
+                                    <select name="SeniorManagements[0].Nationality" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" asp-items="Model.PartnerNationalityList" onchange="ManagementCountryddlonChange(0)">
+                                        <option>Select Nationality</option>
+                                    </select>
+                                    <input type="hidden" class="form-control" id="management_nationality_0" asp-for="SeniorManagements[0].Nationality" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Emirates ID Number</label>
+                                    <input type="text" name="SeniorManagements[0].EmiratesID" placeholder="786 xxx-xxxxx" asp-for="SeniorManagements[0].EmiratesID" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Expiry Date</label>
+                                    <input type="date" name="SeniorManagements[0].IDExpiryDate" asp-for="SeniorManagements[0].EmiratesIDExpiry" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))"  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Passport No.</label>
+                                    <input type="text" name="SeniorManagements[0].PassportNo" asp-for="SeniorManagements[0].PassportNumber" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Passport Expiry Date</label>
+                                    <input type="date" name="SeniorManagements[0].PassportExpiry" asp-for="SeniorManagements[0].PassportExpiry" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))"  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+
+                            </div>
+
+                            <div class="mt-6">
+                                <div class="flex flex-col md:flex-row gap-4 md:justify-between md:items-center mb-2">
+                                    <h3 class="text-md font-semibold text-gray-700">Documents</h3>
+                                    <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded add-document">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+
+                                <div class="document-upload-table space-y-4">
+                                    <div class="grid grid-cols-1 gap-4 document-row">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Document Reference</label>
+                                                <input type="text" name="SeniorManagements[0].Documents[0].DocumentReference" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Issue Date</label>
+                                                <input type="date" name="SeniorManagements[0].Documents[0].IssueDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Expiry Date</label>
+                                                <input type="date" name="SeniorManagements[0].Documents[0].ExpiryDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                            </div>
+                                            <div class="md:col-span-2 space-y-1">
+                                                <label class="block text-sm font-medium text-gray-700">Upload</label>
+                                                <input type="file" name="SeniorManagements[0].Documents[0].File" class="w-full bg-[#F0F4FF] px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-gray-600 flex items-center justify-center gap-2 font-extralight" id="upload_0" />
+                                            </div>
+                                            <div class="flex items-end justify-end md:col-start-2 lg:col-start-3">
+                                                <button type="button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded remove-document">
+                                                    <i class="fas fa-minus-circle mr-1"></i> Remove
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        @* <div class="grid grid-cols-4 gap-4">
+                                            <div class="col-span-4">
+                                                <label class="block text-sm font-medium text-gray-700">Upload</label>
+                                                <input type="file" name="SeniorManagements[0].Documents[0].File" class="hidden" id="upload_0" />
+                                                <label for="upload_0" class="mt-1 w-full flex flex-col items-center px-4 py-2 bg-white text-blue-500 rounded-md shadow-sm tracking-wide border border-blue-500 cursor-pointer hover:bg-blue-500 hover:text-white">
+                                                    <i class="fas fa-upload text-lg mb-1"></i>
+                                                    <span class="text-sm leading-normal">Upload Document</span>
+                                                </label>
+                                            </div>
+                                        </div> *@
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div id="authorizedSignatoryContainer">
+                        <div class="rounded-xl shadow-md border p-4 bg-white mb-6 authorized-signatory-card">
+                            <div class="flex flex-col md:flex-row gap-4 md:justify-between md:items-center mb-4">
+                                <h2 class="text-lg font-semibold text-gray-800">Name of Authorized Signatories</h2>
+                                <div class="flex flex-col md:flex-row gap-2">
+                                    <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded add-signatory">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                    <button type="button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded remove-signatory">
+                                        <i class="fas fa-minus-circle"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Name</label>
+                                    <input type="text" name="AuthorizedSignatories[0].Name" asp-for="AuthorisedSignatories[0].Name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Designation</label>
+                                    <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" id="signatories_designation_0" asp-for="AuthorisedSignatories[0].Designation" maxlength="20" />
+                                    
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Nationality</label>
+                                    <select id="signatories_ddlCountries_0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" asp-items="Model.PartnerNationalityList" onchange="SignatoriesCountryddlonChange(0)">
+                                                <option value="0">--@localizer["Select Country"]--</option>
+                                            </select>
+
+                                            <input type="hidden" class="form-control" id="signatories_nationality_0" asp-for="AuthorisedSignatories[0].Nationality" />
+                                  
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Emirates ID Number</label>
+                                    <input type="text" name="AuthorizedSignatories[0].EmiratesID" asp-for="AuthorisedSignatories[0].EmiratesID" placeholder="786 xxx-xxxxx" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Expiry Date</label>
+                                    <input type="date" name="AuthorizedSignatories[0].IDExpiryDate" asp-for="AuthorisedSignatories[0].EmiratesIDExpiry" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Passport No.</label>
+                                    <input type="text" name="AuthorizedSignatories[0].PassportNo" asp-for="AuthorisedSignatories[0].PassportNumber" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Passport Expiry Date</label>
+                                    <input type="date" name="AuthorizedSignatories[0].PassportExpiryDate" asp-for="AuthorisedSignatories[0].PassportExpiry" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                </div>
+
+                            </div>
+
+                            <div class="mt-6">
+                                <div class="flex flex-col md:flex-row gap-4 md:justify-between md:items-center mb-2">
+                                    <h3 class="text-md font-semibold text-gray-700">Documents</h3>
+                                    <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded add-document">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+
+                                <div class="document-upload-table space-y-4">
+                                    <div class="grid grid-cols-1 gap-4 document-row">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Document Reference</label>
+                                                <input type="text" name="AuthorizedSignatories[0].Documents[0].DocumentReference" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Issue Date</label>
+                                                <input type="date" name="AuthorizedSignatories[0].Documents[0].IssueDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Expiry Date</label>
+                                                <input type="date" name="AuthorizedSignatories[0].Documents[0].ExpiryDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                                            </div>
+                                            <div class="md:col-span-2 space-y-1">
+                                                <label class="block text-sm font-medium text-gray-700">Upload</label>
+                                                <input type="file" name="AuthorizedSignatories[0].Documents[0].File" class="w-full bg-[#F0F4FF] px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-gray-600 flex items-center justify-center gap-2 font-extralight" id="upload_signatory_0_0" />
+                                            </div>
+                                            <div class="flex items-end justify-end md:col-start-2 lg:col-start-3">
+                                                <button type="button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded remove-document">
+                                                    <i class="fas fa-minus-circle mr-1"></i> Remove
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        @* <div class="grid grid-cols-4 gap-4">
+                                            <div class="col-span-4">
+                                                <label class="block text-sm font-medium text-gray-700">Upload</label>
+                                                <input type="file" name="AuthorizedSignatories[0].Documents[0].File" class="hidden" id="upload_signatory_0_0" />
+                                                <label for="upload_signatory_0_0" class="mt-1 w-full flex flex-col items-center px-4 py-2 bg-white text-blue-500 rounded-md shadow-sm tracking-wide border border-blue-500 cursor-pointer hover:bg-blue-500 hover:text-white">
+                                                    <i class="fas fa-upload text-lg mb-1"></i>
+                                                    <span class="text-sm leading-normal">Upload Document</span>
+                                                </label>
+                                            </div>
+                                        </div> *@
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- HTML Document Only Card -->
+                    <div class="rounded-xl shadow-md border p-4 bg-white mb-6" id="documentsOnlyContainer">
+                        <div class="flex flex-col md:flex-row gap-4 md:justify-between md:items-center mb-4">
+                            <h2 class="text-lg font-semibold text-gray-800">Documents</h2>
+                            <button type="button" onclick="addDocumentCard()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+
+                        <input type="hidden" id="corpDivIndex" value="1" />
+
+                        <div id="corporateBodyDiv" class="document-upload-table space-y-4">
+                            <!-- Initial Document Row Template -->
+                            <div class="grid grid-cols-1 gap-4 document-row Corporate" id="corporateDiv_0">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Document Reference</label>
+                                        <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                               name="CaseDocumentsL[0].DocumentName"
+                                               maxlength="100" placeholder="Document Reference" data-reset="true"  />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Issued Date</label>
+                                        <input type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                               name="CaseDocumentsL[0].IssuedDate" data-reset="true" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Expiry Date</label>
+                                        <input type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                               name="CaseDocumentsL[0].ExpiryDate"
+                                               max="2077-12-31" data-reset="true" />
+                                    </div>
+                                    <div class="md:col-span-2 space-y-1">
+                                        <label class="block text-sm font-medium text-gray-700">Upload</label>
+                                        <input type="file"
+                                               name="CaseDocumentsL[0].Document"
+                                               class="w-full bg-[#F0F4FF] px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-gray-600 flex items-center justify-center gap-2 font-extralight"
+                                               id="txtFile_0" data-reset="true" />
+                                    </div>
+                                    <div class="flex items-end justify-end md:col-start-2 lg:col-start-3">
+                                        <div>
+                                            <input type="hidden" value="false" name="CaseDocumentsL[0].isRemoved" />
+                                            <button type="button"
+                                                    class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+                                                    onclick="removeDocumentCard(this)">
+                                                <i class="fas fa-minus-circle mr-1"></i> Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @* <div class="grid grid-cols-4 gap-4 mt-4">
+                                    <div class="col-span-4">
+                                        <label class="block text-sm font-medium text-gray-700">Upload</label>
+                                        <input type="file"
+                                               name="CaseDocumentsL[0].Document"
+                                               class="hidden"
+                                               id="txtFile_0" />
+                                        <label for="txtFile_0"
+                                               class="mt-1 w-full flex flex-col items-center px-4 py-2 bg-white text-blue-500 rounded-md shadow-sm tracking-wide border border-blue-500 cursor-pointer hover:bg-blue-500 hover:text-white">
+                                            <i class="fas fa-upload text-lg mb-1"></i>
+                                            <span class="text-sm leading-normal">Upload Document</span>
+                                        </label>
+                                    </div>
+                                </div> *@
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl shadow-md border p-6 bg-white mb-6">
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4">@localizer["Details"]</h2>
+
+                        <!-- Document Display Area (if any JS appends to this) -->
+                        <div id="corporateBodyDiv" class="space-y-4 mb-6">
+                            <!-- Placeholder for dynamic content if needed -->
+                        </div>
+
+                        <!-- Match Parameter and Signature Section -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Match Parameter -->
+                            <div >
+                                <label for="textInput" class="block text-sm font-medium text-gray-700">@localizer["Match Parameter"]</label>
+                                <input type="number" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                       asp-for="Threshold" id="textInput" value="70" min="50" max="100"
+                                       placeholder="@localizer["70"]" />
+                            </div>
+
+                            <!-- Signature -->
+                            <div >
+                                <label class="block text-sm font-medium text-gray-700">@localizer["Signature"]</label>
+                                <p class="mt-2 text-gray-700 text-sm">Date: @DateTime.Now</p>
+                            </div>
+
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2">
+
+                            <!-- Remarks Field -->
+                            <div class="mt-6">
+                                <label for="Remarks" class="block text-sm font-medium text-gray-700">@localizer["Remarks"]</label>
+                                <textarea id="Remarks"
+                                          name="Remarks"
+                                          rows="3"
+                                          class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                          placeholder="@localizer["Enter any remarks here"]"></textarea>
+                            </div>
+                        </div>
+
+                        
+
+                        
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-center mt-6">
+                        <button type="submit" id="btnSubmit" onclick="fnSubmit();"
+                                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded shadow-sm transition duration-150">
+                            @localizer["Submit"]
+                        </button>
+                    </div>
+
+
+
+                </div>
+            </form>
+        </div>
+
+
+    </div>
+</body>
+
+<!-- SortableJS Library for Drag-and-Drop -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+<script>
+     function fnSubmit() {
+    showLoader();
+     }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const maxShareholders = 5;
+        const maxDocuments = 5;
+        let shareholderIndex = 1;
+
+        const shareholdersContainer = document.getElementById("shareholdersContainer");
+        const baseShareholderCard = shareholdersContainer.querySelector(".shareholders-card");
+
+        shareholdersContainer.addEventListener("click", function (e) {
+            // Add Shareholder
+            if (e.target.closest(".add-shareholder")) {
+                const total = shareholdersContainer.querySelectorAll(".shareholders-card").length;
+                if (total >= maxShareholders) {
+                    toastr.error("Maximum of 5 shareholders allowed.");
+                    return;
+                }
+                const clone = baseShareholderCard.cloneNode(true);
+                resetInputs(clone);
+                updateShareholderIndex(clone, shareholderIndex++);
+                shareholdersContainer.appendChild(clone);
+            }
+
+            // Remove Shareholder
+            if (e.target.closest(".remove-shareholder")) {
+                const allCards = shareholdersContainer.querySelectorAll(".shareholders-card");
+                if (allCards.length > 1) {
+                    e.target.closest(".shareholders-card").remove();
+                } else {
+                    toastr.error("At least one shareholder is required.");
+                }
+            }
+
+            // Add Document
+            if (e.target.closest(".add-document")) {
+                const card = e.target.closest(".shareholders-card");
+                const docTable = card.querySelector(".document-upload-table");
+                const currentDocs = docTable.querySelectorAll(".document-row");
+                if (currentDocs.length >= maxDocuments) {
+                    toastr.error("Maximum of 5 documents allowed.");
+                    return;
+                }
+
+                const docIndex = currentDocs.length;
+                const newDocRow = currentDocs[0].cloneNode(true);
+                resetInputs(newDocRow);
+                updateDocumentIndex(newDocRow, card, docIndex);
+                docTable.appendChild(newDocRow);
+            }
+
+            // Remove Document
+            if (e.target.closest(".remove-document")) {
+                const row = e.target.closest(".document-row");
+                const table = row.closest(".document-upload-table");
+                const allRows = table.querySelectorAll(".document-row");
+                if (allRows.length > 1) {
+                    row.remove();
+                } else {
+                    toastr.error("At least one document is required.");
+                }
+            }
+        });
+
+        function resetInputs(container) {
+            container.querySelectorAll("input").forEach(input => {
+                if (input.type !== "file") input.value = "";
+            });
+        }
+
+        function updateShareholderIndex(container, index) {
+            container.querySelectorAll("[name]").forEach(el => {
+                el.name = el.name.replace(/Shareholders\[\d+\]/g, `Shareholders[${index}]`);
+            });
+
+            container.querySelectorAll("input[type='file']").forEach((input, i) => {
+                const newId = `upload_shareholder_${index}_${i}`;
+                const label = container.querySelector(`label[for='${input.id}']`);
+                if (label) label.setAttribute("for", newId);
+                input.id = newId;
+            });
+        }
+
+        function updateDocumentIndex(row, card, docIndex) {
+            const input = card.querySelector("input[name^='Shareholders']");
+            const match = input?.name?.match(/Shareholders\[(\d+)\]/);
+            const shareholderIdx = match ? match[1] : "0";
+
+            row.querySelectorAll("[name]").forEach(el => {
+                el.name = el.name.replace(/Shareholders\[\d+\]\.Documents\[\d+\]/, `Shareholders[${shareholderIdx}].Documents[${docIndex}]`);
+            });
+
+            const uploadInput = row.querySelector("input[type='file']");
+            if (uploadInput) {
+                const newId = `upload_shareholder_${shareholderIdx}_${docIndex}`;
+                uploadInput.id = newId;
+                const label = row.querySelector("label[for]");
+                if (label) label.setAttribute("for", newId);
+            }
+        }
+    });
+</script>
+
+<script>
+    // Initialize Drag-and-Drop for Shareholders
+    document.addEventListener("DOMContentLoaded", function () {
+        const shareholdersContainer = document.getElementById("shareholdersContainer");
+        
+        if (shareholdersContainer) {
+            const sortable = new Sortable(shareholdersContainer, {
+                handle: '.shareholder-drag-handle',  // Only drag by the handle
+                animation: 150,  // Smooth animation in ms
+                ghostClass: 'shareholder-ghost',  // Class for placeholder
+                chosenClass: 'shareholder-chosen',  // Class when item is selected
+                dragClass: 'shareholder-drag',  // Class while dragging
+                
+                // Callback after reordering
+                onEnd: function (evt) {
+                    // Reindex all shareholders after drag-and-drop
+                    reindexShareholders();
+                }
+            });
+            
+            // Function to update all shareholder array indices
+            function reindexShareholders() {
+                const cards = shareholdersContainer.querySelectorAll('.shareholders-card');
+                
+                cards.forEach((card, index) => {
+                    // Update all form fields within this card
+                    card.querySelectorAll('[name]').forEach(el => {
+                        // Replace Shareholders[oldIndex] with Shareholders[newIndex]
+                        el.name = el.name.replace(/Shareholders\[\d+\]/, `Shareholders[${index}]`);
+                    });
+                    
+                    // Update file input IDs and their associated labels
+                    const fileInputs = card.querySelectorAll('input[type="file"]');
+                    fileInputs.forEach((input, docIndex) => {
+                        const oldId = input.id;
+                        const newId = `upload_shareholder_${index}_${docIndex}`;
+                        
+                        // Update input ID
+                        input.id = newId;
+                        
+                        // Update associated label if it exists
+                        const label = card.querySelector(`label[for="${oldId}"]`);
+                        if (label) {
+                            label.setAttribute('for', newId);
+                        }
+                    });
+                    
+                    // Update hidden fields and specific IDs
+                    const nationalitySelect = card.querySelector('select[name*="Nationality"]');
+                    if (nationalitySelect) {
+                        nationalitySelect.name = `Shareholders[${index}].Nationality`;
+                    }
+                    
+                    const nationalityHidden = card.querySelector('input[type="hidden"][id^="nationality_"]');
+                    if (nationalityHidden) {
+                        nationalityHidden.id = `nationality_${index}`;
+                    }
+                    
+                    const emiratesId = card.querySelector('input[id^="emirates_id_"]');
+                    if (emiratesId) {
+                        emiratesId.id = `emirates_id_${index}`;
+                    }
+                    
+                    const expiryDate = card.querySelector('input[id^="expiry_date_"]');
+                    if (expiryDate) {
+                        expiryDate.id = `expiry_date_${index}`;
+                    }
+                    
+                    const passportNumber = card.querySelector('input[id^="passport_number_"]');
+                    if (passportNumber) {
+                        passportNumber.id = `passport_number_${index}`;
+                    }
+                    
+                    const passportExpiry = card.querySelector('input[id^="passport_expiry_"]');
+                    if (passportExpiry) {
+                        passportExpiry.id = `passport_expiry_${index}`;
+                    }
+                });
+                
+                console.log('Shareholders reindexed after drag-and-drop');
+            }
+        }
+    });
+</script>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let maxSignatories = 5;
+        let maxDocuments = 5;
+        let signatoryIndex = 1;
+
+        const signatoryContainer = document.getElementById("authorizedSignatoryContainer");
+        const baseCard = signatoryContainer.querySelector(".rounded-xl");
+
+        signatoryContainer.addEventListener("click", function (e) {
+            // Add signatory
+            if (e.target.closest(".add-signatory")) {
+                const total = signatoryContainer.querySelectorAll(".rounded-xl").length;
+                if (total >= maxSignatories) {
+                    toastr.error('@localizer["Maximum of 5 authorized signatories allowed."]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+                    return;
+                }
+
+                const clone = baseCard.cloneNode(true);
+                updateSignatoryIndex(clone, signatoryIndex++);
+                resetInputs(clone);
+                signatoryContainer.appendChild(clone);
+            }
+
+            // Remove signatory
+            if (e.target.closest(".remove-signatory")) {
+                const cards = signatoryContainer.querySelectorAll(".rounded-xl");
+                if (cards.length > 1) {
+                    e.target.closest(".rounded-xl").remove();
+                }  else {
+            //alert("Maximum number of Corporates is 5")
+            toastr.error('@localizer["Atleast One Document is Required"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+        }
+            }
+
+            // Add document
+            if (e.target.closest(".add-document")) {
+                const card = e.target.closest(".rounded-xl");
+                const documentTable = card.querySelector(".document-upload-table");
+                const currentRows = documentTable.querySelectorAll(".document-row");
+                if (currentRows.length >= maxDocuments) {
+                     toastr.error('@localizer["Maximum of 5 documents allowed"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+                    return;
+                }
+
+                const docIndex = currentRows.length;
+                const newRow = currentRows[0].cloneNode(true);
+                resetInputs(newRow);
+                updateDocumentIndex(newRow, card, docIndex);
+                documentTable.appendChild(newRow);
+            }
+
+            // Remove document
+            if (e.target.closest(".remove-document")) {
+                const row = e.target.closest(".document-row");
+                const table = row.closest(".document-upload-table");
+                const allRows = table.querySelectorAll(".document-row");
+                if (allRows.length > 1) {
+                    row.remove();
+                } else {
+                    toastr.error('@localizer["Atleast One Document is Required"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+                }
+            }
+        });
+
+        function resetInputs(container) {
+            container.querySelectorAll("input").forEach(input => {
+                if (input.type !== "file") input.value = "";
+            });
+        }
+
+        function updateSignatoryIndex(container, index) {
+            container.querySelectorAll("[name]").forEach(el => {
+                el.name = el.name.replace(/AuthorizedSignatories\[\d+\]/, `AuthorizedSignatories[${index}]`);
+            });
+
+            container.querySelectorAll("input[type='file']").forEach((input, i) => {
+                const newId = `upload_signatory_${index}_${i}`;
+                const label = container.querySelector(`label[for='${input.id}']`);
+                if (label) label.setAttribute("for", newId);
+                input.id = newId;
+            });
+        }
+
+        function updateDocumentIndex(row, card, docIndex) {
+            const input = card.querySelector("input[name^='AuthorizedSignatories']");
+            const match = input?.name?.match(/AuthorizedSignatories\[(\d+)\]/);
+            const signatoryIdx = match ? match[1] : "0";
+
+            row.querySelectorAll("[name]").forEach(el => {
+                el.name = el.name.replace(/AuthorizedSignatories\[\d+\]\.Documents\[\d+\]/, `AuthorizedSignatories[${signatoryIdx}].Documents[${docIndex}]`);
+            });
+
+            const uploadInput = row.querySelector("input[type='file']");
+            if (uploadInput) {
+                const newId = `upload_signatory_${signatoryIdx}_${docIndex}`;
+                uploadInput.id = newId;
+                const label = row.querySelector("label[for]");
+                if (label) label.setAttribute("for", newId);
+            }
+        }
+    });
+</script>
+
+
+@* <script>
+    function addDocumentCard() {
+        const container = document.getElementById("corporateBodyDiv");
+        const currentCards = container.querySelectorAll(".document-row");
+        let index = parseInt(document.getElementById("corpDivIndex").value);
+
+        if (currentCards.length >= 5) {
+            toastr.error('@localizer["Maximum of 5 documents allowed"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+            return;
+        }
+
+        const firstCard = document.getElementById("corporateDiv_0");
+        const newCard = firstCard.cloneNode(true);
+
+        newCard.id = `corporateDiv_${index}`;
+
+        newCard.querySelectorAll("input, select, textarea").forEach(el => {
+            if (el.name) {
+                el.name = el.name.replace(/CaseDocumentsL\[\d+\]/g, `CaseDocumentsL[${index}]`);
+            }
+            if (el.type !== "file") el.value = "";
+        });
+
+        const fileInput = newCard.querySelector("input[type='file']");
+        if (fileInput) {
+            const newFileId = `txtFile_${index}`;
+            const label = newCard.querySelector(`label[for='${fileInput.id}']`);
+            if (label) label.setAttribute("for", newFileId);
+            fileInput.id = newFileId;
+        }
+
+        container.appendChild(newCard);
+        document.getElementById("corpDivIndex").value = index + 1;
+    }
+
+    function removeDocumentCard(btn) {
+        const container = document.getElementById("corporateBodyDiv");
+        const allCards = container.querySelectorAll(".document-row");
+        if (allCards.length > 1) {
+            btn.closest(".document-row").remove();
+        } else {
+            toastr.error('@localizer["Atleast One Document is Required"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+        }
+    }
+</script> *@
+
+<script>
+    function addDocumentCard() {
+        const container = document.getElementById("corporateBodyDiv");
+        const cards = container.querySelectorAll(".document-row");
+
+        if (cards.length >= 5) {
+            toastr.error('@localizer["Maximum of 5 documents allowed"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+            return;
+        }
+
+        const templateCard = cards[0];
+        const newCard = templateCard.cloneNode(true);
+
+        // 🔹 CLEAR values ONLY for new card
+        newCard.querySelectorAll("input, select, textarea").forEach(el => {
+            if (el.type === "file") {
+                el.value = "";
+            } else {
+                el.value = "";
+            }
+        });
+
+        container.appendChild(newCard);
+
+        reindexDocumentCards(); // only renames ids & names
+    }
+</script>
+
+
+<script>
+    function removeDocumentCard(btn) {
+        const container = document.getElementById("corporateBodyDiv");
+        const cards = container.querySelectorAll(".document-row");
+
+        if (cards.length <= 1) {
+            toastr.error('@localizer["Atleast One Document is Required"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+            return;
+        }
+
+        btn.closest(".document-row").remove();
+
+        reindexDocumentCards(); // only renames
+    }
+</script>
+
+
+<script>
+    function reindexDocumentCards() {
+        const container = document.getElementById("corporateBodyDiv");
+        const cards = container.querySelectorAll(".document-row");
+
+        cards.forEach((card, index) => {
+            card.id = `corporateDiv_${index}`;
+
+            card.querySelectorAll("input, select, textarea").forEach(el => {
+                if (el.name) {
+                    el.name = el.name.replace(
+                        /CaseDocumentsL\[\d+\]/g,
+                        `CaseDocumentsL[${index}]`
+                    );
+                }
+            });
+
+            // Update file input + label
+            const fileInput = card.querySelector("input[type='file']");
+            if (fileInput) {
+                const newFileId = `txtFile_${index}`;
+                const label = card.querySelector(`label`);
+
+                if (label) label.setAttribute("for", newFileId);
+                fileInput.id = newFileId;
+            }
+        });
+
+        document.getElementById("corpDivIndex").value = cards.length;
+    }
+</script>
+
+
+
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let maxManagement = 5;
+        let maxDocuments = 5;
+        let managementIndex = 1;
+
+        const managementContainer = document.getElementById("managementContainer");
+        const baseManagementCard = managementContainer.querySelector(".senior-management-card");
+
+        // Add Management Entry
+        managementContainer.addEventListener("click", function (e) {
+            if (e.target.closest(".add-management")) {
+                const total = managementContainer.querySelectorAll(".senior-management-card").length;
+                if (total >= maxManagement) {
+                     toastr.error('@localizer["Maximum of 5 senior management entries allowed"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+
+                    return;
+                }
+
+                const clone = baseManagementCard.cloneNode(true);
+                updateManagementIndex(clone, managementIndex++);
+                resetInputs(clone);
+                managementContainer.appendChild(clone);
+            }
+
+            // Remove Management Entry
+            if (e.target.closest(".remove-management")) {
+                const cards = managementContainer.querySelectorAll(".senior-management-card");
+                if (cards.length > 1) {
+                    e.target.closest(".senior-management-card").remove();
+                } else {
+                     toastr.error('@localizer["Atleast One Entry is Required"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+                }
+            }
+
+            // Add Document Entry
+            if (e.target.closest(".add-document")) {
+                const card = e.target.closest(".senior-management-card");
+                const documentTable = card.querySelector(".document-upload-table");
+                const currentRows = documentTable.querySelectorAll(".document-row");
+                if (currentRows.length >= maxDocuments) {
+                    toastr.error('@localizer["Maximum of 5 documents is allowed"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+                    return;
+                }
+
+                const lastIndex = currentRows.length;
+                const lastRow = currentRows[0];
+                const newRow = lastRow.cloneNode(true);
+                resetInputs(newRow);
+                updateDocumentIndex(newRow, card, lastIndex);
+                documentTable.appendChild(newRow);
+            }
+
+            // Remove Document Entry
+            if (e.target.closest(".remove-document")) {
+                const row = e.target.closest(".document-row");
+                const table = row.closest(".document-upload-table");
+                const allRows = table.querySelectorAll(".document-row");
+                if (allRows.length > 1) {
+                    row.remove();
+                } else {
+                    toastr.error('@localizer["Atleast One Document is Required"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+                }
+            }
+        });
+
+        // Reset input fields
+        function resetInputs(container) {
+            container.querySelectorAll("input").forEach(input => {
+                if (input.type === "file") return;
+                input.value = "";
+            });
+        }
+
+        // Update the indexes in name attributes for management entries
+        function updateManagementIndex(container, index) {
+            container.querySelectorAll("[name]").forEach(el => {
+                el.name = el.name.replace(/SeniorManagements\[\d+\]/, `SeniorManagements[${index}]`);
+            });
+
+            container.querySelectorAll("input[type='file']").forEach((input, i) => {
+                const newId = `upload_${index}_${i}`;
+                input.id = newId;
+                const label = container.querySelector(`label[for='${input.id}']`);
+                if (label) label.setAttribute("for", newId);
+            });
+        }
+
+        // Update document index inside a management entry
+        function updateDocumentIndex(row, card, docIndex) {
+            const managementNameMatch = card.querySelector("input, select").name.match(/SeniorManagements\[(\d+)\]/);
+            const mgmtIndex = managementNameMatch ? managementNameMatch[1] : "0";
+
+            row.querySelectorAll("[name]").forEach(el => {
+                el.name = el.name.replace(/SeniorManagements\[\d+\]\.Documents\[\d+\]/, `SeniorManagements[${mgmtIndex}].Documents[${docIndex}]`);
+            });
+
+            const uploadInput = row.querySelector("input[type='file']");
+            if (uploadInput) {
+                const uploadId = `upload_${mgmtIndex}_${docIndex}`;
+                uploadInput.id = uploadId;
+                const label = row.querySelector(`label[for]`);
+                if (label) label.setAttribute("for", uploadId);
+            }
+        }
+    });
+</script>
+
+
+
+<script>
+      let groupEntityIndex = 1;
+
+    function showToast(message) {
+        const toast = document.createElement("div");
+        toast.className = "fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow z-50";
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    document.addEventListener("click", function (e) {
+        if (e.target.closest(".add-entity")) {
+            const cards = document.querySelectorAll(".group-entity-card");
+            if (cards.length >= 5)  {toastr.error('@localizer["Maximum of 5 group entites are allowed"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });}
+            const container = document.getElementById("groupEntityContainer");
+            const newEntity = container.querySelector(".group-entity-card").cloneNode(true);
+
+            const docTable = newEntity.querySelector(".document-upload-table");
+            docTable.innerHTML = docTable.children[0].outerHTML;
+
+            updateEntityNames(newEntity, groupEntityIndex);
+            container.appendChild(newEntity);
+            groupEntityIndex++;
+        }
+
+        if (e.target.closest(".remove-entity")) {
+            const cards = document.querySelectorAll(".group-entity-card");
+            if (cards.length > 1) {
+                e.target.closest(".group-entity-card").remove();
+            }
+            else{
+                 toastr.error('@localizer["Atleast One group entity is Required"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+            }
+        }
+
+        if (e.target.closest(".add-document")) {
+            const container = e.target.closest(".group-entity-card");
+            const table = container.querySelector(".document-upload-table");
+            if (table.children.length >= 5){ toastr.error('@localizer["Maximum of 5 documents is allowed"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });}
+
+            const index = Array.from(document.querySelectorAll(".group-entity-card")).indexOf(container);
+            const newRow = table.children[0].cloneNode(true);
+            const docIndex = table.children.length;
+            updateDocumentNames(newRow, index, docIndex);
+            table.appendChild(newRow);
+        }
+
+        if (e.target.closest(".remove-document")) {
+            const row = e.target.closest(".document-row");
+            const table = row.parentNode;
+            if (table.children.length > 1) {
+                row.remove();
+            }
+            else {
+                 toastr.error('@localizer["Atleast One Document is Required"]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+            }
+        }
+    });
+
+    function updateEntityNames(card, entityIndex) {
+        const inputs = card.querySelectorAll("input, select, textarea");
+        inputs.forEach(input => {
+            input.name = input.name.replace(/GroupEntities\[\d+]/g, `GroupEntities[${entityIndex}]`);
+        });
+    }
+
+    function updateDocumentNames(row, entityIndex, docIndex) {
+        const inputs = row.querySelectorAll("input, select, textarea");
+        inputs.forEach(input => {
+            input.name = input.name.replace(/GroupEntities\[\d+\]\.Documents\[\d+\]/g, `GroupEntities[${entityIndex}].Documents[${docIndex}]`);
+        });
+    }
+    document.getElementById('textInput').value = 70
+
+    function addDocuments() {
+        //alert("add documents");
+        var corpDivIndexVal = $('#corpDivIndex').val();
+        var CorpCount = $('.Corporate:visible').length;
+       // alert(corpDivIndexVal);
+        if (CorpCount < 4) {
+            var corpDiv = document.createElement('div');
+            corpDiv.setAttribute('id', 'corporateDiv_' + corpDivIndexVal); // div id.
+            corpDiv.setAttribute('class', 'Corporate');
+
+            var divStr4 = "<div class='row'><div class='col-4' >";
+            divStr4 += "<div class='form-group'>";
+            divStr4 += " <input type='text' class='form-control' name = 'CaseDocumentsL[" + corpDivIndexVal + "].DocumentName' asp-for= 'CaseDocumentsL[" + corpDivIndexVal + "].DocumentName' id='DocumentName_" + corpDivIndexVal + "' placeholder='Document Reference' maxlength='100' >";
+            divStr4 += "</div></div>";
+
+            var divstr2 = "<div class='col-4'><div class='form-group'>"
+            divstr2 += "<input type='date' class='form-control' id = 'txtIssuedDate' name = 'CaseDocumentsL[" + corpDivIndexVal + "].IssuedDate' asp-for= 'CaseDocumentsL[" + corpDivIndexVal + "].IssuedDate' max='@(DateTime.Now.ToString("yyyy-MM-dd"))' placeholder = 'Document Issued Date'>";
+            divstr2 += "</div></div>";
+
+            var divstr3 = "<div class='col-4'><div class='form-group'>"
+            divstr3 += "<input type='date' class='form-control' id = 'txtExpiryDate' name = 'CaseDocumentsL[" + corpDivIndexVal + "].ExpiryDate' asp-for= 'CaseDocumentsL[" + corpDivIndexVal + "].ExpiryDate' max = '4444-12-31' min='@(DateTime.Now.ToString("yyyy-MM-dd"))' placeholder = 'Document Expiry Date']>";
+            divstr3 += "</div></div>";
+
+            var divstr5 = "<div class='col-4' ><div class='form-group'>";
+            divstr5 += "<input type='file' name='CaseDocumentsL[" + corpDivIndexVal + "].Document' class='form-control' asp-for='CaseDocumentsL[" + corpDivIndexVal + "].Document' id = 'txtFile' >";
+            divstr5 += "</div></div>";
+
+            var divStr1 = "<div class='col-1'><div class='form-group'>";
+            divStr1 += "<input type='hidden' id='isRemoved_" + corpDivIndexVal + "' value='false' name='CorporateDetailList[" + corpDivIndexVal + "].isRemoved' class='form-control'/>";
+            divStr1 += "<input type='button' class='DelCorporate' id='btnCorpDel_" + corpDivIndexVal + "' onclick='removeDoc(" + corpDivIndexVal + ")' value='Remove' />";
+            divStr1 += "</div></div></div>";
+
+            //corpDiv.innerHTML = divStr4 + divstr2 + divstr3 + divstr5 + divStr1 ;
+            corpDiv.innerHTML = divStr4 + divstr2 + divstr3 + divstr5 + divStr1;
+
+            var div = document.getElementById('corporateBodyDiv');
+            div.appendChild(corpDiv);
+            $('#corpDivIndex').val(parseInt(corpDivIndexVal) + 1);
+            var d = new Date(),
+                month = '' + (d.getMonth() + 1),
+                day = '' + d.getDate(),
+                year = d.getFullYear();
+
+            if (month.length < 2)
+                month = '0' + month;
+            if (day.length < 2)
+                day = '0' + day;
+
+            var dateToday = year + '-' + month + '-' + day;
+            $("#txtAccomplishedDate_" + corpDivIndexVal).val(dateToday);
+        } else {
+            //alert("Maximum number of Corporates is 5")
+            toastr.error('@localizer["Cannot add more than 5 Documents."]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+        }
+        createTable(corpDivIndexVal);
+        addListRow(corpDivIndexVal);
+        var CorpCount = $('.Corporate:visible').length;
+        if (CorpCount > 1) {
+            $('.DelCorporate').show();
+        }
+    }
+    function removeDoc(i) {
+        $('#corporateDiv_' + i).hide();
+        //$('#corpDivIndex').val(parseInt(corpDivIndexVal) - 1);
+
+    }
+</script>
+
+<script>
+    function addDocumentsGE(i) {
+
+        var GECount = i;
+        var docCount = $('#GErowIndex_'+i).val();
+
+        //alert(docCount);
+        if (docCount < 5) {
+            $("#GE" + GECount + "_" + docCount).show();
+            $('#GErowIndex_' + i).val(parseInt(docCount) + 1);
+
+        }
+        else {
+            //alert("Maximum number of Corporates is 5")
+            toastr.error('@localizer["Cannot add more than 5 Documents."]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+        }
+        //createTable(corpDivIndexVal);
+        //addListRow(corpDivIndexVal);
+        //var CorpCount = $('.Corporate:visible').length;
+        //if (CorpCount > 1) {
+        //    $('.DelCorporate').show();
+        //}
+    }
+    function removeDocument(i,j) {
+        //$('#corporateDiv_' + i).remove();
+
+        $("#GE" + i + "_" + j).hide();
+        $('#GErowIndex_'+i).val(j);
+    }
+</script>
+
+<script>
+    function AddPartner() {
+        var count=$('#PartnerCount').val()
+        var rowIndex = $('#PartnerRowIndex').val()
+        if (count < 5) {
+            //$("#tbl_group_entity").find(`tbody tr:eq(${rowIndex})`).show();
+            $("#tbl_partner_" + rowIndex).show();
+            $("#tbl_partner_" + rowIndex + "1").show();
+            //$(`#group_entity__isRemoved_${rowIndex}`).val(false);
+            $('#PartnerRowIndex').val(Number(rowIndex) + 1);
+            $('#PartnerCount').val(Number(count) + 1)
+        }
+        else {
+            toastr.error('@localizer["Cannot add more than 5 partners for a corporate."]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+
+        }
+    }
+    function Remove(i) {
+        $("#tbl_partner_"+i).hide();
+        $("#tbl_partner_" + i + "1").hide();
+    }
+
+    function addDocumentsPT(i) {
+        var PTCount = i;
+        var docCount = $('#PartnerrowIndex_'+i).val();
+
+        //alert(docCount);
+        if (docCount < 5) {
+            $("#PT" + PTCount + "_" + docCount).show();
+            $('#PartnerrowIndex_' + i).val(parseInt(docCount) + 1);
+
+        }
+        else {
+            //alert("Maximum number of Corporates is 5")
+            toastr.error('@localizer["Cannot add more than 5 Documents."]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+        }
+        //createTable(corpDivIndexVal);
+        //addListRow(corpDivIndexVal);
+        //var CorpCount = $('.Corporate:visible').length;
+        //if (CorpCount > 1) {
+        //    $('.DelCorporate').show();
+        //}
+    }
+    function removeDocumentPT(i,j) {
+        //$('#corporateDiv_' + i).remove();
+        $("#PT" + i + "_" + j).hide();
+        $('#PartnerrowIndex_'+i).val(j);
+    }
+</script>
+
+<script>
+    function AddSrManagement() {
+        var count = $('#managementCount').val()
+        var rowIndex = $('#managementRowIndex').val()
+        if (count < 5) {
+            //$("#tbl_group_entity").find(`tbody tr:eq(${rowIndex})`).show();
+            $("#tbl_management_" + rowIndex).show();
+            $("#tbl_management_" + rowIndex + "1").show();
+            //$(`#group_entity__isRemoved_${rowIndex}`).val(false);
+            $('#managementRowIndex').val(Number(rowIndex) + 1);
+            $('#managementCount').val(Number(count) + 1)
+        }
+        else {
+            toastr.error('@localizer["Cannot add more than 5 partners for a corporate."]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+
+        }
+    }
+    function RemoveSrManagement(i) {
+        $("#tbl_management_" + i).hide();
+        $("#tbl_management_" + i + "1").hide();
+    }
+
+
+    function addDocumentsSM(i) {
+        var SMCount = i;
+        var docCount = $('#SrMgrrowIndex_' + i).val();
+
+        //alert(docCount);
+        if (docCount < 5) {
+            $("#SM" + SMCount + "_" + docCount).show();
+            $('#SrMgrrowIndex_' + i).val(parseInt(docCount) + 1);
+
+        }
+        else {
+            //alert("Maximum number of Corporates is 5")
+            toastr.error('@localizer["Cannot add more than 5 Documents."]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+        }
+        //createTable(corpDivIndexVal);
+        //addListRow(corpDivIndexVal);
+        //var CorpCount = $('.Corporate:visible').length;
+        //if (CorpCount > 1) {
+        //    $('.DelCorporate').show();
+        //}
+    }
+    function removeDocumentSM(i, j) {
+        //$('#corporateDiv_' + i).remove();
+        $("#SM" + i + "_" + j).hide();
+        $('#SrMgrrowIndex_' + i).val(j);
+    }
+</script>
+
+
+<script>
+    function AddAuthorisedSignatories() {
+        var count = $('#SignatoriesCount').val()
+        var rowIndex = $('#SignatoriesIndex').val()
+        if (count < 5) {
+            //$("#tbl_group_entity").find(`tbody tr:eq(${rowIndex})`).show();
+            $("#tbl_signatories_" + rowIndex).show();
+            $("#tbl_signatories_" + rowIndex + "1").show();
+            //$(`#group_entity__isRemoved_${rowIndex}`).val(false);
+            $('#SignatoriesIndex').val(Number(rowIndex) + 1);
+            $('#SignatoriesCount').val(Number(count) + 1)
+        }
+        else {
+            toastr.error('@localizer["Cannot add more than 5 partners for a corporate."]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+
+        }
+    }
+    function RemoveAuthorisedSignatories(i) {
+        $("#tbl_signatories_" + i).hide();
+        $("#tbl_signatories_" + i + "1").hide();
+    }
+    //function RemoveAuthorisedSignatories(i) {
+    //    $('#SignatoriesCount').val(Number($('#SignatoriesCount').val()) -1);
+    //    //$("#tbl_signatories").eq(i).hide();
+    //    $("#tbl_signatories").find(`tbody tr:eq(${i})`).hide();
+    //    $(`#signatories_isRemoved_${i}`).val(true);
+    //    //var PartnerCount = $('.partner:visible').length;
+    //    //if (CorpCount <= 1) {
+    //    //    $('.delpartner').hide();
+    //    //}
+    //}
+
+    function addDocumentsAS(i) {
+        var ASCount = i;
+        var docCount = $('#AuthrowIndex_' + i).val();
+
+        //alert(docCount);
+        if (docCount < 5) {
+            $("#AS" + ASCount + "_" + docCount).show();
+            $('#AuthrowIndex_' + i).val(parseInt(docCount) + 1);
+
+        }
+        else {
+            //alert("Maximum number of Corporates is 5")
+            toastr.error('@localizer["Cannot add more than 5 Documents."]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+        }
+        //createTable(corpDivIndexVal);
+        //addListRow(corpDivIndexVal);
+        //var CorpCount = $('.Corporate:visible').length;
+        //if (CorpCount > 1) {
+        //    $('.DelCorporate').show();
+        //}
+    }
+    function removeDocumentAS(i, j) {
+        //$('#corporateDiv_' + i).remove();
+        $("#AS" + i + "_" + j).hide();
+        $('#AuthrowIndex_' + i).val(j);
+    }
+</script>
+
+
+<script type="text/javascript">
+
+
+        $(document).ready(function () {
+            $("#tbl_partner_41").hide();
+            $("#tbl_partner_1").hide();
+            $("#tbl_partner_11").hide();
+            $("#tbl_partner_2").hide();
+            $("#tbl_partner_21").hide();
+            $("#tbl_partner_3").hide();
+            $("#tbl_partner_31").hide();
+            $("#tbl_partner_4").hide();
+            $("#PT0_1").hide();
+            $("#PT0_2").hide();
+            $("#PT0_3").hide();
+            $("#PT0_4").hide();
+            $("#PT1_1").hide();
+            $("#PT1_2").hide();
+            $("#PT1_3").hide();
+            $("#PT1_4").hide();
+            $("#PT2_1").hide();
+            $("#PT2_2").hide();
+            $("#PT2_3").hide();
+            $("#PT2_4").hide();
+            $("#PT3_1").hide();
+            $("#PT3_2").hide();
+            $("#PT3_3").hide();
+            $("#PT3_4").hide();
+            $("#PT4_1").hide();
+            $("#PT4_2").hide();
+            $("#PT4_3").hide();
+            $("#PT4_4").hide();
+            $('#GroupEntityRowIndex').val();
+            $("#tbl_group_entity_1").hide();
+            $("#tbl_group_entity_11").hide();
+            $("#GE0_1").hide();
+            $("#GE0_2").hide();
+            $("#GE0_3").hide();
+            $("#GE0_4").hide();
+            $("#GE1_1").hide();
+            $("#GE1_2").hide();
+            $("#GE1_3").hide();
+            $("#GE1_4").hide();
+            $("#GE2_1").hide();
+            $("#GE2_2").hide();
+            $("#GE2_3").hide();
+            $("#GE2_4").hide();
+            $("#GE3_1").hide();
+            $("#GE3_2").hide();
+            $("#GE3_3").hide();
+            $("#GE3_4").hide();
+            $("#GE4_1").hide();
+            $("#GE4_2").hide();
+            $("#GE4_3").hide();
+            $("#GE4_4").hide();
+            $(`#group_entity__isRemoved_${1}`).val(true);
+            $("#tbl_group_entity_2").hide();
+            $("#tbl_group_entity_21").hide();
+            $(`#group_entity__isRemoved_${2}`).val(true);
+            $("#tbl_group_entity_3").hide();
+            $("#tbl_group_entity_31").hide();
+            $(`#group_entity__isRemoved_${3}`).val(true);
+            $("#tbl_group_entity_4").hide();
+            $("#tbl_group_entity_41").hide();
+            $(`#group_entity__isRemoved_${4}`).val(true);
+            $('#ddlProductType').val('Group Health Insurance');
+            $('#ddlDeliveryChannel').val(' Direct Sales');
+            $("#tbl_management_41").hide();
+            $("#tbl_management_1").hide();
+            $("#tbl_management_11").hide();
+            $("#tbl_management_2").hide();
+            $("#tbl_management_21").hide();
+            $("#tbl_management_3").hide();
+            $("#tbl_management_31").hide();
+            $("#tbl_management_4").hide();
+            $("#SM0_1").hide();
+            $("#SM0_2").hide();
+            $("#SM0_3").hide();
+            $("#SM0_4").hide();
+            $("#SM1_1").hide();
+            $("#SM1_2").hide();
+            $("#SM1_3").hide();
+            $("#SM1_4").hide();
+            $("#SM2_1").hide();
+            $("#SM2_2").hide();
+            $("#SM2_3").hide();
+            $("#SM2_4").hide();
+            $("#SM3_1").hide();
+            $("#SM3_2").hide();
+            $("#SM3_3").hide();
+            $("#SM3_4").hide();
+            $("#SM4_1").hide();
+            $("#SM4_2").hide();
+            $("#SM4_3").hide();
+            $("#SM4_4").hide();
+            $("#tbl_signatories_41").hide();
+            $("#tbl_signatories_1").hide();
+            $("#tbl_signatories_11").hide();
+            $("#tbl_signatories_2").hide();
+            $("#tbl_signatories_21").hide();
+            $("#tbl_signatories_3").hide();
+            $("#tbl_signatories_31").hide();
+            $("#tbl_signatories_4").hide();
+            $("#AS0_1").hide();
+            $("#AS0_2").hide();
+            $("#AS0_3").hide();
+            $("#AS0_4").hide();
+            $("#AS1_1").hide();
+            $("#AS1_2").hide();
+            $("#AS1_3").hide();
+            $("#AS1_4").hide();
+            $("#AS2_1").hide();
+            $("#AS2_2").hide();
+            $("#AS2_3").hide();
+            $("#AS2_4").hide();
+            $("#AS3_1").hide();
+            $("#AS3_2").hide();
+            $("#AS3_3").hide();
+            $("#AS3_4").hide();
+            $("#AS4_1").hide();
+            $("#AS4_2").hide();
+            $("#AS4_3").hide();
+            $("#AS4_4").hide();
+            document.getElementById('txtIssuedDate').value = ""
+            document.getElementById('txtExpiryDate').value = ""
+        });
+
+      
+
+       
+        function AddGroupEntity() {
+            var rowIndex = $('#GroupEntityRowIndex').val()
+            var count=$('#GroupEntityCount').val()
+            if (count < 5) {
+                //$("#tbl_group_entity").find(`tbody tr:eq(${rowIndex})`).show();
+                $("#tbl_group_entity_" + rowIndex).show();
+                $("#tbl_group_entity_" + rowIndex +"1").show();
+                $(`#group_entity__isRemoved_${rowIndex}`).val(false);
+                $('#GroupEntityRowIndex').val(Number(rowIndex) + 1);
+                $('#GroupEntityCount').val(Number(count)+1)
+            }
+            else {
+                toastr.error('@localizer["Cannot add more than 5 group entity for a corporate."]', {
+                    tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+                });
+
+            }
+        }
+        function RemoveGroupEntity(i) {
+
+            //$('#GroupEntityCount').val(Number($('#GroupEntityCount').val()) - 1)
+            $("#tbl_group_entity_"+i).hide();
+            $("#tbl_group_entity_" + i +"1").hide();
+
+            //$(`#group_entity__isRemoved_${i}`).val('true');
+        }
+
+        $('#ddlCountryList').change(function () {
+            $('#country').val($('#ddlCountryList :selected').text());
+
+        });
+
+        $('#ddlLicenseType').change(function () {
+            $('#ddlLicenseTypehdn').val($('#ddlLicenseType :selected').text());
+
+        });
+
+
+
+        $('#ddlpublic_l_Company').change(function () {
+            $('#EntityType').val($('#ddlpublic_l_Company :selected').text());
+
+        });
+
+        $('#ddlFundSource').change(function () {
+            if ($('#ddlFundSource :selected').text() == "Other") {
+                var x = document.getElementById('FundOther');
+                $('#ddlFundSourcehdn').val('');
+                x.style.display = "";
+            }
+            else {
+                var x = document.getElementById('FundOther');
+                x.style.display = "none";
+
+                $('#ddlFundSourcehdn').val($('#ddlFundSource :selected').text());
+            }
+        });
+
+        $('#ddlBusinessType').change(function () {
+            if ($('#ddlBusinessType :selected').val() == "Other") {
+                var x = document.getElementById('BusinessOther');
+                $('#ddlBusinessTypehdn').val('');
+                x.style.display = "";
+            }
+            else {
+                var x = document.getElementById('BusinessOther');
+                x.style.display = "none";
+
+                $('#ddlBusinessTypehdn').val($('#ddlBusinessType :selected').text());
+            }
+        });
+
+        $('#ddlpublic_l_Company').change(function () {
+            if ($('#ddlpublic_l_Company :selected').text() == "Other") {
+                var x = document.getElementById('entityTypeOther');
+                $('#EntityType').val('');
+                x.style.display = "";
+            }
+            else {
+                var x = document.getElementById('entityTypeOther');
+                x.style.display = "none";
+
+                $('#EntityType').val($('#ddlpublic_l_Company :selected').text());
+            }
+        });
+
+        $('#btnSubmit').click(function () {
+            $('.se-pre-con').show();
+            $('.se-pre-con').fadeOut(5000);
+        });
+        function alphaCheck(e) {
+            var key = e.keyCode;
+            if (!(key > 64 && key < 91) && !(key > 96 && key < 123)) {
+                if (key == 34 || key == 32) {
+
+                } else {
+                    e.preventDefault();
+                }
+            }
+        }
+        $(document).ready(function () {
+            $(document).find("input[type=text]").val('');
+            $(document).find("input[type=number]").val('');
+            $(document).find("select").val('0');
+            $('#ddl_placeofincorporation_1').val('Within UAE');
+            $('#ddlResidenceStatus').val('Resident');
+        });
+        function doiOnChange() {
+            $('#hdnDOI').val($('#date_incorporation').val());
+        }
+
+        function CountryddlonChange(i) {
+
+            //alert(i)
+
+            $(`#nationality_${i}`).val($(`#ddlCountries_${i} :selected`).text());
+        }
+        function SignatoriesCountryddlonChange(i) {
+          /*  alert($(`#signatories_nationality_${i}`).val($(`#signatories_ddlCountries_${i} :selected`).text()));*/
+            $(`#signatories_nationality_${i}`).val($(`#signatories_ddlCountries_${i} :selected`).text());
+        }
+        function ManagementCountryddlonChange(i) {
+            $(`#management_nationality_${i}`).val($(`#management_ddlCountries_${i} :selected`).text());
+
+
+        }
+
+        $(document).ready(function () {
+            $("#textInput").val("70");
+        });
+
+        function updateTextInput(val) {
+            document.getElementById('textInput').value = val;
+        }
+
+        $("body").on("change", "#ddl_placeofincorporation_0", function () {
+            $("input[id=group_placeofincorporate_0]").val($(this).find("option:selected").text());
+
+        });
+        $("body").on("change", "#ddl_placeofincorporation_1", function () {
+            $("input[id=group_placeofincorporate_1]").val($(this).find("option:selected").text());
+
+        });
+        $("body").on("change", "#ddl_placeofincorporation_2", function () {
+            $("input[id=group_placeofincorporate_2]").val($(this).find("option:selected").text());
+
+        });
+        $("body").on("change", "#ddl_placeofincorporation_3", function () {
+            $("input[id=group_placeofincorporate_3]").val($(this).find("option:selected").text());
+
+        });
+        $("body").on("change", "#ddl_placeofincorporation_4", function () {
+            $("input[id=group_placeofincorporate_4]").val($(this).find("option:selected").text());
+
+        });
+
+
+        function POXboxInputSize(input) {
+
+      var maxLength = 20; // Maximum number of digits allowed
+
+      var inputValue = input.value;
+      var regex = /^\d{1,21}$/; 
+
+      if (inputValue.length > maxLength) {
+        input.value = inputValue.slice(0, maxLength); // Truncate the value to the maximum length
+      }
+    }
+
+
+         function limitInputSize(input) {
+
+      var maxLength = 3; // Maximum number of digits allowed
+
+      var inputValue = input.value;
+      var regex = /^\d{1,4}$/; // Regular expression to allow 1 to 5 digits
+
+      //if (!regex.test(inputValue)) {
+      //  input.setCustomValidity("Please enter a number with 1 to 3 digits.");
+      //} else {
+      //  input.setCustomValidity("");
+      //}
+
+      if (inputValue.length > maxLength) {
+        input.value = inputValue.slice(0, maxLength); // Truncate the value to the maximum length
+      }
+    }
+
+     function showLoader() {
+        $('#loading').removeClass('hidden');
+    }
+
+    function hideLoader() {
+        $('#loading').addClass('hidden');
+    }
+
+</script>
+<script>
+    function AddRow(row) {
+        var x = document.getElementById('tbl_group_entity_0');
+        var i = row.parentNode.parentNode.rowIndex;
+        // // document.getElementById("test").rowSpan += 1;
+        var new_row = x.rows[i].cloneNode(true);
+        x.insertBefore(new_row, x.childNodes[i]);
+    }
+</script>
+
+
+
+

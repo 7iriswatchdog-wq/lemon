@@ -1,0 +1,198 @@
+@{
+    Layout = null;
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var clientId = HttpContextAccessor.HttpContext.Session.GetString("SessClientId");
+    var logo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@model AML.ViewModel.ViewModels.User.UserModel
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lemon - OTP Verfication</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Left Section -->
+        <div class="hidden lg:flex lg:w-1/2 bg-[#2563EB] flex-col items-center justify-between p-8">
+            <!-- Logo -->
+            <div class="w-full">
+                <div class="flex items-center text-white">
+                    <img src="~/img/logo.svg" alt="WatchDog Logo" class="h-7" />
+
+                </div>
+            </div>
+
+            <!-- Center Content -->
+            <div class="text-center text-white">
+                <img src="~/img/image1.svg" alt="OTP Illustration" style=" max-height: 448px; width: auto; height: auto;" class=" mx-auto mb-8" />
+                <h2 class="text-2xl font-bold mb-4">Customizable Multipurpose Dashboard</h2>
+                <p class="text-sm text-white/80">Everything you need in an easily customizable dashboard.</p>
+            </div>
+
+            <!-- Dots -->
+            <div class="flex gap-2 justify-center w-full">
+                <!-- <div class="w-2 h-2 rounded-full bg-white"></div>
+                <div class="w-2 h-2 rounded-full bg-white/50"></div>
+                <div class="w-2 h-2 rounded-full bg-white/50"></div> -->
+            </div>
+        </div>
+
+        <!-- Right Section -->
+        <div class="w-full lg:w-1/2 flex flex-col justify-between p-8 lg:p-12">
+            <div></div>
+            <div class="max-w-md mx-auto w-full">
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Verify OTP</h1>
+                <p class=" text-sm mb-8 max-w-sm font-semibold">
+                    OTP has been sent to your email (@ViewData["Email"]).
+                </p>
+
+                <form asp-controller="UserAccess" asp-action="VerifyOTP" class="space-y-4" enctype="multipart/form-data" method="post">
+                    <div>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                            </div>
+                            <input type="text"
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" asp-for="OTP" placeholder="Enter OTP" onkeypress="return isNumberKey(event)" />
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Convert.ToString(ViewData["Error"])))
+                    {
+                        <label class="text-red-500 text-danger">Invalid OTP!</label>
+                    }
+
+                    <button type="submit"
+                            class="w-full bg-[#2563EB] text-white py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        Submit
+                    </button>
+                </form>
+
+                <div class="mt-4 text-center">
+                    <a href="/auth/login" class="text-[#2563EB] hover:underline">Back to Login</a>
+                </div>
+
+
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center text-sm text-gray-600 mt-8">
+                Please contact
+                <a href="mailto:Support@nationalcompliance.ae" class="text-[#2563EB] underline">
+                    support@nationalcompliance.ae
+                </a>
+                or your<br />Account Manager in case of support.
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript">
+    function isNumberKey(evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode;
+        if (charCode != 46 && charCode > 31
+            && (charCode < 48 || charCode > 57) && charCode != 13)
+            return false;
+
+        return true;
+    }
+</script>
+
+
+@* <link href="~/css/login.css" rel="stylesheet" />
+<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+<!------ Include the above in your HEAD tag ---------->
+<style type="text/css">
+    select {
+        /* for Firefox */
+        -moz-appearance: none;
+        /* for Chrome */
+        -webkit-appearance: none;
+    }
+
+        /* For IE10 */
+        select::-ms-expand {
+            display: none;
+        }
+
+        select option {
+            width: 75% !important;
+        }
+</style> *@
+@* <body>
+
+    <section class="ftco-section aml-new-section bg-blue">
+        <div class="container">
+            <div class="row justify-content-center">
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-md-5 col-lg-5">
+                    <div class=" d-md-flex">
+                        @*<div class="img">
+                        <img src="~/img/bg-1.png" width="100%" height="100%">
+                        </div>* @
+                       
+                        <div class="login-wrap p-3 p-md-3 aml-login-wrap bg-dark-blue">
+                            <div class="d-flex">
+                                <div class="w-100">
+                                    <span class="login100-form-title">
+
+                                        <h3 style="color:#fff">Enter OTP</h3>
+                                        <span style="color: #fff; font-size: 14px;">OTP has been sent to your email(@ViewData["Email"]).</span>
+                                </div>
+                            </div>
+
+
+                            <!-- Login Form -->
+                            <form asp-controller="UserAccess" asp-action="VerifyOTP" class="form-horizontal" enctype="multipart/form-data" method="post">
+                                <div class="form-group mb-3">
+                                    <input type="text" id="otp" style="box-shadow: 0 0 15px rgb(255 255 255 / 15%) !important;color: #272f49 !important;border-radius: 10px !important;font-size: 14px;font-family: 'Work Sans', sans-serif !important;display: block;border: 2px solid #FFF !important;padding: 0 !important;height: 40px;background-color: #FFF !important;text-align: center !important;background: none !important;background-color: #FFF !important;" class="fadeIn second form-control mb-3" asp-for="OTP" placeholder="Enter OTP" onkeypress="return isNumberKey(event)">
+                                </div>
+                                <div class="form-group">
+                                    <input type="submit" style="box-shadow: 0 0 15px rgb(255 255 255 / 15%) !important;color: #272f49 !important;border-radius: 10px !important;font-size: 14px;font-family: 'Work Sans', sans-serif !important;display: block;border: 2px solid #FFF !important;padding: 0 !important;height: 40px;background-color: #FFF !important;text-align: center !important;background: none !important;background-color: #FFF !important;" class="form-control btn btn-primary buttonone submit px-3 fadeIn fourth" value="Submit">
+                                </div>
+                                <div id="formFooter" class="d-flex justify-content-center">
+                                    <a class="underlineHover" style="color: #FFF;" href="/auth/login">Back to Login</a>
+                                </div>
+
+                            </form>
+                            @if (!string.IsNullOrEmpty(Convert.ToString(ViewData["Error"])))
+                            {
+                                <label class="text-danger">Invalid OTP!</label>
+                            }
+                        </div>
+
+                        <!-- Remind Passowrd -->
+
+
+                    </div>
+                </div>
+                <script src="~/plugins/jquery/jquery.min.js"></script>
+                <script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+                <script type="text/javascript">
+                    function isNumberKey(evt) {
+                        var charCode = (evt.which) ? evt.which : event.keyCode;
+                        if (charCode != 46 && charCode > 31
+                            && (charCode < 48 || charCode > 57) && charCode != 13)
+                            return false;
+
+                        return true;
+                    }
+                </script>
+            </div>
+        </div>
+
+        </section>
+
+</body> *@

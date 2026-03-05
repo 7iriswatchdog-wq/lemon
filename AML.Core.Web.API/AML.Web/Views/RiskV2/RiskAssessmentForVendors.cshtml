@@ -1,0 +1,619 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+@model AML.ViewModel.ViewModels.Risk.RiskAssessmentVendorModel
+<style>
+    .risk-header {
+        text-align: center;
+    }
+
+    .risk-assessment-div {
+        margin-top: 20px;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .subcategory tr td {
+        border-top: none !important;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .row {
+        display: -ms-flexbox;
+        display: flex;
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+        margin-right: 7.5px;
+        margin-left: -7.5px;
+    }
+
+    .subcategory tr td {
+        border-top: none !important;
+        /* border-bottom: 1px solid #ddd; */
+    }
+
+    .subcategory tr td {
+        /* border-top: none !important; */
+        border-bottom: none !important;
+    }
+
+    .grid-select {
+        width: 300px !important;
+    }
+
+    .pulse-button {
+        position: relative;
+        width: 34px;
+        height: 34px;
+        border: none;
+        box-shadow: 0 0 0 0 rgba(232, 76, 61, 0.7);
+        border-radius: 50%;
+        background-color: #e84c3d;
+        background-size: cover;
+        background-repeat: no-repeat;
+        cursor: pointer;
+        -webkit-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+        -moz-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+        /*  -ms-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);*/
+        animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+    }
+
+        .pulse-button:hover {
+            -webkit-animation: none;
+            -moz-animation: none;
+            /*-ms-animation: none;*/
+            animation: none;
+        }
+
+
+    @@-webkit-keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    @@-moz-keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    @@-ms-keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    @@keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    #container {
+        display: block;
+        position: relative
+    }
+
+    .ui-autocomplete {
+        position: absolute;
+    }
+
+    .select2-container .select2-selection--single {
+        height: 100% !important;
+    }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css" integrity="sha512-yI2XOLiLTQtFA9IYePU0Q1Wt0Mjm/UkmlKMy4TU4oNXEws0LybqbifbO8t9rEIU65qdmtomQEQ+b3XfLfCzNaw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@("@")ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
+
+<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.0.min.js" type="text/javascript"></script>
+<script src="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/jquery-ui.min.js" type="text/javascript"></script>
+
+<link href="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/themes/blitzer/jquery-ui.css" rel="Stylesheet" type="text/css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/js/select2.min.js" defer integrity="sha512-qiKM6FJbI5x5+GL5CEbAUK0suRhjXVMRXnH/XQJaaQ6iQPf05XxbFBE4jS6VJzPGIRg7xREZTrGJIZVk1MLclA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script type="text/javascript">
+
+
+    $(function () {
+        $('#ddlCustomer').change(function () {
+            $("#finalRiskBody").prop("disabled", true)
+            $("#riskBody").prop("disabled", true)
+    @{
+        int ddlCount = 0;
+
+        for (int i = 0; i < Model.RiskTypeCategoryDTO.Count; i++)
+        {
+            for (var j = 0; j < Model.RiskTypeCategoryDTO[i].RiskTypes.Count; j++)
+            {
+                ddlCount++;
+            }
+        }
+    }
+
+                            const ddlItemCount = @ddlCount;
+
+            for (let i = 0; i <= ddlItemCount; i++) {
+                $(`#ddlItem_${i}`).prop("disabled", true)
+                $(`#ddlItem_${i}`).val("0").trigger('change')
+            }
+
+            var selectedId = $("#ddlCustomer option:selected").val();
+
+            console.log("Show loading screen")
+            $('.se-pre-con').css("display", "block");
+
+            $.ajax({
+                url: '/Risk/GetCustomerDetailById/',
+                data: { "id": selectedId },
+                type: "POST",
+                beforeSend: function () {
+                    $('.se-pre-con').show();
+                },
+                success: function (data) {
+
+                    $('#txtRegistrationNumber').val(data.customerReferenceId);
+                    $('#txtVendorName').val(data.firstName);//    ' '    ((data.lastName != '' && data.lastName != 'null') ? data.lastName : ''));
+                    $('#countryTxt').val(((data.nationality != '' && data.nationality != 'null') ? data.nationality : ''));
+                    $('#ddlCountry').val(((data.nationality != '' && data.nationality != 'null') ? data.nationality : ''));
+
+
+                    console.log("Send request to '/Risk/GetRiskDetailsByCIdVendor/'")
+                    $.ajax({
+                        url: "/Risk/GetRiskDetailsByCIdVendor/",
+
+                        data: { "id": $('#ddlCustomer option:selected').text() },
+                        type: "POST",
+                        success: function (data) {
+                            console.log("Got response from '/Risk/GetRiskDetailsByCIdVendor/'")
+                            const riskDetails = data
+                            for (let i = 0; i <= riskDetails.riskTypeCategoryDTO.length - 1; i++) {
+                                for (let j = 0; j <= riskDetails.riskTypeCategoryDTO[i].riskTypes.length - 1; j++) {
+                                    if (riskDetails.riskTypeCategoryDTO[i].riskTypes[j].itemTxt == null) { continue }
+
+                                    const option = $(`#risk-item-${i}-${j} select option`)
+                                        .filter(function () { return $(this).html() == riskDetails.riskTypeCategoryDTO[i].riskTypes[j].itemTxt; })
+                                        .val()
+
+                                    $(`#risk-item-${i}-${j} select`)
+                                        .val(`${option}`)
+                                        .trigger('change')
+                                }
+                            }
+
+                            for (let i = 0; i <= ddlItemCount; i++) {
+                                $(`#ddlItem_${i}`).prop("disabled", false)
+                            }
+
+                            console.log("Hide loading screen")
+
+                            $('.se-pre-con').fadeOut("slow");
+                        },
+                        error: async function (response) {
+
+                            for (let i = 0; i <= ddlItemCount; i++) {
+                                $(`#ddlItem_${i}`).prop("disabled", false)
+                            }
+
+                            response.then(val => console.log(val));
+                        },
+                        failure: function (response) {
+
+                            for (let i = 0; i <= ddlItemCount; i++) {
+                                $(`#ddlItem_${i}`).prop("disabled", false)
+                            }
+                            console.log(response.responseText);
+                        }
+                    });
+                },
+                complete: function (data) {
+                    for (let i = 0; i <= ddlItemCount; i++) {
+                        $(`#ddlItem_${i}`).prop("disabled", false)
+                    }
+                    console.log(data);
+                    wait = false;
+                },
+                error: function (response) {
+
+                    for (let i = 0; i <= ddlItemCount; i++) {
+                        $(`#ddlItem_${i}`).prop("disabled", false)
+                    }
+                    console.log(response);
+                },
+                failure: function (response) {
+                    for (let i = 0; i <= ddlItemCount; i++) {
+                        $(`#ddlItem_${i}`).prop("disabled", false)
+                    }
+                    console.log(response);
+                }
+            });
+        });
+
+    });
+
+
+    function ValidateCustomerId(e) {
+        var uniquiIdVal = $('#txtRegistrationNumber').val();
+        if (uniquiIdVal != '' && uniquiIdVal != null)
+            return true;
+        else
+            alert('@localizer["Registration Number not Selected!"]');
+        $(".se-pre-con").hide();
+        event.preventDefault();
+        return false;
+    }
+</script>
+
+
+<div class="sas-breadcrumbs aml-breadcrumbs pb-3">
+    <ul class="mb-0 pl-0 d-flex">
+        <li><a href="#">Home</a></li>/
+        <li><a href="#">Risk Assessment</a></li>/
+        <li><a href="#">@localizer["Risk Assessment For Vendors/Service Providers"]</a></li>
+    </ul>
+</div>
+<div class="page-heading">
+    <div class="sas-card rounded-card br-10 mb-2 bg-blue">
+        <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">@localizer["Risk Assessment For Vendors/Service Providers"]</h4>
+            <div class="menu-icon">
+                <i class="lni lni-microsoft"></i>
+            </div>
+    </div>
+</div>
+</div>
+
+<div class="sas-card rounded-card mb-2 bg-blue">
+    <!-- form start -->
+    <form role="form" asp-controller="Risk" asp-action="RiskAssessmentForVendors" class="form-horizontal" enctype="multipart/form-data" method="post" onsubmit="ValidateCustomerId(this);">
+        <div class="form_contents">
+            @if (Model.userAuthorised == true)
+            {
+                <div class="row">
+                    <div class="col-md-8">
+                        @* <div class="card card-primary card-body">
+                    <div class="card-header">
+                    <h3 class="card-title">@localizer["Risk Assessment For Vendors/Service Providers"]</h3>
+                    </div>*@
+                        <div class="sas-card rounded-card mb-2 border-box">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">@localizer["Risk Assessment Filter"]</h6>
+                            </div>
+                            <hr />
+                            <div class="risk-assessment-div">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="form-group">
+                                            <label for="txtRegistrationNumber">@localizer["Registration Number"]</label>
+                                            <select id="ddlCustomer" class="form-control br-50" asp-for="CustomerId" asp-items="Model.CustomerList">
+                                                <option value="">--@localizer["EMPTY"]--</option>
+                                            </select>
+                                            <input type="hidden" class="form-control" asp-for="RegistrationNumber" id="txtRegistrationNumber" maxlength="12">
+                                            <span asp-validation-for="RegistrationNumber" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="form-group">
+                                            <label for="txtName">@localizer["Vendor/Service Provider Name"]</label>
+                                            <input type="text" asp-for="VendorName" class="form-control" id="txtVendorName" placeholder=@localizer["Vendor Name"] readonly>
+                                            <span asp-validation-for="VendorName" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="form-group">
+                                            <label>@localizer["Country"]</label>
+                                            <input type="text" asp-for="Country" class="form-control" id="countryTxt" placeholder=@localizer["Country Name"] readonly>
+                                            <span asp-validation-for="Country" class="text-danger"></span>
+                                            <input type="hidden" asp-for="CountryCode" id="ddlCountry" />
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="form-group">
+                                            <label for="dtLegalNameOfEntity">@localizer["Registered Date"]</label>
+                                            <input type="date" asp-for="RegisteredDate" class="form-control mandatory" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" id="dtRegisteredDate" placeholder=@localizer["Registered Date"]>
+                                            <span asp-validation-for="RegisteredDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        @*<div class="card card-primary card-body" id="finalRiskBody">
+                    <div class="card-header">
+                    <h3 class="card-title">@localizer["Risk Assessment Rating"]</h3>
+                    </div>
+                    <br>*@
+                        <div class="sas-card rounded-card mb-2 border-box">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">@localizer["Risk Assessment Rating"]</h6>
+                            </div>
+                            <hr />
+                            <div class="col-sm">
+                                <button id="btnRiskAssessmentRating" disabled class="dt-button-info form-control br-50" type="button">@localizer["Low"]</button>
+                                <input type="hidden" asp-for="RiskAssessmentRating" id="riskAssessmentRatingTxt" />
+                                <input type="hidden" asp-for="RiskAssessmentRatingWithoutOverride" id="riskAssessmentRatingWithoutOverrideTxt" />
+                            </div>
+                            <div>
+                                <div class="row">
+                                    <div class="col-sm" style="margin-top:20px;">
+                                        <label>@localizer["Risk Override"]</label>
+                                        <div class="form-group">
+                                            <button id="btnAsPerRiskScore" disabled class="btn dt-button-info br-10 risk-button" type="button">@localizer["As Per Risk Score"]</button>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+
+                        </div>
+
+
+
+                    </div>
+                </div>
+
+                <div class="sas-card rounded-card mb-2 border-box" id="riskBody">
+                    <div>
+                        <table class="table" id="riskTable">
+                            <thead>
+                                <tr class="row">
+                                    <th style="width:25%;">
+                                        @localizer["Risk Type Category"]
+                                    </th>
+                                    <th style=" padding-left: 25px;width:35%;">
+                                        @localizer["Risk Type"]
+                                    </th>
+                                    <th style="width:30%;">
+                                        @localizer["Risk Items"]
+                                    </th>
+                                    <th style="width:10%;">
+                                        @localizer["Rating Scale"]
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int a = 0;
+                                }
+                                @for (int i = 0; i < Model.RiskTypeCategoryDTO.Count; i++)
+                                {
+                                    <tr class="row">
+                                        <td style="width:25%;">
+                                            @Model.RiskTypeCategoryDTO[i].RiskCategory
+                                        </td>
+                                        <td style="width:75%;" class="row">
+                                            <table class=" subcategory" id="RiskSubTable" style="width:100%;">
+                                                <tbody>
+                                                    @for (var j = 0; j < Model.RiskTypeCategoryDTO[i].RiskTypes.Count; j++)
+                                                    {
+                                                        <tr>
+                                                            <td style="width: 46.6%;">
+                                                                @Model.RiskTypeCategoryDTO[i].RiskTypes[j].RiskType
+                                                                <input type="hidden" asp-for="@Model.RiskTypeCategoryDTO[i].RiskTypes[j].Id" />
+                                                            </td>
+                                                            <td style="width: 40%;">
+                                                                <div id="risk-item-@i-@j">
+                                                                    <select class="form-control grid-select" asp-items="@Model.RiskTypeCategoryDTO[i].RiskTypes[j].Items" id="ddlItem_@a" onchange="ItemChange(@a,@Model.RiskTypeCategoryDTO[i].RiskTypes[j].RiskTypePercentage)">
+                                                                        <option value="0">--@localizer["EMPTY"]--</option>
+                                                                    </select>
+                                                                    <input type="hidden" asp-for="@Model.RiskTypeCategoryDTO[i].RiskTypes[j].ItemScore" id="RiskItem_@a" />
+                                                                    <input type="hidden" asp-for="@Model.RiskTypeCategoryDTO[i].RiskTypes[j].ItemTxt" id="RiskItemTxt_@a" />
+                                                                    <input type="hidden" asp-for="@Model.RiskTypeCategoryDTO[i].RiskTypes[j].SelectedItemId" id="RiskItemId_@a" />
+                                                                </div>
+                                                            </td>
+                                                            <td style="text-align: center;width: 13.3%;padding-left:5%;">
+                                                                <button id="clrScore_@a" type="button" class="btn btn-block btn-secondary riskscorebtn" style="width:38px;">0</button>
+                                                                <input id="clrScorehdn_@a" type="hidden" class="riskscorehdn" value="0" />
+                                                            </td>
+                                                        </tr>
+                                                        a = a + 1;
+                                                    }
+
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-header">
+                        <div class="row justify-content-between">
+                            <div class="">
+                                <h3 class="card-title">@localizer["Total Selected"] :    <button id="btntotal" class="dt-button-info result-score" type="button">0</button></h3>  <h3 class="card-title" style="margin-left: 20px;">@localizer["Total Score"] :    <button id="btntotalscore" class="dt-button-info result-score" type="button">0</button></h3>
+                                <input type="hidden" asp-for="RiskScoreSum" id="riskScoreSumTxt" />
+                                <input type="hidden" asp-for="RiskScoreCount" id="riskScoreCountTxt" />
+                            </div>
+                            <div class="">
+                                <h3 class="card-title" style="padding-top: 20px;margin-top: 10px;"><b>@localizer["Risk Score"] &nbsp;</b></h3>
+                                <button type="button" class="sas-button p-8-25 top_btn_5 mr-2 result-score" style="padding: 8px 30px;" id="lowTxt">0</button>
+                                <button type="button" class="sas-button p-8-25 top_btn_6  mr-2 result-score" style="padding: 8px 30px;" id="mediumTxt">0</button>
+                                <button class="sas-button p-8-25 top_btn_7  mr-2 result-score" style="padding: 8px 30px;" id="highTxt">0</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.card-body -->
+
+                <div class="row justify-content-center mt-2">
+                    <button type="submit" class="sas-button p-8-25 submit_btn mr-2" onclick="fnSubmit()">Submit</button>
+                    <button type="button" class="sas-button p-8-25 cancel_btn mr-2" onclick="location.href='@Url.Action("Index", "Risk" )'">Cancel</button>
+                </div>
+            }
+            else
+            {
+                <div class="row" style="text-align:center;">
+                    <h3>@localizer["Your subscription is finished, please contact admin"].</h3>
+                </div>
+            }
+        </div>
+    </form>
+</div>
+
+
+
+
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+
+<script>
+
+    $(document).ready(function () {
+        /* $('#risk-item-0-1 select').prop("disabled", true)*/
+        $("#ddlCustomer").select2();
+        $('.risk-button').hide();
+    });
+
+    var OverRideVariables = [];
+    var b = $('#RiskSubTable tr').length;
+    for (i = 0; i <= b; i++) {
+        OverRideVariables[i] = false
+    }
+    var OverRides = "false";
+
+
+    
+
+
+    function ItemChange(a) {
+        var score = $("#ddlItem_" + a + " option:selected").val().split("|");
+        var selectedVal = score[0];
+        var overrideScore = score[1];
+        var selectedItemId = score[2];
+
+        $('#RiskItemTxt_' + a).val($("#ddlItem_" + a + " option:selected").text());
+        $('#RiskItem_' + a).val(selectedVal);
+        $('#RiskItemId_' + a).val(selectedItemId);
+
+
+        if (selectedVal == 1) {
+            $('#clrScore_' + a).removeClass('btn btn-warning');
+            $('#clrScore_' + a).removeClass('btn btn-danger pulse-button');
+            $('#clrScore_' + a).addClass('btn btn-success');
+            $('#clrScore_' + a).text(selectedVal);
+            $('#clrScorehdn_' + a).val(selectedVal);
+            OverRideVariables[a] = false;
+        }
+        else if (selectedVal == 2) {
+
+            $('#clrScore_' + a).removeClass('btn btn-success');
+            $('#clrScore_' + a).removeClass('btn btn-danger pulse-button');
+            $('#clrScore_' + a).addClass('btn btn-warning');
+            $('#clrScore_' + a).text(selectedVal);
+            $('#clrScorehdn_' + a).val(selectedVal);
+            OverRideVariables[a] = false;
+        }
+        else if (selectedVal == 3) {
+            $('#clrScore_' + a).removeClass('btn btn-success');
+            $('#clrScore_' + a).removeClass('btn btn-warning');
+            $('#clrScore_' + a).text(selectedVal);
+            $('#clrScorehdn_' + a).val(selectedVal);
+            $('#clrScore_' + a).addClass('btn btn-danger');
+            if (overrideScore == 3) {
+                $('#clrScore_' + a).addClass('pulse-button');
+                OverRideVariables[a] = true;
+            } else {
+                $('#clrScore_' + a).removeClass('pulse-button');
+                OverRideVariables[a] = false;
+            }
+        }
+        else if (selectedVal == 0) {
+            $('#clrScore_' + a).removeClass('btn btn-success');
+            $('#clrScore_' + a).removeClass('btn btn-warning');
+            $('#clrScore_' + a).removeClass('btn btn-danger pulse-button');
+            $('#clrScore_' + a).addClass('btn btn-block btn-secondary');
+            $('#clrScore_' + a).text(0);
+            $('#clrScorehdn_' + a).val(0);
+            OverRideVariables[a] = false;
+        }
+        else {
+            OverRideVariables[a] = false;
+        }
+        calculateTotal();
+    }
+    function calculateTotal() {
+        var total = 0;
+        var i = 0;
+        var riskStatus = '@localizer["Low Risk"]';
+
+        $(".riskscorehdn").each(function () {
+            total = parseInt(total) + parseInt($(this).val());
+            if ($(this).val() != 0) {
+                i++;
+            }
+        });
+
+        $('#btntotalscore').text(total.toFixed(2));
+        $('#btntotal').text(i);
+
+        $('#btnAsPerRiskScore').show();
+
+        var highscoreVal = (i * 3);
+        var mediumScoreVal = (i * 2.24);
+        var lowScoreVal = (i * 1.49);
+            
+        $('#lowTxt').text(lowScoreVal.toFixed(2));
+        $('#mediumTxt').text(mediumScoreVal.toFixed(2));
+        $('#highTxt').text(highscoreVal.toFixed(2));
+
+        if (total <= highscoreVal) {
+            riskStatus = '@localizer["High Risk"]';
+            $('#btnRiskAssessmentRating').removeClass();
+            $('#btnRiskAssessmentRating').addClass('btn btn-danger form-control');
+            $('#btnAsPerRiskScore').text('@localizer["As Per Risk Score - High"]');
+            $('#btnAsPerRiskScore').removeClass();
+            $('#btnAsPerRiskScore').addClass('btn btn-danger form-control risk-button');
+        }
+        if (total <= mediumScoreVal) {
+            riskStatus = '@localizer["Medium Risk"]';
+            $('#btnRiskAssessmentRating').removeClass();
+            $('#btnRiskAssessmentRating').addClass('btn btn-warning form-control');
+            $('#btnAsPerRiskScore').text('@localizer["As Per Risk Score - Medium"]');
+            $('#btnAsPerRiskScore').removeClass();
+            $('#btnAsPerRiskScore').addClass('btn btn-warning form-control risk-button');
+        }
+        if (total <= lowScoreVal) {
+            riskStatus = '@localizer["Low Risk"]';
+            $('#btnRiskAssessmentRating').removeClass();
+            $('#btnRiskAssessmentRating').addClass('btn btn-info form-control');
+            $('#btnAsPerRiskScore').text('@localizer["As Per Risk Score - Low"]');
+            $('#btnAsPerRiskScore').removeClass();
+            $('#btnAsPerRiskScore').addClass('btn btn-info form-control risk-button');
+        }
+        //Set Risk score witout override
+        $('#riskAssessmentRatingWithoutOverrideTxt').val(riskStatus);
+
+        for (x = 0; x <= b; x++) {
+
+            OverRides = OverRides + "||" + OverRideVariables[x];
+            if (OverRides.includes("true")) {
+                riskStatus = '@localizer["High Risk"]';
+                $('#btnRiskAssessmentRating').removeClass();
+                $('#btnRiskAssessmentRating').addClass('btn btn-danger form-control');
+            }
+        }
+        //Set final risk score
+        $('#riskAssessmentRatingTxt').val(riskStatus);
+
+
+        $('#btnRiskAssessmentRating').text(riskStatus);
+
+        $('#riskScoreSumTxt').val(total);
+        $('#riskScoreCountTxt').val(i);
+    }
+    function fnSubmit() {
+        $(".se-pre-con").show();
+    }
+</script>
+
+
+
+
+
+

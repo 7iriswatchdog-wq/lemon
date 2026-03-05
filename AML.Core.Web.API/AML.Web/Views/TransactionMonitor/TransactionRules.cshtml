@@ -1,0 +1,343 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = @localizer["TMS Rules"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model AML.ViewModel.ViewModels.TransactionMonitor.TMSRulesView
+@* <script src="~/plugins/jquery/jquery.min.js"></script>  *@
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script type="text/tailwindcss">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            clifford: '#da373d',
+          }
+        }
+      }
+    }
+    @@layer utilities {
+    }
+</script>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&family=Outfit:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Varela+Round&display=swap');
+
+    .donut-chart {
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        background: conic-gradient( #2563EB 0% 65%, #AD87FF 65% 80%, #38BDF8 80% 100% );
+        position: relative;
+    }
+
+    .donut-hole {
+        position: absolute;
+        width: 60%;
+        height: 60%;
+        background-color: white;
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .percentage {
+        position: absolute;
+        background-color: white;
+        padding: 4px 8px;
+        border-radius: 9999px;
+        font-weight: bold;
+        font-size: 1.25rem;
+    }
+
+    .percent-20 {
+        top: 15%;
+        right: -20%;
+    }
+
+    .percent-65 {
+        bottom: -15%;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .percent-15 {
+        top: 10%;
+        left: -20%;
+    }
+</style>
+
+@* <style>
+    #ruleTable.dataTable {
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+    }
+
+        #ruleTable.dataTable thead th {
+            background-color: #E9EFFD !important;
+        }
+
+        #ruleTable.dataTable tbody tr {
+            border-top: 20px solid black !important;
+        }
+</style> *@
+
+@* for the loading effect like data tables ... *@
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }</style>
+
+@* TransactionRules.cshtml *@
+<div class="max-w-screen h-full items-center ">
+    <!-- TOP BAR -->
+    @* <nav class="border-b">
+        <div class="flex flex-row items-center justify-between md:p-5 p-5">
+            <h2 class="text-2xl font-bold">AML Transaction Monitoring Rules</h2>
+            <div class="hidden md:block">Client Logo</div>
+        </div>
+    </nav> *@
+
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                @localizer["AML Transaction Monitoring Rules"]
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+    <div class="h-auto bg-gray-50 items-center  ">
+        <div id="loadingeffect" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-1  justify-center items-center md:p-8 p-4 md:gap-6 gap-4  mx-auto">
+            <!-- MANAGE CASE -->
+            <div class="w-full bg-white rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100 ">
+
+
+                <!-- heading + controls -->
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+                    <h6 class="text-xl font-semibold text-gray-900">Rule Listing</h6>
+
+                    <!-- rows‑per‑page -->
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-700">Show</span>
+                        <select id="rowsPerPage"
+                                class="h-10 ml-2 rounded-md border-gray-300 py-1 pl-3 pr-8 text-sm text-gray-600">
+                            <option value="10" selected>10&nbsp;items</option>
+                            <option value="25">25&nbsp;items</option>
+                            <option value="50">50&nbsp;items</option>
+                            <option value="100">100&nbsp;items</option>
+                        </select>
+                    </div>
+
+                    <!-- search -->
+                    <div class="relative w-full sm:w-96">
+                        <input type="text"
+                               placeholder="Search anything..."
+                               class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg"
+                               id="customSearch" />
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- table -->
+                <div class="overflow-x-auto">
+                    <div class="min-w-[640px]">
+                        <table id="ruleTable"
+                               class="w-full table-auto border-collapse rounded-lg">
+                            <thead class="bg-[#E9EFFD] text-gray-900 text-sm">
+                                <tr>
+                                    <th class="px-6 py-4 text-left font-semibold">OFF/ON</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Id</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Rule Name</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Rule Description</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Date</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in Model.TMSRulesViewModel)
+                                {
+                                    <tr class="border-b">
+                                        <td class="sorting_1 align-middle px-4 py-2">
+                                            <label class="relative inline-block w-11 h-6">
+                                                <input type="checkbox"
+                                                       class="sr-only peer chcktbl1 toggle-rule"
+                                                       data-id="@r.TMSRuleID"
+                                                       @(r.TMSRuleIsActive == 1 ? "checked" : "") />
+
+                                                <div class="absolute inset-0 bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors duration-300"></div>
+
+                                                <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform duration-300 peer-checked:translate-x-5"></div>
+                                            </label>
+                                        </td>
+
+                                        <td class="px-6 py-4 text-sm">@r.TMSRuleID</td>
+                                        <td class="px-6 py-4 text-sm">@r.TMSRuleName</td>
+                                        <td class="px-6 py-4 text-sm">@r.TMSRuleDescription</td>
+                                        <td class="px-6 py-4 text-sm">
+                                            @r.TMSRuleCreatedOn
+                                        </td>
+                                        <td class="px-6 py-4 text-sm">@r.TMSRuleScore</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+<script>
+        $(function () {
+
+            /* --- DataTable (client‑side paging / search) --- */
+            const table = $('#ruleTable').DataTable({
+                paging     : true,
+                info       : true,
+                searching  : true,
+                ordering   : true,
+                lengthChange: false,          // we control length with our own select
+                pageLength : parseInt($('#rowsPerPage').val()) || 10,
+                dom: 'tip',                    // only table + information + paging
+                drawCallback: function () {
+        // Reapply tailwind border classes after table redraw
+                $('#ruleTable tbody').addClass('border-b border-gray-300');
+    }
+
+            });
+
+            /* rows‑per‑page selector */
+            $('#rowsPerPage').on('change', function () {
+                table.page.len(parseInt(this.value) || 10).draw();
+            });
+
+            /* custom search box */
+            $('#customSearch').on('keyup change', function () {
+                table.search(this.value).draw();
+            });
+
+            /* ON/OFF toggle */
+               $('#ruleTable').on('change', '.toggle-rule', function () {
+                 /* ---------- show loader ---------- */
+                 $("#loadingeffect").show();          // or .show()
+                const id   = $(this).data('id');
+                const flag = this.checked ? 1 : 0;
+                console.log('change fired', { id, flag });
+
+                $.ajax({
+                    url : `/tmscase/updaterule/${id}`,
+                    type: 'POST',
+                    data: { isActive: flag },
+                    headers: {
+                        // 'RequestVerificationToken': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: () => {
+                        console.log('Rule updated');
+                      /* ---------- hide loader ---------- */
+                      $("#loadingeffect").hide();     // or .hide()
+                    },
+                    error  : xhr => {
+                        console.error('Update failed:', xhr.status, xhr.statusText);
+                         /* ---------- hide loader ---------- */
+                          $("#loadingeffect").hide();     // or .hide()
+                    }
+                });
+            });
+
+
+        });
+</script>

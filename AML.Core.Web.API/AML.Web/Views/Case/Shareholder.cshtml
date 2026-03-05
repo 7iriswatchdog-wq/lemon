@@ -1,0 +1,1940 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Html
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = localizer["Manage Case"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+    var controllerName = "Risk";
+    var actionName = "Create";
+
+    if (Model?.Case?.CustomerType == "I")
+    {
+        controllerName = "Risk";
+        actionName = "Create";
+    }
+    else if (Model?.Case?.CustomerType == "C")
+    {
+        controllerName = "Risk";
+        actionName = "RiskAssessmentForCorpCustomer";
+    }
+}
+
+@model AML.ViewModel.ViewModels.CaseProcess.CaseProcessModel
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Manager - Case Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="~/plugins/jquery/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+
+        /* Modal backdrop */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Transition for column width */
+        .column-transition {
+            transition: width 300ms, opacity 300ms;
+        }
+    </style>
+    <style>
+        .dt-loader {
+            display: inline-block;
+            position: relative;
+            width: 80px;
+            height: 20px;
+        }
+
+            .dt-loader div {
+                position: absolute;
+                top: 8px;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: #2563eb;
+                animation-timing-function: cubic-bezier(0, 1, 1, 0);
+            }
+
+                .dt-loader div:nth-child(1) {
+                    left: 8px;
+                    animation: dt-anim1 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(2) {
+                    left: 8px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(3) {
+                    left: 32px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(4) {
+                    left: 56px;
+                    animation: dt-anim3 0.6s infinite;
+                }
+
+        @@keyframes dt-anim1 {
+            0% {
+                transform: scale(0);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @@keyframes dt-anim2 {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(24px);
+            }
+        }
+
+        @@keyframes dt-anim3 {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(0);
+            }
+        }</style>
+</head>
+<body class="bg-slate-50/30 min-h-screen text-slate-900">
+
+    <div class="p-4 sm:p-6 min-h-screen flex flex-col">
+        <div id="loadingeffect" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        </div>
+    
+    <div class="shrink-0 pb-4">
+    <h1 class="text-lg font-black text-slate-900 tracking-tight uppercase mb-3">
+       Shareholder Case Manager
+    </h1>
+
+    <!-- Case Details Summary -->
+    <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+
+        <!-- Header -->
+        <div class="flex justify-between items-start mb-5">
+            <div class="flex items-center gap-2">
+                <div class="h-4 w-1 bg-blue-600 rounded-full"></div>
+                <h2 class="text-base font-bold text-slate-900 leading-none">
+                    Case Details
+                </h2>
+            </div>
+
+            <button onclick="document.getElementById('uploadModal').style.display = 'flex'"
+                    class="text-[11px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-tight">
+                Upload Document
+            </button>
+        </div>
+
+        <!-- ROW 1 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6 mb-6">
+            <div class="flex flex-col space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Customer ID</span>
+                <span class=""text-sm font-bold text-slate-900 tracking-tight">@Model.Case.CustomerId</span>
+            </div>
+
+            <div class="flex flex-col space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Date</span>
+                <span class=""text-sm font-bold text-slate-900 tracking-tight"">@Model.Case.CreatedOnText</span>
+            </div>
+            <div class="flex flex-col space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Screening Options</span>
+                <span id="screeningShort" class=""text-sm font-bold text-slate-900 tracking-tight"">@Model.Case.ScreeningOptions</span>
+                <span id="screeningFull"
+                                    class="absolute left-0 top-full mt-1 hidden
+                        bg-white border shadow-md rounded-md
+                        p-2 text-xs text-slate-700 z-50
+                        whitespace-normal max-w-lg">
+                                @(Model.Case.ScreeningOptions)
+                            </span>
+            </div>
+
+            <div class="flex flex-col space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Customer Name</span>
+                <span class="text-sm font-bold text-slate-900 tracking-tight" truncate"
+                      title="@($"{Model.Case.FirstName} {Model.Case.LastName}")">
+                    @Model.Case.FirstName @Model.Case.LastName
+                </span>
+            </div>
+
+           
+        </div>
+
+        <!-- ROW 2 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6 mb-6">
+             <div class="flex flex-col space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Nationality</span>
+                <span class="text-sm font-bold text-slate-900 tracking-tight">@Model.Case.Nationality</span>
+            </div>
+            <div class="flex flex-col space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Date of Birth</span>
+                <span class="text-sm font-bold text-slate-900 tracking-tight">@Model.Case.DOB</span>
+            </div>
+
+            <div class="flex flex-col space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">ID Type</span>
+                <span class="text-sm font-bold text-slate-900 tracking-tight">@Model.Case.CustomerIdType</span>
+            </div>
+
+            <div class="flex flex-col space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">ID Number</span>
+                <span class="text-sm font-bold text-slate-900 tracking-tight truncate">@Model.Case.CustomerIdNumber</span>
+            </div>
+           
+            
+        </div>
+
+        <!-- ROW 3 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
+              <div class="flex flex-col space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Gender</span>
+                <span class="text-sm font-bold text-slate-900 tracking-tight">@Model.Case.Gender</span>
+            </div>
+            
+                        <div class="flex flex-col space-y-1">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">ID Issue Date</span>
+                            <span class="value">@(Model.Case.IdIssueDate?.ToString("dd/MM/yyyy") ?? "NA")</span>
+                        </div>
+                        <div class="flex flex-col space-y-1">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">ID Expiry Date</span>
+                            <span class="text-sm font-bold text-slate-900 tracking-tight">@(Model.Case.IdExpiryDate?.ToString("dd/MM/yyyy") ?? "NA")</span>
+                        </div>
+
+                    
+
+            <div class="flex flex-col space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Customer CIF No</span>
+                <span class="text-sm font-bold text-slate-900 tracking-tight">@Model.Case.CIFNumber</span>
+            </div>
+
+            <div class="flex flex-col space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Match Parameter</span>
+                <span class="text-sm font-bold text-slate-900 tracking-tight">@Model.Case.Threshold</span>
+            </div>
+        </div>
+
+        <!-- DOCUMENTS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6 mt-6">
+            <div class="flex flex-col space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Uploaded Documents</span>
+                @foreach (var item in Model.CaseDocuments)
+                {
+                    var shortName = item.DocumentFileName?.Length > 12
+                        ? item.DocumentFileName.Substring(0, 12) + "..."
+                        : item.DocumentFileName;
+
+                    <a href="/Case/DownloadCaseDocument?filePath=@item.DocumentFullPath&fileName=@item.DocumentFileName"
+                       title="@item.DocumentFileName"
+                       class="text-blue-600 text-xs font-semibold hover:underline">
+                        @shortName
+                    </a>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+    <div class="flex-1 min-h-0 py-2 overflow-hidden flex w-full">
+
+    <!-- FULL WIDTH COLUMN -->
+    <div id="leftColumn" class="flex flex-col gap-6 w-full">
+
+        <!-- Search Results Section -->
+        <div class="flex-1 min-h-0 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+
+            <!-- Header -->
+            <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                <h3 class="text-[13px] font-bold text-slate-800 tracking-tight uppercase">
+                    Search Results
+                </h3>
+            </div>
+
+            <!-- Body -->
+            <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+
+                @if (Model.DataList != null && Model.DataList.Any())
+                {
+                    <div class="border border-slate-200 rounded-lg overflow-hidden shadow-sm m-5">
+                        <div class="overflow-x-auto">
+                            <table id="APITable" class="w-full text-sm text-left">
+                                <thead class="text-xs text-slate-500 uppercase bg-white border-b border-slate-200">
+                                    <tr>
+                                        <th class="px-3 py-2">Type</th>
+                                        <th class="px-3 py-2">Category</th>
+                                        <th class="px-3 py-2">Name</th>
+                                        <th class="px-3 py-2">Score</th>
+                                        <th class="px-3 py-2">Nationality</th>
+                                        <th class="px-3 py-2">Id No</th>
+                                        <th class="px-3 py-2">DOB</th>
+                                        <th class="px-3 py-2">Datasets</th>
+                                        <th class="px-3 py-2">Details</th>
+                                        <th class="px-3 py-2">Search Type</th>
+                                        <th class="px-3 py-2">Search Remarks</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody class="divide-y divide-slate-100">
+
+                                    @for (int i = 0; i < Model.DataList.Count; i++)
+                                    {
+                                        <tr class="bg-white hover:bg-slate-50">
+                                            <td class="px-3 py-3 text-[11px] font-bold">@Model.DataList[i].matchtype</td>
+                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchcategory</td>
+                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchname</td>
+                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchscore</td>
+                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchnationality</td>
+                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchidno</td>
+                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchdob</td>
+                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchdatasets</td>
+
+                                            <td class="px-3 py-3">
+                                                @if (Model.DataList[i].matchtype == "KYC6")
+                                                {
+                                                    <button class="h-7 px-3 text-[10px] bg-blue-600 text-white rounded"
+                                                            onclick="location.href='@Url.Action("GetDetailsApi","Case",
+                                                            new {
+                                                                Id = Model.DataList[i].matchuid,
+                                                                Category = Model.DataList[i].matchcategory,
+                                                                CaseId = Model.Case.Id,
+                                                                Type = Model.DataList[i].matchtype,
+                                                                Resourcesid = Model.DataList[i].matchresourcesid
+                                                            })'">
+                                                        Details
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button class="h-7 px-3 text-[10px] bg-blue-600 text-white rounded"
+                                                            onclick="location.href='@Url.Action("GetDetails","Case",
+                                                            new { caseId = Model.Case.Id, index = i })'">
+                                                        Details
+                                                    </button>
+                                                }
+                                            </td>
+
+                                            <td class="px-3 py-3">
+                                                        <div class="relative">
+
+                                                            <!-- Trigger Button -->
+                                                            <button type="button"
+                                                                    id="search-trigger-@i"
+                                                                    class="flex h-8 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-2 text-[10px]">
+                                                                <span id="search-text-@i">Select</span>
+                                                                <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24">
+                                                                    <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" />
+                                                                </svg>
+                                                            </button>
+
+                                                            <!-- Dropdown -->
+                                                            <div id="search-popover-@i" class="hidden absolute z-50 mt-1 w-[260px] rounded-md border bg-white p-3 shadow-md">
+
+                                                                <!-- ALL Checkbox -->
+                                                                <div class="flex items-center gap-2 pb-2 border-b">
+                                                                    <input type="checkbox" id="search-all-@i" class="h-4 w-4">
+                                                                    <label class="text-xs font-bold">ALL</label>
+                                                                </div>
+
+                                                                <!-- Options container -->
+                                                                <div id="search-options-@i" class="space-y-2 mt-2"></div>
+
+                                                                <!-- Hidden inputs (for form submit) -->
+                                                                <div id="search-hidden-@i"></div>
+                                                            </div>
+
+                                                            <!-- Hidden input holding existing values -->
+                                                            <input type="hidden"
+                                                                   id="searchTypesValue-@i"
+                                                                   value='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DataList[i].searchTypes ?? new List<string>()))' />
+                                                        </div>
+                                                    </td>
+
+                                            <td class="px-3 py-3">
+                                                <textarea asp-for="@Model.DataList[i].remarks"
+                                                          class="h-7 w-[120px] text-[10px] border p-1 rounded"
+                                                          placeholder="Enter"></textarea>
+                                            </td>
+                                        </tr>
+                                    }
+
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="px-5 pb-4">
+                        <button onclick="saveRemarks(@Model.Case.Id,'@Model.Case.CustomerId','@Model.Case.Type')"
+                                class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px]
+                                       h-9 px-6 rounded-md shadow-sm uppercase">
+                            Save Search Action
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="flex items-center justify-center h-full py-6 text-slate-400 text-sm font-semibold">
+                        No search results found
+                    </div>
+                }
+
+            </div>
+        </div>
+        <div class="flex-6 min-h-0 flex flex-col gap-6">
+                   @*  @functions {
+                        public IHtmlContent RenderShareholderTree(IEnumerable<AML.ViewModel.ViewModels.CustomerCase.CaseModel> shareholders, string parentCustomerId)
+                        {
+                            var children = shareholders.Where(s => s.ParentId == parentCustomerId).ToList();
+                            if (!children.Any()) return HtmlString.Empty;
+
+                            var html = new System.Text.StringBuilder();
+                            html.Append("<div class='ml-5 space-y-1'>");
+
+                            foreach (var child in children)
+                            {
+                                html.Append($@"
+                                        <div class='grid grid-cols-12 gap-2 items-center py-1 border-l border-slate-200 pl-2 hover:bg-gray-50'>
+                                        <div class='col-span-3 font-semibold'>{child.CustomerId}</div>
+                                        <div class='col-span-3'>{child.LastName}</div>
+                                        <div class='col-span-2 text-sm text-gray-500'>{child.Type}</div>
+                                        <div class='col-span-2 text-sm text-gray-400'>{((AML.Core.DataContract.Enum.CaseStatus)child.Status)}</div>
+                                        <div class='col-span-2 text-blue-600 text-xs font-bold'>");
+
+                                if (child.Status == 5 || child.Status == 0 || child.Status == 6)
+                                    html.Append($"<a href='/case/Process/{child.Id}' class='hover:underline'>Process</a>");
+                                else
+                                    html.Append($"<a href='/report/ViewIndividualCaseDetail?id={child.CustomerId}&type={child.CustomerType}' class='hover:underline'>View</a>");
+
+                                html.Append("</div></div>");
+
+                                // Recursive call
+                                html.Append(RenderShareholderTree(shareholders, child.CustomerId).ToString());
+                            }
+
+                            html.Append("</div>");
+                            return new HtmlString(html.ToString());
+                        }
+                    }
+
+                    @if (Model.Case.CustomerType == "C" && Model.ShareholdersData != null && Model.ShareholdersData.Any())
+                    {
+                        <div id="shareholdersSection" class="flex-1 min-h-0 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+                            <!-- Section Header -->
+                            <div class="px-5 py-3 border-b border-slate-100 shrink-0">
+                                <h3 class="text-[13px] font-bold text-slate-800 uppercase">Shareholders Tree</h3>
+                            </div>
+
+                            <!-- Tree Container -->
+                            <div class="flex-1 overflow-y-auto custom-scrollbar p-5">
+
+                                <!-- Table Headers -->
+                                <div class="grid grid-cols-12 gap-2 py-2 border-b border-slate-200 bg-gray-50">
+                                    <div class="col-span-3 text-[10px] font-bold text-slate-400 uppercase">ID</div>
+                                    <div class="col-span-3 text-[10px] font-bold text-slate-400 uppercase">Name</div>
+                                    <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase">Type</div>
+                                    <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase">Status</div>
+                                    <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase">Link</div>
+                                </div>
+
+                                <!-- Tree Body -->
+                                @foreach (var parent in Model.ShareholdersData.Where(s => string.IsNullOrEmpty(s.ParentId)))
+                                {
+                                    <div class="grid grid-cols-12 gap-2 items-center py-2 border-b border-slate-100 bg-gray-50 font-bold hover:bg-gray-100">
+                                        <div class="col-span-3">@parent.CustomerId</div>
+                                        <div class="col-span-3">@parent.LastName</div>
+                                        <div class="col-span-2 text-sm text-gray-500">@parent.Type</div>
+                                        <div class="col-span-2 text-sm text-gray-400">@((AML.Core.DataContract.Enum.CaseStatus)parent.Status)</div>
+                                        <div class="col-span-2 text-blue-600 text-xs font-bold">
+                                            @if (parent.Status == 5 || parent.Status == 0 || parent.Status == 6)
+                                            {
+                                                <a href="/case/Process/@parent.Id" class="hover:underline">Process</a>
+                                            }
+                                            else
+                                            {
+                                                <a href="/report/ViewIndividualCaseDetail?id=@parent.CustomerId&type=@parent.CustomerType" class="hover:underline">View</a>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    @RenderShareholderTree(Model.ShareholdersData, parent.CustomerId)
+                                }
+                            </div>
+                        </div>
+                    } *@ 
+
+
+                    <!-- Case History -->
+                    <div class="flex-1 min-h-0 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+
+                        <div class="px-5 py-3 border-b shrink-0">
+                            <h3 class="text-[13px] font-bold uppercase">Case History</h3>
+                        </div>
+
+                        <div class="flex-1 min-h-0 overflow-y-auto p-5">
+                            <div id="commentsContainer"
+                                 class="relative border-l-2 border-slate-100 ml-2 space-y-8">
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+    </div>
+</div>
+<div class="shrink-0 py-3 bg-white border-t border-slate-200 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)] z-50 mt-2">
+            <div class="bg-white rounded-lg border border-slate-200 p-6 space-y-6">
+               <form role="form" id="frmCmment" class="space-y-4" enctype="multipart/form-data" method="post">
+                   @* //input type="hidden" name="CaseId" value="@Model.Case.Id" /> *@
+                    <input id="hdnCaseId" type="hidden" name="CaseId" value="@Model.Case.Id" />
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold text-slate-900">Case Comments</h3>
+
+                        <div id="commentsContainer" class="space-y-3">
+                            <div id="noCommentsMsg" class="text-sm text-slate-500 italic pb-2">
+                                No comments yet
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <textarea id="commentText"
+                                      name="Comment"
+                                      class="flex-1 min-h-[44px] h-[44px] py-2.5 bg-white border-slate-200 resize-none text-xs rounded-md border px-3"
+                                      placeholder="Enter Your Comments"></textarea>
+
+                            <button type="submit"
+                                    class="h-[44px] px-8 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 border rounded-md">
+                                Save
+                            </button>
+                        </div>
+                    </div>
+
+               </form>
+               @{
+                    bool disableButtons = false;
+
+                    if (Model.Case.CustomerType == "C" && Model.ShareholdersData != null)
+                    {
+                        disableButtons = Model.ShareholdersData
+                            .Any(s => s.Status == 5 || s.Status == 0 || s.Status == 6);
+                    }
+                }
+                <form role="form" id="frmCloseCase" class="form-horizontal" enctype="multipart/form-data" method="post">
+
+                    <input type="hidden" name="CaseId" value="@Model.Case.Id" />
+                    <input type="hidden" name="CustomerId" value="@Model.Case.CustomerId" />
+                   
+
+
+                    <input type="hidden" id="hdnAction" name="Action" value="" />
+                    <input type="hidden" id="hdnRemark" name="Comment" value="" />
+                    <input type="hidden" id="hdnAction" name="Action" value="" />
+                    <input type="hidden" id="hdnnomatch" name="NoMatch" value="" />
+                    <input type="hidden" id="hdndometicpep" name="TrueDomesticpep" value="" />
+                    <input type="hidden" id="hdntrueforeignpep" name="TrueForeignpep" value="" />
+                    <input type="hidden" id="hdntrueadversemedia" name="TrueAdverseMedia" value="" />
+                    <input type="hidden" id="hdnpartialdometicpep" name="PartialDomesticpep" value="" />
+                    <input type="hidden" id="hdnpartialforeignpep" name="PartialForeignpep" value="" />
+                    <input type="hidden" id="hdnpartialadversemedia" name="Partialadversemedia" value="" />
+                    <input type="hidden" id="hdntrueuaeunsanction" name="TrueUAEUNSanction" value="" />
+                    <input type="hidden" id="hdntrueothersanction" name="TrueOtherSanction" value="" />
+                    <div class="flex flex-col gap-2 pt-4 border-t border-slate-50">
+
+                        @* Warning Message *@
+                        @if (disableButtons)
+                        {
+                            <div class="flex justify-end">
+                                <div class="text-red-500 text-xs font-semibold">
+                                    All shareholders must be cleared before taking further action.
+                                </div>
+                            </div>
+                        }
+
+                        @* Main Buttons Container *@
+                        <div class="flex items-center gap-3 w-full">
+
+                            <button type="button" data-action="Submit To Senior Management"
+                                    class="case-action-btn h-9 px-4 border rounded-md hidden"
+                                    @(disableButtons ? "disabled style='opacity:0.5;pointer-events:none;'" : "")>
+                                Submit To Senior Management
+                            </button>
+
+                            <button type="button" data-action="Whitelist"
+                                    class="case-action-btn h-9 px-4 border rounded-md"
+                                    @(disableButtons ? "disabled style='opacity:0.5;pointer-events:none;'" : "")>
+                                Whitelist
+                            </button>
+
+                            @if (Model.Users.Count() != 0)
+                            {
+                                <button type="button" data-action="Transfer"
+                                        onclick="document.getElementById('transferModel').style.display = 'flex'"
+                                        class="h-9 px-4 border rounded-md"
+                                        @(disableButtons ? "disabled style='opacity:0.5;pointer-events:none;'" : "")>
+                                    Transfer
+                                </button>
+                            }
+
+                            <button type="button" data-action="Hold"
+                                    class="case-action-btn h-9 px-4 border rounded-md hidden"
+                                    @(disableButtons ? "disabled style='opacity:0.5;pointer-events:none;'" : "")>
+                                Hold
+                            </button>
+
+                            <button type="button" data-action="Approve"
+                                    class="case-action-btn h-9 px-8 text-white rounded-md @(disableButtons ? "bg-gray-400" : "bg-blue-600")"
+                                    @(disableButtons ? "disabled style='pointer-events:none;'" : "")>
+                                Approve
+                            </button>
+
+                            <button type="button" data-action="Reject"
+                                    class="case-action-btn h-9 px-8 text-white rounded-md @(disableButtons ? "bg-gray-400" : "bg-red-600")"
+                                    @(disableButtons ? "disabled style='opacity:0.5;pointer-events:none;'" : "")>
+                                Reject
+                            </button>
+
+                        </div>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+</div>
+<div id="uploadModal" style="display: none;"
+     class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
+         x-data="{ fileName: 'No file chosen' }">
+
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h3 class="text-lg font-bold text-slate-900">Upload Document</h3>
+            <button type="button" onclick="document.getElementById('uploadModal').style.display='none'"
+                        class="h-9 px-8 text-white rounded-md bg-red-600">
+                    Close
+            </button>
+        </div>
+
+        <!-- Body -->
+        <form id="frmDocument" enctype="multipart/form-data" method="post" class="px-6 py-6 space-y-4">
+            <input type="hidden" name="CaseId" value="@Model.Case.Id" />
+
+            <label class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors flex flex-col items-center justify-center">
+               <input type="file" id="txtFile" name="Document" class="hidden"
+                           onchange="displayShortFileName(this)">
+
+                    <i data-lucide="upload-cloud" class="h-10 w-10 text-slate-400 mb-3 group-hover:text-blue-500 transition-colors"></i>
+                    <p class="text-sm font-bold text-slate-700 mb-2">Click to upload or drag and drop</p>
+                    <span id="fileNameDisplay" class="text-xs text-slate-500 font-medium">No file chosen</span>
+            </label>
+        </form>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-slate-200 flex justify-end space-x-2">
+            <button type="button" onclick="document.getElementById('uploadModal').style.display='none'"
+                    class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition">
+                Cancel
+            </button>
+            <button type="submit" form="frmDocument"
+                    class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
+                Save
+            </button>
+        </div>
+
+    </div>
+</div>
+
+    <div id="transferModel" style="display: none;"
+         class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
+             x-data="{ fileName: 'No file chosen' }">
+
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-900">Upload Document</h3>
+                <button type="button" onclick="document.getElementById('uploadModal').style.display='none'"
+                        class="text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <form id="frmTransferCase" enctype="multipart/form-data" method="post" class="px-6 py-6 space-y-4">
+                <input type="hidden" name="CaseId" value="@Model.Case.Id" />
+                <input type="hidden" id="hdnTransferUserTransfer" name="TransferUser" value="" />
+                <input type="hidden" id="hdnRemarkTransfer" name="Comment" value="" />
+
+                <span class="text-sm font-bold">Transfer To (Officer) : </span>
+                <select id="ddlUsers" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium appearance-none outline-none focus:ring-2 focus:ring-blue-500/10" name="UserId" asp-items="Model.Users">
+                    <option value="0">--EMPTY--</option>
+                </select>
+            
+
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-slate-200 flex justify-end space-x-2">
+                <button type="button" onclick="document.getElementById('transferModel').style.display='none'"
+                        class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition">
+                    Cancel
+                </button>
+                <button type="submit" form="frmTransferCase" id="btnTransfer"
+                        class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
+                    Transfer Case
+                </button>
+            </div>
+            </form>
+
+        </div>
+    </div>
+
+    
+
+
+
+    @{
+        int ddlCount = 0;
+    }
+    @if (Model.RiskTypeCategoryDTO == null || !Model.RiskTypeCategoryDTO.Any() ||
+              !Model.RiskTypeCategoryDTO.Any(c => c.RiskTypes != null && c.RiskTypes.Any()))
+    {
+        @* <div class="text-center text-slate-500 font-semibold py-10">
+            Risk assessment is Completed .
+        </div> *@
+    }
+    else
+    {
+        
+            
+
+            for (int i = 0; i < Model.RiskTypeCategoryDTO.Count; i++)
+            {
+                for (var j = 0; j < Model.RiskTypeCategoryDTO[i].RiskTypes.Count; j++)
+                {
+                    ddlCount++;
+                }
+            }
+        }
+     
+<script>
+     var ddlItemCount = @ddlCount;
+        
+        //Initialize Lucide icons
+        lucide.createIcons();
+   
+       
+
+            $(document).ready(function(){
+                   var customerCode = "@(Model.Case.CustomerId)";
+                var customerType = "@(Model.Case.CustomerType)";
+                @* //alert(customerType); *@
+                // Choose the correct URL based on customer type
+                var url = "/Risk/GetRiskDetailsByCIdIndividual/";
+                if (customerType === "C" || customerType === "Corporate") {
+                    url = "/Risk/GetRiskDetailsByCIdCorporate/";
+                }
+            $.ajax({
+                            url: url,
+                            data: { "id": customerCode },
+                            type: "POST",
+                            success: function (data) {
+                                console.log("Got response from '/Risk/GetRiskDetailsByCIdIndividual/'")
+                                $('#risktxtRemarks').val(data.remarks);
+                                //console.log(data);
+                                const riskDetails = data
+                                //console.log(riskDetails);
+
+                                applyRiskSelections(riskDetails.riskTypeCategoryDTO);
+
+                                // for (let i = 0; i <= riskDetails.riskTypeCategoryDTO.length - 1; i++) {
+                                //     for (let j = 0; j <= riskDetails.riskTypeCategoryDTO[i].riskTypes.length - 1; j++) {
+                                //         if (riskDetails.riskTypeCategoryDTO[i].riskTypes[j].itemTxt == null) { continue }
+
+                                //         const option = $(`#risk-item-${i}-${j} select option`)
+                                //             .filter(function () { return $(this).html() == riskDetails.riskTypeCategoryDTO[i].riskTypes[j].itemTxt; })
+                                //             .val()
+
+                                //         $(`#risk-item-${i}-${j} select`)
+                                //             .val(`${option}`)
+                                //             .trigger('change')
+                                //     }
+                                // }
+
+                                for (let i = 0; i <= ddlItemCount; i++) {
+                                    $(`#ddlItem_${i}`).prop("disabled", false)
+                                }
+
+                                console.log("Hide loading screen")
+
+                                $('.se-pre-con').fadeOut("slow");
+                            },
+                            error: async function (response) {
+
+                                for (let i = 0; i <= ddlItemCount; i++) {
+                                    $(`#ddlItem_${i}`).prop("disabled", false)
+                                }
+
+                                response.then(val => console.log(val));
+                            },
+                            failure: function (response) {
+
+                                for (let i = 0; i <= ddlItemCount; i++) {
+                                    $(`#ddlItem_${i}`).prop("disabled", false)
+                                }
+                                console.log(response.responseText);
+                            }
+                        });
+
+        });
+
+
+           var OverRideVariables = [];
+           var b = $('#RiskSubTable tr').length;
+           for (i = 0; i <= b; i++) {
+               OverRideVariables[i] = false
+           }
+           var OverRides = "false";
+           $('#ddlMainNationality').change(function () {
+               $('#mainNationalityTxt').val($("#ddlMainNationality option:selected").text());
+           });
+
+           $('#dtCustomerCode').keyup(function () {
+               $('#hfCustomerCode').val($("#dtCustomerCode").val());
+           });
+
+           function ItemChange(a, data) {
+               //if ($('#risk-item-0-0 select').val() !== '2|0|6503' && data === undefined) {
+
+
+               //    $('#clrScore_' + 1).removeClass('btn btn-success');
+               //    $('#clrScore_' + 1).removeClass('btn btn-warning');
+               //    $('#clrScore_' + 1).removeClass('btn btn-danger pulse-button');
+               //    $('#clrScore_' + 1).addClass('btn btn-block btn-secondary');
+               //    $('#clrScore_' + 1).text(0);
+               //    $('#clrScorehdn_' + 1).val(0);
+               //    OverRideVariables[1] = false;
+
+               //    calculateTotal();
+               //} else {
+               //    $('#risk-item-0-1 select').prop("disabled", false)
+               //}
+
+               if (!$("#ddlItem_" + a + " option:selected").val()) {
+                   return
+               }
+               var score = $("#ddlItem_" + a + " option:selected").val()?.split("|");
+               var selectedVal = score[0];
+               var overrideScore = score[1];
+               var selectedItemId = score[2];
+               $('#RiskItemTxt_' + a).val($("#ddlItem_" + a + " option:selected").text());
+               $('#RiskItem_' + a).val(selectedVal);
+               $('#RiskItemId_' + a).val(selectedItemId);
+                       var el = $('#clrScore_' + a);
+
+        // Remove all possible color classes first
+        el.removeClass('bg-green-500 bg-yellow-400 bg-red-500 bg-gray-400 text-white text-black animate-pulse');
+
+        if (selectedVal == 1) {
+
+            el.addClass('bg-green-500 text-white');
+            el.text(selectedVal);
+            $('#clrScorehdn_' + a).val(selectedVal);
+            OverRideVariables[a] = false;
+        }
+        else if (selectedVal == 2) {
+
+            el.addClass('bg-yellow-400 text-black');
+            el.text(selectedVal);
+            $('#clrScorehdn_' + a).val(selectedVal);
+            OverRideVariables[a] = false;
+        }
+        else if (selectedVal == 3) {
+
+            el.addClass('bg-red-500 text-white');
+            el.text(selectedVal);
+            $('#clrScorehdn_' + a).val(selectedVal);
+
+            if (overrideScore == 3) {
+                el.addClass('animate-pulse'); // Tailwind pulse
+                OverRideVariables[a] = true;
+            } else {
+                el.removeClass('animate-pulse');
+                OverRideVariables[a] = false;
+            }
+        }
+        else if (selectedVal == 0) {
+
+            el.addClass('bg-gray-400 text-white');
+            el.text(0);
+            $('#clrScorehdn_' + a).val(0);
+            OverRideVariables[a] = false;
+        }
+        else {
+            OverRideVariables[a] = false;
+        }
+
+               // if (selectedVal == 1) {
+               //     $('#clrScore_' + a).removeClass('btn btn-warning');
+               //     $('#clrScore_' + a).removeClass('btn btn-danger pulse-button');
+               //     $('#clrScore_' + a).addClass('btn btn-success');
+               //     $('#clrScore_' + a).text(selectedVal);
+               //     $('#clrScorehdn_' + a).val(selectedVal);
+               //     OverRideVariables[a] = false;
+               // }
+               // else if (selectedVal == 2) {
+
+               //     $('#clrScore_' + a).removeClass('btn btn-success');
+               //     $('#clrScore_' + a).removeClass('btn btn-danger pulse-button');
+               //     $('#clrScore_' + a).addClass('btn btn-warning');
+               //     $('#clrScore_' + a).text(selectedVal);
+               //     $('#clrScorehdn_' + a).val(selectedVal);
+               //     OverRideVariables[a] = false;
+               // }
+               // else if (selectedVal == 3) {
+               //     $('#clrScore_' + a).removeClass('btn btn-success');
+               //     $('#clrScore_' + a).removeClass('btn btn-warning');
+               //     $('#clrScore_' + a).text(selectedVal);
+               //     $('#clrScorehdn_' + a).val(selectedVal);
+               //     $('#clrScore_' + a).addClass('btn btn-danger');
+               //     if (overrideScore == 3) {
+               //         $('#clrScore_' + a).addClass('pulse-button');
+               //         OverRideVariables[a] = true;
+               //     } else {
+               //         $('#clrScore_' + a).removeClass('pulse-button');
+               //         OverRideVariables[a] = false;
+               //     }
+               // }
+               // else if (selectedVal == 0) {
+               //     $('#clrScore_' + a).removeClass('btn btn-success');
+               //     $('#clrScore_' + a).removeClass('btn btn-warning');
+               //     $('#clrScore_' + a).removeClass('btn btn-danger pulse-button');
+               //     $('#clrScore_' + a).addClass('btn btn-block btn-secondary');
+               //     $('#clrScore_' + a).text(0);
+               //     $('#clrScorehdn_' + a).val(0);
+               //     OverRideVariables[a] = false;
+               // }
+               // else {
+               //     OverRideVariables[a] = false;
+               // }
+               calculateTotal();
+           }
+           function calculateTotal() {
+               var total = 0;
+               var i = 0;
+               var riskStatus = '@localizer["Low Risk"]';
+
+
+
+               $(".riskscorehdn").each(function () {
+                   //alert($(this).val());
+                   total = parseInt(total) + parseInt($(this).val());
+                   if ($(this).val() != 0) {
+                       i++;
+                   }
+               });
+               $('#btntotalscore').text(total);
+               $('#btntotal').text(i);
+
+               $('#btnAsPerRiskScore').show();
+
+               var highscoreVal = (i * 3);
+               var mediumScoreVal = (i * 2.24);
+               var lowScoreVal = (i * 1.49);
+
+               $('#lowTxt').text(lowScoreVal.toFixed(2));
+               $('#mediumTxt').text(mediumScoreVal.toFixed(2));
+               $('#highTxt').text(highscoreVal.toFixed(2));
+
+               if (total <= highscoreVal) {
+                   riskStatus = '@localizer["High Risk"]';
+                   $('#btntotalscoretop').removeClass();
+                   $('#btntotalscoretop').addClass('btn btn-danger form-control br-50');
+                   $('#btnAsPerRiskScore').text('@localizer["As Per Risk Score - High"]');
+                   $('#btnAsPerRiskScore').removeClass();
+                   $('#btnAsPerRiskScore').addClass('btn btn-danger form-control br-50 risk-button');
+               }
+               if (total <= mediumScoreVal) {
+                   riskStatus = '@localizer["Medium Risk"]';
+                   $('#btntotalscoretop').removeClass();
+                   $('#btntotalscoretop').addClass('btn btn-warning form-control br-50');
+                   $('#btnAsPerRiskScore').text('@localizer["As Per Risk Score - Medium"]');
+                   $('#btnAsPerRiskScore').removeClass();
+                   $('#btnAsPerRiskScore').addClass('btn btn-warning form-control br-50 risk-button');
+               }
+               if (total <= lowScoreVal) {
+                   riskStatus = '@localizer["Low Risk"]';
+                   $('#btntotalscoretop').removeClass();
+                   $('#btntotalscoretop').addClass('btn btn-info form-control br-50');
+                   $('#btnAsPerRiskScore').text('@localizer["As Per Risk Score - Low"]');
+                   $('#btnAsPerRiskScore').removeClass();
+                   $('#btnAsPerRiskScore').addClass('btn btn-info form-control br-50 risk-button');
+               }
+
+
+
+               //Set Risk score witout override
+               $('#riskScoreBeforeOverrideTxt').val(riskStatus);
+               $('#riskAssessmentRatingWithoutOverrideTxt').val(riskStatus);
+
+               var OverRides = "false";
+
+               for (x = 0; x <= b; x++) {
+
+                   OverRides = OverRides + "||" + OverRideVariables[x];
+                   if (OverRides.includes("true")) {
+                       riskStatus = '@localizer["High Risk"]';
+                       $('#btntotalscoretop').removeClass();
+                       $('#btntotalscoretop').addClass('btn btn-danger form-control br-50');
+                   }
+               }
+               //Set final risk score
+               $('#finalRiskScoreTxt').val(riskStatus);
+               $('#riskAssessmentRatingTxt').val(riskStatus);
+
+
+
+               $('#btntotalscoretop').text(riskStatus);
+
+               $('#riskScoreSumTxt').val(total);
+               $('#riskScoreCountTxt').val(i);
+
+
+
+
+           }
+
+                         function resetRiskAssessment() {
+
+                            for (let i = 0; i < ddlItemCount; i++) {
+
+                                $(`#ddlItem_${i}`).val("0");
+
+                                $(`#RiskItem_${i}`).val("");
+                                $(`#RiskItemTxt_${i}`).val("");
+                                $(`#RiskItemId_${i}`).val("");
+
+                                $(`#clrScore_${i}`).text(0);
+                                $(`#clrScorehdn_${i}`).val("0");
+                            }
+
+                            $("#btntotal").text("0");
+                            $("#btntotalscore").text("0");
+        }
+
+                function applyRiskSelections(riskData) {
+
+            let counter = 0;
+
+            for (let i = 0; i < riskData.length; i++) {
+
+                let category = riskData[i];
+
+                for (let j = 0; j < category.riskTypes.length; j++) {
+
+                    let riskType = category.riskTypes[j];
+
+                    let dropdown = $(`#ddlItem_${counter}`);
+                    let scoreCircle = $(`#clrScore_${counter}`);
+                    let scoreHidden = $(`#clrScorehdn_${counter}`);
+
+                    if (!dropdown.length) {
+                        counter++;
+                        continue;
+                    }
+
+                    // ⭐ CASE 1 → itemTxt NOT AVAILABLE → RESET EVERYTHING
+                    if (!riskType.itemTxt || riskType.itemTxt.trim() === "") {
+
+                        dropdown.val("0").trigger("change");
+
+                        // Reset score UI
+                        scoreCircle.text("0");
+                        scoreCircle.removeClass().addClass(
+                            "text-[10px] font-semibold inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-400"
+                        );
+
+                        scoreHidden.val("0");
+
+                        counter++;
+                        continue;
+                    }
+
+                    // ⭐ CASE 2 → Assign Value
+                    let optionValue = dropdown.find("option").filter(function () {
+
+                        return $(this).text().trim().toLowerCase() ===
+                               riskType.itemTxt.trim().toLowerCase();
+
+                    }).val();
+
+                    if (optionValue) {
+                        dropdown.val(optionValue).trigger("change");
+                    }
+                    else {
+                        // If value not found → also reset
+                        dropdown.val("0").trigger("change");
+
+                        scoreCircle.text("0");
+                        scoreCircle.removeClass().addClass(
+                            "text-[10px] font-semibold inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-400"
+                        );
+
+                        scoreHidden.val("0");
+                    }
+
+                    counter++;
+                }
+            }
+        }
+
+
+        //         function applyRiskSelections(riskData) {
+
+        //     let counter = 0;
+
+        //     for (let i = 0; i < riskData.length; i++) {
+
+        //         let category = riskData[i];
+
+        //         for (let j = 0; j < category.riskTypes.length; j++) {
+
+        //             let riskType = category.riskTypes[j];
+        //             let dropdown = $(`#ddlItem_${counter}`);
+
+        //             if (!dropdown.length || !riskType.itemTxt) {
+        //                 counter++;
+        //                 continue;
+        //             }
+
+        //             let optionValue = dropdown.find("option").filter(function () {
+        //                 return $(this).text().trim().toLowerCase() ===
+        //                        riskType.itemTxt.trim().toLowerCase();
+        //             }).val();
+
+        //             if (optionValue) {
+        //                 dropdown.val(optionValue).trigger("change");
+        //             }
+
+        //             counter++;
+        //         }
+        //     }
+        // }
+
+
+                 function saveVersion() {
+
+            $("#versionModal").hide();
+
+            let selected = document.querySelector('.versionRadio:checked');
+
+            if (!selected) {
+                toastr.error("Please select a version");
+                return;
+            }
+
+            let payload = {
+                customerCode: selected.value,
+                versionId: selected.dataset.id,
+                type: selected.dataset.type
+            };
+
+            console.log("Payload => ", payload);
+
+            // Optional loader
+            $('.se-pre-con').fadeIn("fast");
+
+            $.ajax({
+                url: '/risk/saveversion',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+
+                        success: function (res) {
+
+                            console.log("Returned Data => ", res);
+
+                            if (!res || !res.riskTypeCategoryDTO) {
+                                toastr.error("Invalid data received");
+                                $('.se-pre-con').fadeOut("slow");
+                                return;
+                            }
+
+                            // ⭐ RESET FIRST
+                            resetRiskAssessment();
+
+                           applyRiskSelections(res.riskTypeCategoryDTO);
+
+                            toastr.success("Version loaded successfully");
+                            $('.se-pre-con').fadeOut("slow");
+                        },
+
+
+                error: function (err) {
+
+                    console.log(err);
+                    toastr.error("Error loading version");
+                    $('.se-pre-con').fadeOut("slow");
+                }
+            });
+        }
+
+        var comments = [];
+        $('#Comments').hide();
+        $('#nocomment').show();
+        $(document).ready(function () {
+            $('[data-toggle="modal"]').click(function () {
+                const target = $(this).data("target");
+                $(target).removeClass("hidden");
+            });
+
+            $('.close-modal').click(function () {
+                $(this).closest('.modal').addClass("hidden");
+            });
+        });
+        $(document).ready(
+            function () {
+                $('#docSubmit').attr('disabled', true);
+                $('input:file').change(function () {
+                    if ($(this).val()) {
+                        $('#docSubmit').removeAttr('disabled');
+                    }
+                    else {
+                        $('#docSubmit').attr('disabled', true);
+                    }
+                });
+            });
+
+        $(document).ready(function () {
+
+            if ($('#hdnStatus').val() == '2' || $('#hdnStatus').val() == '3') {
+                $('#txtCaseActionRemarks').attr('disabled', 'disabled');
+                $("input[type=submit]").attr('disabled', 'disabled');
+                $('#ddlUsers').attr('disabled', 'disabled');
+                $("#btnTransfer").attr('disabled', 'disabled');
+            }
+
+            $.ajax({
+                url: '/case/comment/' + $('#hdnCaseId').val() + '?' + new Date().getTime(),
+                type: 'get',
+                success: function (response) {
+                    comments = response;
+                    buildComments();
+                }
+            });
+        });
+
+
+             $('#frmCmment').submit(function (e) {
+                      $('#loadingeffect').show();
+                
+
+            e.preventDefault(); // 🔥 Always first
+
+            if ($('#commentText').val().trim() === '') {
+                alert("Enter any remark");
+                return false;
+            }
+
+            $.ajax({
+                url: '/case/comment',
+                type: 'POST',
+                data: $('#frmCmment').serialize(),
+
+                success: function (response) {
+
+                         $('#loadingeffect').hide();
+                    comments = response;
+
+                    console.log(comments);
+                    buildComments();
+
+                    $('#commentText').val(""); // clear textbox
+                }
+            });
+        });
+
+                function buildComments() {
+
+            let container = $("#commentsContainer");
+            container.empty();
+
+            if (!comments || comments.length === 0) {
+                container.append(`
+                    <div class="text-sm text-slate-500 italic pb-2">
+                        No comments yet
+                    </div>
+                `);
+                return;
+            }
+
+            $.each(comments, function (i, v) {
+
+                let userName = v.createdUser || "User";
+                let commentText = v.comment || "";
+                let duration = v.duration || "";
+                let version = v.version || (i + 1);
+
+                let html = `
+                    <div class="pl-6 relative">
+
+                        <div class="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-white bg-blue-500">
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-xs font-bold text-slate-900">
+                                    Version ${version}
+                                </span>
+
+                                <span class="text-[11px] text-slate-500">
+                                    was actioned by
+                                    <span class="font-semibold text-blue-600">${userName}</span>
+                                </span>
+                            </div>
+
+                            <p class="text-[11px] font-medium text-slate-700 leading-relaxed">
+                                ${commentText}
+                            </p>
+
+                            <span class="text-[10px] font-bold uppercase tracking-wide text-blue-600">
+                                ${duration}
+                            </span>
+
+                        </div>
+
+                    </div>
+                `;
+
+                container.append(html);
+            });
+        }
+
+
+        //           function buildComments() { 
+
+        //     let container = $("#commentsContainer");
+        //     container.empty();
+
+        //     if (!comments || comments.length === 0) {
+        //         container.append(`
+        //             <div id="noCommentsMsg" class="text-sm text-slate-500 italic pb-2">
+        //                 No comments yet
+        //             </div>
+        //         `);
+        //         return;
+        //     }
+
+        //     $.each(comments, function (i, v) {
+
+        //         let userName = v.createdUser || "User";
+        //         let commentText = v.comment || "";
+        //         let duration = v.duration || "";
+
+        //         let firstLetter = userName.toString().charAt(0).toUpperCase();
+
+        //         let commentHtml = `
+        //             <div class="flex items-start gap-3 bg-slate-50 p-3 rounded-md border border-slate-200">
+
+        //                 <div class="w-8 h-8 flex items-center justify-center rounded-full bg-green-500 text-white font-bold text-xs">
+        //                     ${firstLetter}
+        //                 </div>
+
+        //                 <div class="flex-1">
+        //                     <div class="flex justify-between items-center">
+        //                         <span class="text-xs font-bold text-slate-800">${userName}</span>
+        //                         <span class="text-[10px] text-slate-400">${duration}</span>
+        //                     </div>
+
+        //                     <div class="text-xs text-slate-600 mt-1">
+        //                         ${commentText}
+        //                     </div>
+        //                 </div>
+
+        //             </div>
+        //         `;
+
+        //         container.append(commentHtml);
+        //     });
+        // }
+
+
+   $(document).on("click", ".case-action-btn", function () {
+            $('#loadingeffect').show();
+
+            let actionName = $(this).data("action");
+
+            console.log("Clicked Action =>", actionName);
+
+            // ✅ Remarks
+            $('#hdnRemark').val($('#txtCaseActionRemarks').val());
+
+            // ✅ Map action to controller value
+            switch (actionName) {
+
+                case "Approve":
+                    $('#hdnAction').val(2);
+                    break;
+
+                case "Whitelist":
+                    $('#hdnAction').val(1);
+                    break;
+
+                case "Reject":
+                    $('#hdnAction').val(3);
+                    break;
+
+                case "Transfer":
+                    $('#hdnTransferUser').val($("#ddlUsers option:selected").text());
+                    $('#hdnAction').val(4);
+                    break;
+
+                case "Submit To Senior Management":
+                    $('#hdnAction').val(5);
+                    break;
+
+                case "Hold":
+                    $('#hdnAction').val(6);
+                    break;
+            }
+
+            // ✅ Submit via AJAX
+            $.ajax({
+                url: '/case/close',
+                type: 'POST',
+                data: $('#frmCloseCase').serialize(),
+
+                success: function (response) {
+
+                         $('#loadingeffect').hide();
+
+                    $('#txtCaseActionRemarks').val('').prop('disabled', true);
+                    $('.case-action-btn').prop('disabled', true);
+                    $('#ddlUsers').prop('disabled', true);
+
+                    toastr.success(response);
+
+                    setTimeout(function () {
+                        location.href = '/case';
+                    }, 2000);
+                }
+            });
+
+        });
+
+
+        //      $('#frmCloseCase').submit(function (e) {
+        //     e.preventDefault();
+
+        //     //alert("hai");
+
+        //     // var arr = [];
+
+        //     // $('input[name="amlcheck"]:checked').each(function () {
+        //     //     //alert("hai");
+        //     //   //alert($(this).val());
+
+        //     //     arr.push($(this).val());
+
+        //     //     //alert(arr);
+
+        //     //     if (arr.indexOf('No Match') !== -1) {
+        //     //         $('#hdnnomatch').val(1);
+
+        //     //     }
+        //     //     if (arr.indexOf('True Domestic PEP') !== -1) {
+
+        //     //        // alert("UAE");
+
+        //     //         $('#hdndometicpep').val(1);
+
+        //     //     }
+        //     //     if (arr.indexOf('True Foreign PEP') !== -1) {
+
+        //     //        // alert("othersanction");
+
+        //     //         $('#hdntrueforeignpep').val(1);
+        //     //     }
+        //     //     if (arr.indexOf('True Adverse Media') !== -1) {
+
+        //     //         //alert("adversemedia");
+        //     //         $('#hdntrueadversemedia').val(1);
+        //     //     }
+        //     //     if (arr.indexOf('Partial Domestic PEP') !== -1) {
+
+        //     //         //alert("adversemedia");
+        //     //         $('#hdnpartialdometicpep').val(1);
+        //     //     }
+        //     //     if (arr.indexOf('Partial Foreign PEP') !== -1) {
+
+        //     //         //alert("adversemedia");
+        //     //         $('#hdnpartialforeignpep').val(1);
+        //     //     }
+        //     //     if (arr.indexOf('Partial Adverse Media') !== -1) {
+
+        //     //         //alert("adversemedia");
+        //     //         $('#hdnpartialadversemedia').val(1);
+        //     //     }
+        //     //      if (arr.indexOf('True UAE/UN Santion') !== -1) {
+
+        //     //         //alert("adversemedia");
+        //     //         $('#hdntrueuaeunsanction').val(1);
+        //     //     }
+        //     //      if (arr.indexOf('True Other Sanction') !== -1) {
+
+        //     //         //alert("adversemedia");
+        //     //         $('#hdntrueothersanction').val(1);
+        //     //     }
+        //     // });
+
+        //     //    $(".aml-checkbox")
+        //     //{
+
+        //     //}
+
+        //     //$('#pepcheckbox').
+        //     //{
+        //     //    //alert(true);
+        //     //  $('#hdnpep').val(1);
+        //     //}
+        //     //$('#')
+
+
+        //     $('#hdnRemark').val($('#txtCaseActionRemarks').val());
+        //     var val = $("input[type=submit][clicked=true]").val();
+        //     if (val == 'Approve') {
+        //         $('#hdnAction').val(2);
+        //     } else if (val == 'Whitelist') {
+        //         $('#hdnAction').val(1);
+        //     }
+        //     else if (val == 'Reject') {
+        //         $('#hdnAction').val(3);
+        //     }
+        //     else if (val == 'Transfer Case') {
+        //         $('#hdnTransferUser').val($("#ddlUsers option:selected").text());
+        //         $('#hdnAction').val(4);
+        //     }
+        //     $.ajax({
+        //         url: '/case/close',
+        //         type: 'post',
+        //         data: $('#frmCloseCase').serialize(),
+        //         success: function (response) {
+        //             $('#txtCaseActionRemarks').val('');
+        //             $('#txtCaseActionRemarks').attr('disabled', 'disabled');
+        //             $("input[type=submit]").attr('disabled', 'disabled');
+        //             $('#ddlUsers').attr('disabled', 'disabled');
+        //             $("#btnTransfer").attr('disabled', 'disabled');
+
+        //             toastr.success(response);
+        //             setTimeout(function () { location.href = '/case'; }, 3000);
+        //             location.href = '/case';
+
+        //         }
+        //     });
+        // });
+
+        $("#frmCloseCase input[type=submit]").click(function () {
+            $("input[type=submit]", $(this).parents("form")).removeAttr("clicked");
+            $(this).attr("clicked", "true");
+        });
+
+        function saveRemarks(id,customerid,type) {
+           $('#loadingeffect').show();
+               var model = new Array();
+               $("#APITable TBODY TR").each(function (index) {
+                   var row = $(this);
+                   var result = {};
+                   result.matchtype = row.find("TD").eq(0).html();
+                   result.matchcategory = row.find("TD").eq(1).html();
+                   result.matchname = row.find("TD").eq(2).html();
+                   result.matchcore = row.find("TD").eq(3).html();
+                   result.matchnationality = row.find("TD").eq(4).html();
+                   result.matchidno = row.find("TD").eq(5).html();
+                   result.matchdob = row.find("TD").eq(6).html();
+                   result.remarks = document.getElementById(`DataList_${index}__remarks`).value || "";
+                   result.searchTypes = [];
+
+                $(`#search-hidden-${index} input[type='hidden']`).each(function () {
+                    result.searchTypes.push($(this).val());
+                });
+                        result.riskAssessments = [];
+
+                $(".risk-type-id").each(function (i) {
+
+                    const riskTypeId = $(this).val();
+                            const riskTypeText = $(this)
+                .closest(".flex")
+                .find(".risk-type-label")
+                .data("risk-type-text");
+                    const selectedItemId = $("#RiskItemId_" + i).val();
+                    const itemScore = $("#RiskItem_" + i).val();
+                    const itemText = $("#RiskItemTxt_" + i).val();
+
+                    if (selectedItemId && selectedItemId !== "0") {
+                        result.riskAssessments.push({
+                            RiskTypeId: parseInt(riskTypeId),
+                            RiskTypeText: riskTypeText || "",
+                            SelectedItemId: parseInt(selectedItemId),
+                            ItemScore: parseInt(itemScore || 0),
+                            ItemText: itemText || ""
+                        });
+                    }
+                });
+                   model.push(result);
+               });
+
+
+               $.ajax({
+                   url: '/case/saveRemark',
+                   type: 'post',
+                   //  contentType: 'application/json'
+                   data:
+                   {
+                       id: id,
+                       customerid:customerid,
+                       type:type,
+                       model: model
+                   },
+
+
+                   //     dataType: "json",
+                   success: function (response) {
+                           
+                       insertUploadComment("Remarks has been update in the Search Api Result Section");
+                             $('#loadingeffect').hide();
+                       toastr.success(response);
+                               location.reload();
+
+                   }
+               });
+           }
+
+        $('#frmDocument').submit(function (e) {
+                 $('#loadingeffect').show();
+             e.preventDefault();
+             var formdata = new FormData();
+             formdata.append('CaseId', $('#hdnCaseId').val());
+             formdata.append('DocumentName', $('#txtDocNo').val());
+             formdata.append('DocumentCategory', $('#ddlCategories').val());
+             formdata.append('DocumentType', $('#ddlType').val());
+             formdata.append('Document', $('#txtFile')[0].files[0]);
+             formdata.append('Remarks', $('#txtRemarks').val());
+             formdata.append('DocumentDetails', $('#txtDetails').val());
+             formdata.append('IssuedDate', $('#txtIssuedDate').val());
+             formdata.append('ExpiryDate', $('#txtExpiryDate').val());
+             $.ajax({
+                 url: '/case/document',
+                 type: 'post',
+                 data: formdata,
+                 contentType: false,
+                 processData: false,
+                 success: function () {
+                      insertUploadComment("A new document has been added to the case.");
+                          $('#loadingeffect').hide();
+                     clearDocuemnt();
+                     toastr.success('Document Updated');
+                     location.reload();
+                 }
+             });
+         });
+
+        function insertUploadComment(comment) {
+
+            $.ajax({
+                url: '/case/comment',
+                type: 'POST',
+                data: {
+                    CaseId: $('#hdnCaseId').val(),
+                   Comment: comment
+                },
+                     success: function (response) {
+                        comments = response;
+                         buildComments();
+
+                         // Optional → also update hidden fields in close case form
+                         document.getElementById("hdnRemark").value = commentValue;
+                         document.getElementById("hdnAction").value = "Risk Update";
+                }
+            });
+
+        }
+
+              function clearDocuemnt() {
+             $('#frmDocument').find("input[type=text], textarea").val("");
+             $('#frmDocument').find("input[type=file]").val(null);
+             $('#frmDocument').find("select").val(0);
+         }
+
+                   $('#riskassessmentform').on('submit', function () {
+
+                                 $('#loadingeffect').show();
+
+                 });
+
+        $('#frmTransferCase').submit(function (e) {
+                e.preventDefault();
+                     $('#loadingeffect').show();
+                // location.href = "/case/assign";
+                $('#hdnTransferUserTransfer').val($("#ddlUsers option:selected").text());
+                $('#hdnRemarkTransfer').val($('#txtCaseActionRemarks').val());
+
+                     var transferuser=$("#ddlUsers option:selected").text();
+                //$('#hdnRemarkTransfer').val($('#txtCaseComment').val());
+                $.ajax({
+                    url: '/case/assign',
+                    type: 'post',
+                    data: $('#frmTransferCase').serialize(),
+                    success: function () {
+                                  //insertUploadComment("This Case Has been Transfered to '"+transferuser+"'");
+                             $('#loadingeffect').hide();
+                        $('#ddlUsers').val(0);
+                        setTimeout(function () { location.href = '/case'; }, 3000);
+                        location.href = '/case';
+                             toastr.success('Case Transferred');
+                    }
+                });
+            });
+
+            function displayShortFileName(input) {
+
+    if (input.files.length === 0) {
+        document.getElementById("fileNameDisplay").innerText = "No file chosen";
+        return;
+    }
+
+    let fullName = input.files[0].name;
+
+    // Split name and extension
+    let extension = fullName.split('.').pop();
+    let nameWithoutExt = fullName.substring(0, fullName.lastIndexOf('.'));
+
+    // Show first 5 characters only
+    let shortName = nameWithoutExt.length > 10
+        ? nameWithoutExt.substring(0, 10) + "..."
+        : nameWithoutExt;
+
+    document.getElementById("fileNameDisplay").innerText =
+        shortName + "." + extension;
+}
+
+
+</script>
+<script>
+                $(document).ready(function () {
+
+            const searchTypeOptions = [
+                "Domestic PEP","Foreign PEP","REL","RRE","INS",
+                "DD","GRI","SOE","UAE Sanction","UN Sanction",
+                "Other Sanctions","VHNWI"
+            ];
+
+            let activeSearchRowIndex = null;
+
+            // Initialize dropdown for all rows
+             @if(Model.DataList != null && Model.DataList.Any())
+                {
+                    @for (int i = 0; i < Model.DataList.Count; i++)
+                    {
+                        <text>initSearchTypeDropdown(@i);</text>
+                    }
+                }
+
+            function initSearchTypeDropdown(rowIndex) {
+
+                const trigger = $(`#search-trigger-${rowIndex}`);
+                const text = $(`#search-text-${rowIndex}`);
+                const popover = $(`#search-popover-${rowIndex}`);
+                const allCheckbox = $(`#search-all-${rowIndex}`);
+                const optionsContainer = $(`#search-options-${rowIndex}`);
+                const hiddenContainer = $(`#search-hidden-${rowIndex}`);
+                const hiddenInput = $(`#searchTypesValue-${rowIndex}`);
+
+                // Parse existing value (JSON)
+                let selected = [];
+                try {
+                    const val = hiddenInput.val();
+                    selected = val ? JSON.parse(val) : [];
+                } catch (e) {
+                    selected = [];
+                }
+
+                // Render checkboxes
+                optionsContainer.empty();
+                searchTypeOptions.forEach(opt => {
+                    const checked = selected.includes(opt) ? "checked" : "";
+                    const checkboxHtml = `
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" class="search-option" value="${opt}" ${checked}>
+                            <label class="text-xs">${opt}</label>
+                        </div>
+                    `;
+                    optionsContainer.append(checkboxHtml);
+                });
+
+                // Update button text and hidden inputs
+                function updateUI() {
+                    // Update text
+                    if (selected.length === 0) {
+                        text.text("Select");
+                    } else if (selected.length === searchTypeOptions.length) {
+                        text.text("ALL");
+                    } else {
+                        text.text(selected.length + " selected");
+                    }
+
+                    // Update hidden inputs for form
+                    hiddenContainer.empty();
+                    selected.forEach(val => {
+                        const input = `<input type="hidden" name="SearchTypes[${rowIndex}]" value="${val}">`;
+                        hiddenContainer.append(input);
+                    });
+                }
+
+                // Update row disable state
+                function updateRowDisableState() {
+                    $("[id^='search-trigger-']").each(function () {
+                        const idx = $(this).attr("id").split("-").pop();
+                        const disable = activeSearchRowIndex !== null && idx != activeSearchRowIndex;
+                        $(this).prop("disabled", disable)
+                               .toggleClass("opacity-50 cursor-not-allowed", disable);
+                    });
+                }
+
+                // Checkbox change
+                optionsContainer.find(".search-option").on("change", function () {
+                    const val = $(this).val();
+                    if ($(this).is(":checked")) {
+                        if (!selected.includes(val)) selected.push(val);
+                    } else {
+                        selected = selected.filter(x => x !== val);
+                    }
+
+                    // Row locking
+                    activeSearchRowIndex = selected.length ? rowIndex : null;
+
+                    // Sync ALL checkbox
+                    allCheckbox.prop("checked", selected.length === searchTypeOptions.length);
+
+                    updateRowDisableState();
+                    updateUI();
+                });
+
+                // ALL checkbox
+                allCheckbox.on("change", function () {
+                    if ($(this).is(":checked")) {
+                        selected = [...searchTypeOptions];
+                    } else {
+                        selected = [];
+                    }
+
+                    optionsContainer.find(".search-option").each(function () {
+                        $(this).prop("checked", selected.includes($(this).val()));
+                    });
+
+                    activeSearchRowIndex = selected.length ? rowIndex : null;
+
+                    updateRowDisableState();
+                    updateUI();
+                });
+
+                // Dropdown toggle
+                trigger.on("click", function (e) {
+                    if ($(this).prop("disabled")) return;
+                    e.stopPropagation();
+                    popover.toggleClass("hidden");
+                });
+
+                // Close dropdown on outside click
+                $(document).on("click", function (e) {
+                    if (!popover.is(e.target) && popover.has(e.target).length === 0 &&
+                        !trigger.is(e.target)) {
+                        popover.addClass("hidden");
+                    }
+                });
+
+                // Initialize ALL checkbox
+                allCheckbox.prop("checked", selected.length === searchTypeOptions.length);
+                if (selected.length) activeSearchRowIndex = rowIndex;
+
+                updateRowDisableState();
+                updateUI();
+            }
+
+        });
+
+        function setScreeningOptions(){
+            const maxItems = 3; // show first 3 comma-separated values
+            const shortEl = document.getElementById("screeningShort");
+            const fullEl = document.getElementById("screeningFull");
+
+            if (!shortEl) return;
+
+            const fullText = shortEl.innerText;
+            const items = fullText.split(",");
+
+            // If content is small → no tooltip, no trimming
+            if (items.length <= maxItems) {
+                return;
+            }
+
+            // Trim text
+            const shortText = items.slice(0, maxItems).join(", ") + " etc…";
+            shortEl.innerText = shortText;
+            shortEl.classList.add("cursor-pointer");
+
+            // Enable hover tooltip ONLY when trimmed
+            shortEl.parentElement.addEventListener("mouseenter", () => {
+                fullEl.classList.remove("hidden");
+            });
+
+            shortEl.parentElement.addEventListener("mouseleave", () => {
+                fullEl.classList.add("hidden");
+            });
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function () {
+            //initializeSearchResults();
+            
+            setScreeningOptions();
+        });
+    </script>
+</body>
+</html>

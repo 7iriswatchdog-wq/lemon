@@ -1,0 +1,244 @@
+﻿@{
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@model AML.ViewModel.ViewModels.RiskV2.RiskModelV2
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
+<style>
+    .pulse-button {
+        @@apply rounded-full text-white text-sm font-bold;
+        animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+        background-color: #e84c3d !important;
+        box-shadow: 0 0 0 0 rgba(232, 76, 61, 0.7);
+        width: 34px;
+        height: 34px;
+    }
+
+    @@keyframes pulse {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(232, 76, 61, 0.7);
+        }
+
+        70% {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);
+        }
+
+        100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(232, 76, 61, 0);
+        }
+    }
+</style>
+<section class=" h-full content">
+
+    <!-- Navigation -->
+    @* <nav class="border-b">
+        <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+            <div>
+                <h2 class="text-2xl font-bold">@companyName</h2>
+            </div>
+            <div class="md:block hidden">
+                <img src="@logo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-white">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Individual Risk
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+    <div class="h-full bg-gray-50 items-center ">
+        <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4 mx-auto">
+            <div class="flex flex-col md:flex-row md:justify-end gap-4 mb-4">
+                <a asp-controller="RiskV2" asp-action="GetRiskReport" class="px-4 py-2 bg-blue-600 text-white text-center rounded hover:bg-blue-700">Back</a>
+                <button id="printform" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    Print
+                </button>
+            </div>
+
+            <!-- Main Report Card -->
+            <div id="printSection" class="rounded-card w-full bg-white rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+
+                <!-- Hidden Logo + Title for Print -->
+                @* <div class="hidden text-center" id="logodiv">
+                <h2 class="text-2xl font-bold">@companyName</h2>
+                <img src="@logo" class="w-16 float-right" />
+            </div> *@
+
+                <input type="hidden" asp-for="IsWhiteListed" id="hfIsWhiteListed" />
+                <h3 class="text-lg font-semibold mb-4">Risk Assessment for Individuals</h3>
+
+                <!-- Form Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <!-- Left Panel -->
+
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Customer Code</label>
+                        <input asp-for="CustomerCode" class="w-full border rounded px-3 py-2 bg-gray-50" readonly />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Customer Name</label>
+                        <input asp-for="CustomerName" class="w-full border rounded px-3 py-2 bg-gray-50" readonly />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Address</label>
+                        <textarea asp-for="Address" class="w-full border rounded px-3 py-2 bg-gray-50 resize-none" readonly></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Nationality</label>
+                        <input asp-for="MainNationalityTxt" class="w-full border rounded px-3 py-2 bg-gray-50" readonly />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Date of Assessment</label>
+                        <input asp-for="DateofAssessment" class="w-full border rounded px-3 py-2 bg-gray-50" type="date" readonly />
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-1">Remarks</label>
+                        <textarea asp-for="Remarks" class="w-full border rounded px-3 py-2 bg-gray-50 resize-none" readonly></textarea>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Risk Score -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Final Risk Score</label>
+                        <div class="bg-green-500 text-white text-center rounded px-3 py-2">Low</div>
+                        <input asp-for="FinalRiskScore" class="form-control text-white text-center rounded px-3 py-2 hidden" readonly />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Risk Score Before Override</label>
+                        <div class="bg-green-500 text-white text-center rounded px-3 py-2">As Per Risk Score</div>
+                        <input asp-for="RiskScoreBeforeOverride" class="form-control text-white text-center rounded px-3 py-2 hidden" readonly />
+                    </div>
+                </div>
+
+                <!-- Risk Table -->
+                <div class="border rounded-xl w-full overflow-x-auto">
+                    <div class="min-w-[640px]">
+                        <table class="w-full table-auto border-collapse">
+                            <thead class="bg-blue-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left">Risk Category</th>
+                                    <th class="px-4 py-2 text-left">Risk Type</th>
+                                    <th class="px-4 py-2 text-left">Selected Item</th>
+                                    <th class="px-4 py-2 text-left">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int a = 0;
+                                }
+                                @foreach (var i in Model.RiskTypeCategoryDTO)
+                                {
+                                    foreach (var j in i.RiskTypes)
+                                    {
+                                        <tr>
+                                            <td class="px-4 py-2">@i.RiskCategory</td>
+                                            <td class="px-4 py-2">@j.RiskType</td>
+                                            <td class="px-4 py-2">
+                                                <input type="text" asp-for="@j.ItemTxt" class="form-control border rounded px-2 py-1 w-full bg-gray-50" readonly />
+                                            </td>
+                                            <td class="px-4 py-2 text-center">
+                                                @if (j.ItemScore == 0)
+                                                {
+                                                    <button class="btn bg-gray-300 inline-block text-white rounded-full px-3 py-1">@j.ItemScore</button>
+                                                }
+                                                else if (j.ItemScore == 1)
+                                                {
+                                                    <button class="btn bg-green-500 inline-block text-white rounded-full px-3 py-1">@j.ItemScore</button>
+                                                }
+                                                else if (j.ItemScore == 2)
+                                                {
+                                                    <button class="btn bg-yellow-400 inline-block text-white rounded-full px-3 py-1">@j.ItemScore</button>
+                                                }
+                                                else if (j.ItemScore == 3 && j.OverrideScore == 3)
+                                                {
+                                                    <button class="pulse-button inline-block text-white rounded-full px-3 py-1">@j.ItemScore</button>
+                                                }
+                                                else
+                                                {
+                                                    <button class="btn bg-red-400 inline-block text-white rounded-full px-3 py-1">@j.ItemScore</button>
+                                                }
+                                            </td>
+                                        </tr>
+                                        a++;
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <!-- Totals -->
+                @* <div class="flex justify-between mt-4">
+                    <h3 class="text-md">Total Selected: <button class="btn bg-blue-500 text-white">@Model.RiskScoreCount</button></h3>
+                    <h3 class="text-md">Total Score: <button class="btn bg-blue-500 text-white">@Model.RiskScoreSum</button></h3>
+                </div>
+
+
+                <!-- Footer for Print -->
+                <div class="hidden mt-8" id="footdiv">
+                    <p class="italic text-sm text-center">This is a computer-generated report; no signature is required.</p>
+                </div> *@
+                <div class="flex justify-between mt-4">
+                    <div class="text-md font-medium">
+                        Total Selected: <span class="inline-block bg-blue-600 text-white px-3 py-1 rounded-full ">@Model.RiskScoreCount</span>
+                    </div>
+                    <div class="text-md font-medium">
+                        Total Score: <span class="inline-block bg-blue-600 text-white px-3 py-1 rounded-full">@Model.RiskScoreSum</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@* <script>
+    function printdiv(printpage) {
+        var newstr = document.getElementById(printpage).innerHTML;
+        var oldstr = document.body.innerHTML;
+        document.body.innerHTML = newstr;
+        document.getElementById("logodiv").style.display = "";
+        document.getElementById("footdiv").style.display = "";
+        window.print();
+        document.body.innerHTML = oldstr;
+        return false;
+    }
+</script> *@
+<script>
+    $('#printform').on("click", function () {
+        $('#printSection').printThis({
+            importCSS: true,
+            importStyle: true,
+            loadCSS: ["/css/print.css"],
+            header: `<div style="background: linear-gradient(180deg, #33394e 0%, #2F3961 100%); width:100%; padding:15px 20px;">
+                        <h1 style="color:white; font-size:20px;">@companyName
+                            <img src="@Clientlogo" style="float:right; height:50px;" />
+                        </h1>
+                    </div>`,
+            footer: `
+                <div style="border-top:1px solid #ddd; margin-top:20px; padding:10px 20px; font-size:12px; text-align:center;">
+                    This is a computer-generated report; no signature is required.
+                </div>
+            `,
+        });
+    });
+</script>

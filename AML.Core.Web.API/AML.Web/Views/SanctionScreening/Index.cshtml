@@ -1,0 +1,253 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    ViewData["Title"] = "Sanction Screening";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+    var clientId = HttpContextAccessor.HttpContext.Session.GetString("SessClientId");
+    var logo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@model AML.ViewModel.ViewModels.Sanction.ScreeningSearchModel
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<div class="custom-container">
+    <div class="sas-breadcrumbs aml-breadcrumbs pb-3">
+        <ul class="mb-0 pl-0 d-flex">
+            <li><a href="#">Home</a></li>/
+            <li><a href="#">Instant Sanction Screening</a></li>
+        </ul>
+    </div>
+    <div class="page-heading">
+        <div class="sas-card rounded-card br-20 mb-2 bg-blue">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><b>Instant Sanction Screening</b></h4>
+                <div class="menu-icon">
+                    <i class="lni lni-microsoft"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.card-header -->
+    <!-- form start -->
+    <!--form role="form" asp-controller="Case" asp-action="SanctionScreening" class="form-horizontal" enctype="multipart/form-data" method="post"-->
+
+
+    <div class="sas-card rounded-card mb-2 bg-blue">
+
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="card-buttons">
+                <a class="sas-button p-8-25 bg-color-2" onclick="ExportToPDF();">
+                    PDF Export
+                    <i class="lni lni-google-drive ml-3"></i>
+                </a>
+            </div>
+            <div class="">
+                @*            <button type="button" class="sas-button p-8-25 bg-color-2" onclick="ExportToPDF();">PDF Export <i class="fas fa-file-pdf"></i></button>
+                *@            <a class="sas-button p-8-25 bg-color-1" onClick="printdiv('printDetails');">Print</a>
+            </div>
+
+        </div>
+        <br />
+
+        <div id="printDetails" style="width:100%">
+
+            <div style="width:100%;display:none" id="logodiv">
+                <div style="width:98%;text-align:center;">
+                    <h2>@companyName</h2>
+                    <img src=@logo style="width:8%;float:right;" />
+                </div>
+            </div>
+            <form role="form" class="form-horizontal" enctype="multipart/form-data" method="post">
+
+
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Instant Sanction Screening Filter</h6>
+                </div>
+                <hr />
+                <div class="form-contents">
+                    <div class="row">
+                        <div class="col-sm">
+                            <div class="form-group">
+                                <label for="txtCustomerID">Name</label>
+                                <input type="text" asp-for="Name" class="form-control br-50" id="txtName" placeholder="Name">
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm">
+                            <div class="form-group">
+                                <label>Nationality</label>
+                                <select id="ddlNationalities" class="form-control br-50" asp-for="Nationality" asp-items="Model.Nationalities">
+                                    <option value="">--SELECT--</option>
+                                </select>
+                                <span asp-validation-for="Nationality" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm">
+                            <div class="form-group">
+                                <label for="dtDOB">Date of Birth</label>
+                                <input type="date" asp-for="DOB" class="form-control br-50" id="dtDOB" max="@DateTime.Now.ToString("yyyy-MM-dd")" placeholder="Date of Birth">
+                                <span asp-validation-for="DOB" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row justify-content-end" id="createddiv">
+                        <div class="d-flex justify-content-between align-items-center mr-3">
+                            @*//<button type="submit" id="btnSearch" class="btn btn-primary center" asp-action="">Search</button>*@
+                            <button type="submit" class="sas-button p-8-25 color-white bg-color-2" id="btnSearch" formaction='@Url.Action("SearchList", "SanctionScreening")'>Search</button>
+                            <button type="reset" id="btnReset" class="sas-button p-8-25 color-white bg-color-3 ml-2 mr-3">Reset</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- /.card-body -->
+                <!--/form-->
+            </form>
+
+            <!-- Export pdf and print buttons -->
+            @if (@Model.DataList.Count > 0)
+            {
+                <div class="sas-card rounded-card mb-2 bg-blue">
+                    <h6 class="mb-0">
+                        s
+                    </h6>
+                    <hr />
+                    <div class="d-flex justify-content-between align-items-center">
+
+                        <div class="table-responsive">
+                            <table id="APITable" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>@localizer["Type"]</th>
+                                        <th>@localizer["Category"]</th>
+                                        <th>@localizer["Name"]</th>
+                                        <th>@localizer["Score"]</th>
+                                        <th>@localizer["Nationality"]</th>
+                                        <th>@localizer["Id No"]</th>
+                                        <th>@localizer["DOB"]</th>
+
+                                        @*<th style=" @(@Model.Case.Source != "WC" ? "display:none" : "height:auto")">@localizer["Download"]</th>*@
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                    @for (int itemIndex = 0; itemIndex < @Model.DataList.Count(); itemIndex++)
+                                    {
+                                        <tr>
+                                            <td>@Model.DataList[itemIndex].matchtype</td>
+                                            <td>@Model.DataList[itemIndex].matchcategory</td>
+                                            <td>@Model.DataList[itemIndex].matchname</td>
+                                            <td>@Model.DataList[itemIndex].matchscore</td>
+                                            <td>@Model.DataList[itemIndex].nationality</td>
+                                            <td>@Model.DataList[itemIndex].matchidnumber</td>
+                                            <td>@Model.DataList[itemIndex].matchdob</td>
+                                            @*<td style=" @(Model.DataList[itemIndex].matchtype != "KYC6" ? "display:none" : "height:auto")">
+                                    <input type="button" value="Details" onclick="location.href='@Url.Action("GetDetailsApi", "Case", new { Id = @Model.DataList[itemIndex].matchuid, Category = @Model.DataList[itemIndex].matchcategory })'" />
+                                    </td>
+                                    <td style=" @(Model.DataList[itemIndex].matchtype != "KYC6" ? "display:none" : "height:auto")">
+                                    <input type="button" value="Download" onclick="location.href='@Url.Action("CallApi", "Case", new { Id = @Model.DataList[itemIndex].matchuid, Category = @Model.DataList[itemIndex].matchcategory })'" />
+                                    </td>*@
+
+
+                                        </tr>
+                                    }
+
+                                </tbody>
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+            <div style="width:100%;display:none" id="footdiv">
+                <p>Computer generated report; hence no signature is required.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+@*<div class="sas-card rounded-card mb-2">
+    <div class="sas-button d-flex justify-content-between align-items-center padding-buttons">
+        <div class="card-buttons">
+            <a class="sas-button p-8-25 bg-color-2">
+                PDF Export
+                <i class="lni lni-google-drive"></i>
+            </a>
+        </div>
+        <div class="sas-button">
+            <a class="sas-button p-8-25 bg-color-1">Print</a>
+        </div>
+    </div>
+</div>
+*@
+
+<script type="text/javascript">
+    var searchData;
+
+    function ExportToPDF() {
+
+
+
+        $.ajax({
+            type: "GET",
+            url: "/SanctionScreening/DownloadPDFs/",
+            data: {
+                Name: $('#txtName').val().toUpperCase(), // < note use of 'this' here
+                Nationality: $("#ddlNationalities").val().toUpperCase(),
+                DOB: $('#dtDOB').val(),
+                SelectionProperty: $("input[id='rdSelectionProperty']:checked").val()
+            },
+            success: function (data) {
+                window.location = '/SanctionScreening/DownloadPDFs?Name=' + $('#txtName').val().toUpperCase() + '&Nationality=' + $("#ddlNationalities").val().toUpperCase() + '&DOB=' + $('#dtDOB').val() + '&SelectionProperty=' + $("input[id='rdSelectionProperty']:checked").val();
+
+            },
+            error: function (result) {
+                alert('error');
+            }
+        });
+    }
+
+    //function PrintTag() {
+    //    var text = $("#apiResult")[0].outerHTML;
+    //    var popup = window.open("", "popup");
+    //    popup.document.body.innerHTML = text;
+    //    popup.focus();
+    //    popup.print();
+    //}
+    //function printdiv(printpage) {
+    //    var headstr1 = "<html><head>";
+    //    var headstr2 = "<title></title></head><body class='printDiv'>";
+    //    var footstr = "</body>";
+    //    var newstr = document.all.item(printpage).innerHTML;
+    //    var oldstr = document.body.innerHTML;
+    //    document.body.innerHTML = headstr1 + headstr2 + newstr + footstr;
+    //    document.getElementById("logodiv").style.display = "";
+    //    document.getElementById("createddiv").style.display = "none";
+    //    //document.getElementById("footdiv").style.display = "";
+    //    window.print();
+    //    document.body.innerHTML = oldstr;
+    //    return false;
+    //}
+
+    $("#btnReset").click(function () {
+
+        $('#ddlNationalities').val("");
+        $("#dtDOB").val("");
+        $("#txtName").val("");
+
+        LoadTable();
+    });
+
+
+
+</script>

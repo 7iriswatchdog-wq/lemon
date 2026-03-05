@@ -1,0 +1,406 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Client";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model AML.ViewModel.ViewModels.Common.ClientMaster
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<style>
+    .page {
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .head-section {
+        display: flex;
+        justify-content: space-between; /* Better than flex-start + auto margin */
+        align-items: center;
+        width: 100%;
+        height: 72px;
+        overflow-x: hidden;
+        padding: 0 16px; /* Add horizontal padding if needed */
+        box-sizing: border-box;
+        background-color: white !important;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .heading, .menu-icon, .md.block {
+        min-width: 0; /* allows shrinking */
+        flex-shrink: 1; /* enables shrinking */
+    }
+
+    .heading {
+        font-size: 1.25rem;
+    }
+
+    .card1 {
+        max-width: 100%; /* Ensures it never overflows parent */
+        border-radius: 8px;
+        overflow: hidden; /* Contains all child elements */
+        background-color: white !important;
+        margin: 30px 30px;
+        padding: 20px;
+        box-shadow: 0 0 #0000, /* fallback ring-offset-shadow */
+        0 0 #0000, /* fallback ring-shadow */
+        0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
+
+    .flex-box {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 10px 0px;
+    }
+
+        .flex-box > .flex-item {
+            flex: 1 1 250px;
+            text-align: center;
+        }
+
+    .form-group {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .flex-item input {
+        width: 90%; /* full width of the parent */
+        min-width: 40%;
+        box-sizing: border-box; /* includes padding in the width */
+        padding: 8px;
+        border-radius: 4px; /* spacing between inputs */
+    }
+
+    input, select {
+        border: 1px solid #dee2e6 !important;
+        font-weight: lighter;
+    }
+
+        input:focus {
+            border: 1px solid rgb(37,99,235) !important;
+        }
+
+        select:focus {
+            border: 1px solid rgb(37,99,235) !important;
+        }
+
+    .go {
+        background-color: rgb(37,99,235);
+        border-radius: 8px;
+        padding: 8px 20px;
+        color: white;
+    }
+
+    .clear {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 8px 20px;
+    }
+
+    .flex-box1 {
+        margin-top: 1px;
+        display: flex;
+        width: 90%;
+        justify-content: flex-end !important;
+    }
+
+    tr {
+        border: none !important;
+    }
+
+    td {
+        padding: 15px;
+    }
+
+    @@media (max-width: 768px) {
+        .page {
+            width: 80vw;
+        }
+</style>
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+</style>
+<div class="page bg-gray-50">
+    <div class="custom-container aml-casereport">
+@* <div class="page-heading">
+        <div class="sas-card rounded-card br-10 mb-2 bg-blue head-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 heading"><b>Add New</b></h4>
+                <div class="menu-icon">
+                    <i class="lni lni-microsoft"></i>
+                </div>
+            </div>
+            <div class="md:block">
+               <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </div> *@
+        <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-white">
+            <div class="flex items-center justify-between w-full">
+                <!-- Title -->
+                <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                    Add New
+                </h2>
+
+                <!-- Right-side content -->
+                <div class="text-sm md:text-base text-right">
+                    <img src="@Clientlogo" alt="Client Logo" width="50px" />
+                </div>
+            </div>
+        </nav>
+        <div class="sas-card rounded-card mb-2 bg-blue card1 relative">
+            <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+                <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+            </div>
+
+
+            <form asp-controller="Client" id="frmDocument" asp-action="Add" class="form-horizontal" enctype="multipart/form-data" method="post">
+
+                <input type="hidden" id="hdnClientId" asp-for="ClientId" />
+                <div class="form-contents">
+                    <div class="row flex-box gap-2">
+                        <div class="col-md-4 flex-item">
+
+                            <div class="form-group gap-2">
+                                <label>Client Name <span class="text-red-500">*</span></label>
+                                <input type="text" asp-for="ClientName" id="txtClientName" class="form-control br-50" placeholder="Client Name">
+                                <span asp-validation-for="ClientName" class="text-red-500"></span>
+                            </div>
+                        </div>
+
+
+                        <div class="col-md-4 flex-item">
+
+                            <div class="form-group gap-2">
+                                <label>Prefix <span class="text-red-500">*</span></label>
+                                <input type="text" asp-for="Prefix" id="txtPrefix" class="form-control br-50" placeholder="Prefix">
+                                <span asp-validation-for="Prefix" class="text-red-500"></span>
+                            </div>
+
+                        </div>
+                        <div class="col-md-4 flex-item">
+
+                            <div class="form-group gap-2">
+                                <label>Description <span class="text-red-500">*</span></label>
+                                <input type="text" asp-for="Description" id="txtDescription" class="form-control br-50" placeholder="Description">
+                                <span asp-validation-for="Description" class="text-red-500"></span>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="row flex-box gap-2">
+                        <div class="col-md-4 flex-item">
+
+                            <div class="form-group gap-2">
+                                <label>C6 Username <span class="text-red-500">*</span></label>
+                                <input type="text" asp-for="C6Username" id="txtC6Username" class="form-control br-50" placeholder="C6 Username">
+                                <span asp-validation-for="C6Username" class="text-red-500"></span>
+                            </div>
+
+                        </div>
+                        <div class="col-md-4 flex-item">
+
+                            <div class="form-group gap-2">
+                                <label>C6 Base API Url<span class="text-red-500">*</span></label>
+                                <input type="text" asp-for="C6BaseUrl" id="txtC6BaseUrl" class="form-control br-50" placeholder="C6 Base API Url">
+                                <span asp-validation-for="C6BaseUrl" class="text-red-500"></span>
+                            </div>
+
+                        </div>
+                        <div class="col-md-4 flex-item">
+
+                            <div class="form-group gap-2">
+                                <label>C6 Threshold <span class="text-red-500">*</span></label>
+                                <input type="text" asp-for="C6Threshold" id="txtC6Threshold" class="form-control br-50" placeholder="C6 Threshold">
+                                <span asp-validation-for="C6Threshold" class="text-red-500"></span>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="row flex-box gap-2">
+                        <div class="col-md-4 flex-item">
+
+                            <div class="form-group gap-2">
+                                <label>Threshold <span class="text-red-500">*</span></label>
+                                <input type="text" asp-for="Threshold" id="txtThreshold" class="form-control br-50" placeholder="Threshold">
+                                <span asp-validation-for="Threshold" class="text-red-500"></span>
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-md-4 flex-item ">
+
+                            <div class="form-group gap-2">
+                                <label>Compliance Officer Email Id<span class="text-red-500">*</span></label>
+                                <input type="text" asp-for="Complem" id="txtComplem" class="form-control br-50" placeholder="Complaince officer EmailId">
+                                <span asp-validation-for="Complem" class="text-red-500"></span>
+                            </div>
+
+                        </div>
+
+                        <div class="col-md-4 flex-item">
+                            <div class="form-group gap-2">
+                                <label for="txtFile">Upload Logo<span class="text-red-500">*</span></label>
+                                <input type="file" asp-for="Document" name="Document" class="form-control br-50" id="txtFile" placeholder="Logo">
+                                <span asp-validation-for="Document" class="text-red-500"></span>
+                                @{
+                                    if (Model.DocumentFileName != null)
+                                    {
+                                        <label>Client has been already uploaded the document</label>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row flex-box gap-2">
+                        <div class="col-md-4 flex-item">
+                            <div class="form-group gap-2">
+                                <label for="dtStartDate">Application Start Date<span class="text-red-500">*</span></label>
+                                <input type="date" id="dtStartDate"
+                                       class="form-control br-50"
+                                       max="@DateTime.Now:yyyy-MM-dd" />
+                            </div>
+
+                        </div>
+                        <div class="col-md-4 flex-item">
+                            <div class="form-group gap-2">
+                                <label for="dtEndDate">Application End Date<span class="text-red-500">*</span></label>
+                                <input type="date" id="dtEndDate"
+                                       class="form-control br-50"
+                                       max="@DateTime.Now:yyyy-MM-dd" />
+                            </div>
+                        </div>
+                        <div class="col-md-4 flex-item">
+                            <div class="form-group gap-2">
+                                <label for="txtSearchCount">Search Count <span class="text-red-500">*</span></label>
+                                <input type="text" id="txtSearchCount" class="form-control br-50" placeholder="Threshold">
+
+                            </div>
+                        </div>
+
+
+
+                    </div>
+                    @*<div class="row">
+                    <button class='btn btn-primary' onclick="AddRight()">Add Rights</button>
+                </div>*@
+                </div>
+                <div class="flex flex-col md:flex-row justify-center mt-10 gap-4">
+                    <button type="submit" class="px-6 py-2 bg-[#2563EB] text-white rounded-md hover:bg-blue-700" onclick=" $('#loader').show(); fnSubmit()">Submit</button>
+                    <button type="button" class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 text-center transition duration-200" onclick="$('#loader').show(); location.href='@Url.Action("Index", "Client")'">Cancel</button>
+                </div>
+            </form>
+        </div>
+        <script>
+            function fnSubmit() {
+                $(".se-pre-con").show();
+            }
+            function AddRight(){
+
+            }
+            $('#frmDocument').submit(function (e) {
+                e.preventDefault();
+                var formdata = new FormData();
+                formdata.append('ClientId', $('#hdnClientId').val());
+                formdata.append('ClientName', $('#txtClientName').val());
+                formdata.append('Prefix', $('#txtPrefix').val());
+                formdata.append('Description', $('#txtDescription').val());
+                formdata.append('Document', $('#txtFile')[0].files[0]);
+                formdata.append('C6Username', $('#txtC6Username').val());
+                formdata.append('C6BaseUrl', $('#txtC6BaseUrl').val());
+                formdata.append('C6Threshold', $('#txtC6Threshold').val());
+                formdata.append('Threshold', $('#txtThreshold').val());
+                formdata.append('Complem', $('#txtComplem').val());
+                $.ajax({
+                    url: '/client/create',
+                    type: 'post',
+                    data: formdata,
+                    contentType: false,
+                    processData: false,
+                    success: function () {
+                        clearDocuemnt();
+
+                                        window.location.href = "/Client";
+                            toastr.success('Client Data Saved Successfully');
+                    }
+                });
+            });
+            function clearDocuemnt() {
+                $('#frmDocument').find("input[type=text], textarea").val("");
+                $('#frmDocument').find("input[type=file]").val(null);
+                $('#frmDocument').find("select").val(0);
+            }
+        </script>

@@ -1,0 +1,77 @@
+﻿@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+}
+
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var clientId = HttpContextAccessor.HttpContext.Session.GetString("SessClientId");
+    var logo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@model AML.ViewModel.ViewModels.User.UserModel
+
+<link href="~/css/login.css" rel="stylesheet" />
+<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+<style type="text/css">
+    select {
+        /* for Firefox */
+        -moz-appearance: none;
+        /* for Chrome */
+        -webkit-appearance: none;
+    }
+
+        /* For IE10 */
+        select::-ms-expand {
+            display: none;
+        }
+
+        select option {
+            width: 75% !important;
+        }
+</style>
+<!------ Include the above in your HEAD tag ---------->
+<div class="wrapper" style=" background: url('/img/bg-18.jpg') no-repeat; background-size: 100%;">
+    <div id="formContent">
+        <!-- Tabs Titles -->
+        <!-- Icon -->
+        <div class="fadeIn first">
+            <img src=@logo style="width: 200px;margin-top: 10px;display:none;" />
+        </div>
+
+        <!-- Login Form -->
+        <form asp-controller="UserAccess" asp-action="Login" class="form-horizontal" enctype="multipart/form-data" method="post">
+            @*<select id="ddlClients" class="fadeIn second" asp-for="ClientId" asp-items="Model.Clients" style="border-radius: 37px;font-variant: small-caps !important;background-color: #f6f6f6;border: none;color: gray;padding: 15px 32px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;margin: 5px;width: 85%;border: 2px solid #f6f6f6;text-align-last:center; ">
+                    <option value="">Company</option>
+                </select>*@
+            <br />
+            <input type="text" id="Clientname" class="fadeIn second" asp-for="ClientName" placeholder="Company Name" style="border-radius: 37px;font-variant:small-caps !important;">
+            <input type="text" id="Username" class="fadeIn second" asp-for="UserName" placeholder="Username" style="border-radius: 37px;font-variant:small-caps !important;">
+            <input type="password" id="password" class="fadeIn third" asp-for="Password" placeholder="Password" style="border-radius: 37px;font-variant:small-caps !important;">
+
+
+            <input type="submit" class="fadeIn fourth" value="Log In" style="border-radius: 37px;width: 85%;font-variant:small-caps !important;background: url('/img/bg-17.jpg') no-repeat;">
+        </form>
+        @if (!string.IsNullOrEmpty(Convert.ToString(ViewData["Error"])))
+        {
+            <label class="text-danger" style="font-variant: small-caps !important;">Wrong Username, Password and/or Company</label>
+        }
+
+        <!-- Login Form -->
+        <!--form asp-controller="UserAccess" asp-action="Login" class="form-horizontal" enctype="multipart/form-data" method="post">
+            <input type="text" id="Username" class="fadeIn second" asp-for="UserName" placeholder="Username">
+            <input type="password" id="password" class="fadeIn third" asp-for="Password" placeholder="password">
+            <input type="submit" class="fadeIn fourth" value="Log In">
+        </form-->
+        <!-- Remind Passowrd -->
+        <div id="formFooter">
+            <a class="underlineHover" href="/auth/Forgot" style="font-variant: small-caps !important;">Forgot Password?</a>
+        </div>
+
+    </div>
+</div>
+
+
+
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>

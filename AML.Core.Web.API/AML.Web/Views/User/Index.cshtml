@@ -1,0 +1,315 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@model AML.ViewModel.ViewModels.User.UserModel
+@{
+    ViewData["Title"] = "Users";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body { font-family: 'Inter', sans-serif; }
+    .dt-loader { position: relative; width: 80px; height: 20px; }
+    .dt-loader div { position: absolute; top: 8px; width: 13px; height: 13px; border-radius: 50%; background: #2563eb; animation-timing-function: cubic-bezier(0,1,1,0); }
+    .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+    .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+    .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+    .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+    @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+    @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+    @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+
+    th.sortable { cursor: pointer; position: relative; padding-right: 20px; }
+    th.sortable::after {
+        content: "▲\A▼";
+        white-space: pre;
+        font-size: 10px;
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #bbb;
+        line-height: 1;
+        text-align: center;
+    }
+    th.sortable.active.asc::after { content: "▲"; color: #2563eb; }
+    th.sortable.active.desc::after { content: '\A▼'; color: #2563eb; }
+</style>
+
+<div id="loader" class="fixed inset-0 bg-white bg-opacity-75 items-center justify-center z-50 hidden">
+    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+</div>
+
+<div class="bg-slate-50 min-h-screen text-slate-900">
+    <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <div class="flex items-center gap-2 text-slate-500 text-xs mb-2">
+                    <a href="/AdminManagement/Index" class="hover:text-blue-600">Admin Management</a>
+                    <i data-lucide="chevron-right" class="h-3 w-3"></i>
+                    <a href="/AdminManagement/Details/@Model.ClientId" class="hover:text-blue-600">Client Details</a>
+                    <i data-lucide="chevron-right" class="h-3 w-3"></i>
+                    <span class="text-slate-900 font-medium">Users</span>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Users</h1>
+                <p class="text-slate-500 text-sm mt-1">Manage system users, permissions, and security status.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="/AdminManagement/Details/@Model.ClientId" class="bg-white border border-slate-200 shadow-sm hover:bg-slate-50 text-slate-700 font-bold h-10 px-5 rounded-md flex items-center gap-2 transition-colors text-sm">
+                    <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                    Back to Details
+                </a>
+                <a href="@Url.Action("Add", "User")?clientId=@Model.ClientId" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-5 rounded-md flex items-center gap-2 transition-colors text-sm shadow-sm">
+                    <i data-lucide="user-plus" class="h-4 w-4"></i>
+                    Add New User
+                </a>
+            </div>
+        </div>
+
+        <!-- SuperAdmin Client Switcher -->
+        @if (Model.isSuperAdmin == 1)
+        {
+            <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 flex flex-col sm:flex-row items-center gap-4">
+                <label class="text-sm font-bold text-blue-900 whitespace-nowrap uppercase tracking-tight flex items-center gap-2">
+                    <i data-lucide="building-2" class="h-4 w-4"></i>
+                    Switch Client Context:
+                </label>
+                <select id="ddlClients" class="h-10 w-full sm:w-auto rounded-md border border-blue-200 bg-white px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20" onchange="fetchUserData()">
+                    @foreach(var client in Model.Clients) {
+                        <!option value="@client.Value" @(client.Value == Model.ClientId.ToString() ? "selected" : "")>@client.Text</!option>
+                    }
+                </select>
+            </div>
+        }
+        <input type="hidden" id="clientId" value="@Model.ClientId" />
+
+        <!-- Users Table Card -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-6 space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-2 text-xs">
+                         <select id="userRowsPerPage" class="h-8 rounded-md border border-slate-200 bg-white px-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20" onchange="changePageSize()">
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <label class="text-slate-500 font-medium">Entries per page</label>
+                    </div>
+                    <div class="relative w-full md:w-80">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-slate-400"></i>
+                        <input id="userSearchBox" type="text" placeholder="Search by name, code, username..." 
+                               class="pl-9 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-100 rounded-lg">
+                    <table id="usersTable" class="w-full text-sm text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-slate-500 uppercase bg-slate-50/50 border-b border-slate-100">
+                            <tr>
+                                <th class="px-6 py-4 font-semibold sortable active asc" data-column="empCode" onclick="sortTable('empCode', this)">Employee Code</th>
+                                <th class="px-6 py-4 font-semibold sortable" data-column="fName" onclick="sortTable('fName', this)">Full Name</th>
+                                <th class="px-6 py-4 font-semibold sortable" data-column="userName" onclick="sortTable('userName', this)">Username</th>
+                                <th class="px-6 py-4 font-semibold text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex items-center justify-between px-6 py-4 border-t border-slate-100">
+                    <div class="text-xs text-slate-500">
+                        Showing <span id="showingStart" class="font-bold text-slate-900">0</span> to <span id="showingEnd" class="font-bold text-slate-900">0</span> of <span id="totalRecords" class="font-bold text-slate-900">0</span> users
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="prevBtn" onclick="previousPage()"
+                                class="h-8 px-3 text-xs font-semibold border border-slate-200 bg-white rounded-md text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors">
+                            Prev
+                        </button>
+                        <div id="pageNumbers" class="flex gap-1"></div>
+                        <button id="nextBtn" onclick="nextPage()"
+                                class="h-8 px-3 text-xs font-semibold border border-slate-200 bg-white rounded-md text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let userCurrentPage = 1;
+    let userTotalPages = 1;
+    let userPageSize = 10;
+    let totalRecords = 0;
+    let currentSortColumn = "empCode";
+    let currentSortDirection = "asc";
+
+    $(document).ready(function () {
+        lucide.createIcons();
+        fetchUserData();
+
+        $('#userSearchBox').on('input', function () {
+            userCurrentPage = 1;
+            fetchUserData();
+        });
+    });
+
+    function sortTable(column, element) {
+        $('.sortable').removeClass('active asc desc');
+        if (currentSortColumn === column) {
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortColumn = column;
+            currentSortDirection = 'asc';
+        }
+        $(element).addClass('active ' + currentSortDirection);
+        fetchUserData();
+    }
+
+    function fetchUserData() {
+        $('#loader').removeClass('hidden').addClass('flex');
+        const searchValue = $('#userSearchBox').val() || '';
+        const start = (userCurrentPage - 1) * userPageSize;
+        const clientIdVal = $('#ddlClients').val() || $('#clientId').val();
+
+        $.ajax({
+            url: '/user/custompagination',
+            type: 'POST',
+            data: {
+                draw: 1,
+                start: start,
+                length: userPageSize,
+                search: { value: searchValue },
+                order: [{ column: 0, dir: currentSortDirection }],
+                columns: [{ data: currentSortColumn }],
+                Id: clientIdVal
+            },
+            success: function (resp) {
+                renderUserTable(resp.data);
+                totalRecords = resp.recordsFiltered;
+                userTotalPages = Math.ceil(totalRecords / userPageSize);
+                updatePagination();
+            },
+            complete: function () {
+                $('#loader').addClass('hidden').removeClass('flex');
+            }
+        });
+    }
+
+    function renderUserTable(data) {
+        const tbody = $('#usersTableBody').empty();
+        if (!data || data.length === 0) {
+            tbody.append('<tr><td colspan="4" class="px-6 py-12 text-center text-slate-400 font-medium">No user records found.</td></tr>');
+            return;
+        }
+
+        data.forEach(u => {
+            const blockIcon = u.isBlocked 
+                ? '<i data-lucide="unlock" class="h-3.5 w-3.5"></i>' 
+                : '<i data-lucide="lock" class="h-3.5 w-3.5"></i>';
+            const blockColor = u.isBlocked ? 'hover:text-amber-600 hover:bg-amber-50 hover:border-amber-100' : 'hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100';
+            const blockTitle = u.isBlocked ? 'Unblock User' : 'Block User';
+
+            tbody.append(`
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="px-6 py-4 font-bold text-slate-700">${u.empCode}</td>
+                    <td class="px-6 py-4 text-slate-900 font-medium">${u.fName} ${u.lName || ''}</td>
+                    <td class="px-6 py-4 text-slate-500">${u.userName}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex justify-center gap-2">
+                            <a href="/user/edit/${u.id}" class="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:text-blue-600 hover:border-blue-100 hover:bg-blue-50 transition-all shadow-sm" title="Edit User">
+                                <i data-lucide="edit-3" class="h-3.5 w-3.5"></i>
+                            </a>
+                            <button onclick="BlockData(${u.id}, ${u.isBlocked ? 0 : 1})" class="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 ${blockColor} transition-all shadow-sm" title="${blockTitle}">
+                                ${blockIcon}
+                            </button>
+                            <a href="/UserGroup/GroupRight/${u.userGroupId}" class="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50 transition-all shadow-sm" title="Manage Rights">
+                                <i data-lucide="shield-check" class="h-3.5 w-3.5"></i>
+                            </a>
+                            <button onclick="DeleteData('${u.id}')" class="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:text-red-600 hover:border-red-100 hover:bg-red-50 transition-all shadow-sm" title="Delete User">
+                                <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `);
+        });
+        lucide.createIcons();
+    }
+
+    function updatePagination() {
+        const start = totalRecords === 0 ? 0 : (userCurrentPage - 1) * userPageSize + 1;
+        const end = Math.min(userCurrentPage * userPageSize, totalRecords);
+
+        $('#showingStart').text(start);
+        $('#showingEnd').text(end);
+        $('#totalRecords').text(totalRecords);
+
+        $('#prevBtn').prop('disabled', userCurrentPage === 1);
+        $('#nextBtn').prop('disabled', end >= totalRecords);
+
+        renderPageNumbers();
+    }
+
+    function renderPageNumbers() {
+        const container = $('#pageNumbers').empty();
+        if (userTotalPages <= 1) return;
+
+        const maxVisible = 5;
+        let start = Math.max(1, userCurrentPage - Math.floor(maxVisible / 2));
+        let end = Math.min(userTotalPages, start + maxVisible - 1);
+        if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+
+        for (let i = start; i <= end; i++) {
+            container.append(`
+                <button onclick="goToPage(${i})" 
+                        class="h-7 w-7 flex items-center justify-center text-[11px] font-bold border rounded transition-all
+                        ${i === userCurrentPage ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}">
+                    ${i}
+                </button>
+            `);
+        }
+    }
+
+    function goToPage(p) { userCurrentPage = p; fetchUserData(); }
+    function previousPage() { if (userCurrentPage > 1) goToPage(userCurrentPage - 1); }
+    function nextPage() { if (userCurrentPage < userTotalPages) goToPage(userCurrentPage + 1); }
+    function changePageSize() { userPageSize = parseInt($('#userRowsPerPage').val()); userCurrentPage = 1; fetchUserData(); }
+
+    function BlockData(id, status) {
+        if (confirm('Do you want to Block / UnBlock User?')) {
+            $.ajax({
+                url: `/User/Block?Id=${id}&Status=${status}`,
+                type: 'POST',
+                success: function () { fetchUserData(); }
+            });
+        }
+    }
+
+    function DeleteData(id) {
+        if (confirm('Do you want to delete this user?')) {
+            $.ajax({
+                url: `/user/delete/${id}`,
+                type: 'DELETE',
+                success: function () { fetchUserData(); }
+            });
+        }
+    }
+</script>
+
+
+
+
+

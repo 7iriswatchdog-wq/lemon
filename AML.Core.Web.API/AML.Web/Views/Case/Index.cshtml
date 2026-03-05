@@ -1,0 +1,1060 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+
+@model AML.ViewModel.ViewModels.Report.ReportLogSearchModel
+
+
+
+@{
+    ViewData["Title"] = localizer["Customer Case"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+        var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Manager - WatchDog</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+    <div id="loadingCaseDetails" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+    </div>
+
+    <style>
+        .dt-loader {
+            position: relative;
+            width: 80px;
+            height: 20px;
+        }
+
+            .dt-loader div {
+                position: absolute;
+                top: 8px;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: #2563eb;
+                animation-timing-function: cubic-bezier(0,1,1,0);
+            }
+
+                .dt-loader div:nth-child(1) {
+                    left: 8px;
+                    animation: dt-anim1 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(2) {
+                    left: 8px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(3) {
+                    left: 32px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(4) {
+                    left: 56px;
+                    animation: dt-anim3 0.6s infinite;
+                }
+
+        @@keyframes dt-anim1 {
+            0% {
+                transform: scale(0);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @@keyframes dt-anim2 {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(24px);
+            }
+        }
+
+        @@keyframes dt-anim3 {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(0);
+            }
+        }
+
+        #caseDetailsTbl, #caseDetailsTbl th, #caseDetailsTbl td {
+            border: none !important;
+            border-radius: 0 !important;
+        }
+
+        th.sortable {
+            cursor: pointer;
+            position: relative;
+            padding-right: 20px;
+        }
+
+            th.sortable::after {
+                content: "▲\A▼";
+                white-space: pre;
+                font-size: 10px;
+                position: absolute;
+                right: 6px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #bbb;
+                line-height: 1;
+                text-align: center;
+            }
+
+            th.sortable.active.asc::after {
+                content: "▲";
+                color: #000;
+            }
+
+            th.sortable.active.desc::after {
+                content: '\A▼';
+                color: #000;
+            }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen text-slate-900">
+    <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Case Manager</h1>
+                <p class="text-slate-500 text-sm mt-1">Manage and review all individual and corporate cases.</p>
+            </div>
+           @*  <div class="flex items-center gap-3 w-full md:w-auto">
+                <button onclick="ExportList(false)" ;
+                        class="bg-white border border-slate-200 shadow-sm hover:bg-slate-50 text-slate-700 font-bold h-10 px-5 rounded-md flex items-center gap-2 transition-colors text-sm">
+                    <i data-lucide="download" class="h-4 w-4"></i>
+                    Export
+                </button>
+            </div> *@
+        </div>
+
+        <!-- Filters Section -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-tight">Case Filter</h3>
+                <div class="flex gap-2">
+                    <button onclick="clearFilters()"
+                            class="text-slate-500 hover:text-slate-700 h-8 px-3 text-sm font-medium transition-colors">
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-slate-500 uppercase ml-0.5">Start Date</label>
+                    <input type="date" id="startDate" asp-for="StartDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"
+                           class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm ring-offset-white focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-colors placeholder:text-slate-500">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-slate-500 uppercase ml-0.5">End Date</label>
+                    <input type="date" id="endDate" asp-for="EndDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"
+                           class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm ring-offset-white focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-colors placeholder:text-slate-500">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-slate-500 uppercase ml-0.5">Customer Type</label>
+                    <div class="relative">
+                        <select  asp-items=@Model.CustomerCategories id="customertype"
+                                class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm ring-offset-white focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-colors appearance-none text-slate-900">
+                            <option value="0">--@localizer["SELECT"]--</option>
+                        </select>
+                        <i data-lucide="chevron-down"
+                           class="absolute right-3 top-3 h-4 w-4 text-slate-400 pointer-events-none"></i>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="applyFilters()"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-4 py-2 rounded-md shadow-sm transition-colors text-sm">
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row gap-4 items-center w-full">
+
+                <!-- Input wrapper for icon -->
+                <div class="relative flex-1 w-full">
+                    <i data-lucide="search"
+                       class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+
+                    <input type="text"
+                           id="searchInput"
+                           placeholder="Search by Customer ID, Name"
+                           onkeyup="filterTable()"
+                           class="pl-10 h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm
+                      ring-offset-white focus-visible:outline-none focus-visible:ring-2
+                      focus-visible:ring-blue-500/20 focus-visible:border-blue-500
+                      shadow-sm transition-all placeholder:text-slate-500">
+                </div>
+
+                <!-- Search button -->
+                <button onclick="searchCases()"
+                        class="h-11 px-5 rounded-md bg-blue-600 text-white text-sm font-semibold
+                   hover:bg-blue-700 transition-all shadow-sm">
+                    Search
+                </button>
+
+                <!-- Export button pushed to RIGHT -->
+                <button onclick="ExportList(false)"
+                        class="sm:ml-auto bg-white border border-slate-200 shadow-sm
+                   hover:bg-slate-50 text-slate-700 font-bold
+                   h-10 px-5 rounded-md flex items-center gap-2
+                   transition-colors text-sm">
+                    <i data-lucide="download" class="h-4 w-4"></i>
+                    Export
+                </button>
+
+            </div>
+
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-slate-500 uppercase bg-white border-b border-slate-200">
+                            <tr>
+                                <th class="px-2 py-4 font-small h-12">Customer ID</th>
+                                <th class="px-2 py-4 font-small h-12">Created on</th>
+                                <th class="px-2 py-4 font-small h-12">Updated on</th>
+                                <th class="px-2 py-4 font-small h-12">Customer Type</th>
+                                <th class="px-2 py-4 font-small h-12">Customer Name</th>
+                                <th class="px-2 py-4 font-small h-12">Case Status Change Reason</th>
+                                <th class="px-2 py-4 font-small h-12">Screening Score</th>
+                                <th class="px-2 py-4 font-small h-12 text-center">Risk Score</th>
+                                <th class="px-2 py-4 font-small h-12">User</th>
+                                <th class="px-2 py-4 font-small h-12">Status</th>
+                                <th class="px-2 py-4 font-small h-12 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="casesTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex items-center justify-between px-4 py-4 border-t border-slate-200">
+                    <!-- Page length dropdown -->
+                    <div class="flex items-center gap-2 text-sm">
+                        <select id="pageSize"
+                                class="h-8 rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                onchange="changePageSize()">
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <label class="text-slate-600 font-medium">Entries per page</label>
+
+                    </div>
+                    <div class="text-sm text-slate-500">
+                        Showing <span id="showingStart" class="font-medium text-slate-900">1</span> to <span id="showingEnd" class="font-medium text-slate-900">10</span> of <span id="totalCases"
+                                                                                                                                                                                   class="font-medium text-slate-900">50</span> cases
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <button id="prevBtn" onclick="previousPage()"
+                                class="h-8 px-3 text-sm font-medium border border-slate-200 bg-white rounded-md text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50">
+                            Previous
+                        </button>
+                        <button id="nextBtn" onclick="nextPage()"
+                                class="h-8 px-3 text-sm font-medium border border-slate-200 bg-white rounded-md text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </body>
+    </html>
+    <script>
+                    lucide.createIcons();
+
+    let filteredCases = [];
+    let currentPage = 1;
+    let size = 10;
+    let totalRecords = 0;
+    let draw = 1;
+
+    /* ---------------------- Helpers ---------------------- */
+
+    function formatDate(dateString) {
+        if (!dateString) return { date: '', time: '' };
+
+        const date = new Date(dateString);
+
+        return {
+            date: date.toLocaleDateString('en-GB'),
+            time: date.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            })
+        };
+    }
+
+    function getStatusBadge(status) {
+        let styles = "";
+
+        switch ((status || '').toLowerCase()) {
+            case 'Approved': styles = "bg-blue-50 text-blue-600 border-blue-100"; break;
+            case 'onhold': styles = "bg-amber-50 text-amber-600 border-amber-100"; break;
+            case 'Rejected': styles = "bg-red-50 text-red-600 border-red-100"; break;
+            case 'transferred': styles = "bg-green-50 text-green-600 border-green-100"; break;
+            default: styles = "bg-slate-50 text-slate-500 border-slate-100";
+        }
+
+        return `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${styles}">${status || ''}</span>`;
+    }
+    //     function formatCaseStatus(statusText) {
+    //     if (!statusText) return '';
+
+    //     // Corporate case with shareholders info
+    //     if (statusText.includes('| Shareholders:')) {
+
+    //         const [corpStatus, shInfo] = statusText.split('|');
+
+    //         const total = shInfo.match(/Total\s(\d+)/)?.[1] || 0;
+    //         const approved = shInfo.match(/Approved\s(\d+)/)?.[1] || 0;
+    //         const pending = shInfo.match(/Pending\s(\d+)/)?.[1] || 0;
+    //         const rejected = shInfo.match(/Rejected\s(\d+)/)?.[1] || 0;
+
+    //         return `
+    //             <div class="space-y-1 text-left">
+    //                 <div class="font-bold text-slate-900">
+    //                     ${corpStatus.trim()}
+    //                 </div>
+
+    //                 <div class="text-xs font-semibold text-slate-600">
+    //                     Shareholder:
+    //                 </div>
+
+    //                 <div class="text-xs">Total: ${total}</div>
+    //                 <div class="text-xs">Approved: ${approved}</div>
+    //                 <div class="text-xs">Pending: ${pending}</div>
+    //                 <div class="text-xs">Rejected: ${rejected}</div>
+    //             </div>
+    //         `;
+    //     }
+
+    //     // Individual case
+    //     return `<span class="font-bold text-slate-900">${statusText}</span>`;
+    // }
+
+     function formatCaseStatus(statusText) {
+        if (!statusText) return '';
+
+        function getStatusClass(text) {
+            const t = text.toLowerCase().trim();
+
+            if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
+            if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
+            if (t.includes('transfer')) return 'bg-green-100 text-green-800';
+            if (t.includes('rejected')) return 'bg-red-100 text-red-800';
+
+            return 'bg-slate-100 text-slate-800';
+        }
+
+        // Corporate case
+        if (statusText.includes('| Shareholders:')) {
+
+            const [corpStatus, shInfo] = statusText.split('|');
+
+            const total = shInfo.match(/Total\s(\d+)/)?.[1] || 0;
+            const approved = shInfo.match(/Approved\s(\d+)/)?.[1] || 0;
+            const pending = shInfo.match(/Pending\s(\d+)/)?.[1] || 0;
+            const rejected = shInfo.match(/Rejected\s(\d+)/)?.[1] || 0;
+
+            const statusClass = getStatusClass(corpStatus);
+
+            return `
+                <div class="space-y-1 text-left">
+                    <div class="flex w-full items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+                        ${corpStatus.trim()}
+                    <div class="relative group">
+                            <svg class="w-5 h-5 text-gray-800 dark:text-white cursor-pointer"
+                                 aria-hidden="true"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 fill="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path fill-rule="evenodd"
+                                      d="M12 6a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-1.5 8a4 4 0 0 0-4 4 2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-3Zm6.82-3.096a5.51 5.51 0 0 0-2.797-6.293 3.5 3.5 0 1 1 2.796 6.292ZM19.5 18h.5a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-1.1a5.503 5.503 0 0 1-.471.762A5.998 5.998 0 0 1 19.5 18ZM4 7.5a3.5 3.5 0 0 1 5.477-2.889 5.5 5.5 0 0 0-2.796 6.293A3.501 3.501 0 0 1 4 7.5ZM7.1 12H6a4 4 0 0 0-4 4 2 2 0 0 0 2 2h.5a5.998 5.998 0 0 1 3.071-5.238A5.505 5.505 0 0 1 7.1 12Z"
+                                      clip-rule="evenodd"/>
+                            </svg>
+
+                            <!-- Hover tooltip -->
+                            <div class="absolute left-1/2 top-full mt-2 -translate-x-1/2
+                                        hidden group-hover:flex gap-2
+                                        bg-white p-2 rounded-lg shadow-lg border z-50">
+
+                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                    A:${approved}
+                                </span>
+
+                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                    P:${pending}
+                                </span>
+
+                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                    R:${rejected}
+                                </span>
+                            </div>
+                        </div>
+                       </div>
+                     </div>
+            `;
+        }
+
+        // Individual case
+        const statusClass = getStatusClass(statusText);
+
+        return `
+            <span class="flex w-full items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+                ${statusText}
+            </span>
+        `;
+    }
+
+      function formatDateTime(dateStr) {
+        if (!dateStr) return { date: '-', time: '-' };
+
+        const d = new Date(dateStr);
+
+        return {
+            date: d.toLocaleDateString('en-GB'), // 20/02/2026
+            time: d.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',   // ✅ added
+                hour12: true
+            }) // 06:43:15 PM
+        };
+    }
+
+    function getRiskScoreClass(score) {
+        return score >= 85
+            ? "text-red-500"
+            : (score >= 50 ? "text-amber-500" : "text-slate-500");
+    }
+
+    /* ---------------------- SEARCH TRIGGER ---------------------- */
+
+    function searchCases() {
+        loadCases(1);
+    }
+
+    /* ---------------------- Load Data From Backend ---------------------- */
+
+    function loadCases(page = 1) {
+
+        $('#loadingCaseDetails').removeClass('hidden');
+
+        let searchValue = $('#searchInput').val() || '';
+
+        $.ajax({
+            url: '/case/custompagination',
+            type: 'POST',
+            data: {
+                draw: draw,
+                start: (page - 1) * size,
+                length: size,
+
+                // ⭐ Search Value
+                searchValue: searchValue,
+                search: { value: searchValue },
+
+                // ⭐ Filters
+                startDate: $('#startDate').val(),
+                endDate: $('#endDate').val(),
+                cust_type: $('#customertype').val()
+            },
+
+            success: function (res) {
+
+                console.log(res);
+                filteredCases = (res.data || []).map(r => ({
+                    id: r.id,
+                    customerId: r.customerId,
+                    customerName: `${r.firstName || ''} ${r.middleName || ''} ${r.lastName || ''}`.trim(),
+                    customerType: r.customerType === 'I'
+                        ? 'Individual'
+                        : r.customerType === 'C'
+                            ? 'Corporate'
+                            : r.customerType === 'S'
+                                ? 'Shareholder'
+                                : '',
+                    cifNo: r.customerId,
+                    caseChangeStatus: r.caseChangeStatus || '',
+                    matchScore:r.matchScore || '',
+                    createdOn: r.createdOn,
+                    updatedOnDB:r.updatedOnDB,
+                    createdUser:r.createdUser,
+                    status: r.caseStatus || '',
+                    riskScore: r.customerType === 'I'
+                        ? r.individual_final_risk_score || ''
+                        : r.corporate_final_risk_score || ''
+                }));
+
+                totalRecords = res.recordsFiltered || 0;
+                currentPage = page;
+
+                renderTable();
+                updatePagination();
+
+                draw++;
+            },
+
+            complete: function () {
+                $('#loadingCaseDetails').addClass('hidden');
+            },
+
+            error: function () {
+                alert('Error loading data');
+            }
+        });
+    }
+
+    /* ---------------------- Render Table ---------------------- */
+
+    function renderTable() {
+
+        const tbody = document.getElementById('casesTableBody');
+
+        if (!filteredCases.length) {
+            tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="h-24 text-center">
+                    <div class="text-slate-500">No results found.</div>
+                </td>
+            </tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filteredCases.map(caseItem => {
+
+            const { date, time } = formatDate(caseItem.createdOn);
+            const created = formatDateTime(caseItem.createdOn);
+                const updated = formatDateTime(caseItem.updatedOnDB);
+            const riskClass = getRiskScoreClass(caseItem.riskScore);
+
+            return `
+            <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50">
+
+                <td class="px-2 py-4 font-medium text-slate-600">${caseItem.customerId}</td>
+
+                 <td class="px-2 py-4">
+                    <!-- Created -->
+                    <div class="text-xs  text-slate-700">
+                        ${created?.date || '-'} ${created?.time || ''}
+                    </div>
+                </td>
+                <td class="px-2 py-4">
+                    <!-- Updated (only if exists) -->
+                    ${updated ? `
+                        
+                        <div class="text-xs text-slate-700">
+                            ${updated?.date || '-'} ${updated?.time || ''}
+                        </div>
+                    ` : ''}
+                </td>
+                
+
+                <td class="px-2 py-4">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="${caseItem.customerType === 'Individual' ? 'user' : 'building-2'}" class="h-4 w-4 text-slate-400"></i>
+                        ${caseItem.customerType}
+                    </div>
+                </td>
+
+                <td class="px-2 py-4 ">${caseItem.customerName}</td>
+
+                <td class="px-2 py-4">${caseItem.caseChangeStatus}</td>
+
+                    <td class="item-center text-center px-2 py-4 ${
+                        caseItem.matchScore < 70 ? 'text-green-600 font-semibold' :
+                        caseItem.matchScore < 85 ? 'text-orange-500 font-semibold' :
+                        'text-red-600 font-semibold'
+                    }">
+                        ${caseItem.matchScore}
+                    </td>
+                <td class="px-2 py-4 text-center">
+                    <span class="font-bold ${riskClass}">
+                        ${caseItem.riskScore.replace(' Risk', '')}
+                    </span>
+                </td>
+                <td class="px-2 py-4">${caseItem.createdUser}</td>
+                <td class="px-2 py-4">${formatCaseStatus(caseItem.status)}</td>
+                <td class="px-2 py-4 text-center">
+                    <a href="/case/Process/${caseItem.id}"
+                       class="text-blue-600 font-bold text-xs underline">
+                        Process
+                    </a>
+                </td>
+
+            </tr>`;
+        }).join('');
+
+        lucide.createIcons();
+    }
+
+    /* ---------------------- Pagination ---------------------- */
+
+    function updatePagination() {
+
+        const start = totalRecords === 0 ? 0 : (currentPage - 1) * size + 1;
+        const end = Math.min(currentPage * size, totalRecords);
+
+        $('#showingStart').text(start);
+        $('#showingEnd').text(end);
+        $('#totalCases').text(totalRecords);
+
+        $('#prevBtn').prop('disabled', currentPage === 1);
+        $('#nextBtn').prop('disabled', end >= totalRecords);
+    }
+
+    function previousPage() {
+        if (currentPage > 1)
+            loadCases(currentPage - 1);
+    }
+
+    function nextPage() {
+        if (currentPage * size < totalRecords)
+            loadCases(currentPage + 1);
+    }
+
+    /* ---------------------- Filters ---------------------- */
+
+    function applyFilters() {
+        loadCases(1);
+    }
+
+    function clearFilters() {
+
+        $('#startDate').val('');
+        $('#endDate').val('');
+        $('#customerType').val('');
+        $('#searchInput').val('');
+
+        loadCases(1);
+    }
+
+    /* ---------------------- Export ---------------------- */
+
+    function exportToExcel() {
+        alert('Export functionality here');
+    }
+
+    /* ---------------------- Initial Load ---------------------- */
+
+    $(document).ready(function () {
+        
+        const savedSize = localStorage.getItem('pageSize');
+
+        if (savedSize) {
+            size = parseInt(savedSize);
+            $('#pageSize').val(savedSize);
+        }
+        loadCases(1);
+    });
+    function changePageSize() {
+        size = parseInt($('#pageSize').val());
+        localStorage.setItem('pageSize', size);
+        currentPage = 1;
+        loadCases(1);
+    }
+
+    // function ExportList(isPDF) {
+    //     $("#loader").show();
+    //     $.ajax({
+    //         type: "GET",
+    //         url: "/Report/ExportCaseManagementReport/",
+    //         data: {
+    //             startDate: $('#startDate').val(),
+    //             endDate: $('#endDate').val(),
+    //             cust_type: $('#customertype').val(),
+    //             IsPDF: isPDF
+    //         },
+    //         success: function (data) {
+    //             window.location = '/Report/ExportCaseManagementReport?startDate=' + $('#dtStartDate').val() + '&endDate=' + $("#dtEndDate").val() + '&cust_type=' + $('#customertype').val() + '&IsPDF=' + isPDF;
+    //             $("#loader").hide();
+    //         },
+    //         error: function (result) {
+    //             alert('error');
+    //             $("#loader").hide();
+    //         },
+    //         complete: function () {
+
+    //         }
+    //     });
+    // }
+
+        function ExportList(isPDF) {
+
+        $("#loadingCaseDetails").show();
+
+        window.location =
+            '/Report/ExportCaseManagementReport?' +
+            'startDate=' + $('#startDate').val() +
+            '&endDate=' + $('#endDate').val() +
+            '&cust_type=' + $('#customertype').val() +
+            '&IsPDF=' + isPDF;
+
+        $("#loadingCaseDetails").hide();
+    }
+
+    //                 lucide.createIcons();
+
+    // let filteredCases = [];
+    // let currentPage = 1;
+    // let size = 10;
+    // let totalRecords = 0;
+    // let draw = 1;
+
+    // /* ---------------------- Helpers ---------------------- */
+
+    // function formatDate(dateString) {
+    //     if (!dateString) return { date: '', time: '' };
+
+    //     const date = new Date(dateString);
+
+    //     return {
+    //         date: date.toLocaleDateString('en-GB'),
+    //         time: date.toLocaleTimeString('en-GB', {
+    //             hour: '2-digit',
+    //             minute: '2-digit',
+    //             second: '2-digit'
+    //         })
+    //     };
+    // }
+
+    // function getStatusBadge(status) {
+    //     let styles = "";
+
+    //     switch ((status || '').toLowerCase()) {
+    //         case 'approved': styles = "bg-blue-50 text-blue-600 border-blue-100"; break;
+    //         case 'onhold': styles = "bg-amber-50 text-amber-600 border-amber-100"; break;
+    //         case 'rejected': styles = "bg-red-50 text-red-600 border-red-100"; break;
+    //         case 'transferred': styles = "bg-green-50 text-green-600 border-green-100"; break;
+    //         default: styles = "bg-slate-50 text-slate-500 border-slate-100";
+    //     }
+
+    //     return `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${styles}">${status || ''}</span>`;
+    // }
+
+    // function getRiskScoreClass(score) {
+    //     return score >= 85
+    //         ? "text-red-500"
+    //         : (score >= 50 ? "text-amber-500" : "text-slate-500");
+    // }
+
+    // /* ---------------------- Load Data From Backend ---------------------- */
+
+    // function loadCases(page = 1) {
+
+    //     $('#loadingCaseDetails').removeClass('hidden');
+
+    //     $.ajax({
+    //         url: '/case/custompagination',
+    //         type: 'POST',
+    //         data: {
+    //             draw: draw,
+    //             start: (page - 1) * size,
+    //             length: size,
+    //             search: { value: $('#searchInput').val() || '' },
+    //             startDate: $('#startDate').val(),
+    //             endDate: $('#endDate').val(),
+    //             cust_type: $('#customertype').val()
+    //         },
+
+    //         success: function (res) {
+    //             console.log(res.data);
+    //             filteredCases = (res.data || []).map(r => ({
+    //                 id: r.id,
+    //                 customerId:r.customerId,
+    //                 customerName: `${r.firstName || ''} ${r.middleName || ''} ${r.lastName || ''}`.trim(),
+    //                 customerType: r.customerType === 'I'
+    //                     ? 'Individual'
+    //                     : r.customerType === 'C'
+    //                         ? 'Corporate'
+    //                         : r.customerType === 'S'
+    //                             ? 'Shareholder'
+    //                             : '',
+    //                 cifNo: r.customerId,
+    //                 nationality: r.nationality || '',
+    //                 createdOn: r.createdOn,
+    //                 status: r.caseStatus || '',
+    //                 riskScore: r.riskScore || 0
+    //             }));
+
+    //             totalRecords = res.recordsFiltered || 0;
+    //             currentPage = page;
+
+    //             renderTable();
+    //             updatePagination();
+
+    //             draw++;
+    //         },
+
+    //         complete: function () {
+    //             $('#loadingCaseDetails').addClass('hidden');
+    //         },
+
+    //         error: function () {
+    //             alert('Error loading data');
+    //         }
+    //     });
+    // }
+
+    // /* ---------------------- Render Table ---------------------- */
+
+    // function renderTable() {
+
+    //     const tbody = document.getElementById('casesTableBody');
+
+    //     if (!filteredCases.length) {
+    //         tbody.innerHTML = `
+    //         <tr>
+    //             <td colspan="8" class="h-24 text-center">
+    //                 <div class="text-slate-500">No results found.</div>
+    //             </td>
+    //         </tr>`;
+    //         return;
+    //     }
+
+    //     tbody.innerHTML = filteredCases.map(caseItem => {
+
+    //         const { date, time } = formatDate(caseItem.createdOn);
+    //         const riskClass = getRiskScoreClass(caseItem.riskScore);
+
+    //         return `
+    //         <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50">
+
+    //             <td class="px-4 py-3 font-medium text-slate-600">${caseItem.customerId}</td>
+
+    //             <td class="px-4 py-3">
+    //                 ${date}<br>
+    //                 <span class="text-[10px] text-slate-400">${time}</span>
+    //             </td>
+
+    //             <td class="px-4 py-3">
+    //                 <div class="flex items-center gap-2">
+    //                     <i data-lucide="${caseItem.customerType === 'Individual' ? 'user' : 'building-2'}" class="h-4 w-4 text-slate-400"></i>
+    //                     ${caseItem.customerType}
+    //                 </div>
+    //             </td>
+
+    //             <td class="px-4 py-3 font-semibold">${caseItem.customerName}</td>
+
+    //             <td class="px-4 py-3">${caseItem.nationality}</td>
+
+    //             <td class="px-4 py-3">${getStatusBadge(caseItem.status)}</td>
+
+    //             <td class="px-4 py-3 text-center">
+    //                 <span class="font-bold ${riskClass}">
+    //                     ${caseItem.riskScore}
+    //                 </span>
+    //             </td>
+
+    //             <td class="px-4 py-3 text-center">
+    //                 <a href="/case/Process/${caseItem.id}"
+    //                    class="text-blue-600 font-bold text-xs hover:underline">
+    //                     Process
+    //                 </a>
+    //             </td>
+
+    //         </tr>`;
+    //     }).join('');
+
+    //     lucide.createIcons();
+    // }
+
+    // /* ---------------------- Pagination ---------------------- */
+
+    // function updatePagination() {
+
+    //     const start = totalRecords === 0 ? 0 : (currentPage - 1) * size + 1;
+    //     const end = Math.min(currentPage * size, totalRecords);
+
+    //     $('#showingStart').text(start);
+    //     $('#showingEnd').text(end);
+    //     $('#totalCases').text(totalRecords);
+
+    //     $('#prevBtn').prop('disabled', currentPage === 1);
+    //     $('#nextBtn').prop('disabled', end >= totalRecords);
+    // }
+
+    // function previousPage() {
+    //     if (currentPage > 1)
+    //         loadCases(currentPage - 1);
+    // }
+
+    // function nextPage() {
+    //     if (currentPage * size < totalRecords)
+    //         loadCases(currentPage + 1);
+    // }
+
+    // /* ---------------------- Filters ---------------------- */
+
+    // function applyFilters() {
+    //     loadCases(1);
+    // }
+
+    // function clearFilters() {
+
+    //     $('#startDate').val('');
+    //     $('#endDate').val('');
+    //     $('#customerType').val('');
+    //     $('#searchInput').val('');
+
+    //     loadCases(1);
+    // }
+
+    // /* ---------------------- Export ---------------------- */
+
+    // function exportToExcel() {
+    //     alert('Export functionality here');
+    // }
+
+    // /* ---------------------- Initial Load ---------------------- */
+
+    // $(document).ready(function () {
+    //     loadCases(1);
+    // });
+    //      </script>
+@* <script>
+//     let sortCol = 'createdOn', sortDir = 'desc', currentPage = 1, totalPages = 1, draw = 1;
+
+//     const cols = ['action','customerId','customerName','createdBy','createdOn','companyCode'];
+//     const getColIndex = (c) => cols.indexOf(c);
+
+//     function fetchData(search = '', page = 1) {
+//       const size = +$('#rowsPerPage').val();
+//       $('#loadingCaseDetails').removeClass('hidden');
+//       $.ajax({
+//         url: '/case/custompagination',
+//         type: 'POST',
+//         data: {
+//           draw, start: (page - 1) * size, length: size,
+//           search: { value: search },
+//           order: [{ column: getColIndex(sortCol), dir: sortDir }],
+//           columns: cols.map(_ => ({ data: null })),
+//           startDate: $('#dtStartDate').val(),
+//           endDate: $('#dtEndDate').val(),
+//           cust_type: ({
+//             INDIVIDUAL: 'I',
+//             CORPORATE: 'C',
+//             SHAREHOLDER: 'S'
+//           })[$('#customertype').val()] || ''
+//         },
+//         success(res) {
+//           renderTable(res.data || []);
+//           totalPages = Math.max(1, Math.ceil((res.recordsFiltered || 0) / size));
+//           renderPager(page);
+//           draw++;
+//         },
+//         complete() {
+//           $('#loadingCaseDetails').addClass('hidden');
+//         },
+//         error() {
+//           alert('Error loading data');
+//         }
+//       });
+//     }
+
+//     function renderTable(rows) {
+//       const tb = $('#caseDetailsTbl tbody').empty();
+//       if (!rows.length) {
+//         tb.append('<tr><td colspan="6" class="text-center py-4">No records found</td></tr>');
+//         return;
+//       }
+//       rows.forEach(r => {
+//         tb.append(`
+//         <tr>
+//           <td class="px-4 py-3"><a class="text-blue-600 underline" href="/case/Process/${r.id}">Process</a></td>
+//           <td class="px-4 py-3">${r.customerId}</td>
+//           <td class="px-4 py-3">${r.firstName||''} ${r.middleName||''} ${r.lastName||''}</td>
+//           <td class="px-4 py-3">${r.createdUser}</td>
+//           <td class="px-4 py-3">${r.createdOn}</td>
+//           <td class="px-4 py-3">${r.companyCode}</td>
+//         </tr>`);
+//       });
+//     }
+
+//     function renderPager(page) {
+//       const pg = $('.pagination-controls').empty();
+//       const btn = (lbl, p, d, a) => `
+//         <button class="px-3 py-1 border rounded ${a ? 'bg-blue-600 text-white':'bg-white text-blue-600'} ${d ? 'opacity-50':''}"
+//                 data-page="${p}" ${d?'disabled':''}>${lbl}</button>`;
+//       pg.append(btn('First',1,page===1,false));
+//       pg.append(btn('Prev',page-1,page===1,false));
+//       for (let i=Math.max(1,page-2); i<=Math.min(totalPages,page+2); i++) {
+//         pg.append(btn(i,i,false,i===page));
+//       }
+//       pg.append(btn('Next',page+1,page===totalPages,false));
+//       pg.append(btn('Last',totalPages,page===totalPages,false));
+//     }
+
+//     $('#btnSearch').click(() => fetchData($('#searchInput').val(),1));
+//     $('#btnReset').click(() => { $('#filterForm')[0].reset(); fetchData('',1); });
+//     $('#rowsPerPage, #searchInput').on('change keyup', () => fetchData($('#searchInput').val(),1));
+//     $('.pagination-controls').on('click','button',function(){
+//       const p = +$(this).data('page');
+//       if (!isNaN(p)) fetchData($('#searchInput').val(), p);
+//     });
+//     $('#caseDetailsTbl thead').on('click','th.sortable',function(){
+//       const c = $(this).data('column');
+//       if (sortCol === c) sortDir = sortDir==='asc'?'desc':'asc';
+//       else { sortCol=c; sortDir='asc'; }
+//       $('#caseDetailsTbl th.sortable').removeClass('active asc desc');
+//       $(this).addClass(`active ${sortDir}`);
+//       fetchData($('#searchInput').val(),1);
+//     });
+
+//     function ExportList(){
+//       const params = $.param({
+//         startDate: $('#dtStartDate').val(),
+//         endDate: $('#dtEndDate').val(),
+//         custType: $('#customertype').val(),
+//         pageSize: $('#rowsPerPage').val(),
+//         search: $('#searchInput').val()
+//       });
+//       window.location = '/case/ExportLog?' + params;
+//     }
+
+//     $(document).ready(() => {
+//       $('#caseDetailsTbl th.sortable[data-column="'+sortCol+'"]').addClass(`active ${sortDir}`);
+//       fetchData('',1);
+//     });
+// </script>*@

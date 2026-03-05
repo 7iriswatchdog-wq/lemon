@@ -1,0 +1,1202 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using static AML.Web.Helpers.NavigationIndicatorHelper;
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    //ViewData["Title"] = "Risk Configuration Master";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model AML.ViewModel.ViewModels.ProductMaster.ProductRiskModel
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="~/plugins/jquery/jquery.min.js"></script>
+    <!-- jQuery -->
+
+
+    <style>
+        body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .page {
+            width: 100% !important;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .head-section {
+            width: 100% !important;
+            max-width: 100%;
+        }
+
+        /* .card1 {
+                    width: 100% !important;
+                    max-width: 100%;
+                    margin: 30px 30px !important;
+                } */
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            min-width: 600px;
+            Minimum width before scrolling
+        }
+
+            .table .subcategory {
+                width: 100% !important;
+            }
+
+                .table .subcategory td {
+                    width: auto !important;
+                }
+
+        .subcategory .form-control {
+            width: 100% !important;
+            margin-right: 40% !important;
+        }
+
+        .subcategory .riskscorebtn {
+            margin-left: 260% !important;
+        }
+
+        .card-header {
+            width: 100% !important;
+        }
+
+            .card-header .flex-box {
+                width: 100% !important;
+            }
+
+        .submission-div {
+            width: 100% !important;
+            max-width: 100%;
+        }
+
+        .heading > h4 {
+            font-size: 1.25rem;
+        }
+
+        h6 {
+            font-size: 1.15rem;
+            font-weight: bold;
+        }
+
+        body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        .page {
+            width: 96%;
+            overflow-x: hidden;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .head-section {
+            display: flex;
+            justify-content: space-between; /* Better than flex-start + auto margin */
+            align-items: center;
+            max-width: 100%;
+            min-width: 0%;
+            height: 72px;
+            overflow-x: hidden;
+            padding: 0 16px; /* Add horizontal padding if needed */
+            box-sizing: border-box;
+            background-color: white !important;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .card1 {
+            /* Or set fixed width like 300px */
+            max-width: 100%; /* Ensures it never overflows parent */
+            border-radius: 8px;
+            overflow: hidden; /* Contains all child elements */
+            background-color: white !important;
+            margin: 30px 30px;
+            padding: 20px;
+            box-shadow: 0 0 #0000, /* fallback ring-offset-shadow */
+            0 0 #0000, /* fallback ring-shadow */
+            0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+
+        .flex-box {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 10px 0px;
+        }
+
+            .flex-box > .flex-item {
+                flex: 1 1 250px;
+                text-align: center;
+            }
+
+        .form-group {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .flex-item input {
+            width: 80%; /* full width of the parent */
+            min-width: 40%;
+            box-sizing: border-box; /* includes padding in the width */
+            padding: 8px;
+            border-radius: 4px; /* spacing between inputs */
+        }
+
+        label {
+            display: block;
+        }
+
+        .form-control {
+            display: block;
+            border-radius: 4px;
+            background-color: white;
+            width: 100%;
+        }
+
+        .low {
+            background-color: #28a745;
+            border-radius: 8px;
+            display: block;
+            padding: 10px;
+            width: 100%;
+            font-style: italic;
+        }
+
+        input, select {
+            border: 1px solid #dee2e6 !important;
+            font-weight: lighter;
+        }
+        /* Reset table structure */
+        /* Main table structure */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed; /* Ensures columns respect width settings */
+        }
+
+            /* Header row */
+            .table thead tr {
+                display: table-row;
+            }
+
+            .table thead {
+                background-color: rgb(233,239,253);
+            }
+
+                .table thead th:first-child {
+                    border-top-left-radius: 8px;
+                    border-bottom-left-radius: 8px;
+                }
+
+                .table thead th:last-child {
+                    border-top-right-radius: 8px;
+                    border-bottom-right-radius: 8px;
+                }
+                /* Header cells - explicit widths */
+                .table thead th {
+                    display: table-cell;
+                    padding: 12px;
+                    vertical-align: middle;
+                    text-align: center;
+                    width: 25%; /* Equal width for all columns */
+                }
+
+            /* Body cells - matching header widths */
+            .table tbody td {
+                display: table-cell;
+                padding: 12px;
+                vertical-align: middle;
+                text-align: center;
+                width: 25%; /* Must match header widths */
+            }
+
+            /* Specific column adjustments */
+            .table th:nth-child(1) {
+                width: 25%;
+                text-align: center;
+            }
+
+            /* .table td:nth-child(1) {
+                        width: 20%;
+                        text-align: center;
+                    } */
+
+            .table th:nth-child(2) {
+                width: 50%; /* More space for risk items */
+            }
+
+            /* .table td:nth-child(2) {
+                        width: 80%
+                    } */
+            .table td:nth-child(2) {
+                width: 50%;
+                text-align: center;
+                /* display: flex;
+                        justify-content: center;
+                        align-items: center; */
+            }
+
+                .table td:nth-child(2) select {
+                    margin: auto;
+                }
+
+            .table th:nth-child(3) {
+                width: 25%;
+                text-align: center;
+            }
+
+            /* Sub-table fixes */
+            .table .subcategory {
+                width: 80vw;
+            }
+
+                .table .subcategory td {
+                    width: 80vw !important;
+                }
+
+                .table .subcategory .riskscorebtn {
+                    margin-left: 10%;
+                }
+
+            /* Remove Bootstrap column class interference */
+
+            /* Form control adjustments */
+            .table .form-control {
+                width: 50% !important;
+                align-items: center;
+            }
+
+            /* Button styling */
+            .table .riskscorebtn {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                /* background-color: aliceblue; */
+                background-color: #e5e7eb;
+            }
+
+        .input-field {
+            margin-left: 22%;
+        }
+
+        .table > tbody > tr {
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .card-header {
+            padding: 1rem;
+            display: flex;
+            align-items: center; /* Vertically center all content */
+            width: 80vw;
+            justify-content: center;
+        }
+
+            .card-header .flex-box {
+                width: 80vw;
+                justify-content: center;
+            }
+
+
+        .score-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .aml-risk-score {
+            display: flex;
+            align-items: center; /* This is key for vertical alignment */
+            justify-content: center;
+        }
+
+        .card-title {
+            margin: 0 auto;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        /* Specific fix for the Risk Score label */
+        .aml-risk-score h3.card-title {
+            margin-bottom: 0;
+            padding-top: 0; /* Remove any top padding */
+            margin-top: 0; /* Remove any top margin */
+        }
+
+        /* Button alignment */
+        .sas-button, .dt-button-info {
+            vertical-align: middle; /* Ensures buttons align properly */
+            line-height: normal; /* Prevents line-height issues */
+        }
+
+        .card-header button {
+            padding: 15px;
+            border-radius: 8px;
+            background-color: rgb(37,99,235);
+            color: white;
+            margin: 10px;
+        }
+
+        .submission-div {
+            display: flex;
+            width: 70vw;
+            justify-content: flex-end;
+            align-items;
+            center;
+        }
+
+            .submission-div .submit_btn {
+                background-color: rgb(37,99,235);
+                border-radius: 8px;
+                padding: 8px 20px;
+                color: white;
+            }
+
+            .submission-div .cancel_btn {
+                border: 2px solid #dee2e6;
+                border-radius: 8px;
+                padding: 8px 20px;
+            }
+
+        th {
+            font-weight: 500;
+        }
+        /* Add this at the end of your existing CSS */
+        input:focus {
+            border: 2px solid rgb(37,99,235) !important;
+        }
+
+        tr {
+            border: none !important;
+        }
+
+        td {
+            padding: 15px;
+        }
+
+        select:focus {
+            border: 2px solid rgb(37,99,235) !important;
+        }
+
+        .is-invalid {
+            border-color: #dc3545 !important;
+            background-color: #fff3f3;
+        }
+
+        body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .page {
+            width: 100% !important;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .head-section {
+            width: 100% !important;
+            max-width: 100%;
+        }
+
+        /* .card1 {
+                    width: 100% !important;
+                    max-width: 100%;
+                    margin: 30px 30px !important;
+                } */
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            min-width: 600px;
+        }
+
+            .table .subcategory {
+                width: 100% !important;
+            }
+
+                .table .subcategory td {
+                    width: auto !important;
+                }
+
+        .subcategory .form-control {
+            width: 100% !important;
+            margin-right: 40% !important;
+        }
+
+        .subcategory .riskscorebtn {
+            margin-left: 260% !important;
+        }
+
+        .card-header {
+            width: 100% !important;
+        }
+
+            .card-header .flex-box {
+                width: 100% !important;
+            }
+
+        .submission-div {
+            width: 100% !important;
+            max-width: 100%;
+        }
+        /* General responsive fixes */
+        @@media (max-width: 992px) {
+            .page {
+                width: 83vw !important;
+                box-sizing: border-box;
+            }
+
+            .table {
+                width: 100vw;
+            }
+
+            .head-section {
+                width: 100% !important;
+            }
+            /* .card1 {
+                        width: 77vw !important;
+                        margin: 10px 10px;
+                        padding: 10px;
+                    } */
+
+            .subcategory {
+                margin-left: 20px;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+
+            .flex-item {
+                width: 100%;
+            }
+
+            .form-control {
+                width: 40% !important;
+            }
+
+            .low {
+                width: 100% !important;
+            }
+
+            .div-1 input {
+                width: 100% !important;
+            }
+        }
+
+        /* Mobile-specific fixes (up to 768px) */
+        @@media (max-width: 768px) {
+            /* Table transformation */
+            .table {
+                width: 100vw !important;
+            }
+
+            .head-section {
+                width: 100% !important;
+            }
+
+            .subcategory {
+                margin-left: 20px;
+            }
+            /* .card1 {
+                        width: 77vw !important;
+                        margin: 10px 10px;
+                        padding: 10px;
+                    } */
+
+            .table-container {
+                overflow-x: auto;
+            }
+            /* Form controls */
+            .input-field {
+                margin-left: 0;
+            }
+            /* Score display */
+            .card-header {
+                flex-direction: column;
+            }
+
+            .score-group,
+            .aml-risk-score {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .card-title {
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                gap: 5px;
+            }
+            /* Buttons */
+            .submission-div {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .submit_btn,
+            .cancel_btn {
+                width: 100%;
+                margin: 5px 0;
+            }
+
+            .low {
+                width: 100% !important;
+            }
+        }
+
+        /* Very small devices (up to 480px) */
+        @@media (max-width: 480px) {
+            .table {
+                width: 100vw !important;
+            }
+
+            .subcategory {
+                margin-left: 20px;
+            }
+
+            .head-section {
+                width: 100% !important;
+            }
+            /* .card1 {
+                        width: 77vw !important;
+                        margin: 10px 10px;
+                        padding: 10px;
+                    } */
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+
+            h6 {
+                font-size: 1rem;
+            }
+
+            .heading {
+                font-size: 1.1rem;
+            }
+
+            .low {
+                width: 100% !important;
+            }
+        }
+        /* Add these styles to your existing CSS */
+
+
+
+
+    </style>
+    <style>
+        .dt-loader {
+            display: inline-block;
+            position: relative;
+            width: 80px;
+            height: 20px;
+        }
+
+            .dt-loader div {
+                position: absolute;
+                top: 8px;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: #2563eb;
+                animation-timing-function: cubic-bezier(0, 1, 1, 0);
+            }
+
+                .dt-loader div:nth-child(1) {
+                    left: 8px;
+                    animation: dt-anim1 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(2) {
+                    left: 8px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(3) {
+                    left: 32px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(4) {
+                    left: 56px;
+                    animation: dt-anim3 0.6s infinite;
+                }
+
+        @@keyframes dt-anim1 {
+            0% {
+                transform: scale(0);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @@keyframes dt-anim2 {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(24px);
+            }
+        }
+
+        @@keyframes dt-anim3 {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(0);
+            }
+        }
+
+        .green-score {
+            background-color: #28a745 !important;
+            color: black;
+        }
+
+        .yellow-score {
+            background-color: #ffc107 !important;
+            color: black;
+        }
+
+        .red-score {
+            background-color: #dc3545 !important;
+            color: black;
+        }
+
+        .gray-score {
+            /* background-color: aliceblue !important; */
+            background-color: #e5e7eb !important;
+            color: black;
+        }
+
+        #lowTxt {
+            background-color: #28a745 !important;
+        }
+
+        #mediumTxt {
+            background-color: #ffc107 !important;
+        }
+
+        #highTxt {
+            background-color: #dc3545 !important;
+        }
+        /* Optional: Pulse animation for override */
+        .pulse-button {
+            animation: pulse 1.2s infinite;
+        }
+
+        @@keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <div class="sas-card rounded-card br-10 mb-2 bg-blue relative bg-gray-50">
+        <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        </div>
+        <div class="page">
+            @* <div class="head-section">
+                <div class="heading">
+                    <h4 class="mb-0"><b>@localizer["Product Risk Assessement"]</b></h4>
+                </div>
+                <div class="md:block">
+                    Client Logo
+                </div>
+            </div> *@
+            <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-white">
+                <div class="flex items-center justify-between w-full">
+                    <!-- Title -->
+                    <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                        @localizer["Product Risk Assessement"]
+                    </h2>
+
+                    <!-- Right-side content -->
+                    <div class="text-sm md:text-base text-right">
+                        @* <img src="@Clientlogo" alt="Client Logo" width="50px" /> *@
+                        <img src="@Clientlogo" alt="Client Logo" width="50px" />
+                    </div>
+                </div>
+            </nav>
+            <div class="cont1">
+
+                <form role="form" asp-controller="Product" asp-action="Create" class="form-horizontal" enctype="multipart/form-data" method="post" onsubmit="ValidateCustomerId(this);">
+                    <div class="form_contents">
+
+                        <div class="row m-0">
+                            <div class="card1 div-1">
+                                <div class="col-12 p-0">
+                                    <div class="sas-card rounded-card mb-2 border-box">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">@localizer["Product Risk Assessment Model"]</h6>
+                                        </div>
+                                        <div class="risk-assessment-div">
+                                            <div class="row flex-box">
+                                                <div class="col-sm-4 flex-item">
+                                                    <div class="form-group aml-search_select ">
+                                                        <label for="dtCustomerCode">@localizer["Product Code"]</label>
+                                                        <input type="text" asp-for="ProductCode" class="form-control" id="dtCustomerCode" placeholder="Product Code" maxlength="25" required>
+                                                        @*<div id="container">
+                                                        </div>
+                                                        <select style="height:100%" id="ddlCustomer" class="form-control br-50" asp-for="CustomerId" asp-items="Model.CustomerList">
+                                                        <option value="">--@localizer["EMPTY"]--</option>
+                                                        </select>*@
+                                                        @*<select class="form-control br-50" asp-for="CustomerId" asp-items="Model.CustomerList" id="ddlCustomer">
+                                                            <option value="0">--@localizer["EMPTY"]--</option>
+                                                        </select>*@
+
+                                                        @* <span asp-validation-for="CustomerCode" class="text-danger"></span>
+                                                        <input type="hidden" asp-for="CustomerCode" id="hfCustomerCode" />*@
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4 flex-item">
+                                                    <div class="form-group">
+                                                        <label for="dtCustomerNamelbl">@localizer["Product Name"]<span asp-validation-for="ProductName" class="text-red-500">*</span></label>
+                                                        <input type="text" asp-for="ProductName" class="form-control mandatory" id="dtCustomerName" placeholder=@localizer["Product Name"] maxlength="200" required>
+
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4 flex-item">
+                                                    <div class="form-group">
+                                                        <label for="txtDateofAssessmentlbl">@localizer["Date Of Assessment"]</label>
+                                                        <input type="date" asp-for="DateofAssessment" class="form-control mandatory" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" value="@(DateTime.Now.ToString("yyyy-MM-dd"))" id="txtDateofAssessment" placeholder=@localizer["Date of Assessment"] required>
+                                                        <span asp-validation-for="DateofAssessment" class="text-danger"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @*<div class="row">
+                                            <div class="col-sm-4">
+                                            <div class="form-group">
+                                            <label for="txtAddresslbl">@localizer["Date of Birth"]</label>
+                                            <input type="text" asp-for="Dob" class="form-control h-38px" id="txtdob" placeholder=@localizer["Date of birth"] readonly />
+                                            <span asp-validation-for="Dob" class="text-danger"></span>
+                                            </div>
+                                            </div>
+                                            <div class="col-sm-4">
+                                            <div class="form-group">
+                                            <label>@localizer["Nationality"]</label>
+                                            <select id="ddlMainNationality" class="form-control" asp-for="MainNationality" asp-items="Model.MainNationalityLists">
+                                            <option value="">--EMPTY--</option>
+                                            </select>
+                                            <input type="text" class="form-control" asp-for="MainNationalityTxt" id="mainNationalityTxt" placeholder=@localizer["Nationality"] readonly />
+
+                                            <span asp-validation-for="MainNationalityTxt" class="text-danger"></span>
+                                            <input id="ddlMainNationality" type="hidden" asp-for="MainNationality" value="1" />
+                                            </div>
+                                            </div>
+                                            </div>*@
+                                        </div>
+                                    </div>
+                                    @*  <div class="card card-primary card-body riskBody" id="finalRiskBody">
+                                    <div class="card-header">
+                                        <h3 class="card-title">@localizer["Final Risk Score"]</h3>
+                                    </div>
+                                    <br>*@
+                                </div>
+                                <div class="col-12 p-0">
+                                    <div class="sas-card rounded-card mb-2 border-box">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-2">@localizer["Risk Assessment Rating"]</h6>
+                                        </div>
+                                        <hr />
+
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <button id="btntotalscoretop" disabled class="dt-button-info form-control br-50 low" type="button">@localizer["Low Risk"]</button>
+                                                <input type="hidden" asp-for="FinalRiskScore" id="finalRiskScoreTxt" />
+                                                <input type="hidden" asp-for="RiskScoreBeforeOverride" id="riskScoreBeforeOverrideTxt" />
+                                                <br />
+                                            </div>
+                                            @* <div class="col-12">
+                                                <div class="row">
+                                                    <div class="col-sm">
+                                                        <label>@localizer["Risk Score Before Override"]</label>
+                                                        <div class="form-group">
+                                                            <button id="btnAsPerRiskScore" disabled class="btn dt-button-info br-10 risk-button" type="button">@localizer["As Per Risk Score"]</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>*@
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sas-card rounded-card mb-2 border-box card1" id="riskBody">
+                            <div class="table-container">
+                                <table class="table" id="riskTable">
+                                    <thead>
+                                        <tr class="row m-0">
+                                            <th class="col-md-4">
+                                                @localizer["Product Risk Category"]
+                                            </th>
+
+                                            <th class="col-md-4">
+                                                @localizer["Product Risk Items"]
+                                            </th>
+                                            <th class="col-md-4">
+                                                @localizer["Rating Scale"]
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{
+                                            int a = 0;
+                                        }
+                                        @for (int i = 0; i < Model.ProdRiskTypeCategoryDTO.Count; i++)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    @Model.ProdRiskTypeCategoryDTO[i].ProdRiskTypeCategory
+                                                    <input type="hidden" asp-for="@Model.ProdRiskTypeCategoryDTO[i].Id" />
+                                                </td>
+
+
+                                                <td id="risk-item-@i">
+
+                                                    <select class="form-control grid-select" asp-items="@Model.ProdRiskTypeCategoryDTO[i].ProdRiskItem" id="ddlItem_@a" onchange="ItemChange(@a)">
+                                                        <option value="0">--@localizer["EMPTY"]--</option>
+                                                    </select>
+                                                    <input type="hidden" asp-for="@Model.ProdRiskTypeCategoryDTO[i].prodItemScore" id="RiskItem_@a" />
+                                                    <input type="hidden" asp-for="@Model.ProdRiskTypeCategoryDTO[i].prodItemTxt" id="RiskItemTxt_@a" />
+                                                    <input type="hidden" asp-for="@Model.ProdRiskTypeCategoryDTO[i].prodSelectedItemId" id="RiskItemId_@a" />
+
+                                                </td>
+                                                <td>
+                                                    @* <button id="clrScore_@a" type="button" class="btn btn-block btn-secondary riskscorebtn result-score">0</button> *@
+                                                    <button id="clrScore_@a" type="button" class="riskscorebtn bg-gray-300 ">0</button>
+                                                    <input id="clrScorehdn_@a" type="hidden" class="riskscorehdn" value="0" />
+                                                </td>
+
+
+                                            </tr>
+                                            @* <tr class="row m-0">
+                                                <td style="width:25%; padding-left: 10px;" class="d-flex align-items-center">
+                                                    @Model.ProdRiskTypeCategoryDTO[i].ProdRiskTypeCategory
+                                                    <input type="hidden" asp-for="@Model.ProdRiskTypeCategoryDTO[i].Id" />
+                                                </td>
+                                                <td class="col-md-9 row">
+                                                    <table class=" subcategory tb" id="RiskSubTable">
+                                                        <tbody>
+                                                            @*  @for (var j = 0; j < Model.ProdRiskTypeCategoryDTO[i].ProdRiskItems.Count; j++)
+                                                        {* @
+                                                            <tr>
+
+                                                                <td>
+                                                                    <div id="risk-item-@i" class="input-field">
+                                                                        <select class="form-control grid-select" asp-items="@Model.ProdRiskTypeCategoryDTO[i].ProdRiskItem" id="ddlItem_@a" onchange="ItemChange(@a)">
+                                                                            <option value="0">--@localizer["EMPTY"]--</option>
+                                                                        </select>
+                                                                        <input type="hidden" asp-for="@Model.ProdRiskTypeCategoryDTO[i].prodItemScore" id="RiskItem_@a" />
+                                                                        <input type="hidden" asp-for="@Model.ProdRiskTypeCategoryDTO[i].prodItemTxt" id="RiskItemTxt_@a" />
+                                                                        <input type="hidden" asp-for="@Model.ProdRiskTypeCategoryDTO[i].prodSelectedItemId" id="RiskItemId_@a" />
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    @* <button id="clrScore_@a" type="button" class="btn btn-block btn-secondary riskscorebtn result-score">0</button> * @
+                                                                    <button id="clrScore_@a" type="button" class="riskscorebtn bg-gray-300 ">0</button>
+                                                                    <input id="clrScorehdn_@a" type="hidden" class="riskscorehdn" value="0" />
+                                                                </td>
+                                                                 
+                                                                   
+                                                            </tr>
+
+                                                            @*}* @
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr> *@
+                                            a = a + 1;
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="card-header ">
+                                <div class="row justify-content-between flex-box">
+                                    <div class="score-group">
+                                        <h3 class="card-title"><b>@localizer["Total Selected"]</b> <button id="btntotal" class="dt-button-info result-score" type="button">0</button></h3>  <h3 class="card-title"><b>@localizer["Total Score"]</b>   <button id="btntotalscore" class="dt-button-info result-score" type="button">0</button></h3>
+                                        <input type="hidden" asp-for="ProdRiskScoreSum" id="riskScoreSumTxt" />
+                                        <input type="hidden" asp-for="ProdRiskScoreCount" id="riskScoreCountTxt" />
+                                    </div>
+                                    <div class="aml-risk-score">
+                                        <h3 class="card-title"><b>@localizer["Risk Score"]</b> </h3>
+                                        <button type="button" class="sas-button top_btn_5 result-score" id="lowTxt">0</button>
+                                        <button type="button" class="sas-button top_btn_6 result-score" id="mediumTxt">0</button>
+                                        <button class="sas-button top_btn_7 result-score" id="highTxt">0</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row justify-content-center mt-2 submission-div">
+                                <a asp-controller="product" asp-action="Create"> <button type="button" class="sas-button p-8-25  cancel_btn mr-2" onclick="$('#loader').show();">@localizer["Cancel"]</button></a>
+                                <button type="submit" class="sas-button p-8-25  submit_btn mr-2" onclick="return validateFormBeforeSubmit()">@localizer["Submit"]</button>
+
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    $(window).reload(function () {
+        $("#riskTable").datatable();
+    });
+</script>
+
+<script>
+    function validateFormBeforeSubmit() {
+        // Clear previous validations
+        $('.is-invalid').removeClass('is-invalid');
+        $('.error-text').remove();
+
+        let isValid = true;
+
+        // Validate Product Code
+        const productCode = $('#dtCustomerCode').val().trim();
+        if (!productCode) {
+            showError('dtCustomerCode', 'Product Code is required');
+            isValid = false;
+        } else if (productCode.length > 25) {
+            showError('dtCustomerCode', 'Max 25 characters allowed');
+            isValid = false;
+        }
+
+        // Validate Product Name
+        const productName = $('#dtCustomerName').val().trim();
+        if (!productName) {
+            showError('dtCustomerName', 'Product Name is required');
+            isValid = false;
+        } else if (productName.length > 200) {
+            showError('dtCustomerName', 'Max 200 characters allowed');
+            isValid = false;
+        }
+
+        // Validate Date of Assessment
+        const assessmentDate = $('#txtDateofAssessment').val();
+        if (!assessmentDate) {
+            showError('txtDateofAssessment', 'Date is required');
+            isValid = false;
+        } else {
+            const selectedDate = new Date(assessmentDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (selectedDate > today) {
+                showError('txtDateofAssessment', 'Date cannot be in the future');
+                isValid = false;
+            }
+        }
+
+        // If valid, show loader and submit
+        if (isValid) {
+            $('#loader').show();
+            fnSubmit();
+        } else {
+            // Scroll to first error
+            $('html, body').animate({
+                scrollTop: $('.is-invalid').first().offset().top - 100
+            }, 500);
+        }
+
+        return isValid;
+    }
+
+    // Helper function to show error messages
+    function showError(fieldId, message) {
+        $('#' + fieldId).addClass('is-invalid');
+        $('#' + fieldId).after(`<span class="error-text" style="color: red; font-size: 0.85rem;">${message}</span>`);
+    }
+
+    // Clear errors when user starts typing
+    $('#dtCustomerCode, #dtCustomerName, #txtDateofAssessment').on('input', function () {
+        $(this).removeClass('is-invalid');
+        $(this).next('.error-text').remove();
+    });
+
+
+    var OverRideVariables = [];
+    var b = $('#RiskSubTable tr').length;
+    for (i = 0; i <= b; i++) {
+        OverRideVariables[i] = false
+    }
+
+    function ItemChange(a, data) {
+
+        if (!$("#ddlItem_" + a + " option:selected").val()) return;
+
+        var score = $("#ddlItem_" + a + " option:selected").val()?.split("|");
+        var selectedVal = score[0];
+        var overrideScore = score[1];
+        var selectedItemId = score[2];
+
+        $('#RiskItemTxt_' + a).val($("#ddlItem_" + a + " option:selected").text());
+        $('#RiskItem_' + a).val(selectedVal);
+        $('#RiskItemId_' + a).val(selectedItemId);
+
+        const btn = $('#clrScore_' + a);
+        btn.removeClass('green-score yellow-score red-score gray-score pulse-button');
+
+        if (selectedVal == '1') {
+            console.log("Iam here" + a)
+            btn.addClass('green-score').text(selectedVal);
+            $('#clrScorehdn_' + a).val(selectedVal);
+            OverRideVariables[a] = false;
+        } else if (selectedVal == '2') {
+            btn.addClass('yellow-score').text(selectedVal);
+            $('#clrScorehdn_' + a).val(selectedVal);
+            OverRideVariables[a] = false;
+        } else if (selectedVal == '3') {
+            btn.addClass('red-score').text(selectedVal);
+            $('#clrScorehdn_' + a).val(selectedVal);
+            if (overrideScore == '3') {
+                btn.addClass('pulse-button');
+                OverRideVariables[a] = true;
+            } else {
+                OverRideVariables[a] = false;
+            }
+        } else if (selectedVal == '0') {
+            btn.addClass('gray-score').text('0');
+            $('#clrScorehdn_' + a).val('0');
+            OverRideVariables[a] = false;
+        } else {
+            OverRideVariables[a] = false;
+        }
+
+        calculateTotal();
+    }
+
+
+    function calculateTotal() {
+        var total = 0;
+        var i = 0;
+        var riskStatus = '@localizer["Low Risk"]';
+
+
+
+        $(".riskscorehdn").each(function () {
+            //alert($(this).val());
+            total = parseInt(total) + parseInt($(this).val());
+            if ($(this).val() != 0) {
+                i++;
+            }
+        });
+        $('#btntotalscore').text(total);
+        $('#btntotal').text(i);
+
+        $('#btnAsPerRiskScore').show();
+
+        var highscoreVal = (i * 3);
+        var mediumScoreVal = (i * 2.24);
+        var lowScoreVal = (i * 1.49);
+
+        $('#lowTxt').text(lowScoreVal.toFixed(2));
+        $('#mediumTxt').text(mediumScoreVal.toFixed(2));
+        $('#highTxt').text(highscoreVal.toFixed(2));
+
+        if (total <= highscoreVal) {
+            riskStatus = '@localizer["High Risk"]';
+            $('#btntotalscoretop').removeClass();
+            $('#btntotalscoretop').addClass('btn btn-danger form-control br-50 low').css('background-color', '#dc3545');;
+            $('#btnAsPerRiskScore').text('@localizer["As Per Risk Score - High"]');
+            $('#btnAsPerRiskScore').removeClass();
+            $('#btnAsPerRiskScore').addClass('btn btn-danger form-control br-50 risk-button low').css('background-color', '#dc3545');;
+        }
+        if (total <= mediumScoreVal) {
+            riskStatus = '@localizer["Medium Risk"]';
+            $('#btntotalscoretop').removeClass();
+            $('#btntotalscoretop').addClass('btn btn-warning form-control br-50 low').css('background-color', '#ffc107 ');;
+            $('#btnAsPerRiskScore').text('@localizer["As Per Risk Score - Medium"]');
+            $('#btnAsPerRiskScore').removeClass();
+            $('#btnAsPerRiskScore').addClass('btn btn-warning form-control br-50 risk-button low').css('background-color', '#ffc107 ');;
+        }
+        if (total <= lowScoreVal) {
+            riskStatus = '@localizer["Low Risk"]';
+            $('#btntotalscoretop').removeClass();
+            $('#btntotalscoretop').addClass('btn btn-info form-control br-50 low').css('background-color', '#28a745');;
+            $('#btnAsPerRiskScore').text('@localizer["As Per Risk Score - Low"]');
+            $('#btnAsPerRiskScore').removeClass();
+            $('#btnAsPerRiskScore').addClass('btn btn-info form-control br-50 risk-button low').css('background-color', '#28a745');;
+        }
+
+
+
+        //Set Risk score witout override
+        $('#riskScoreBeforeOverrideTxt').val(riskStatus);
+
+        var OverRides = "false";
+
+        for (x = 0; x <= b; x++) {
+
+            OverRides = OverRides + "||" + OverRideVariables[x];
+            if (OverRides.includes("true")) {
+                riskStatus = '@localizer["High Risk"]';
+                $('#btntotalscoretop').removeClass();
+                $('#btntotalscoretop').addClass('btn btn-danger form-control br-50');
+            }
+        }
+        //Set final risk score
+        $('#finalRiskScoreTxt').val(riskStatus);
+
+        $('#btntotalscoretop').text(riskStatus);
+
+        $('#riskScoreSumTxt').val(total);
+        $('#riskScoreCountTxt').val(i);
+
+
+
+
+    }
+    function fnSubmit() {
+        $(".se-pre-con").show();
+    }
+
+</script>

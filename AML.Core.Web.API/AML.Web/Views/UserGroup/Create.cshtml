@@ -1,0 +1,195 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "User Group";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model AML.ViewModel.ViewModels.UserGroup.UserGroupModel
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+</style>
+
+<div class="max-w-screen h-full items-center container">
+    @*<div class="sas-breadcrumbs aml-breadcrumbs mt-2">
+            <ul class="mb-0 pl-0 d-flex">
+                <li><a href="#">Home</a></li>/
+                <li><a href="#">User Management</a></li>/
+                <li><a href="#">User Group</a></li>
+            </ul>
+        </div>
+        <div class="page-heading">
+            <div class="sas-card rounded-card br-10 mb-2 bg-blue">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><b>Add New</b></h4>
+                    <div class="menu-icon">
+                        <i class="lni lni-microsoft"></i>
+                    </div>
+                </div>
+            </div>
+        </div>*@
+    @* <nav class="border-b">
+        <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+            <div>
+                <h2 class="text-2xl font-bold">Add New</h2>
+            </div>
+            <div class="md:block hidden">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-white">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Add New
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+    <div class="h-screen bg-gray-50 items-center container ">
+        <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4 container mx-auto">
+            <div class="w-full bg-white rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+
+                <!-- /.card-header -->
+                <!-- form start -->
+                <form role="form" asp-controller="UserGroup" asp-action="Create" class="form-horizontal" enctype="multipart/form-data" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="CreatedBy" />
+                    <input type="hidden" asp-for="IsActive" />
+                    <input type="hidden" asp-for="ClientId" />
+                    <div class="form-contents">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+
+                            <div class="form-group">
+                                <label for="txtCode" class="block text-sm font-medium text-gray-700 mb-1">Code <span class="text-red-500">*</span></label>
+                                <input type="text" asp-for="Code" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" id="txtCode" placeholder="Enter code">
+                                <span asp-validation-for="Code" class="text-red-500 text-sm"></span>
+                            </div>
+
+
+                            <div class="form-group">
+                                <label for="txtName" class="block text-sm font-medium text-gray-700 mb-1">Name <span class="text-red-500">*</span></label>
+                                <input type="text" asp-for="Name" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" id="txtName" placeholder="Name">
+                                <span asp-validation-for="Name" class="text-red-500 text-sm"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="txtDescription" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <input type="text" asp-for="Description" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" id="txtDescription" placeholder="Description">
+                            </div>
+                        </div>
+
+                        <!-- /.card-body -->
+                        <div id="loadingRiskCategory"
+                             class="fixed inset-0 bg-white bg-opacity-75 items-center justify-center z-50" style="display: none;">
+                            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                        </div>
+                        <div class="flex flex-col md:flex-row justify-center mt-10 gap-4">
+                            <button type="button" class="sas-button px-6 py-2 bg-[#2563EB] text-white rounded-md hover:bg-blue-700" onclick="fnSubmit()">Submit</button>
+                            <button type="button" class="px-6 py-2 border border-gray-300 rounded-md text-gray-700  hover:bg-gray-100 text-center transition duration-200" onclick="handleCancel()">Cancel</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+            function fnSubmit() {
+                document.getElementById("loadingRiskCategory").style.display = "flex";
+
+                // Optionally disable button
+                const btn = document.querySelector('button[onclick="fnSubmit()"]');
+                btn.disabled = true;
+                btn.classList.add("opacity-50", "cursor-not-allowed");
+
+                // Submit form manually
+                document.querySelector('form').submit();
+            }
+            function handleCancel() {
+            // Show loader
+            document.getElementById("loadingRiskCategory").style.display = "flex";
+
+            // Optional: disable button
+            const btns = document.querySelectorAll("button");
+            btns.forEach(btn => btn.disabled = true);
+
+            // Wait briefly to show loader, then navigate
+            setTimeout(function () {
+                location.href = '/AdminManagement/Details/@Model.ClientId';
+            }, 300); // Delay 300ms just to show animation
+        }
+    </script>
+</div>
+

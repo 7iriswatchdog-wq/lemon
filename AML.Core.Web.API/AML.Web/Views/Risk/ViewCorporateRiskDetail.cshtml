@@ -1,0 +1,258 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+
+@using Newtonsoft.Json;
+
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@model AML.ViewModel.ViewModels.Risk.RiskCorpCustomerModel
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
+
+<style>
+    .pulse-button {
+        animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+    }
+
+    @@keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+        }
+    }
+</style>
+<section class=" h-full content">
+            @* <nav class="border-b">
+            <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+                <div>
+                    <h2 class="text-2xl font-bold">Corporate Risk</h2>
+                </div>
+                <div class="md:block hidden">
+                    <img src="@logo" alt="Client Logo" width="50px" />
+                </div>
+            </div>
+        </nav>
+        <br />*@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-white">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Corporate Risk
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+    <div class="h-full bg-gray-50 items-center ">
+        <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4 mx-auto">
+            <div class="flex flex-col md:flex-row md:justify-end gap-4  mb-4">
+                <a asp-controller="Risk" asp-action="GetRiskReport" class="px-4 py-2 bg-blue-600 text-white text-center rounded hover:bg-blue-700">
+                    Back
+                </a>
+                <button id="printform" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    Print
+                </button>
+            </div>
+
+            <!-- Main Container -->
+            <div id="printSection" class="rounded-card w-full bg-white rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+                <!-- Section: Risk Assessment Model -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Customer Code / Unique ID</label>
+                        <input asp-for="UniqueID" readonly class="w-full border rounded px-3 py-2 bg-gray-50" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Legal Name of the Entity</label>
+                        <input asp-for="LegalNameOfEntity" readonly class="w-full border rounded px-3 py-2 bg-gray-50" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Date Of Assessment</label>
+                        <input asp-for="DateofAssessment" type="date" readonly class="w-full border rounded px-3 py-2 bg-gray-50" />
+                    </div>
+                </div>
+
+                <!-- Remarks -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-1">Remarks</label>
+                    <textarea asp-for="Remarks" readonly class="w-full border rounded px-3 py-2 bg-gray-50 resize-none"></textarea>
+                </div>
+
+                <!-- Score Summary -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Risk Assessment Rating</label>
+                        <div class="bg-green-500 text-white text-center rounded px-3 py-2">Low</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Risk Score Before Override</label>
+                        <div class="bg-green-500 text-white text-center rounded px-3 py-2">As Per Risk Score</div>
+                    </div>
+                </div>
+
+                <!-- Risk Table -->
+                <div class="w-full bg-white rounded-xl overflow-x-auto border border-blue-100">
+                    <div class="min-w-[640px]">
+                        <!-- Table Header -->
+                        <div class="grid grid-cols-4 gap-4 bg-[#E9EFFD] p-4 rounded-lg mb-4">
+                            <div class="font-medium">@localizer["Risk Category"]</div>
+                            <div class="font-medium">@localizer["Risk Type"]</div>
+                            <div class="font-medium">@localizer["Risk Items"]</div>
+                            <div class="font-medium justify-end md:ml-24">@localizer["Rating Scale"]</div>
+                        </div>
+
+                        <!-- Table Rows -->
+                        <div class="space-y-4">
+                            @{
+                                int a = 0;
+                            }
+                            @foreach (var i in Model.RiskTypeCategoryDTO)
+                            {
+                                var risk = i;
+                                <div class="gap-4 border-b">
+                                    @if (risk.RiskTypes.Count == 0)
+                                    {
+                                        <div class="grid grid-cols-4 gap-4 items-center mb-4">
+                                            <div class="items-center justify-center md:ml-12 font-extralight">@risk.RiskCategory</div>
+                                            <div>-</div>
+                                            <div>
+                                                <select class="w-full p-2 border border-[#E2E8F0] rounded-lg bg-white font-extralight" id="ddlItem_@a" onchange="ItemChange(@a)">
+                                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                                </select>
+                                            </div>
+                                            <!-- Rating Score -->
+                                            <div class="flex justify-center">
+                                                <button id="clrScore_@a" type="button" class="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center md:mr-8 mr-8 font-semibold">0</button>
+                                                <input id="clrScorehdn_@a" type="hidden" class="riskscorehdn" value="0" />
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+
+                                        @for (var j = 0; j < risk.RiskTypes.Count; j++)
+                                        {
+                                            var type = risk.RiskTypes[j];
+                                            <div class="grid grid-cols-4 gap-4 items-center mb-4">
+                                                <!-- Risk Category (only once per group) -->
+                                                @if (j == 0)
+                                                {
+                                                    <div class="items-center justify-center md:ml-12 font-extralight">@risk.RiskCategory</div>
+                                                }
+                                                else
+                                                {
+
+                                                    <div></div>
+                                                }
+
+
+
+
+                                                <!-- Risk Type -->
+                                                <div class="font-extralight" title="@type.tooltip">@type.RiskType</div>
+
+                                                <!-- Select Dropdown -->
+                                                <div>
+                                                    <input type="text" asp-for="@type.ItemTxt" id="RiskItemTxt_@a" class="w-full p-2 border border-[#E2E8F0] rounded-lg bg-white font-extralight" readonly />
+                                                </div>
+
+                                                <!-- Rating Score -->
+                                                <div class="flex justify-center">
+                                                    @if (type.ItemScore == 0)
+                                                    {
+                                                        <button id="clrScore_@a" type="submit" class="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center md:mr-8 mr-8 font-semibold">@type.ItemScore</button>
+                                                    }
+                                                    else if (type.ItemScore == 1)
+                                                    {
+                                                        <button id="clrScore_@a" type="submit" class="bg-green-500 w-8 h-8 rounded-full flex items-center justify-center md:mr-8 mr-8 font-  semibold">@type.ItemScore</button>
+                                                    }
+                                                    else if (type.ItemScore == 2)
+                                                    {
+                                                        <button id="clrScore_@a" type="submit" class="bg-yellow-400 w-8 h-8 rounded-full flex items-center justify-center md:mr-8 mr-8 font-  semibold">@type.ItemScore</button>
+                                                    }
+                                                    else if (type.ItemScore == 3)
+                                                    {
+                                                        if (type.OverrideScore == 3)
+                                                        {
+                                                            <button id="clrScore_@a" type="submit" class="bg-red-400 w-8 h-8 rounded-full flex items-center justify-center md:mr-8 mr-8 font-  semibold">@type.ItemScore</button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button id="clrScore_@a" type="submit" class="bg-red-400 w-8 h-8 rounded-full flex items-center justify-center md:mr-8 mr-8 font-  semibold">@type.ItemScore</button>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <button id="clrScore_@a" type="submit" class="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center md:mr-8 mr-8 font-  semibold">@type.ItemScore</button>
+                                                    }
+                                                    @*<button id="clrScore_@a" type="button" class="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center md:mr-8 mr-8 font-  semibold">0</button>
+                                              <input id="clrScorehdn_@a" type="hidden" class="riskscorehdn" value="0" />*@
+                                                </div>
+                                            </div>
+                                            a++;
+
+                                        }
+
+
+                                    }
+
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Totals -->
+                @* <div class="flex justify-between mt-4">
+                    <div>
+                        <span class="font-medium">Total Selected:</span>
+                        <span class="font-semibold">@Model.RiskScoreCount</span>
+                    </div>
+                    <div>
+                        <span class="font-medium">Total Score:</span>
+                        <span class="font-semibold">@Model.RiskScoreSum</span>
+                    </div>
+                </div> *@
+                <div class="flex justify-between mt-4">
+                    <div class="text-md font-medium">
+                        Total Selected: <span class="inline-block bg-blue-600 text-white px-3 py-1 rounded-full ">@Model.RiskScoreCount</span>
+                    </div>
+                    <div class="text-md font-medium">
+                        Total Score: <span class="inline-block bg-blue-600 text-white px-3 py-1 rounded-full">@Model.RiskScoreSum</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<script>
+    $('#printform').on("click", function () {
+        $('#printSection').printThis({
+            importCSS: true,
+            importStyle: true,
+            loadCSS: ["/css/print.css"],
+            header: `<div style="background: linear-gradient(180deg, #33394e 0%, #2F3961 100%); width:100%; padding:15px 20px;">
+                        <h1 style="color:white; font-size:20px;">@companyName
+                            <img src="@Clientlogo" style="float:right; height:50px;" />
+                        </h1>
+                    </div>`,
+        });
+    });
+</script>

@@ -1,0 +1,332 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@model AML.ViewModel.ViewModels.User.UserModel
+@{
+    var isEdit = Model.Id > 0;
+    ViewData["Title"] = isEdit ? "Edit User" : "Add New User";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body { font-family: 'Inter', sans-serif; }
+    .dt-loader { position: relative; width: 80px; height: 20px; }
+    .dt-loader div { position: absolute; top: 8px; width: 13px; height: 13px; border-radius: 50%; background: #2563eb; animation-timing-function: cubic-bezier(0,1,1,0); }
+    .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+    .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+    .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+    .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+    @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+    @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+    @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+
+    .input-field {
+        height: 42px;
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 0 12px;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        background: #f8fafc;
+    }
+    .input-field:focus {
+        background: #fff;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 131, 246, 0.1);
+        outline: none;
+    }
+    .label-text {
+        color: #64748b;
+        font-weight: 600;
+        font-size: 0.75rem;
+        margin-bottom: 6px;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+</style>
+
+<div id="loader" class="fixed inset-0 bg-white bg-opacity-75 items-center justify-center z-50 hidden">
+    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+</div>
+
+<div class="bg-slate-50 min-h-screen text-slate-900">
+    <div class="p-8 space-y-8 max-w-[1200px] mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <div class="flex items-center gap-2 text-slate-500 text-xs mb-2">
+                    <a href="/AdminManagement/Index" class="hover:text-blue-600">Admin Management</a>
+                    <i data-lucide="chevron-right" class="h-3 w-3"></i>
+                    <a href="/AdminManagement/Details/@Model.ClientId" class="hover:text-blue-600">Client Details</a>
+                    <i data-lucide="chevron-right" class="h-3 w-3"></i>
+                    <span class="text-slate-900 font-medium">@(isEdit ? "Edit User" : "Add User")</span>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">@(isEdit ? "Edit User" : "New User")</h1>
+                <p class="text-slate-500 text-sm mt-1">Configure user profile, security settings, and permissions.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="handleCancel()" class="bg-white border border-slate-200 shadow-sm hover:bg-slate-50 text-slate-700 font-bold h-10 px-5 rounded-md flex items-center gap-2 transition-colors text-sm">
+                    Cancel
+                </button>
+                <button type="button" onclick="fnSubmit()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-5 rounded-md flex items-center gap-2 transition-colors text-sm shadow-sm">
+                    <i data-lucide="save" class="h-4 w-4"></i>
+                    @(isEdit ? "Apply Changes" : "Create User")
+                </button>
+            </div>
+        </div>
+
+        <form id="userForm" asp-controller="User" asp-action="Add" method="post" enctype="multipart/form-data" class="space-y-6">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="CreatedBy" />
+            <input type="hidden" id="hdnContact" value="@Model.UserContactDetails" />
+            <input type="hidden" id="hdnIdentity" value="@Model.UserIdentityDetails" />
+            <input type="hidden" id="hdnVisa" value="@Model.UserVisaDetails" />
+
+            <!-- Form Card -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-8 space-y-12">
+                    
+                    <!-- Section: Basic Info -->
+                    <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="col-span-1">
+                            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2">Basic Info</h3>
+                            <p class="text-slate-500 text-xs leading-relaxed">System identification and role assignment.</p>
+                        </div>
+                        <div class="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="label-text">Client Context <span class="text-rose-500">*</span></label>
+                                <select asp-for="ClientId" asp-items="Model.Clients" class="input-field">
+                                    <option value="">-- Select Client --</option>
+                                </select>
+                                <span asp-validation-for="ClientId" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
+                            </div>
+                            <div>
+                                <label class="label-text">User Group <span class="text-rose-500">*</span></label>
+                                <select asp-for="UserGroupId" asp-items="Model.UserGroup" class="input-field">
+                                    <option value="">-- Select Group --</option>
+                                </select>
+                                <span asp-validation-for="UserGroupId" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
+                            </div>
+                            @if (isEdit)
+                            {
+                                <div class="flex items-center gap-3 p-4 rounded-lg border border-slate-100 bg-slate-50/50">
+                                    <div class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" asp-for="IsBlocked" class="sr-only peer" id="isBlockedToggle" value="1" @(Model.IsBlocked == 1 ? "checked" : "")>
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        <span class="ml-3 text-sm font-medium text-slate-700">Blocked Status</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 leading-tight">Restrict user access to the system immediately.</p>
+                                </div>
+                            }
+                            <div>
+                                <label class="label-text">Employee Code <span class="text-rose-500">*</span></label>
+                                <input type="text" asp-for="EmpCode" class="input-field" placeholder="EMP001">
+                                <span asp-validation-for="EmpCode" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
+                            </div>
+                            <div class="md:col-span-2 grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="label-text">First Name <span class="text-rose-500">*</span></label>
+                                    <input type="text" asp-for="FName" class="input-field" placeholder="John">
+                                    <span asp-validation-for="FName" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
+                                </div>
+                                <div>
+                                    <label class="label-text">Last Name <span class="text-rose-500">*</span></label>
+                                    <input type="text" asp-for="LName" class="input-field" placeholder="Doe">
+                                    <span asp-validation-for="LName" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="border-t border-slate-100"></div>
+
+                    <!-- Section: Security -->
+                    <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="col-span-1">
+                            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2">Security</h3>
+                            <p class="text-slate-500 text-xs leading-relaxed">Authentication and account isolation.</p>
+                        </div>
+                        <div class="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="label-text">Email Address <span class="text-rose-500">*</span></label>
+                                <input type="email" asp-for="UserDetail.Email" class="input-field" placeholder="john.doe@example.com">
+                                <span asp-validation-for="UserDetail.Email" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
+                            </div>
+                            @{
+                                var userNameClass = isEdit ? "input-field bg-slate-100" : "input-field";
+                            }
+                            <div>
+                                <label class="label-text">Username <span class="text-rose-500">*</span></label>
+                                @if (isEdit)
+                                {
+                                    <input type="text" asp-for="UserName" class="@userNameClass" readonly placeholder="jdoe">
+                                }
+                                else
+                                {
+                                    <input type="text" asp-for="UserName" class="@userNameClass" placeholder="jdoe">
+                                }
+                                <span asp-validation-for="UserName" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
+                            </div>
+                            @if (!isEdit)
+                            {
+                                <div>
+                                    <label class="label-text">Password <span class="text-rose-500">*</span></label>
+                                    <input type="password" asp-for="Password" class="input-field" placeholder="••••••••">
+                                    <span asp-validation-for="Password" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
+                                </div>
+                                <div>
+                                    <label class="label-text">Confirm Password <span class="text-rose-500">*</span></label>
+                                    <input type="password" asp-for="RePassword" class="input-field" placeholder="••••••••">
+                                    <span asp-validation-for="RePassword" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
+                                </div>
+                            }
+                        </div>
+                    </section>
+
+                    <div class="border-t border-slate-100"></div>
+
+                    <!-- Section: Organization -->
+                    <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="col-span-1">
+                            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2">Hierarchy</h3>
+                            <p class="text-slate-500 text-xs leading-relaxed">Departmental structure and location.</p>
+                        </div>
+                        <div class="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="label-text">Designation</label>
+                                <select asp-for="DesignationId" asp-items="Model.Designations" class="input-field">
+                                    <option value="">-- Select Position --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label-text">Department</label>
+                                <select asp-for="DepartmentId" asp-items="Model.Departments" class="input-field">
+                                    <option value="">-- Select Dept --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label-text">Default Branch</label>
+                                <select asp-for="BranchId" asp-items="Model.Branches" class="input-field">
+                                    <option value="">-- Select Branch --</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="label-text">Remarks</label>
+                                <textarea asp-for="Remarks" rows="3" class="w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 placeholder-slate-400 resize-none min-h-[80px]" placeholder="Add any notes here..."></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Dynamic Sections -->
+                    <div id="divUserContact" class="hidden">
+                        <div class="border-t border-slate-100 my-12"></div>
+                        <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="col-span-1">
+                                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2">Contact</h3>
+                                <p class="text-slate-500 text-xs leading-relaxed">Personal and location information.</p>
+                            </div>
+                            <div class="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="label-text">DOB / Join Date</label>
+                                    <input type="date" asp-for="UserDetail.DateOfJoin" class="input-field">
+                                </div>
+                                <div>
+                                    <label class="label-text">Nationality</label>
+                                    <select asp-for="CountryId" asp-items="Model.Countries" class="input-field">
+                                        <option value="0">-- Select Country --</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="label-text">City</label>
+                                    <input type="text" asp-for="UserDetail.City" class="input-field">
+                                </div>
+                                <div>
+                                    <label class="label-text">Phone</label>
+                                    <input type="text" asp-for="UserDetail.Phone" class="input-field">
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div id="divUserIdentity" class="hidden">
+                        <div class="border-t border-slate-100 my-12"></div>
+                        <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="col-span-1">
+                                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2">Identity</h3>
+                            </div>
+                            <div class="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="label-text">ID Type</label>
+                                    <select asp-for="UserDetail.IdentityType" asp-items="Model.IdentityTypes" class="input-field"></select>
+                                </div>
+                                <div>
+                                    <label class="label-text">ID Number</label>
+                                    <input type="text" asp-for="UserDetail.IdentificationNumber" class="input-field">
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div id="divUserVisa" class="hidden">
+                        <div class="border-t border-slate-100 my-12"></div>
+                        <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="col-span-1">
+                                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-2">Visa</h3>
+                            </div>
+                            <div class="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="label-text">Visa Type</label>
+                                    <select asp-for="UserDetail.VisaType" asp-items="Model.VisaTypes" class="input-field"></select>
+                                </div>
+                                <div>
+                                    <label class="label-text">Visa Number</label>
+                                    <input type="text" asp-for="UserDetail.VisaNumber" class="input-field">
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        lucide.createIcons();
+
+        // Logic to show dynamic sections
+        if ($("#hdnContact").val() === "Yes") $("#divUserContact").removeClass("hidden");
+        if ($("#hdnIdentity").val() === "Yes") $("#divUserIdentity").removeClass("hidden");
+        if ($("#hdnVisa").val() === "Yes") $("#divUserVisa").removeClass("hidden");
+    });
+
+    function fnSubmit() {
+        if ($('#ClientId').val() == "" || $('#ClientId').val() == "0") {
+            alert("Please select a client context.");
+            return;
+        }
+
+        $('#loader').removeClass('hidden').addClass('flex');
+        const btn = document.querySelector('button[onclick="fnSubmit()"]');
+        btn.disabled = true;
+        btn.classList.add("opacity-50", "cursor-not-allowed");
+
+        $('#userForm').submit();
+    }
+
+    function handleCancel() {
+        $('#loader').removeClass('hidden').addClass('flex');
+        window.location.href = '/AdminManagement/Details/@Model.ClientId';
+    }
+</script>
+

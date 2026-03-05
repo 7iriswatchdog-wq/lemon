@@ -1,0 +1,270 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    ViewData["Title"] = "AML Transaction Monitoring Rules";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+@model AML.ViewModel.ViewModels.TransactionMonitor.TMSRIskConfigurationMasterModel
+
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<script src="~/plugins/datatables/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.4/css/jquery.dataTables.css">
+<style>
+    thead {
+        text-align: center;
+    }
+
+    td {
+        text-align: center;
+    }
+
+    .no-js #loader {
+        display: none;
+    }
+
+    .js #loader {
+        display: block;
+        position: absolute;
+        left: 100px;
+        top: 0;
+    }
+
+    .se-pre-con {
+        position: fixed;
+        left: 0px;
+        top: 0px;
+        width: 100%;
+        height: 100%;
+        z-index: 9999;
+        background: url(/img/loader1.gif) center no-repeat #fff;
+        opacity: 0.8
+    }
+
+    table.dataTable.nowrap th, table.dataTable.nowrap td {
+        background: none;
+    }
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 15px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 12px;
+  width: 10px;
+  left: 3px;
+  bottom: 2px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 25px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}</style>
+<div class="se-pre-con"></div>
+
+<div class="card card-primary">
+    <div class="card-header">
+        @localizer["AML Transaction Monitoring Rule Configuration"]
+    </div>
+     
+   
+                
+    <div class="card-body">
+        <div class = "form-group">
+           
+          <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input" id="customSwitches1" checked="">
+                <label class="custom-control-label" for="customSwitches1">Turn on rule</label>
+            </div>
+
+ 
+         <div class="row">
+            <div class="col col-4">
+             
+              @*<span class="forms-label">Name <span class="req">*</span></span>*@
+              <label for="DS">@localizer["Name"]<span class="req">*</span></label>
+                
+              <input class="form-control" id="name" name="name" type="text" value="" />
+                               
+            </div>
+
+         </div>
+
+
+    </div>
+     <div>
+        <h3> Rule Parameters  <i> (Add your rule parameters)</i></h3>   
+     </div>
+
+       <div class="form-group row">
+            <label class="col-sm-2 ">Rule Parameter Type <i class="fa fa-info-circle js-tooltip" data-tip="We use four different types of logic to inspect the data points, we call these rule parameter types." aria-hidden="true"></i><span class="req">*</span></label>
+            <div class="col-sm-3">
+
+                 <select name="sentence-type" id ="sentencetype" onchange= "ChangeDIVVisibility()">
+                  <option value="">Select a parameter type</option>
+                  <option value="datamatch">Data match</option>
+                  <option value="compare">Compare</option>
+                  <option value="velocity">Velocity</option>
+                </select>
+       </div>
+       </div>
+
+       <div id="type-datamatch" style="display:none">
+           <div class="form-group row">
+                <label class="col-sm-2 ">Data field <i class="fa fa-info-circle js-tooltip" data-tip="" aria-hidden="true"></i><span class="req">*</span></label>
+                <div class="col-sm-3">
+
+                     <select name="Keys">
+                      <option value="">Select the key</option>
+                      <option value="RemType">Remitter Type</option>
+                      <option value="RemNation">Remitter Nation</option>
+                      <option value="TxnAmt">Amount</option>
+                    </select>
+                </div>
+            </div>
+       </div>
+       <div id="compare-operation" style="display:none">
+           <div class="form-group row">
+                <label class="col-sm-2 "> Operator <i class="fa fa-info-circle js-tooltip" data-tip="" aria-hidden="true"></i><span class="req">*</span></label>
+                <div class="col-sm-3">
+
+                    <select name="operation" id = "operation">
+                    @*<option value='='>&equals; (is equal to)</option>
+                    <option value='!='>&ne; (is not equal to)</option>
+                    <option value='>'>&gt; (is greater than)</option>
+                    <option value='>='>&ge; (is greater or equal to)</option>
+                    <option value='<'>&lt; (is less than)</option>
+                    <option value='<='>&le; (is less or equal to)</option>
+                    <option value='RANGE' style="display:none;">≤ x ≤ (is in range)</option>
+                    <option value='NOT_IN_RANGE' style="display:none;">≰ x ≰ (is not in range)</option>
+                    <option value='EXISTS'>&#8707; (exists)</option>
+                    <option value='NOT EXISTS'>&#8708; (not exists)</option>
+                    <option value="ILIKE">&supe; (contains)</option>
+                    <option value="NOT ILIKE">&#8837; (does not contain)</option>
+                    <option value="IN">&#8712; (is either)</option>
+                    <option value="NOT IN">&notin; (is neither)</option>
+                    <option value="LISTED ON">is listed on</option> *@                 
+                </select>
+                </div>
+            </div>
+       </div>
+
+         <div class="form-group row">
+            <label for="ParamType" class="col-sm-2 ">Aggregate <i class="fa fa-info-circle js-tooltip" data-tip="We use four different types of logic to inspect the data points, we call these rule parameter types." aria-hidden="true"></i><span class="req">*</span></label>
+            <div class="col-sm-3">
+
+                 <select name="sentence-type" >
+                  <option value="">Select a parameter type</option>
+                  <option value="datamatch">Data match</option>
+                  <option value="compare">Compare</option>
+                  <option value="velocity">Velocity</option>
+                </select>
+            </div>
+          </div>
+
+      
+</div>
+
+</div>
+        
+
+<script type="text/javascript">
+
+$('#sentencetype').change(function () {
+  
+        if ($('#sentencetype :selected').val() == "datamatch") {
+           
+            var x = document.getElementById('type-datamatch');
+            //$('#ddlBusinessTypehdn').val('');
+            x.style.display = "";
+        }
+        else {
+            var x = document.getElementById('type-datamatch');
+            x.style.display = "none";
+
+            //$('#ddlBusinessTypehdn').val($('#ddlBusinessType :selected').text());
+        }
+        
+        if ($('#sentencetype :selected').val() == "datamatch") {
+           
+            var x = document.getElementById('compare-operation');
+            x.style.display = "";
+            var y = document.getElementById('operation');
+
+            var text1 = "";
+            var text2 = "";
+            var result = "";
+
+            y.options[0] = new Option ("Select the Operator", "Select" );
+            
+            text1 = decodeURIComponent('%3D');
+            text2 =  " (is equal to)";
+            result = text1.concat(" ", text2);
+
+            y.options[1] = new Option (result, "=" );
+             //y.options[0] = new Option (" (is equal to)", "=" );
+
+            text1 = decodeURIComponent('!%3D');
+            text2 =  " (is not equal to)";
+            result = text1.concat(" ", text2);
+
+            y.options[2] = new Option (result, "=" );
+
+
+        }
+        else {
+            var x = document.getElementById('compare-operation');
+            x.style.display = "none";
+
+            //$('#ddlBusinessTypehdn').val($('#ddlBusinessType :selected').text());
+        }
+ });
+
+</script>
+
+
+   
+  

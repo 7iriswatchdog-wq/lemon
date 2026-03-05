@@ -1,0 +1,553 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Sanction Database Upload Logs";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    select {
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.41 0L6 4.59L10.59 0L12 1.42L6 7.42L0 1.42L1.41 0Z' fill='black'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position-x: calc(100% - 20px) !important;
+        background-position-y: 50% !important;
+        background-size: 12px 8px !important;
+        padding-right: 2rem;
+    }
+
+    heading {
+        font-size: 1.25rem;
+    }
+
+    .page {
+        <<<<<<< HEAD background-color: whitesmoke;
+                ======= >>>>>>> 7cb355605e0aa816004a7f1ba5f6de1524be9577 width: 100 %;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .head-section {
+        display: flex;
+        justify-content: space-between; /* Better than flex-start + auto margin */
+        align-items: center;
+        width: 100%;
+        height: 72px;
+        overflow-x: hidden;
+        padding: 0 16px; /* Add horizontal padding if needed */
+        box-sizing: border-box;
+        background-color: white !important;
+        border: 1px solid #dee2e6;
+    }
+
+    .card1 {
+        max-width: 100%; /* Ensures it never overflows parent */
+        border-radius: 8px;
+        overflow: hidden; /* Contains all child elements */
+        background-color: white !important;
+        margin: 30px 30px;
+        padding: 20px;
+        box-shadow: 0 0 #0000, /* fallback ring-offset-shadow */
+        0 0 #0000, /* fallback ring-shadow */
+        0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
+
+    .flex-box {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        width: 90%;
+        margin: 10px;
+    }
+
+    th.sort-asc i.fa-sort {
+        color: #000 !important;
+    }
+
+    th.sort-desc i.fa-sort {
+        color: #000 !important;
+    }
+
+    th.sort-asc i.fa-sort:before {
+        content: "\f0de"; /* arrow up */
+    }
+
+    th.sort-desc i.fa-sort:before {
+        content: "\f0dd"; /* arrow down */
+    }
+
+
+    input {
+        border: 1px solid #dee2e6 !important;
+        font-weight: lighter;
+        padding: 8px;
+        border-radius: 8px !important;
+    }
+
+        input:focus {
+            border: 1px solid rgb(37,99,235) !important;
+        }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    thead {
+        background-color: rgb(233,239,253);
+        width: 100%;
+    }
+
+    th {
+        padding: 15px 0px;
+        font-weight: 500;
+        text-align: center;
+    }
+
+    tr {
+        text-align: center;
+    }
+
+    thead th:first-child {
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+    }
+
+    thead th:last-child {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        align-items: center;
+    }
+
+        .pagination-container select {
+            width: 100px;
+        }
+
+    .loader-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .loader {
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+    }
+
+    th, td {
+        width: calc(100% / 4);
+        word-wrap: break-word;
+        text-align: center;
+    }
+
+    tr {
+        border: none !important;
+    }
+
+    td {
+        padding: 15px;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .flex-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .flex-box1 {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search {
+            margin: 10px 0px;
+        }
+
+        .page {
+            width: 80vw;
+        }
+
+        .items-center select {
+            width: 115px;
+        }
+    }
+
+    tr {
+        border: none !important;
+    }
+
+    td {
+        padding: 15px;
+    }
+
+    td, th {
+        border: none !important;
+    }
+
+</style>
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+</style>
+<div class="page bg-gray-50">
+    <div class="custom-container aml-sanction-database-upload-logs">
+        @* <div class="page-heading">
+        <div class="sas-card rounded-card br-20 mb-2 bg-blue head-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 heading"><b>Sanction Database Upload Logs</b></h4>
+                <div class="menu-icon">
+                    <i class="lni lni-microsoft"></i>
+                </div>
+            </div>
+            <div class="md:block">
+                Client Logo
+            </div>
+        </div>
+    </div> *@
+        <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-white">
+            <div class="flex items-center justify-between w-full">
+                <!-- Title -->
+                <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                    Sanction Database Upload Logs
+                </h2>
+
+                <!-- Right-side content -->
+                <div class="text-sm md:text-base text-right">
+                    @* <img src="@Clientlogo" alt="Client Logo" width="50px" /> *@
+                    <img src="@Clientlogo" alt="Client Logo" width="50px" />
+                </div>
+            </div>
+        </nav>
+        <div class="sas-card rounded-card br-20 mb-2 bg-blue card1 relative">
+            <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+                <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+            </div>
+            <div class="flex-box">
+                <div class="d-flex justify-content-between align-items-center flex-item">
+                    <h6 class="mb-0"><b>Sanction Database Upload Logs Filter</b></h6>
+                </div>
+                <div class="flex-item">
+                    <input type="text" placeholder="Search anything..." class="search" />
+                </div>
+            </div>
+            <div style="width: 100%; padding-left: -10px;">
+                <div class="table-responsive">
+                    <table id="filterTable" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
+
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)">Id <i class="fa fa-sort"></i></th>
+                                <th onclick="sortTable(1)">Source <i class="fa fa-sort"></i></th>
+                                <th onclick="sortTable(2)">Uploaded On <i class="fa fa-sort"></i></th>
+                                <th onclick="sortTable(3)">Total Updated Records <i class="fa fa-sort"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white items-center justify-center">
+                        </tbody>
+                    </table>
+                </div>
+                @* <div class="pagination-container d-flex justify-content-between mt-4 flex-wrap gap-2">
+                    <div class="rows-per-page mr-4 mb-2">
+                        <label for="rowsPerPage" class="mr-2 text-sm">Show rows:</label>
+                        <select id="rowsPerPage" class="rounded border px-2 py-1 text-sm">
+                            <option value="5">5 items</option>
+                            <option value="10" selected>10 items</option>
+                            <option value="25">25 items</option>
+                            <option value="50">50 items</option>
+                        </select>
+                    </div>
+                    <div class="pagination-buttons flex flex-wrap gap-2 mb-2"></div>
+                </div> *@
+                <div class="pagination-container mt-4 flex flex-col sm:flex-row sm:justify-between gap-2">
+
+                    <!-- Rows per page -->
+                    <div class="rows-per-page mb-2 sm:mb-0">
+                        <label for="rowsPerPage" class="mr-2 text-sm">Show rows:</label>
+                        <select id="rowsPerPage" class="rounded border px-2 py-1 text-sm">
+                            <option value="5">5 items</option>
+                            <option value="10" selected>10 items</option>
+                            <option value="25">25 items</option>
+                            <option value="50">50 items</option>
+                        </select>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination-buttons w-full flex flex-col sm:flex-row justify-center gap-2"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+        let currentSortColumn = 0; // Default sort by Id
+    let currentSortDirection = 'asc';
+        let pageSize = parseInt($('#rowsPerPage').val()) || 10;
+            let currentPage = 1;
+            let totalPages = 1;
+            let draw = 1;
+            let allData;
+
+
+            function fetchData(searchValue = '', page = 1) {
+                $('#loader').show();
+                pageSize = parseInt($('#rowsPerPage').val()) || 10;
+                const start = (page - 1) * pageSize;
+
+                $.ajax({
+                    url: '/Report/SanctionDBUploadListing',
+                    type: 'POST',
+                    headers: {
+                        'RequestVerificationToken': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: {
+                        draw: draw++,
+                        start: start,
+                        length: pageSize,  // Changed from 1e9 to use actual pageSize
+                        search: { value: searchValue },
+                        orderColumn: currentSortColumn, // Add this
+            orderDirection: currentSortDirection
+
+                    },
+                    success: function (resp) {
+                        const rows = resp.data || [];
+                        const totalRecords = resp.recordsFiltered || 0;
+                        allData = resp.allRows;
+                        totalPages = Math.max(1, Math.ceil((totalRecords * 1.0) / pageSize));
+                        console.log(totalRecords);
+
+                        renderTable(rows);
+                        renderPager(page);
+                    },
+                    error: function (xhr) {
+                        console.error('Error fetching data:', xhr.statusText);
+                    },
+                    complete: function () {
+                        $('#loader').hide();                }
+                });
+            }
+
+            function renderTable(rows) {
+                const $tbody = $('#filterTable tbody').empty();
+
+                if (!rows.length) {
+                    $tbody.append('<tr><td colspan="4" class="text-center py-4">No data available</td></tr>');
+                    return;
+                }
+
+                rows.forEach(item => {  // Changed parameter from 'r' to 'item' to match usage
+                    $tbody.append(`<tr>
+                    <td>${item.id || ''}</td>
+                    <td>${item.source || ''}</td>
+                    <td>${formatDate(item.createdOn) || ''}</td>
+                    <td>${item.totalrecords || ''}</td>
+                </tr>`);  // Removed extra "</tr> td>" that was causing syntax error
+                });
+            }
+
+            function renderPager(page) {
+                const $pagerButtons = $('.pagination-buttons').empty();
+                if (totalPages <= 1) return;
+
+                const btn = (lbl, pg, disabled, active) =>
+                    `<button class="px-3 py-1 border rounded
+        ${active ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'}
+        ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}"
+        data-page="${pg}" ${disabled ? 'disabled' : ''}>
+        ${lbl}
+    </button>`;
+
+                $pagerButtons.append(btn('First', 1, page === 1));
+                $pagerButtons.append(btn('Previous', page - 1, page === 1));
+
+                const maxVisible = 5;
+                let start = Math.max(1, page - Math.floor(maxVisible / 2));
+                let end = start + maxVisible - 1;
+
+                if (end > totalPages) {
+                    end = totalPages;
+                    start = Math.max(1, end - maxVisible + 1);
+                }
+
+                for (let i = start; i <= end; i++) {
+                    $pagerButtons.append(btn(i, i, false, i === page));
+                }
+
+                $pagerButtons.append(btn('Next', page + 1, page === totalPages));
+                $pagerButtons.append(btn('Last', totalPages, page === totalPages));
+            }
+
+            function formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            }
+
+            $('#rowsPerPage').on('change', () => {
+                currentPage = 1;
+                fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+            });
+
+            $('.search').on('input', function () {
+                const keyword = $(this).val().toLowerCase();
+
+                const filteredData = allData.filter(item =>
+                    (item.source || '').toLowerCase().includes(keyword) ||
+                    (item.totalrecords + '').toLowerCase().includes(keyword) ||
+                    (item.id + '').toLowerCase().includes(keyword) ||
+                    (formatDate(item.createdOn) || '').toLowerCase().includes(keyword)
+                );
+
+                currentPage = 1;
+                totalPages = Math.ceil(filteredData.length / pageSize);
+                $('#loader').show();
+                setTimeout(() => {
+                    renderTable(filteredData.slice(0, pageSize));
+                    renderPager(currentPage);
+                    $('#loader').hide();
+                }, 100);
+
+            });
+
+            $('.pagination-container').on('click', '.pagination-buttons button', function () {
+                const pg = parseInt($(this).data('page'));
+                if (!isNaN(pg) && pg >= 1 && pg <= totalPages) {
+                    currentPage = pg;
+                    fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+                }
+            });// Default sort direction
+        function sortTable(columnIndex) {
+        // Reset all sort icons
+        $('#filterTable th').removeClass('sort-asc sort-desc');
+        $('#filterTable th i.fa-sort').css('color', '#ccc');
+
+        // If clicking the same column, toggle direction
+        if (currentSortColumn === columnIndex) {
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            // New column, default to ascending
+            currentSortColumn = columnIndex;
+            currentSortDirection = 'asc';
+        }
+
+        // Update the sort icon for the current column
+        const $header = $('#filterTable th').eq(columnIndex);
+        $header.addClass(`sort-${currentSortDirection}`);
+        $header.find('i.fa-sort').css('color', '#2563eb');
+
+        // Reload the data with new sorting
+        fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+    }
+
+    $(document).ready(function () {
+
+
+        fetchData('', 1);
+    });
+
+    // Removed duplicate rowsPerPage change handler at the bottom
+</script>

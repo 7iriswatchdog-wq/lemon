@@ -1,0 +1,203 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+}
+@model AML.DTO.DTO.EWRA.EWRAModelDTO
+<style>
+    #table-scroll {
+        overflow: scroll;
+        margin-top: 20px;
+    }
+
+    .table {
+        width: 150%;
+    }
+
+    #FraudTable {
+        width: 120%;
+        margin-left: 1.8px;
+        overflow: scroll;
+    }
+
+    .table td, .table th {
+        padding: .65rem;
+    }
+
+    table, th {
+        text-align: center;
+    }
+
+    td {
+        vertical-align: bottom;
+        text-align: left !important;
+    }
+
+    .form-control {
+        width: 100%;
+    }
+</style>
+@*<div style="width:100% !important;height:70px !important;">
+
+    </div>*@
+<div id="printDetails" style="width:100%">
+    <br />
+    <div style="width:100%;display:none" id="logodiv">
+        <div style="width:98%;text-align:center;">
+            <h2>@companyName</h2>
+            <img src="~/img/logo.png" style="width:8%;float:right;" />
+        </div>
+        <br />
+    </div>
+    <br />
+    <div class="card-primary" id="reportViewDetails" style="width:100%;padding-left:1%;">
+        <div class="row" style="width:100%;padding-left:1%;">
+            <h3 style="width:90%">EWRA Report Of @companyName</h3>
+            <input name="b_print" id="b_print" type="button" onClick="printdiv('printDetails');" value=" Print " style="float:right;margin:20px;width:50px;"><br />
+        </div>
+        <div id="delivery" class="card card-body" style="padding-bottom:0px;padding-top:10px;">
+            <div class="card card-header" style="width:100%;float:left;background-color: darkgrey;">
+                <h3 class="card-title">
+                    @localizer["Delivery Channel Risk"]
+                </h3>
+            </div>
+            <div class="card-footer row">
+                <div style="width:50%;">
+                    <label>@localizer["Overall Average Score"]</label>
+                    <div class="form-group" style="width:70%;">
+                        <button id="btnDeliveryAvgScore" disabled class="dt-button-info form-control risk-button" type="button">@Model.DeliveryOverallScore</button>
+                        <input type="hidden" id="hdnDeliveryAvgScore" asp-for="@Model.DeliveryOverallScore" value="0" />
+                    </div>
+                </div>
+                <div style="width:50%;float:right">
+                    <label>@localizer["Overall Risk Assessement Level"]</label>
+                    <div class="form-group" style="width:70%;">
+                        @if (@Model.DeliveryOverallRisk == "Low")
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button btn-success" type="button">@Model.DeliveryOverallRisk</button>
+                        }
+                        else if (@Model.DeliveryOverallRisk == "Medium")
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button btn-warning" type="button">@Model.DeliveryOverallRisk</button>
+                        }
+                        else if (@Model.DeliveryOverallRisk == "High")
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button btn-danger" type="button">@Model.DeliveryOverallRisk</button>
+                        }
+                        else
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button" type="button">@Model.DeliveryOverallRisk</button>
+                        }
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div id="deliveryRisk" class="card card-body deliveryDivs">
+                <div style="width:100% !important;">
+                    <table class="table" id="deliveryTable" style="width:100% !important">
+                        <thead style="display:table-header-group;background-color: white;opacity: 100;">
+                            <tr class="row" style="width:100%;background-color:white">
+                                <th style="vertical-align:middle;width:28% !important;align-items:center;display:flex;">
+                                    @localizer["Delivery Channel"]
+                                </th>
+                                <th style="vertical-align:middle;width:18% !important;align-items:center;display:flex;">
+                                    @localizer["Cash"]
+                                </th>
+                                <th style="vertical-align:middle;width:18% !important;align-items:center;display:flex;">
+                                    @localizer["Bank"]
+                                </th>
+                                <th style="vertical-align:middle;width:18% !important;align-items:center;display:flex;">
+                                    @localizer["Risk Level Assessed"]
+                                </th>
+                                <th style="vertical-align:middle;width:18% !important;align-items:center;display:flex;">
+                                    @localizer["Risk Score"]
+                                </th>
+                            </tr>
+                        </thead>
+                        @{
+                            int c = 0;
+                        }
+                        @foreach (var item in Model.EWRADeliveryType)
+                        {
+                            <tr class="row" style="width:100%;">
+                                <td style="width: 28%;">
+                                    @item.DeliveryType
+                                </td>
+                                <td style="width:18%">
+                                    <input type="text" class="form-control" id="cash_@c" value="@item.Cash" disabled />
+                                </td>
+                                <td style="width:18%">
+                                    <input type="text" class="form-control" id="bank_@c" value="@item.Bank" disabled />
+                                </td>
+                                <td style="width:18%">
+                                    <input type="text" disabled class="form-control" value="@item.RiskLevel" id="hdnDeliveryRisk_@c" />
+                                </td>
+                                <td style="width:18%">
+                                    @if (@item.RiskScore != "")
+                                    {
+                                        @if (Convert.ToDouble(@item.RiskScore) < 1)
+                                        {
+                                            <button id="productRiskScore_@c" disabled class="dt-button-info form-control risk-button btn-success" type="button">@item.RiskScore</button>
+                                        }
+                                        else if (Convert.ToDouble(@item.RiskScore) >= 1 && Convert.ToDouble(@item.RiskScore) < 2)
+                                        {
+                                            <button id="productRiskScore_@c" disabled class="dt-button-info form-control risk-button btn-warning" type="button">@item.RiskScore</button>
+                                        }
+                                        else if (Convert.ToDouble(@item.RiskScore) >= 2)
+                                        {
+                                            <button id="productRiskScore_@c" disabled class="dt-button-info form-control risk-button btn-danger" type="button">@item.RiskScore</button>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+
+                            c = c + 1;
+                        }
+                    </table>
+                </div>
+
+            </div>
+        </div>
+        <div class="row" style="width:98%;">
+            <div class="col-sm-4">
+                <div class="form-group">
+                    <label for="dtCreatedBy">@localizer["Created By"]</label>
+                    <input type="text" asp-for="@Model.CreatedBy" class="form-control mandatory" id="dtCreatedBy" placeholder="" maxlength="200" readonly>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="form-group">
+                    <label for="dtCreatedOn">@localizer["Created On"]</label>
+                    <input type="text" asp-for="@Model.CreatedOn" class="form-control mandatory" id="dtCreatedOn" placeholder="" maxlength="200" readonly>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+    <div style="width:90%;display:none;padding-left:2%;" id="footdiv">
+        <p>@localizer["Computer generated report; hence no signature is required."]</p>
+    </div>
+</div>
+<script type="text/javascript">
+    function printdiv(printpage) {
+        var headstr1 = "<html><head>";
+        var headstr2 = "<title></title></head><body class='printDiv'>";
+        var footstr = "</body>";
+        var newstr = document.all.item(printpage).innerHTML;
+        var oldstr = document.body.innerHTML;
+        document.body.innerHTML = headstr1 + headstr2 + newstr + footstr;
+        document.getElementById("logodiv").style.display = "";
+        document.getElementById("footdiv").style.display = "";
+        document.getElementById("b_print").style.display = "none";
+        window.print();
+        document.body.innerHTML = oldstr;
+        return false;
+    }
+</script>

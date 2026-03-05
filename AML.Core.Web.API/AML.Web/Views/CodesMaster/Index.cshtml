@@ -1,0 +1,350 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Codes Master";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+
+<style>
+    .dt-loader {
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+
+    #codesTable th.sortable {
+        cursor: pointer;
+        position: relative;
+        padding-right: 20px;
+    }
+
+        #codesTable th.sortable::after {
+            content: '▲\A▼';
+            white-space: pre;
+            font-size: 10px;
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #bbb;
+            line-height: 1;
+            text-align: center;
+        }
+
+        #codesTable th.sortable.active.asc::after {
+            content: '▲';
+            color: #000;
+        }
+
+        #codesTable th.sortable.active.desc::after {
+            content: '▼';
+            color: #000;
+        }
+</style>
+<section class=" h-full content">
+    <!-- Loader -->
+    @* <div id="loader" class="fixed inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex items-center justify-center hidden">
+    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+</div> *@
+
+    <!-- Page Header -->
+    @* <nav class="border-b mb-6">
+    <div class="flex justify-between p-5">
+        <h2 class="text-2xl font-bold">Codes Master</h2>
+        <div class="hidden md:block"><img src="@Clientlogo" alt="Client Logo" width="50px" /></div>
+    </div>
+</nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Codes Master
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+
+    <!-- Entire Card Section -->
+    <div class="custom_container bg-gray-50 items-center ">
+        <div class="h-full bg-gray-50 items-center  ">
+            <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 hidden" >
+                <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+            </div>
+            <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4  mx-auto">
+                <div class="sas-card rounded-card w-full bg-white rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+
+                    <!-- Controls -->
+                    <div class="flex lg:flex-row flex-col items-center justify-between mb-6">
+                        <h6 class="text-xl font-semibold text-gray-900 mb-4">List</h6>
+                        <div class="flex flex-col lg:flex-row md:items-center md:justify-between gap-4">
+                            <!-- Rows per page -->
+                            <div class="flex items-center ml-8">
+                                <span class="text-sm text-gray-700">Show</span>
+                                <select id="rowsPerPage" class="h-10 ml-2 rounded-md border-gray-300 py-1 pl-3 pr-8 text-sm text-[#94A3B8]">
+                                    <option value="10" selected>10 items</option>
+                                    <option value="25">25 items</option>
+                                    <option value="50">50 items</option>
+                                    <option value="100">100 items</option>
+                                </select>
+                            </div>
+
+                            <!-- Search + Add Button -->
+                            <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                                <!-- Search -->
+                                <div class="relative w-full xl:w-96">
+                                    <input id="searchInput" type="text"
+                                           placeholder="Search anything..."
+                                           class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="2"
+                                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="@Url.Action("Create", "codesmaster")" class="sas-button p-10-25  color-white top_btn_3 px-6 py-2 text-white border border-gray-300 rounded-lg bg-[#2563EB] whitespace-nowrap" type="submit" onclick="showLoadingAndRedirect(event, this)">Add New</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @* <div class="flex flex-col md:flex-row justify-between gap-4">
+           <div class="flex flex-wrap gap-4 items-center">
+                <span class="text-sm text-gray-700">Show</span>
+                <select id="rowsPerPage" class="h-10 rounded-md border-gray-300 text-sm">
+                    <option value="10" selected>10 items</option>
+                    <option value="25">25 items</option>
+                    <option value="50">50 items</option>
+                    <option value="100">100 items</option>
+                </select>
+                <input type="text" id="searchInput" placeholder="Search..." class="px-4 py-2 border rounded-md text-sm w-72" />
+            </div>
+            <a href="@Url.Action("Create", "codesmaster")"
+               class="px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Add New</a>
+        </div> *@
+
+                    <!-- Table -->
+                    <div class="form-contents">
+                        <div class="overflow-x-auto">
+                            <table id="codesTable" class="min-w-full text-left text-sm text-gray-800">
+                                <thead class="bg-[#E9EFFD] font-semibold">
+                                    <tr>
+                                        <th class="sortable px-4 py-3" data-column="ccCode">Code</th>
+                                        <th class="sortable px-4 py-3" data-column="ccName">Name</th>
+                                        <th class="sortable px-4 py-3" data-column="ccType">Type</th>
+                                        <th class="sortable px-4 py-3" data-column="ccActiveYn">Active</th>
+                                        <th class="px-4 py-3">Edit</th>
+                                        <th class="px-4 py-3">Delete</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        @* <div class="pagination-controls mt-4 flex justify-center gap-2"></div> *@
+                        <div class="pagination-controls mt-4 flex flex-col sm:flex-row justify-center gap-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<script>
+        $(function () {
+            let sortCol = 'ccCode', sortDir = 'asc', pageSize = 10, currentPage = 1, totalPages = 1, draw = 1;
+
+            const getColIndex = col => ['ccCode', 'ccName', 'ccType', 'ccActiveYn'].indexOf(col);
+
+            function fetchData(search = '', page = 1) {
+                pageSize = +$('#rowsPerPage').val();
+                $('#loader').removeClass('hidden');
+
+                $.ajax({
+                    url: '/codesmaster/custompagination',
+                    type: 'POST',
+                    data: {
+                        draw, start: (page - 1) * pageSize, length: pageSize,
+                        search: { value: search },
+                        order: [{ column: getColIndex(sortCol), dir: sortDir }],
+                        columns: [
+                            { data: 'ccCode' }, { data: 'ccName' },
+                            { data: 'ccType' }, { data: 'ccActiveYn' }
+                        ]
+                    },
+                    success: function (resp) {
+                        const rows = resp.data || [];
+                        totalPages = Math.max(1, Math.ceil((resp.recordsFiltered || 0) / pageSize));
+                        renderTable(rows);
+                        renderPager(page);
+                        draw++;
+                    },
+                    error: () => alert('Error loading data.'),
+                    complete: () => $('#loader').addClass('hidden')
+                });
+            }
+
+            function renderTable(rows) {
+                const $tbody = $('#codesTable tbody').empty();
+                if (!rows.length) {
+                    return $tbody.append('<tr><td colspan="6" class="py-4 text-center">No data found</td></tr>');
+                }
+
+                rows.forEach(r => {
+                    const editUrl = `/codesmaster/edit/${r.ccClientId}/${r.ccCode}/${r.ccType}`;
+                    const delFn = `DeleteData('${r.ccClientId}','${r.ccCode}','${r.ccType}')`;
+
+                    $tbody.append(`
+                        <tr>
+                            <td class="px-4 py-3">${r.ccCode}</td>
+                            <td class="px-4 py-3">${r.ccName}</td>
+                            <td class="px-4 py-3">${r.ccType}</td>
+                            <td class="px-4 py-3">${r.ccActiveYn}</td>
+                            <td class="px-4 py-3"><a href="${editUrl}" class="text-blue-600 underline"> <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M4.16536 16.667H15.832C16.053 16.667 16.265 16.7548 16.4213 16.9111C16.5776 17.0673 16.6654 17.2793 16.6654 17.5003C16.6654 17.7213 16.5776 17.9333 16.4213 18.0896C16.265 18.2459 16.053 18.3337 15.832 18.3337H4.16536C3.94435 18.3337 3.73239 18.2459 3.57611 18.0896C3.41983 17.9333 3.33203 17.7213 3.33203 17.5003C3.33203 17.2793 3.41983 17.0673 3.57611 16.9111C3.73239 16.7548 3.94435 16.667 4.16536 16.667ZM3.33203 12.5003L11.6654 4.16699L14.1654 6.66699L5.83203 15.0003H3.33203V12.5003ZM12.4987 3.33366L14.1654 1.66699L16.6654 4.16699L14.9979 5.83449L12.4987 3.33366Z" fill="#64748B"/>
+    </svg></a></td>
+                            <td class="px-4 py-3"><a class="text-red-600 underline" onclick="${delFn}"><svg width="16" height="18" viewBox="0 0 16 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6.33203 3.37533V3.58366H9.66536V3.37533C9.66536 2.9333 9.48977 2.50937 9.17721 2.19681C8.86465 1.88425 8.44073 1.70866 7.9987 1.70866C7.55667 1.70866 7.13275 1.88425 6.82019 2.19681C6.50763 2.50937 6.33203 2.9333 6.33203 3.37533ZM5.29036 3.58366V3.37533C5.29036 2.65703 5.57571 1.96816 6.08362 1.46024C6.59153 0.952334 7.2804 0.666992 7.9987 0.666992C8.71699 0.666992 9.40587 0.952334 9.91378 1.46024C10.4217 1.96816 10.707 2.65703 10.707 3.37533V3.58366H15.3945C15.5327 3.58366 15.6651 3.63853 15.7628 3.73621C15.8605 3.83388 15.9154 3.96636 15.9154 4.10449C15.9154 4.24263 15.8605 4.3751 15.7628 4.47278C15.6651 4.57045 15.5327 4.62533 15.3945 4.62533H14.1791L13.3458 14.5653C13.2825 15.3202 12.9379 16.0237 12.3803 16.5364C11.8227 17.0492 11.0929 17.3337 10.3354 17.3337H5.66203C4.90461 17.3336 4.17485 17.049 3.61737 16.5363C3.05988 16.0235 2.71534 15.3201 2.65203 14.5653L1.8187 4.62533H0.602865C0.464731 4.62533 0.332255 4.57045 0.23458 4.47278C0.136905 4.3751 0.0820312 4.24263 0.0820312 4.10449C0.0820312 3.96636 0.136905 3.83388 0.23458 3.73621C0.332255 3.63853 0.464731 3.58366 0.602865 3.58366H5.29036ZM6.95703 7.43783C6.95703 7.36943 6.94356 7.3017 6.91739 7.23851C6.89121 7.17532 6.85285 7.1179 6.80448 7.06954C6.75612 7.02118 6.6987 6.98281 6.63551 6.95664C6.57232 6.93046 6.50459 6.91699 6.4362 6.91699C6.3678 6.91699 6.30007 6.93046 6.23688 6.95664C6.17369 6.98281 6.11628 7.02118 6.06791 7.06954C6.01955 7.1179 5.98118 7.17532 5.95501 7.23851C5.92884 7.3017 5.91536 7.36943 5.91536 7.43783V13.4795C5.91536 13.5479 5.92884 13.6156 5.95501 13.6788C5.98118 13.742 6.01955 13.7994 6.06791 13.8478C6.11628 13.8961 6.17369 13.9345 6.23688 13.9607C6.30007 13.9869 6.3678 14.0003 6.4362 14.0003C6.50459 14.0003 6.57232 13.9869 6.63551 13.9607C6.6987 13.9345 6.75612 13.8961 6.80448 13.8478C6.85285 13.7994 6.89121 13.742 6.91739 13.6788C6.94356 13.6156 6.95703 13.5479 6.95703 13.4795V7.43783ZM9.5612 6.91699C9.2737 6.91699 9.04036 7.15033 9.04036 7.43783V13.4795C9.04036 13.6176 9.09524 13.7501 9.19291 13.8478C9.29059 13.9455 9.42306 14.0003 9.5612 14.0003C9.69933 14.0003 9.83181 13.9455 9.92948 13.8478C10.0272 13.7501 10.082 13.6176 10.082 13.4795V7.43783C10.082 7.15033 9.8487 6.91699 9.5612 6.91699Z" fill="#64748B"/>
+    </svg></a></td>
+                        </tr>
+                    `);
+                });
+            }
+
+            function renderPager(page) {
+                const $pager = $('.pagination-controls').empty();
+                const btn = (label, pg, disabled, active) => `
+                    <button class="px-3 py-1 border rounded ${active ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'}${disabled ? ' opacity-50 cursor-not-allowed' : ''}"
+                            data-page="${pg}" ${disabled ? 'disabled' : ''}>${label}</button>`;
+
+                $pager.append(btn('First', 1, page === 1, false));
+                $pager.append(btn('Prev', page - 1, page === 1, false));
+
+                for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) {
+                    $pager.append(btn(i, i, false, i === page));
+                }
+
+                $pager.append(btn('Next', page + 1, page === totalPages, false));
+                $pager.append(btn('Last', totalPages, page === totalPages, false));
+            }
+
+            function DeleteData(clientId, code, type) {
+                if (!confirm('Are you sure you want to delete this code?')) return;
+                $.ajax({
+                    url: `/codesmaster/delete/${clientId}/${code}/${type}`,
+                    type: 'DELETE',
+                    success: () => fetchData($('#searchInput').val(), currentPage),
+                    error: () => alert('Delete failed.')
+                });
+            }
+
+            window.DeleteData = DeleteData;
+
+            // Events
+            $('#rowsPerPage, #searchInput').on('change keyup', () => fetchData($('#searchInput').val(), 1));
+            $('.pagination-controls').on('click', 'button', function () {
+                const page = +$(this).data('page');
+                if (!isNaN(page)) fetchData($('#searchInput').val(), page);
+            });
+
+            $('#codesTable thead').on('click', 'th.sortable', function () {
+                const col = $(this).data('column');
+                if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+                else { sortCol = col; sortDir = 'asc'; }
+
+                $('#codesTable th.sortable').removeClass('active asc desc');
+                $(this).addClass(`active ${sortDir}`);
+                fetchData($('#searchInput').val(), 1);
+            });
+
+            // Init
+            $('#codesTable th.sortable[data-column="' + sortCol + '"]').addClass(`active ${sortDir}`);
+            fetchData('', 1);
+        });
+</script>
+<script>
+    function showLoadingAndRedirect(event, element) {
+        event.preventDefault(); // Prevent default anchor action
+        $('#loader').removeClass('hidden'); // Show loader
+
+        // Optional: wait a bit before redirecting (for loader visibility)
+        setTimeout(() => {
+            window.location.href = element.getAttribute("href");
+        }, 300); // 300ms delay for smooth transition
+    }
+</script>

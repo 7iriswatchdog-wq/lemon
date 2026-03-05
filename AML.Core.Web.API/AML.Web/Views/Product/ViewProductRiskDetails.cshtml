@@ -1,0 +1,184 @@
+﻿@{
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+    var clientId = HttpContextAccessor.HttpContext.Session.GetString("SessClientId");
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@model AML.ViewModel.ViewModels.ProductMaster.ProductRiskModel
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
+
+<style>
+    .pulse-button {
+        animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+    }
+
+    @@keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+        }
+    }
+</style>
+<section class="h-full content">
+    @* <nav class="border-b">
+    <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+        <h2 class="text-2xl font-bold">Product Risk Assessment Details</h2>
+        <div class="hidden md:block"><img src="@Clientlogo" alt="Client Logo" width="50px" /></div>
+    </div>
+</nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-white">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Product Risk Assessment Details
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+    <div class="h-full bg-gray-50 items-center ">
+        <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4 mx-auto">
+            @* <div class="flex justify-end gap-4 px-6 mb-4">
+                <a asp-controller="Product" asp-action="GetProductRiskReport">
+                    <button type="button" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Back</button>
+                </a>
+                <button id="printform" type="button" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">Print</button>
+            </div> *@
+            <div class="flex flex-col md:flex-row md:justify-end gap-4 mb-4">
+                <a asp-controller="Product" asp-action="GetProductRiskReport" class="px-4 py-2 bg-blue-600 text-white text-center rounded hover:bg-blue-700">
+                    Back
+                </a>
+                <button id="printform" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    Print
+                </button>
+            </div>
+
+            <div id="printSection" class="rounded-card w-full bg-white rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+
+
+                <!-- Product Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <div>
+                        <label class="text-sm font-medium">Product Code</label>
+                        <input type="text" asp-for="ProductCode" readonly class="w-full border rounded px-3 py-2" />
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">Product Name</label>
+                        <input type="text" asp-for="ProductName" readonly class="w-full border rounded px-3 py-2" />
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">Date Of Assessment</label>
+                        <input type="date" asp-for="DateofAssessment" readonly class="w-full border rounded px-3 py-2" />
+                    </div>
+                </div>
+
+                <div class="bg-green-700 text-white text-center py-2 rounded mb-4">
+                    <span class="italic">Low Risk</span>
+                </div>
+
+                <!-- Risk Table -->
+                <div class="mt-8  w-full overflow-x-auto">
+                    <div class="min-w-[640px]">
+                        <table class="w-full table-auto border rounded-lg">
+                            <thead class="bg-blue-100 text-left">
+                                <tr class="text-gray-800">
+                                    <th class="p-3">Product Risk Category</th>
+                                    <th class="p-3">Product Risk Items</th>
+                                    <th class="p-3 text-center">Rating Scale</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int a = 0;
+                                }
+                                @foreach (var i in Model.ProdRiskTypeCategoryDTO)
+                                {
+                                    <tr class="border-b">
+                                        <td class="p-3 font-medium">@i.ProdRiskTypeCategory</td>
+                                        <td class="p-3">
+                                            <input type="text" asp-for="@i.prodItemTxt" id="RiskItemTxt_@a" readonly class="w-full border rounded px-3 py-2" />
+                                        </td>
+                                        <td class="p-3 text-center">
+                                            @{
+                                                var scoreClass = "w-8 h-8 flex items-center justify-center rounded-full text-sm font-semibold text-black mx-auto";
+                                                var bgColorClass = i.prodItemScore switch
+                                                {
+                                                    3 when i.OverrideScore == "3" => "bg-red-600 animate-pulse",
+                                                    3 => "bg-red-600",
+                                                    2 => "bg-yellow-500",
+                                                    1 => "bg-green-500",
+                                                    _ => "bg-gray-400"
+                                                };
+                                            }
+                                            <span class="@scoreClass @bgColorClass">@i.prodItemScore</span>
+                                        </td>
+                                    </tr>
+                                    a++;
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Total Score Summary -->
+                <div class="flex justify-between mt-4">
+                    <div class="text-md font-medium">
+                        Total Selected: <span class="inline-block bg-blue-600 text-white px-3 py-1 rounded-full ">@Model.ProdRiskScoreCount</span>
+                    </div>
+                    <div class="text-md font-medium">
+                        Total Score: <span class="inline-block bg-blue-600 text-white px-3 py-1 rounded-full">@Model.ProdRiskScoreSum</span>
+                    </div>
+                </div>
+
+
+                <!-- Footer -->
+                <div id="footdiv" class="mt-6 hidden">
+                    <p class="text-sm text-gray-600">Computer generated report; hence no signature is required.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@* <script type="text/javascript">
+    function printdiv(printpage) {
+        var newstr = document.getElementById(printpage).innerHTML;
+        var oldstr = document.body.innerHTML;
+        document.body.innerHTML = newstr;
+        document.getElementById("logodiv").style.display = "";
+        document.getElementById("footdiv").style.display = "";
+        window.print();
+        document.body.innerHTML = oldstr;
+        return false;
+    }
+</script> *@
+
+<script>
+    $('#printform').on("click", function () {
+        $('#printSection').printThis({
+            importCSS: true,
+            importStyle: true,
+            loadCSS: ["/css/print.css"],
+            header: `<div style="background: linear-gradient(180deg, #33394e 0%, #2F3961 100%); width:100%; padding:15px 20px;">
+                        <h1 style="color:white; font-size:20px;">@companyName
+                            <img src="@Clientlogo" style="float:right; height:50px;" />
+                        </h1>
+                    </div>`,
+        });
+    });
+</script>

@@ -1,0 +1,1427 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+
+@{
+
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+    var companyLog = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+    var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@model AML.ViewModel.ViewModels.Kyc.CorporateKycModel
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<script src="~/plugins/datatables/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.4/css/jquery.dataTables.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
+
+<style>
+    .page {
+   
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .head-section {
+        display: flex;
+        justify-content: space-between; /* Better than flex-start + auto margin */
+        align-items: center;
+        width: 100%;
+        height: 72px;
+        overflow-x: hidden;
+        padding: 0 16px; /* Add horizontal padding if needed */
+        box-sizing: border-box;
+        background-color: white !important;
+        border-bottom: 1px solid #dee2e6;
+        
+    }
+
+    .card1 {
+        max-width: 95%; /* Ensures it never overflows parent */
+        border-radius: 8px;
+        overflow: hidden; /* Contains all child elements */
+        background-color: white !important;
+        margin: 30px 30px;
+        padding: 20px;
+        box-shadow: 0 0 #0000, /* fallback ring-offset-shadow */
+        0 0 #0000, /* fallback ring-shadow */
+        0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
+
+    .heading {
+        font-size: 1.25rem;
+    }
+
+    #printBtnDiv {
+        display: flex;
+        width: 90%;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+
+    .go {
+        background-color: rgb(37,99,235);
+        border-radius: 8px;
+        padding: 8px 20px;
+        color: white;
+    }
+
+    .clear {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 8px 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .firstrow {
+        display: flex;
+        width: 100%; /* Full width of its parent */
+    }
+
+    .flex-item1 {
+        flex: 1;
+    }
+
+        .flex-item1 input {
+            width: 90%; /* full width of the parent */
+            min-width: 40%;
+            box-sizing: border-box; /* includes padding in the width */
+            padding: 8px;
+            border-radius: 4px; /* spacing between inputs */
+        }
+
+    .match-parameter input {
+        box-sizing: border-box; /* includes padding in the width */
+        padding: 8px;
+        border-radius: 4px; /* spacing between inputs */
+    }
+
+    input, select, textarea {
+        border: 1px solid #dee2e6 !important;
+        font-weight: lighter;
+    }
+
+    textarea {
+        width: 100%; /* full width of the parent */
+        min-width: 40%;
+        box-sizing: border-box; /* includes padding in the width */
+        padding: 8px;
+        border-radius: 4px;
+    }
+
+    input:focus {
+        border: 2px solid rgb(37,99,235) !important;
+    }
+
+    select:focus {
+        border: 2px solid rgb(37,99,235) !important;
+    }
+
+    select {
+        font-weight: lighter;
+    }
+
+    .flex-box {
+        width: 90%;
+        display: flex;
+        flex-wrap: wrap;
+        margin: 10px 0px;
+    }
+
+        .flex-box > .flex-item {
+            flex: 1 1 250px !important;
+            text-align: center !important;
+        }
+
+    .flex-item input, .flex-item textarea {
+        width: 80%; /* full width of the parent */
+        min-width: 40%;
+        box-sizing: border-box; /* includes padding in the width */
+        padding: 8px;
+        border-radius: 4px; /* spacing between inputs */
+    }
+
+    .flex-box > .flex-item3 {
+        flex: 1 1 150px !important;
+        text-align: center !important;
+    }
+
+    .flex-item3 input, .flex-item textarea {
+        width: 80%; /* full width of the parent */
+        min-width: 40%;
+        box-sizing: border-box; /* includes padding in the width */
+        padding: 8px;
+        border-radius: 4px; /* spacing between inputs */
+    }
+
+    .status {
+        display: flex;
+        gap: 20%;
+        flex-wrap: wrap;
+    }
+    @@media (max-width: 768px) {
+        .page {
+            width: 80vw;
+        }
+    }
+
+        .flex-item2 input {
+            padding: 8px;
+            border-radius: 4px;
+            min-width: 300px;
+        }
+
+        table {
+            max-width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        thead {
+            background-color: rgb(233,239,253);
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        thead th:first-child {
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+
+        thead th:last-child {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        th {
+            font-weight: 500;
+        }
+
+        table {
+            width: 100% !important;
+        }
+
+        .table1 th, .table1 td {
+            width: calc(100% / 2);
+            word-wrap: break-word;
+            text-align: center;
+        }
+
+        .table2 th, .table2 td {
+            width: calc(100% / 7);
+            word-wrap: break-word;
+            text-align: center;
+        }
+
+        .table3 th, .table3 td {
+            width: calc(100% / 7);
+            word-wrap: break-word;
+            text-align: center;
+        }
+
+        table {
+            display: table; /* Ensure tables display as tables */
+            width: 100% !important;
+        }
+
+        .footer-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        @@media (max-width: 768px) {
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .footer-row {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+
+        tr {
+            border: none !important;
+        }
+
+        td {
+            padding: 15px;
+        }
+</style>
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+</style>
+
+<body>
+    <div class="page bg-gray-50">
+        <div class="custom-container">
+
+            <div class="page-heading head-section">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 heading"><b>KYC View</b></h4>
+                    <div class="menu-icon">
+                        <i class="lni lni-microsoft"></i>
+                    </div>
+                </div>
+                <div class="md:block">
+                    <img src="@Clientlogo" alt="Client Logo" width="50px" />
+                </div>
+            </div>
+            @* *@
+        <div class="card1 relative">
+            <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+                <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+            </div>
+            <div id="printthisform">
+                <div class="sas-card rounded-card mb-2 bg-blue">
+
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><b>Corporate KYC Details</b></h6>
+                    </div>
+
+
+
+
+                    <div id="printDetails" class="row justify-content-end" style="width:100%">
+                        <div style="width:100% !important;" id="printBtnDiv" class="col-md-12 text-right">
+                            <a asp-controller="Report" asp-action="KycReport"> <button type="button" id="btnBack" class="sas-button p-8-25 color-white bg-color-2 clear" align="right" onclick="$('#loader').show();">Back</button></a>
+                            <input name="b_print" class="sas-button p-8-25 color-white bg-color-1 ml-2 go" type="button" id="printform" onclick="$('#loader').show(); setTimeout(function() { $('#loader').hide(); }, 2000);" value=@localizer["Print"]>
+                        </div>
+                        <div style="width:100%;display:none" id="logodiv">
+                            <div style="width:98%;text-align:center;">
+                                <h2>@companyName</h2>
+                                <img src="~/img/Watchdog Logo.png" style="width:100%;float:right;" />
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <form role="form" asp-controller="CustomerMaster" asp-action="EditCorporate" class="form-horizontal" enctype="multipart/form-data" method="post">
+                        <input type="hidden" asp-for="CustomerId" id="hfCustomerID">
+                        <span class="print_color">@localizer["Name of Corporate"]</span>
+                        <div class=" firstrow">
+                            <div class="col-sm-12 flex-item1">
+                                <div class="form-group">
+                                    <span for="fname" class="m-0">@localizer["Full Name"]</span>
+                                    <input type="text" asp-for="FullName" readonly class="form-control br-50" required="required" id="fname">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 flex-box">
+
+
+
+                            <div class="col-sm-6 flex-item">
+                                <div class="form-group">
+                                    @if (@Model.DateofIncorporation.ToString() == "1/1/0001 12:00:00 AM")
+                        {
+                                    <span for="date_incorporation" class="m-0">@localizer["Date of Incorporation"]</span>
+                                    <input type="date" value="" readonly class="form-control br-50" id="date_incorporation" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                        }
+                        else
+                        {
+                                    <span for="date_incorporation" class="m-0">@localizer["Date of Incorporation"]</span>
+                                    <input type="date" asp-for="DateofIncorporation" readonly class="form-control br-50" id="date_incorporation" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                        }
+                                </div>
+                            </div>
+
+                            <div class="col-sm-6 flex-item">
+                                <div class="form-group">
+                                    <span for="place_incorporation" class="m-0">@localizer["Country of Incorporation"]</span>
+                                    <input type="text" asp-for="PlaceofIncorporation" class="form-control br-50" id="place_incorporation" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="status row mb-4">
+                            <div class="col-sm-4 flex-item2">
+                                <strong class="mb-2">@localizer["Type of Entity/ Legal Status"]</strong>
+                            </div>
+                            <div class="col-sm-4 flex-item2">
+                                <input class="form-control br-50" type="text" readonly asp-for="EntityTypeTxt" id="ddlpublic_l_Company" />
+                            </div>
+                        </div>
+
+                        <div class="row" id="entityTypeOther" style="display:none;">
+                            <div class="col-sm-6">
+                                <span>@localizer["Others (Please specify)"] </span>
+                            </div><div class="col-sm-6">
+                                <input type="text" class="form-control br-50" id="EntityType" asp-for="EntityTypeTxt" onkeypress="alphaCheck(event)">
+                            </div>
+                        </div>
+
+                        <span class="print_color">@localizer["Address of Entity"]</span>
+                        <div class="flex-box row">
+                            <div class="flex-item3 col-sm-3">
+                                <div class="form-group">
+                                    <span for="city" class="m-0">@localizer["City"]</span>
+                                    <input type="text" class="form-control br-50" readonly id="city" asp-for="EntityAddress.City">
+                                </div>
+                            </div>
+
+                            <div class="col-sm-3 flex-item3">
+                                <div class="form-group">
+                                    <span for="emirate" class="m-0">@localizer["Emirate"]</span>
+                                    <input type="text" class="form-control br-50" id="emirate" readonly asp-for="EntityAddress.Emirate">
+                                </div>
+                            </div>
+
+                            <div class="flex-item3 col-sm-3">
+                                <div class="form-group">
+                                    <span for="country" class="m-0">@localizer["Country"]</span>
+                                    <input type="text" class="form-control br-50" id="country" readonly asp-for="EntityAddress.Country">
+                                </div>
+                            </div>
+
+                            <div class="col-sm-3 flex-item3">
+                                <div class="form-group">
+                                    <span for="p_o_box" class="m-0">@localizer["P.O. Box"]:</span>
+                                    <input type="text" class="form-control br-50" id="p_o_box" readonly asp-for="EntityAddress.POBox">
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="flex-box row mb-4">
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span for="corporate_website" class="col-12"><strong>@localizer["Corporate Website"]</strong></span>
+
+                                    <input type="text" class="form-control br-50" id="corporate_website" readonly asp-for="CorporateWebsite">
+                                </div>
+                            </div>
+
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span for="telephone_no" class="m-0">@localizer["Tel. No"]</span>
+                                    <input type="text" class="form-control br-50" id="telephone_no" readonly asp-for="Telephone">
+                                </div>
+                            </div>
+
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span class="m-0" for="fax_no">@localizer["Email ID"]</span>
+                                    <input type="text" class="form-control br-50" id="email_id" readonly asp-for="Email">
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <span class="print_color">@localizer["Commercial License Details"]</span>
+                        <div class="flex-box row mb-4">
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span for="license_no" class="m-0">@localizer["License Number"]</span>
+                                    <input type="text" class="form-control br-50" id="license_no" readonly asp-for="CommercialLicense.LicenseNumber">
+                                </div>
+                            </div>
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span for="licence_issue_date" class="m-0">@localizer["License Issue Date"]</span>
+                                    <input type="date" class="form-control br-50" id="licence_issue_date" readonly asp-for="CommercialLicense.LicenseIssueDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                </div>
+                            </div>
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span for="licence_issuing_authority" class="m-0">@localizer["License Issuing Authority"]</span>
+                                    <input type="text" class="form-control br-50" readonly id="licence_issuing_authority" asp-for="CommercialLicense.LicenseIssuingAuthority">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex-box row mb-4">
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span for="licence_exp_date" class="m-0">@localizer["License Expiry Date"]</span>
+                                    <input type="date" class="form-control br-50" id="licence_exp_date" asp-for="CommercialLicense.LicenseExpiryDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                </div>
+                            </div>
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span for="place_of_issue" class="m-0">@localizer["Place of Issue"]</span>
+                                    <input type="text" class="form-control br-50" id="place_of_issue" readonly asp-for="CommercialLicense.PlaceofIssue">
+                                </div>
+                            </div>
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span for="ddlLicenseType" class="m-0">@localizer["License Type"]</span>
+                                    <input type="text" class="form-control br-50" readonly id="ddlLicenseTypehdn" asp-for="CommercialLicense.LicenseTypeTxt" />
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="flex-box row mb-4">
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span for="oprations_trading" class="m-0">@localizer["Business Activity"]</span>
+                                    <input type="text" id="ddlBusinessTypehdn" class="form-control br-50" readonly asp-for="BusinessType">
+                                </div>
+                            </div>
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span class="m-0">@localizer["Product Type"]</span>
+                                    <input type="text" class="form-control br-50" id="ddlProductTypehdn" asp-for="ProductName" />
+                                </div>
+                            </div>
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span class="m-0">@localizer["Delivery Channel"]</span>
+                                    <input type="text" class="form-control br-50" id="ddlProductTypehdn" asp-for="DeliveryChannelName" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex-box row mb-4">
+
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span>@localizer["Mode of Payment"]</span>
+                                    <input id="ddlmodeofpayment" type="text" readonly class="form-control br-50" asp-for="Modeofpayment" />
+                                </div>
+
+                            </div>
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span>@localizer["VAT Registration Number"]</span>
+
+                                    <input type="text" class="form-control br-50" id="vat_registration" readonly asp-for="VATRegistrationNumber">
+                                </div>
+                            </div>
+
+
+
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+
+                                    <span>@localizer["Source of funds"]</span>
+
+                                    <input type="text" id="ddlFundSource" class="form-control mb-2 mt-2 br-50" readonly asp-for="FundSourceOther">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex-box mb-2">
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span>@localizer["Pep Declaration"]</span>
+                                    <input class="form-control " type="text" readonly asp-for="PEPStatus" id="pep" />
+                                </div>
+                            </div>
+                            <div class="col-sm-4 flex-item">
+                                <div class="form-group">
+                                    <span>@localizer["Address"]</span>
+                                    <input class="form-control " type="text" readonly asp-for="Address" id="address" />
+                                </div>
+                            </div>
+                            <div class="flex-item">
+                            </div>
+                        </div>
+
+                        <div class="form-group row" style="display:none;" id="FundOther">
+                            <div class="col-sm-3">
+                                <label for="other_ps">@localizer["Other (Please Specify)"]</label>
+                            </div>
+                            <div class="col-sm-9">
+                                <input type="text" readonly class="form-control mb-2 mt-2 br-50" id="ddlFundSourcehdn" placeholder=@localizer["Other"] asp-for="FundSourceOther">
+
+                            </div>
+                        </div>
+
+
+
+
+                        @{
+                    if (Model.GroupEntity != null)
+                    {
+                            <span class="print_color" style="display: block;">@localizer["Group Entity Information (if Applicable)"]</span>
+                            <input type="hidden" id="GroupEntityRowIndex" value="1" />
+                            <input type="hidden" id="GroupEntityCount" value="1" />
+                            <input type="button" value="Add" class="btn btn-info" onclick="AddGroupEntity()" style="display:none;" />
+
+                            <div class="row table-container">
+                                <table id="tbl_group_entity" class="table table-striped table-hover dt-responsive display nowrap">
+                                    <thead class="table1">
+                                        <tr>
+                                            <th class="print_color">@localizer["Entity Name"]</th>
+                                            <th class="print_color">@localizer["Country of Incorporation"]</th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody class="table1">
+                                        @foreach (var item in @Model.GroupEntity)
+                                    {
+                                        <tr>
+                                            <td class="print_color">@item.EntityName</td>
+                                            <td class="print_color">@item.PlaceofIncorporation</td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+                            @foreach (var item in @Model.GroupEntity)
+                        {
+
+                            foreach (var item2 in item.CaseDocumentsL)
+                            {
+                            <table id="tbl_group_entity_01" class="table ">
+                                <thead class="table3">
+                                    <tr>
+                                        <th class="print_color">@localizer["Document Reference"]</th>
+                                        <th class="print_color">@localizer["Issue Date"]</th>
+                                        <th class="print_color">@localizer["Expiry Date"]</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody class="table3">
+                                    <tr>
+                                        <input type="hidden" id="GErowIndex_0" value="1" />
+
+                                        <td>
+                                            <input type="text" class="form-control br-50" id="txtDocNo_0" name="DocumentName" asp-for="@item2.DocumentName" placeholder="Document Reference" readonly>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control br-50" id="txtIssuedDate" name="IssuedDate" asp-for="@item2.IssuedDateOnDB" placeholder="Document Issued Date" readonly>
+                                        </td>
+                                        <td>
+                                            <input type="date" class="form-control br-50" id="txtExpiryDate" name="ExpiryDate" asp-for="@item2.ExpiryDateOnDB" max="2077-12-31" readonly placeholder="Document Expiry Date">
+                                        </td>
+
+                                    </tr>
+                                </tbody>
+
+                            </table>
+                            }
+                            if (item.CaseDocumentsL.Count() != 0)
+                            {
+                            <div class="row mb-4">
+                                <div class="col-2">
+
+                                    <button type="button" class="btn btn-primary br-50 bg-color-2" style="width:200px;" data-toggle="modal" data-target="#entitydocModal">
+                                        View Uploaded Documents
+                                    </button>
+                                </div>
+                            </div>
+                            }
+
+                        }
+
+
+                    }
+
+                    if (@Model.Partners != null)
+                    {
+                            <span class="print_color" style="display: block;">@localizer["Name of Shareholders"]</span>
+                            <div class=" row table-container">
+                                <table class="table table-striped table-hover dt-responsive display nowrap">
+                                    <thead class="table2">
+                                        <tr>
+                                            <th class="print_color">@localizer["Name"]</th>
+                                            <th class="print_color">@localizer["Percentage"]</th>
+                                            <th class="print_color">@localizer["Natioanlity"]</th>
+
+                                            <th class="print_color">@localizer["Emirates ID Number."]</th>
+                                            <th class="print_color">@localizer["Expiry Date"]</th>
+                                            <th class="print_color">@localizer["Passport Number."]</th>
+                                            <th class="print_color">@localizer["Expiry Date"]</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="table2">
+                                        @foreach (var item in @Model.Partners)
+                                    {
+                                        <tr>
+                                            <td class="print_color">@item.Name</td>
+                                            <td class="print_color">@item.Percentage</td>
+                                            <td class="print_color">@item.Nationality</td>
+                                            <td class="print_color">@item.EmiratesID</td>
+                                            <td class="print_color">@item.EmiratesIDExpiry</td>
+                                            <td class="print_color">@item.PassportNumber</td>
+                                            <td class="print_color">@item.PassportExpiry</td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @foreach (var item in @Model.Partners)
+                        {
+
+                            foreach (var item2 in item.CaseDocumentsL)
+                            {
+                            <table id="tbl_group_entity_01" class="table">
+                                <thead style="border:none" class="table3">
+                                    <tr>
+                                        <th class="print_color">@localizer["Document Reference"]</th>
+                                        <th class="print_color">@localizer["Issue Date"]</th>
+                                        <th class="print_color">@localizer["Expiry Date"]</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody class="table3">
+                                    <tr>
+                                        <input type="hidden" id="GErowIndex_0" value="1" />
+
+                                        <td>
+                                            <input type="text" class="form-control br-50" id="txtDocNo_0" name="DocumentName" asp-for="@item2.DocumentName" placeholder="Document Reference" readonly>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control br-50" id="txtIssuedDate" name="IssuedDate" asp-for="@item2.IssuedDateOnDB" placeholder="Document Issued Date" readonly>
+                                        </td>
+                                        <td>
+                                            <input type="date" class="form-control br-50" id="txtExpiryDate" name="ExpiryDate" asp-for="@item2.ExpiryDateOnDB" max="2077-12-31" readonly placeholder="Document Expiry Date">
+                                        </td>
+
+                                    </tr>
+                                </tbody>
+
+                            </table>
+                            }
+                            if (item.CaseDocumentsL.Count() != 0)
+                            {
+                            <div class="row mb-4">
+                                <div class="col-2">
+
+                                    <button type="button" class="btn btn-primary br-50 bg-color-2" style="width:200px;" data-toggle="modal" data-target="#parnternsdocModal">
+                                        View Uploaded Documents
+                                    </button>
+                                </div>
+                            </div>
+                            }
+
+                        }
+                    }
+                        }
+                        @{
+                    if (@Model.SeniorManagements != null)
+                    {
+
+                            <span class="print_color" style="display: block;">@localizer["Name of Senior Management"]</span>
+                            <div class="table-container row">
+                                <table class="table table-striped table-hover dt-responsive display nowrap">
+                                    <thead class="table2">
+                                        <tr>
+                                            <th class="print_color">@localizer["Name"]</th>
+                                            <th class="print_color">@localizer["Designation"]</th>
+                                            <th class="print_color">@localizer["Natioanlity"]</th>
+                                            <th class="print_color">@localizer["Emirates ID Number"]</th>
+                                            <th class="print_color">@localizer["Expiry Date"]</th>
+                                            <th class="print_color">@localizer["Passport Number."]</th>
+                                            <th class="print_color">@localizer["Expiry Date"]</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="table2">
+                                        @foreach (var item in @Model.SeniorManagements)
+                                    {
+                                        <tr>
+                                            <td class="print_color">@item.Name</td>
+                                            <td class="print_color">@item.Designation</td>
+                                            <td class="print_color">@item.Nationality</td>
+                                            <td class="print_color">@item.EmiratesID</td>
+                                            <td class="print_color">@item.EmiratesIDExpiry</td>
+                                            <td class="print_color">@item.PassportNumber</td>
+                                            <td class="print_color">@item.PassportExpiry</td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+                            @foreach (var item in @Model.SeniorManagements)
+                        {
+
+                            foreach (var item2 in item.CaseDocumentsL)
+                            {
+                            <table id="tbl_group_entity_01" class="table">
+                                <thead style="border:none" class="table3">
+                                    <tr>
+                                        <th class="print_color">@localizer["Document Reference"]</th>
+                                        <th class="print_color">@localizer["Issue Date"]</th>
+                                        <th class="print_color">@localizer["Expiry Date"]</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody class="table3">
+                                    <tr>
+                                        <input type="hidden" id="GErowIndex_0" value="1" />
+
+                                        <td>
+                                            <input type="text" class="form-control br-50" id="txtDocNo_0" name="DocumentName" asp-for="@item2.DocumentName" placeholder="Document Reference" readonly>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control br-50" id="txtIssuedDate" name="IssuedDate" asp-for="@item2.IssuedDateOnDB" placeholder="Document Issued Date" readonly>
+                                        </td>
+                                        <td>
+                                            <input type="date" class="form-control br-50" id="txtExpiryDate" name="ExpiryDate" asp-for="@item2.ExpiryDateOnDB" max="2077-12-31" readonly placeholder="Document Expiry Date">
+                                        </td>
+
+                                    </tr>
+                                </tbody>
+
+                            </table>
+                            }
+                            if (item.CaseDocumentsL.Count() != 0)
+                            {
+                            <div class="row mb-4">
+                                <div class="col-2">
+
+                                    <button type="button" class="btn btn-primary br-50 bg-color-2" style="width:200px;" data-toggle="modal" data-target="#seniordocModal">
+                                        View Uploaded Documents
+                                    </button>
+                                </div>
+                            </div>
+                            }
+
+                        }
+                    }
+                        }
+                        @{
+                    if (@Model.AuthorisedSignatories != null)
+                    {
+                            <span class="print_color" style="display:block;">@localizer["Name of Authorised Signatories"]</span>
+                            <div class="table-container row">
+                                <table class="table table-striped table-hover dt-responsive display nowrap">
+                                    <thead class="table2">
+                                        <tr>
+                                            <th class="print_color">@localizer["Name"]</th>
+                                            <th class="print_color">@localizer["Designation"]</th>
+                                            <th class="print_color">@localizer["Natioanlity"]</th>
+
+                                            <th class="print_color">@localizer["Emirates ID Number"]</th>
+                                            <th class="print_color">@localizer["Expiry Date"]</th>
+                                            <th class="print_color">@localizer["Passport Number"]</th>
+                                            <th class="print_color">@localizer["Expiry Date"]</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="table2">
+                                        @foreach (var item in @Model.AuthorisedSignatories)
+                                    {
+                                        <tr>
+                                            <td class="print_color">@item.Name</td>
+                                            <td class="print_color">@item.Designation</td>
+                                            <td class="print_color">@item.Nationality</td>
+                                            <td class="print_color">@item.EmiratesID</td>
+                                            <td class="print_color">@item.EmiratesIDExpiry</td>
+                                            <td class="print_color">@item.PassportNumber</td>
+                                            <td class="print_color">@item.PassportExpiry</td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @foreach (var item in @Model.AuthorisedSignatories)
+                        {
+
+                            foreach (var item2 in item.CaseDocumentsL)
+                            {
+                            <table id="tbl_group_entity_01" class="table ">
+                                <thead style="border:none" class="table3">
+                                    <tr>
+                                        <th class="print_color">@localizer["Document Reference"]</th>
+                                        <th class="print_color">@localizer["Issue Date"]</th>
+                                        <th class="print_color">@localizer["Expiry Date"]</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody class="table3">
+                                    <tr>
+                                        <input type="hidden" id="GErowIndex_0" value="1" />
+
+                                        <td>
+                                            <input type="text" class="form-control br-50" id="txtDocNo_0" name="DocumentName" asp-for="@item2.DocumentName" placeholder="Document Reference" readonly>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control br-50" id="txtIssuedDate" name="IssuedDate" asp-for="@item2.IssuedDateOnDB" placeholder="Document Issued Date" readonly>
+                                        </td>
+                                        <td>
+                                            <input type="date" class="form-control br-50" id="txtExpiryDate" name="ExpiryDate" asp-for="@item2.ExpiryDateOnDB" max="2077-12-31" readonly placeholder="Document Expiry Date">
+                                        </td>
+
+                                    </tr>
+                                </tbody>
+
+                            </table>
+                            }
+                            if (item.CaseDocumentsL.Count() != 0)
+                            {
+                            <div class="row mb-4">
+                                <div class="col-2">
+
+                                    <button type="button" class="btn btn-primary br-50 bg-color-2" style="width:200px;" data-toggle="modal" data-target="#authoriseddocModal">
+                                        View Uploaded Documents
+                                    </button>
+                                </div>
+                            </div>
+                            }
+
+                        }
+                    }
+                        }
+
+
+                        <div class="form-group" style="display : 100%;">
+                            <div class="col-sm-1"> <label>@localizer["Remarks"]</label></div>
+                            <div class="col-sm-6">
+                                <textarea rows="2" cols="50" asp-for="Remarks" class="form-control br-50" id="txtRemarks" readonly name="Remarks"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-group match-parameter">
+                                <span for="txtAction" class="print_color">@localizer["Match Parameter"]</span>
+                                <input type="number" min="50" max="100" name="my_range" id="Threshold" placeholder="85" asp-for="Threshold" class="form-control">
+                            </div>
+                        </div>
+                        <br />
+                        <br />
+                        <div class="footer-row justify-content-between">
+
+
+                            <label>@localizer["Signature"]</label> <br><br>
+
+
+
+                            <label> Date : @DateTime.Now</label>
+
+                        </div>
+                        <br />
+
+                        @foreach (var item in @Model.CaseDocumentsL)
+                {
+                        <div class="row">
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <label for="txDocNo">Document Reference</label>
+                                    <input type="text" class="form-control br-50" id="txtDocNo" asp-for="@item.DocumentName" readonly name="DocumentName" placeholder="Document Reference">
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <label for="txIssuedDate">Issued Date</label>
+                                    <input type="date" class="form-control br-50" id="txtIssuedDate" asp-for="@item.IssuedDateOnDB" readonly name="IssuedDate" max="3000-12-31" placeholder="Document Issued Date">
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <label for="txtExpiryDate">Expiry Date</label>
+
+                                    <input type="date" class="form-control br-50" id="txtExpiryDate" asp-for="@item.ExpiryDateOnDB" readonly name="ExpiryDate" max="4444-12-31" placeholder="Document Expiry Date">
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label for="txtDetails">Document Details</label>
+                                    <textarea rows="3" class="form-control br-50" id="txtDetails" name="DocumentDetails" placeholder="Document Details" readonly>@item.DocumentDetails</textarea>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label for="txtRemarks">Remarks</label>
+                                    <textarea rows="3" class="form-control br-50" id="txtRemarks" name="Remarks" placeholder="Remarks" readonly>@item.Remarks </textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <hr />
+                }
+                        @if (@Model.CaseDocumentsL.Count() != 0)
+                {
+                        <div class="row mb-4">
+                            <div class="col-2">
+
+                                <button type="button" class="btn btn-primary br-50 bg-color-2" style="width:200px;" data-toggle="modal" data-target="#docModal">
+                                    View Uploaded Documents
+                                </button>
+                            </div>
+                        </div>
+                }
+
+                        @*<p>Tick <i class="fas fa-check"></i>what is applicable/ enclosed with this form</p>
+                    <h6>Documents to be enclosed - Corporations / Government / Partnership / Sole Establishment:</h6>
+                    <div class="form-group row">
+                    <label for="commercial_license" class="col-sm-1">1.</label>
+                    <label for="commercial_license" class="col-sm-8">Commercial License</label>
+                    <div class="col-sm-3">
+                    <input type="text" name="commercial_license" class="form-control mb-2 mt-2" id="commercial_license">
+                    </div>
+                    </div>
+                    <div class="form-group row">
+                    <label for="tax_regis_certificate" class="col-sm-1">2.</label>
+                    <label for="tax_regis_certificate" class="col-sm-8">Tax (VAT) Registration Certificate of the Entity</label>
+                    <div class="col-sm-3">
+                    <input type="text" name="tax_regis_certificate" class="form-control mb-2 mt-2" id="tax_regis_certificate">
+                    </div>
+                    </div>
+                    <div class="form-group row">
+                    <label for="memorandum_associ" class="col-sm-1">3.</label>
+                    <label for="memorandum_associ" class="col-sm-8">Memorandum of Association (MOA) & Article of Association (AOA)</label>
+                    <div class="col-sm-3">
+                    <input type="text" name="memorandum_associ" class="form-control mb-2 mt-2" id="memorandum_associ">
+                    </div>
+                    </div>
+                    <div class="form-group row">
+                    <label for="power_attorny" class="col-sm-1">4.</label>
+                    <label for="power_attorny" class="col-sm-8">Power of Attorney (if any)</label>
+                    <div class="col-sm-3">
+                    <input type="text" name="power_attorny" class="form-control mb-2 mt-2" id="power_attorny">
+                    </div>
+                    </div>
+                    <div class="form-group row">
+                    <label for="copy_of_contract" class="col-sm-1">5.</label>
+                    <label for="copy_of_contract" class="col-sm-8">Copy of Tenancy contract / Utility bill</label>
+                    <div class="col-sm-3">
+                    <input type="text" name="copy_of_contract" class="form-control mb-2 mt-2" id="copy_of_contract">
+                    </div>
+                    </div>
+                    <div class="form-group row">
+                    <label for="group_structure_chart" class="col-sm-1">6.</label>
+                    <label for="group_structure_chart" class="col-sm-8">Group Structure Chart (if any)</label>
+                    <div class="col-sm-3">
+                    <input type="text" name="group_structure_chart" class="form-control mb-2 mt-2" id="group_structure_chart">
+                    </div>
+                    </div>
+                    <div class="form-group row">
+                    <label for="emirates_id" class="col-sm-1">7.</label>
+                    <label for="emirates_id" class="col-sm-8">Emirates ID, Passport and Visa copies of Owners/ Investors/ Partners/ Directors / Managers</label>
+                    <div class="col-sm-3">
+                    <input type="text" name="emirates_id" class="form-control mb-2 mt-2" id="emirates_id">
+                    </div>
+                    </div>
+                    <div class="form-group row">
+                    <label for="id_authorized_signatories" class="col-sm-1">8.</label>
+                    <label for="id_authorized_signatories" class="col-sm-8">ID Copies of Authorized Signatories</label>
+                    <div class="col-sm-3">
+                    <input type="text" name="id_authorized_signatories" class="form-control mb-2 mt-2" id="id_authorized_signatories">
+                    </div>
+                    </div>
+
+                    <h6>**Non-Profit Organization: Charity / Religious / Sports / Co-Operative / Societies or Trust:</h6>
+                    <div class="form-group row">
+                    <label for="non_profit_org" class="col-sm-1">1.</label>
+                    <label for="non_profit_org" class="col-sm-8">**Non-Profit Organization: Charity / Religious / Sports / Co-Operative / Societies or Trust:</label>
+                    <div class="col-sm-3">
+                    <input type="text" name="non_profit_org" class="form-control mb-2 mt-2" id="non_profit_org">
+                    </div>
+                    </div>
+                    <div class="form-group row">
+                    <label for="plc" class="col-sm-1">2.</label>
+                    <label for="plc" class="col-sm-8">Certificate of Incorporation and/ or copy of Commercial Register, as applicable or any other equivalent legal document to prove the legal form and nature of business</label>
+                    <div class="col-sm-3">
+                    <input type="text" name="certificate_incorporation" class="form-control mb-2 mt-2" id="certificate_incorporation">
+                    </div>
+                    </div>
+                    <div class="form-group row">
+                    <label for="plc" class="col-sm-1">3.</label>
+                    <label for="plc" class="col-sm-8">Trust deed (for Trusts)</label>
+                    <div class="col-sm-3">
+                    <input type="text" name="trustd_deed" class="form-control mb-2 mt-2" id="trustd_deed">
+                    </div>
+                    </div>
+                    <div class="form-group row">
+                    <label for="" class="col-sm-1">4.</label>
+                    <label for="id_of_authorized" class="col-sm-8">ID copy of Authorized Signatory(ies)</label>
+                    <div class="col-sm-3">
+                    <input type="text" name="id_of_authorized" class="form-control mb-2 mt-2" id="id_of_authorized">
+                    </div>
+                    </div>
+                    <strong>Note: The above information and due diligence documentation are required for Insurance companies as per the Insurance Authority Directive and Cabinet Decision no (10) of 2019.</strong>
+
+
+                    <strong>KYC Verification carried out by (To be filled by Customer)</strong>
+                    <div class="form-group row mt-2">
+                    <label class="col-md-6">KYC Verification carried out by (To be filled by Customer:</label>
+                    <div class="col-md-6">
+                    <input type="text" name="kycverification" class="form-control mt-2" id="kycverification">
+                    </div>
+                    </div>
+                    <div class="form-group row mt-2">
+                    <label class="col-md-6">Authorised signatory Designation:</label>
+                    <div class="col-md-6">
+                    <input type="text" name="authorised_signatory_desig" class="form-control mt-2" id="authorised_signatory_desig">
+                    </div>
+                    </div>
+                    <div class="form-group row mt-2">
+                    <label class="col-md-3">Authorised signatory Signature:</label>
+                    <div class="col-md-3">
+                    <input type="text" name="authorised_signature" class="form-control mt-2" id="authorised_signature">
+                    </div>
+                    <label class="col-md-3">Date & company Stamp:</label>
+                    <div class="col-md-3">
+                    <input type="text" name="date_company_stamp" class="form-control mt-2" id="date_company_stamp">
+                    </div>
+                    </div>
+
+
+                    <h6>Reviewed By: MEDGULF AML Officer</h6>
+                    <div class="form-group row mt-2">
+                    <label class="col-md-4">Name:</label>
+                    <div class="col-md-8">
+                    <input type="text" name="reviewed_by_name" class="form-control mt-2" id="reviewed_by_name">
+                    </div>
+                    <label class="col-md-4">Signature:</label>
+                    <div class="col-md-8">
+                    <input type="text" name="reviewed_by_signature" class="form-control mt-2" id="reviewed_by_signature">
+                    </div>
+                    <label class="col-md-4">Date:</label>
+                    <div class="col-md-8">
+                    <input type="text" name="reviewed_by_bdate" class="form-control mt-2">
+                    </div>
+                    </div>
+
+
+
+                    <h6>Approved By: MEDGULF General Manager (For High-Risk Customers only)</h6>
+                    <div class="form-group row mt-2">
+                    <label class="col-md-4">Name:</label>
+                    <div class="col-md-8">
+                    <input type="text" name="approved_by_name" class="form-control mt-2" id="approved_by_name">
+                    </div>
+                    <label class="col-md-4">Signature:</label>
+                    <div class="col-md-8">
+                    <input type="text" name="approved_by_signature" class="form-control mt-2" id="approved_by_signature">
+                    </div>
+                    <label class="col-md-4">Date:</label>
+                    <div class="col-md-8">
+                    <input type="text" name="approved_by_date" class="form-control mt-2" id="approved_by_date">
+                    </div>
+                    </div>*@
+                        <button type="submit" class="btn btn-primary br-50" id="btnSubmit" style="display:none;">@localizer["Update"]</button>
+                    </form>
+                </div>
+            </div>
+
+
+
+
+            <br />
+            <div style="width:100%;display:none" id="footdiv">
+                <p>@localizer["Computer generated report; hence no signature is required."]</p>
+            </div>
+        </div>
+
+
+
+            <!-- Modal -->
+            @*<div class="modal fade" id="docModal" tabindex="-1" role="dialog" aria-labelledby="docModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="docModalLabel">Documents</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <ul>
+                                    @foreach (var item in Model.CaseDocumentsL)
+                                    {
+                                        <li><a href='/Case/DownloadCaseDocument?filePath=@item.DocumentFullPath&fileName=@item.DocumentFileName' download='@item.DocumentFileName'>@item.DocumentFileName</a></li>
+                                    }
+                                </ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>*@
+
+            <!-- group entity Modal -->
+            @*<div class="modal fade" id="entitydocModal" tabindex="-1" role="dialog" aria-labelledby="docModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="docModalLabel">Documents</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <ul>
+                                    @if (Model.GroupEntity != null)
+                                    {
+                                        foreach (var item in Model.GroupEntity)
+                                        {
+                                            @foreach (var item2 in item.CaseDocumentsL)
+                                            {
+                                                <li><a href='/Case/DownloadCaseDocument?filePath=@item2.DocumentFullPath&fileName=@item2.DocumentFileName' download='@item2.DocumentFileName'>@item2.DocumentFileName</a></li>
+                                            }
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>*@
+
+            <!-- Partners  Modal -->
+            @*<div class="modal fade" id="parnternsdocModal" tabindex="-1" role="dialog" aria-labelledby="docModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="docModalLabel">Documents</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <ul>
+                                    @if (Model.Partners != null)
+                                    {
+                                        foreach (var item in Model.Partners)
+                                        {
+                                            @foreach (var item2 in item.CaseDocumentsL)
+                                            {
+                                                <li><a href='/Case/DownloadCaseDocument?filePath=@item2.DocumentFullPath&fileName=@item2.DocumentFileName' download='@item2.DocumentFileName'>@item2.DocumentFileName</a></li>
+                                            }
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>*@
+
+            <!-- Senior management  Modal -->
+            @*<div class="modal fade" id="seniordocModal" tabindex="-1" role="dialog" aria-labelledby="docModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="docModalLabel">Documents</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <ul>
+                                    @if (Model.SeniorManagements != null)
+                                    {
+                                        foreach (var item in Model.SeniorManagements)
+                                        {
+                                            @foreach (var item2 in item.CaseDocumentsL)
+                                            {
+                                                <li><a href='/Case/DownloadCaseDocument?filePath=@item2.DocumentFullPath&fileName=@item2.DocumentFileName' download='@item2.DocumentFileName'>@item2.DocumentFileName</a></li>
+                                            }
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>*@
+            <!-- authorized   Modal -->
+            @*<div class="modal fade" id="authoriseddocModal" tabindex="-1" role="dialog" aria-labelledby="docModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="docModalLabel">Documents</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <ul>
+                                    @if (Model.AuthorisedSignatories != null)
+                                    {
+                                        foreach (var item in Model.AuthorisedSignatories)
+                                        {
+                                            @foreach (var item2 in item.CaseDocumentsL)
+                                            {
+                                                <li><a href='/Case/DownloadCaseDocument?filePath=@item2.DocumentFullPath&fileName=@item2.DocumentFileName' download='@item2.DocumentFileName'>@item2.DocumentFileName</a></li>
+                                            }
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>*@
+        </div>
+    </div>
+
+</body>
+
+
+
+<script type="text/javascript">
+
+    $('#printform').on("click", function () {
+        $(this).hide();
+        $('#btnBack').hide();
+        $('#printthisform').printThis({
+            importCSS: true,
+            loadCSS: "/css/print.css",
+            header: '<div style="background: linear-gradient(180deg, #33394e 0%, #2F3961 100%);"><h1 style="color:white">@companyName <img src="@companyLog" style="width:10%;float: right;" /></h1></div>',
+            afterPrint: function () {
+                $('#printform').show();
+                $('#btnBack').show();
+            }
+        });
+
+    });
+
+    $('#ddlCountryList').change(function () {
+        $('#country').val($('#ddlCountryList :selected').text());
+
+    });
+
+    $('#ddlLicenseType').change(function () {
+        $('#ddlLicenseTypehdn').val($('#ddlLicenseType :selected').text());
+
+    });
+
+
+
+    $('#ddlpublic_l_Company').change(function () {
+        $('#EntityType').val($('#ddlpublic_l_Company :selected').text());
+
+    });
+
+    $('#ddlFundSource').change(function () {
+        if ($('#ddlFundSource :selected').text() == "Other") {
+            var x = document.getElementById('FundOther');
+            $('#ddlFundSourcehdn').val('');
+            x.style.display = "block";
+        }
+        else {
+            var x = document.getElementById('FundOther');
+            x.style.display = "none";
+        }
+        $('#ddlFundSourcehdn').val($('#ddlFundSource :selected').text());
+
+    });
+    $('#ddlpublic_l_Company').change(function () {
+        if ($('#ddlpublic_l_Company :selected').text() == "Other") {
+            var x = document.getElementById('entityTypeOther');
+            $('#EntityType').val('');
+            x.style.display = "";
+        }
+        else {
+            var x = document.getElementById('entityTypeOther');
+            x.style.display = "none";
+        }
+        $('#EntityType').val($('#ddlpublic_l_Company :selected').text());
+    });
+
+    $('#btnSubmit').click(function () {
+        $('.se-pre-con').show();
+        $('.se-pre-con').fadeOut(5000);
+    });
+
+    function printdiv(printpage) {
+
+        var newstr = document.all.item(printpage).innerHTML;
+        var oldstr = document.body.innerHTML;
+        document.body.innerHTML =  newstr;
+        document.getElementById("logodiv").style.display = "";
+        //document.getElementById("createddiv").style.display = "";
+        document.getElementById("footdiv").style.display = "";
+        document.getElementById("printBtnDiv").style.display = "none";
+        window.print();
+        document.body.innerHTML = oldstr;
+        document.getElementById("printBtnDiv").style.display = "";
+        return false;
+    }
+</script>
+
+
+

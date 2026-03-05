@@ -1,0 +1,377 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    ViewData["Title"] = localizer["Case Details"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Loader -->
+<div id="loadingdetails" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:flex;">
+    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+</div>
+
+<style>
+    body {
+        background-color: #F8FAFC;
+    }
+
+    .report-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+        width: 100%;
+    }
+
+    /* Core Card */
+    .report-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+
+    .report-header {
+        border-bottom: 1px solid #E2E8F0;
+        padding: 24px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .report-title-area {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .report-profile-img {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #E2E8F0;
+        background-color: #F8FAFC;
+    }
+    
+    .report-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn-secondary {
+        padding: 8px 16px;
+        background: #F1F5F9;
+        color: #475569;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 14px;
+        border: 1px solid #E2E8F0;
+        transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+        background: #E2E8F0;
+        color: #0F172A;
+    }
+
+    /* Content Layout */
+    .report-content {
+        padding: 32px;
+    }
+
+    .report-section {
+        margin-bottom: 32px;
+    }
+    .report-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .report-section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0F172A;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #F1F5F9;
+    }
+
+    .report-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+    }
+
+    .report-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 24px;
+    }
+
+    .info-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 12px;
+    }
+    
+    .info-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 4px;
+    }
+
+    .info-value {
+        font-size: 15px;
+        color: #0F172A;
+        font-weight: 500;
+        line-height: 1.5;
+    }
+
+    .info-value-empty {
+        color: #94A3B8;
+        font-style: italic;
+    }
+
+    /* Tags */
+    .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .tag-item {
+        background: #EFF6FF;
+        color: #1D4ED8;
+        border: 1px solid #BFDBFE;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .tag-item.danger {
+        background: #FEF2F2;
+        color: #B91C1C;
+        border-color: #FECACA;
+    }
+
+    /* Tables */
+    .report-table-wrapper {
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    
+    .report-table th {
+        background: #F8FAFC;
+        padding: 12px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .report-table td {
+        padding: 12px 16px;
+        font-size: 14px;
+        color: #334155;
+        border-bottom: 1px solid #F1F5F9;
+        vertical-align: top;
+    }
+
+    .report-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .report-table tr:hover td {
+        background-color: #F8FAFC;
+    }
+
+    /* Loader */
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+    .dt-loader div {
+        position: absolute;
+        top: 8px;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: #2563eb;
+        animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    }
+    .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+    .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+    .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+    .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+    
+    @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+    @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+    @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+</style>
+
+<div class="report-container mt-6">
+    <div class="report-card">
+        <!-- Report Header -->
+        <div class="report-header">
+            <div class="report-title-area">
+                <div class="report-profile-img" style="display: flex; align-items: center; justify-content: center; background: #E2E8F0; color: #64748B;">
+                    <i class="fa fa-user-circle fa-2x"></i>
+                </div>
+                
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900 mb-1">
+                        @Model.DataList[Model.Index].matchname
+                    </h1>
+                    <div class="text-slate-500 font-medium flex items-center gap-3">
+                        <span>Sanctions Match Report</span>
+                        <span class="tag-item">@Model.DataList[Model.Index].matchtype</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="report-actions">
+                <a asp-controller="Case" asp-action="process" asp-route-CaseId="@Model.Case.Id" class="btn-secondary details-back-btn">
+                    <i class="fa fa-arrow-left mr-2"></i> Back
+                </a>
+            </div>
+        </div>
+
+        <div class="report-content">
+            
+            <!-- Key Details -->
+            <div class="report-section">
+                <h3 class="report-section-title">Match Key Details</h3>
+                <div class="report-grid-3">
+                    <div class="info-group">
+                        <span class="info-label">Code / ID Number</span>
+                        <span class="info-value">@(string.IsNullOrEmpty(Convert.ToString(Model.DataList[Model.Index].matchidno)) ? "-" : Convert.ToString(Model.DataList[Model.Index].matchidno))</span>
+                    </div>
+                    <div class="info-group">
+                        <span class="info-label">Date Of Birth</span>
+                        <span class="info-value">@(string.IsNullOrEmpty(Convert.ToString(Model.DataList[Model.Index].matchdob)) ? "-" : Convert.ToString(Model.DataList[Model.Index].matchdob))</span>
+                    </div>
+                    <div class="info-group">
+                        <span class="info-label">Nationality</span>
+                        <span class="info-value">@(string.IsNullOrEmpty(Convert.ToString(Model.DataList[Model.Index].matchnationality)) ? "-" : Convert.ToString(Model.DataList[Model.Index].matchnationality))</span>
+                    </div>
+                    <div class="info-group">
+                        <span class="info-label">Run Date</span>
+                        <span class="info-value">@DateTime.Now.ToString("dd-MMM-yyyy")</span>
+                    </div>
+                    <div class="info-group" style="grid-column: span 2;">
+                        <span class="info-label">Remarks</span>
+                        <span class="info-value">@(string.IsNullOrEmpty(Convert.ToString(Model.DataList[Model.Index].remarks)) ? "-" : Convert.ToString(Model.DataList[Model.Index].remarks))</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="report-grid-2">
+                <!-- Aliases -->
+                <div class="report-section">
+                    <h3 class="report-section-title">Known Aliases</h3>
+                    @if (Model.apiResultModels[0].alias != null && Model.apiResultModels[0].alias.Count > 0)
+                    {
+                        <div class="tag-list">
+                            @foreach (var item in Model.apiResultModels[0].alias)
+                            {
+                                <span class="tag-item text-red-600 bg-red-100 border-red-200">@item</span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="info-value-empty">No aliases recorded</span>
+                    }
+                </div>
+                
+                <!-- Additional Keys -->
+                <div class="report-section">
+                    <h3 class="report-section-title">System Properties</h3>
+                    <div class="info-group mb-4">
+                        <span class="info-label">API Data ID</span>
+                        <span class="info-value">@Model.apiResultModels[0].matchuid</span>
+                    </div>
+                    <div class="info-group">
+                        <span class="info-label">API Ref No</span>
+                        <span class="info-value">@Model.apiResultModels[0].matchidnumber</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison Block -->
+            <div class="report-section mt-8">
+                <h3 class="report-section-title">Case vs. Sanction Data Comparison</h3>
+                <div class="report-table-wrapper">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Sanction Record (Matched)</th>
+                                <th>Client Profile (Case Input)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-medium text-slate-700">Name</td>
+                                <td class="text-red-700 font-semibold">@Model.DataList[Model.Index].matchname</td>
+                                <td>@Model.Case.FirstName @Model.Case.MiddleName @Model.Case.LastName</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium text-slate-700">Date of Birth</td>
+                                <td>@Model.DataList[Model.Index].matchdob</td>
+                                <td>@(Model.Case.DOB == "1/1/0001 12:00:00 AM" ? "-" : Model.Case.DOB)</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium text-slate-700">Nationality</td>
+                                <td>@Model.DataList[Model.Index].matchnationality</td>
+                                <td>@(string.IsNullOrEmpty(Model.Case.Nationality) ? "-" : Model.Case.Nationality)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(function () {
+        // Ensure loader shows immediately
+        $("#loadingdetails").show();
+    });
+
+    $(window).on("load", function () {
+        // Hide loader after everything including images is loaded
+        $("#loadingdetails").fadeOut("slow");
+    });
+
+    // Show loader on back button click
+    $(document).ready(function () {
+        $('.details-back-btn').on('click', function () {
+            $('#loadingdetails').show();
+        });
+    });
+</script>

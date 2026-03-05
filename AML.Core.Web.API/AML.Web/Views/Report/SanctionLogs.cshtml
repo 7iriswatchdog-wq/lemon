@@ -1,0 +1,208 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Sanction Listing Logs";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model AML.ViewModel.ViewModels.Report.ReportLogSearchModel
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<style>
+select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.41 0L6 4.59L10.59 0L12 1.42L6 7.42L0 1.42L1.41 0Z' fill='white'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position-x: calc(100% - 20px) !important;
+    background-position-y: 50% !important;
+}
+select option {
+    background-color: #1a2038;
+}
+    heading {
+        font-size: 1.25rem;
+    }
+
+    .page {
+        background-color: whitesmoke;
+        width: 83vw;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .head-section {
+        display: flex;
+        justify-content: space-between; /* Better than flex-start + auto margin */
+        align-items: center;
+        width: 83vw;
+        height: 72px;
+        overflow-x: hidden;
+        padding: 0 16px; /* Add horizontal padding if needed */
+        box-sizing: border-box;
+        background-color: white !important;
+    }
+</style>
+<div class="page">
+<div class="custom-container aml-instant-sanction-filter">
+    <div class="page-heading">
+        <div class="sas-card rounded-card br-20 mb-2 bg-blue head-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 heading"><b>Instant Sanction Screening</b></h4>
+                <div class="menu-icon">
+                    <i class="lni lni-microsoft"></i>
+                </div>
+            </div>
+            <div class="md:block hidden">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </div>
+    <!-- /.card-header -->
+    <!-- form start -->
+    <!--form role="form" asp-controller="Case" asp-action="SanctionScreening" class="form-horizontal" enctype="multipart/form-data" method="post"-->
+    <div class="sas-card rounded-card mb-2 bg-blue">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">Instant Sanction Screening Filter</h6>
+        </div>
+        <hr />
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="dtDOB">Start Date</label>
+                    <input type="date" asp-for="StartDate" class="form-control br-50" id="dtStartDate" max="@DateTime.Now.ToString("yyyy-MM-dd")" placeholder="Start Date">
+                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="dtDOB">End Date</label>
+                    <input type="date" asp-for="EndDate" class="form-control br-50" id="dtEndDate" max="@DateTime.Now.ToString("yyyy-MM-dd")" placeholder="End Date">
+                    <span asp-validation-for="EndDate" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-sm">
+                <div class="form-group">
+                   
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-end">
+        <div class="d-flex justify-content-between align-items-center mr-3">
+            <button type="submit" id="btnSearch" class="sas-button p-8-25 color-white bg-color-2 br-50" onclick="search();">GO</button>
+            <button type="reset" id="btnReset" class="sas-button p-8-25 color-white bg-color-3 br-50 ml-3">Reset</button>
+        </div>
+    <!-- /.card-body -->
+    <!--/form-->
+    </div>
+</div>
+    </div>
+
+<div class="custom-container aml-instant-sanction-filter">
+    <div class="sas-card rounded-card mb-2 bg-blue">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">Results</h6>
+        </div>
+        <hr />
+        <div class="row">
+            <div class="col-12">
+                <div class="card-body">
+                    <div style="width: 100%; padding-left: -10px;">
+                        <div class="table-responsive">
+                            <table id="sanctionLogs" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Score</th>
+                                        <th>Category</th>
+                                        <th>Nationality</th>
+                                        <th>DOB</th>
+                                        <th>Created Date</th>
+                                        @*<th>Delete</th>*@
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    var table;
+    function search() {
+        $.fn.dataTable.ext.legacy.ajax;
+        table = $('#sanctionLogs').DataTable({
+            "processing": true,
+            "serverSide": true,
+             order: [[1, 'desc']],
+            "filter": true, // this is for disable filter (search box)
+            "orderMulti": false, // for disable multiple column at once
+            "destroy": true,
+            ajax: {
+                url: '/Report/SanctionList/',
+                type: 'POST',
+                data: {
+                    StartDate: $('#dtStartDate').val(), // < note use of 'this' here
+                    EndDate: $("#dtEndDate").val()
+                }
+            },
+            columns: [
+                { data: "customerName" },
+                { data: "matchScore" },
+                { data: "matchCategory" },
+                { data: "nationality" },
+                {
+                    "render": function (data, type, full, meta) {
+                        if (full.dob != '') {
+                            var doa = full.dob.split('T')[0];     
+                            var dArr = doa.split("-");                           
+                            if (dArr[0] == "0001")
+                                return "NA";
+                            else
+                                return dArr[2] + "-" + dArr[1] + "-" + dArr[0];
+                            //return dArr[2] + "-" + dArr[1] + "-" + dArr[0];
+                        } else {
+                            return full.dob;
+                        }
+                    }
+                },
+                {
+                    "render": function (data, type, full, meta) {
+                        if (full.createdOn != '') {
+
+                            var doa = full.createdOn.split('T')[0];
+                            var time = full.createdOn.split('T')[1];
+                            var dArr = doa.split("-");
+
+                            return dArr[2] + "-" + dArr[1] + "-" + dArr[0] + " " + time;
+                        } else {
+                            return full.createdOn;
+                        }
+                    }
+                }
+            ],
+            colReorder: true
+
+        });
+    }
+
+     $("#btnReset").click(function () {
+        var date = new Date();
+        var day = date.getDate();
+        var month = date.getMonth() + 1;
+        var year = date.getFullYear();
+        if (month < 10) month = "0" + month;
+        if (day < 10) day = "0" + day;
+        var today = year + "-" + month + "-" + day;
+        $('#dtStartDate').val(today);
+        $('#dtEndDate').val(today);
+        search();
+    });
+</script>

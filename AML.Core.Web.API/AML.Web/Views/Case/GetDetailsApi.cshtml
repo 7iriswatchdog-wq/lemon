@@ -1,0 +1,608 @@
+﻿@using Microsoft.AspNetCore.Http
+@using System.Linq
+@using System.Collections.Generic
+@inject IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    ViewData["Title"] = localizer["Case Details"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+    bool isIndividual = ViewBag.user != null;
+    var profile      = isIndividual ? ViewBag.user : ViewBag.business;
+
+    string fullName = "", profileId = "", caseid_s = "0", resourcesid = "", matchuid = "", category = "";
+    if (isIndividual && ViewBag.user != null)
+    {
+        var u = ViewBag.user.Users;
+        fullName  = ((Convert.ToString(u?.Forename)??"") + " " + (Convert.ToString(u?.Middlename)??"") + " " + (Convert.ToString(u?.Surname)??"")).Trim();
+        profileId = Convert.ToString(u?.Id) ?? "";
+    }
+    else if (ViewBag.business != null)
+    {
+        var b = ViewBag.business?.Users;
+        fullName  = Convert.ToString(b?.BusinessName) ?? "";
+        profileId = Convert.ToString(b?.Id) ?? "";
+    }
+    caseid_s    = Convert.ToString(profile?.caseid ?? 0);
+    resourcesid = Convert.ToString(profile?.Resourcesid) ?? "";
+    matchuid    = Convert.ToString(profile?.MatchUid) ?? "";
+    category    = Convert.ToString(profile?.Category) ?? "";
+    int caseid  = int.TryParse(caseid_s, out int cid) ? cid : 0;
+
+    var pu = profile?.Users;
+    var sanctions    = pu?.Sanctions;
+    var pepPositions = pu?.PoliticalPositions;
+    var articles     = pu?.Articles;
+    var notes        = pu?.Notes;
+    int evNum        = 0;
+
+    bool hasPEP     = pu?.IsPEP == true;
+    bool hasSanCurr = pu?.IsSanctionsCurrent == true;
+    bool hasSanPrev = pu?.IsSanctionsPrevious == true;
+    bool hasLawEnf  = pu?.IsLawEnforcement == true;
+    bool hasFinReg  = pu?.IsFinancialregulator == true;
+    bool hasAdvMedia= pu?.IsAdverseMedia == true;
+
+    string primaryBadge = (pu?.Datasets != null && pu.Datasets.Contains("REL")) ? "REL" : (hasSanCurr || hasSanPrev) ? "SAN" : hasPEP ? "PEP" : hasAdvMedia ? "AM" : "";
+
+    bool hasSanctions= sanctions!=null&&sanctions.Count>0;
+    bool hasRelEntries = pu?.RelEntries != null && pu.RelEntries.Count > 0;
+    bool hasRreEntries = pu?.RreEntries != null && pu.RreEntries.Count > 0;
+    bool hasPoiEntries = pu?.PoiEntries != null && pu.PoiEntries.Count > 0;
+    bool hasInsEntries = pu?.InsEntries != null && pu.InsEntries.Count > 0;
+    bool hasGriEntries = pu?.GriEntries != null && pu.GriEntries.Count > 0;
+    bool hasAnyRel   = hasRelEntries || hasRreEntries || hasPoiEntries || hasInsEntries || hasGriEntries;
+
+    bool hasPepPos   = pepPositions!=null&&pepPositions.Count>0;
+    bool hasArticles = articles!=null&&articles.Count>0;
+    int  artCount    = hasArticles?articles.Count:0;
+
+    // Extract short code from category name like "Captured on: 2022-09-13 datasets: REL ..."
+    Func<string,string> dsCode = (raw) => {
+        if (string.IsNullOrWhiteSpace(raw)) return "";
+        int idx = raw.IndexOf("datasets:", StringComparison.OrdinalIgnoreCase);
+        if (idx >= 0) { var a = raw.Substring(idx+9).TrimStart(); var sp = a.IndexOf(' '); return sp>0?a.Substring(0,sp):a; }
+        return raw.Trim();
+    };
+    // Get C6 snippet from category string after dataset code
+    Func<string,string> dsSnippet = (raw) => {
+        if (string.IsNullOrWhiteSpace(raw)) return "";
+        int idx = raw.IndexOf("datasets:", StringComparison.OrdinalIgnoreCase);
+        if (idx >= 0) { var a = raw.Substring(idx+9).TrimStart(); var sp = a.IndexOf(' '); return sp>0?a.Substring(sp+1).Trim():""; }
+        return "";
+    };
+
+    string auditDate = DateTime.UtcNow.ToString("yyyy-MM-dd - HH:mm:ss") + " UTC";
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<div id="loadingdetails" style="display:flex;position:fixed;inset:0;background:rgba(255,255,255,.92);align-items:center;justify-content:center;z-index:9999;">
+    <div class="kld"><div></div><div></div><div></div><div></div></div>
+</div>
+
+<style>
+html,body{font-family:'Inter',Arial,sans-serif;background:#f5f5f5;color:#000;}
+.kld{display:inline-block;position:relative;width:60px;height:13px}
+.kld div{position:absolute;top:1px;width:11px;height:11px;border-radius:50%;background:#1a56db;animation-timing-function:cubic-bezier(0,1,1,0)}
+.kld div:nth-child(1){left:6px;animation:k1 .6s infinite}
+.kld div:nth-child(2){left:6px;animation:k2 .6s infinite}
+.kld div:nth-child(3){left:26px;animation:k2 .6s infinite}
+.kld div:nth-child(4){left:46px;animation:k3 .6s infinite}
+@@keyframes k1{0%{transform:scale(0)}100%{transform:scale(1)}}
+@@keyframes k3{0%{transform:scale(1)}100%{transform:scale(0)}}
+@@keyframes k2{0%{transform:translate(0,0)}100%{transform:translate(19px,0)}}
+
+/* Main document wrapper */
+.doc { 
+    max-width: 800px; 
+    margin: 0 auto; 
+    padding: 0 40px 60px; 
+    background: #fff; 
+}
+
+/* Action bar */
+.topbar { 
+    display: flex; 
+    justify-content: flex-end; 
+    gap: 8px; 
+    padding: 20px 0; 
+    margin-bottom: 10px;
+}
+
+/* Profile header */
+.ph { 
+    display: flex; 
+    gap: 25px; 
+    align-items: flex-start; 
+    margin-bottom: 25px;
+}
+.ph-photo { 
+    width: 100px; 
+    height: 125px; 
+    background: #fdfdfd; 
+    border: 1px solid #eee;
+    flex-shrink: 0; 
+}
+.ph-photo img { width: 100%; height: 100%; object-fit: cover; }
+.ph-info { flex: 1; }
+.ph-name { 
+    font-size: 18px; 
+    font-weight: 700; 
+    color: #000; 
+    display: flex; 
+    align-items: center; 
+    gap: 12px;
+}
+.ph-name em { font-style: italic; font-weight: 700; }
+.ph-id { font-size: 15px; color: #555; margin-top: 4px; font-weight: 500; }
+
+/* Badges */
+.pill { 
+    display: inline-block; 
+    padding: 2px 14px; 
+    border-radius: 99px; 
+    font-size: 11px; 
+    font-weight: 700; 
+    background: #1a78c2; 
+    color: #fff;
+}
+.pill-rel { background: #3b82f6; }
+.pill-san { background: #ef4444; }
+.pill-pep { background: #f59e0b; }
+.pill-id  { background: #10b981; }
+.pill-am  { background: #8b5cf6; }
+
+/* Sections */
+.sec-hdr { font-size: 16px; font-weight: 700; color: #000; margin: 30px 0 6px; }
+.sec-line { border: 0; border-top: 2px solid #1a78c2; margin: 0 0 15px; opacity: 1; }
+
+/* 3-column Table Layout */
+.pd-table { width: 100%; border-collapse: collapse; margin-left: 10px; }
+.pd-table td { padding: 4px 8px; vertical-align: top; font-size: 14px; }
+.pd-group { font-weight: 700; color: #000; width: 160px; }
+.pd-field { color: #9ca3af; width: 160px; font-weight: 400; }
+.pd-val { color: #000; font-weight: 500; }
+.pd-val em { font-style: italic; font-weight: 500; }
+
+/* Line items for lists */
+.pd-list { list-style: none; margin: 0; padding: 0; }
+.pd-list li { padding: 1px 0; }
+
+/* Other Datasets - Tree */
+.ds-subtitle { font-size: 14px; font-weight: 700; color: #000; display: flex; align-items: center; gap: 8px; margin: 5px 0 10px; }
+.ds-badge-cnt { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; border-radius: 50%; background: #ccc; color: #fff; font-size: 11px; font-weight: 700; }
+.ds-law-hdr { font-size: 14px; font-weight: 700; margin: 15px 0 5px; }
+.ds-law-summary { font-size: 14px; color: #000; margin-bottom: 5px; }
+.ds-ev-count { font-size: 14px; font-weight: 700; margin: 10px 0 5px; }
+.ds-evt-indented { margin-left: 20px; border-left: 1px solid #3b82f6; padding-left: 15px; }
+.ds-evt-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.ds-evt-date { font-size: 14px; color: #000; margin-bottom: 2px; }
+.ds-ev-label { font-size: 14px; font-weight: 700; margin: 10px 0 5px; }
+
+/* Grid for labels and values */
+.grid-row { display: grid; grid-template-columns: 180px 1fr; gap: 10px; padding: 4px 8px; font-size: 14px; align-items: start; }
+.grid-lbl { color: #000; font-weight: 700; }
+.grid-sublbl { color: #000; font-weight: 400; padding-left: 30px; width: 150px; }
+.grid-val { color: #000; font-weight: 400; }
+.cp-link { color: #3b82f6; text-decoration: underline; font-size: 14px; word-break: break-all; }
+.cp-text { font-size: 14px; color: #000; line-height: 1.5; }
+.cp-cred-lbl { font-size: 14px; font-weight: 700; color: #000; }
+
+</style>
+
+<div class="doc">
+
+    <!-- Topbar actions only -->
+    <div class="topbar">
+        <a asp-controller="Case" asp-action="process" asp-route-CaseId="@caseid" class="tbtn">&#8592; Back</a>
+        @if (!string.IsNullOrEmpty(resourcesid))
+        {
+            <a href="@Url.Action("CallApi","Case",new{Id=resourcesid,Category=category})" class="tbtn tbtn-dl">Download Report</a>
+        }
+    </div>
+
+    @if (pu != null)
+    {
+    <!-- Profile Header -->
+    <div class="ph">
+        <div class="ph-photo">
+            @if (isIndividual && !string.IsNullOrWhiteSpace(Convert.ToString(pu.ImageURL)))
+            { <img src="@pu.ImageURL" alt="@fullName"/> }
+            else if (isIndividual) { <i class="fa fa-user"></i> }
+            else { <i class="fa fa-building"></i> }
+        </div>
+        <div class="ph-info">
+            <div class="ph-name">
+                @if (isIndividual)
+                {
+                    string fn = Convert.ToString(pu.Forename) ?? "";
+                    string mn = Convert.ToString(pu.Middlename) ?? "";
+                    string sn = Convert.ToString(pu.Surname) ?? "";
+                    @fn
+                    if (!string.IsNullOrEmpty(mn)) { <text> <em>@mn</em></text> }
+                    if (!string.IsNullOrEmpty(sn)) { <text> @sn</text> }
+                }
+                else { @fullName }
+                @if (!string.IsNullOrEmpty(primaryBadge))
+                {
+                    string pc = primaryBadge=="REL"?"pill-rel":primaryBadge=="SAN"?"pill-san":primaryBadge=="PEP"?"pill-pep":primaryBadge=="ID"?"pill-id":primaryBadge=="AM"?"pill-am":primaryBadge=="FINREG"?"pill-fin":"pill-gray";
+                    <span class="pill @pc">@primaryBadge</span>
+                }
+            </div>
+            <div class="ph-id">#@profileId</div>
+            <div class="ph-flags">
+                @if(hasPEP){<span class="pill pill-pep">PEP</span>}
+                @if(hasSanCurr || hasSanPrev){<span class="pill @(hasSanCurr?"pill-san":"pill-gray")">@(hasSanCurr?"Current Sanction":"Previous Sanction")</span>}
+                @if(pu?.Datasets != null) { foreach(var d in pu.Datasets) { <span class="pill pill-rel">@d</span> } }
+                @if(hasAdvMedia){<span class="pill pill-am">Adverse Media</span>}
+                @if(isIndividual && pu.IsDeceased==true){<span class="pill pill-san">Deceased</span>}
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Stamp -->
+    <div class="sec-hdr">Audit Stamp</div>
+    <hr class="sec-line"/>
+    <div class="grid-row" style="margin-top:15px; grid-template-columns: 160px 1fr;">
+        <span class="pd-field">Date:</span>
+        <span class="pd-val" style="margin-left: 10px;">@auditDate</span>
+    </div>
+
+    <!-- Profile Details -->
+    <div class="sec-hdr">Profile Details</div>
+    <hr class="sec-line"/>
+    <table class="pd-table">
+        @if (isIndividual)
+        {
+            string fn2 = Convert.ToString(pu.Forename)??"", mn2 = Convert.ToString(pu.Middlename)??"", sn2 = Convert.ToString(pu.Surname)??"", gn = Convert.ToString(pu.Gender)??"";
+            <tr>
+                <td class="pd-group">Core Details</td>
+                <td class="pd-field">Forename:</td>
+                <td class="pd-val">@fn2</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="pd-field">Middle name:</td>
+                <td class="pd-val">@mn2</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="pd-field">Surname:</td>
+                <td class="pd-val">@sn2</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="pd-field">Gender:</td>
+                <td class="pd-val">@gn</td>
+            </tr>
+        }
+        else
+        {
+            <tr>
+                <td class="pd-group">Core Details</td>
+                <td class="pd-field">Business Name:</td>
+                <td class="pd-val">@(Convert.ToString(pu.BusinessName)??"") </td>
+            </tr>
+            @if (!string.IsNullOrEmpty(Convert.ToString(pu.Description)))
+            {
+                <tr>
+                    <td></td>
+                    <td class="pd-field">Description:</td>
+                    <td class="pd-val">@pu.Description</td>
+                </tr>
+            }
+            @if (pu.BusinessTypes != null && pu.BusinessTypes.Count > 0)
+            {
+                <tr>
+                    <td></td>
+                    <td class="pd-field">Business Type:</td>
+                    <td class="pd-val">@string.Join(", ", pu.BusinessTypes)</td>
+                </tr>
+            }
+            @if (pu.Identifiers != null)
+            {
+                @foreach (var id in pu.Identifiers)
+                {
+                    <tr>
+                        <td></td>
+                        <td class="pd-field">@id.Category:</td>
+                        <td class="pd-val">@id.Value</td>
+                    </tr>
+                }
+            }
+            <tr>
+                <td></td>
+                <td class="pd-field">Website:</td>
+                <td class="pd-val">@(Convert.ToString(pu.Website)??"") </td>
+            </tr>
+        }
+
+        <!-- Aliases -->
+        @if (pu.Aliases != null && pu.Aliases.Count > 0)
+        {
+            <tr><td colspan="3" style="height:15px;"></td></tr>
+            int ali = 0;
+            @foreach (var alias in pu.Aliases)
+            {
+                string af = Convert.ToString(alias.FirstName)??"", am = Convert.ToString(alias.MiddleName)??"", als = Convert.ToString(alias.LastName)??"";
+                string abn = isIndividual ? "" : Convert.ToString(alias.BusinessName)??"";
+                bool hasAlias = isIndividual ? (!string.IsNullOrEmpty(af)||!string.IsNullOrEmpty(am)||!string.IsNullOrEmpty(als)) : !string.IsNullOrEmpty(abn);
+                if (hasAlias)
+                {
+                    <tr>
+                        @if (ali == 0) { <td class="pd-group">Aliases</td> } else { <td></td> }
+                        <td colspan="2" class="pd-val" style="padding-left:0;">
+                            @if (isIndividual)
+                            {
+                                @af
+                                if (!string.IsNullOrEmpty(am)) { <text> </text><em>@am</em> }
+                                if (!string.IsNullOrEmpty(als)) { <text> </text>@als }
+                            }
+                            else { @abn }
+                        </td>
+                    </tr>
+                    ali++;
+                }
+            }
+        }
+
+        <!-- Nationalities -->
+        @if (isIndividual && pu.Nationality != null && !string.IsNullOrEmpty(Convert.ToString(pu.Nationality.Name)))
+        {
+            <tr><td colspan="3" style="height:15px;"></td></tr>
+            <tr>
+                <td class="pd-group">Nationalities</td>
+                <td colspan="2" class="pd-val" style="padding-left:0;">@(pu.Nationality.NationalityText ?? pu.Nationality.Name)</td>
+            </tr>
+        }
+
+        <!-- Addresses -->
+        @if (pu.Addresses != null && pu.Addresses.Count > 0)
+        {
+            <tr><td colspan="3" style="height:15px;"></td></tr>
+            int adri = 0;
+            @foreach (var addr in pu.Addresses)
+            {
+                string a1=Convert.ToString(addr.Address1)??"", a2=Convert.ToString(addr.Address2)??"", a3=Convert.ToString(addr.Address3)??"", acity=Convert.ToString(addr.City)??"", acty=Convert.ToString(addr.County)??"", acount=addr.Country!=null?(Convert.ToString(addr.Country.Name)??""):"";
+                var parts2 = new System.Collections.Generic.List<string>();
+                foreach(var p in new[]{a1,a2,a3,acity,acty,acount}) {
+                    string s = p.Trim().TrimEnd(',');
+                    if(!string.IsNullOrWhiteSpace(s) && !parts2.Any(x => x.Equals(s, StringComparison.OrdinalIgnoreCase))) 
+                        parts2.Add(s);
+                }
+                string addrLine = string.Join(", ", parts2);
+                <tr>
+                    @if(adri==0){<td class="pd-group">Addresses</td>} else { <td></td> }
+                    <td colspan="2" class="pd-val" style="padding-left:0;">
+                        @addrLine
+                        @if (!string.IsNullOrEmpty(addr.AddressType)) { <span style="font-size:11px;color:#555;display:block;">(@addr.AddressType)</span> }
+                    </td>
+                </tr>
+                adri++;
+            }
+        }
+    </table>
+
+    <!-- Other Datasets -->
+    @if (hasSanctions || hasPepPos || hasAnyRel)
+    {
+        <div class="sec-hdr" style="margin-top:28px;">Other Datasets</div>
+        <hr class="sec-line"/>
+
+        @if (hasSanctions || hasAnyRel)
+        {
+            <div class="ds-block" style="@(hasPepPos?"margin-bottom:20px;":"")">
+                <div class="ds-subtitle">
+                    Regulatory Enforcement List
+                    <span class="ds-badge-cnt">@((sanctions?.Count ?? 0) + (pu?.RelEntries?.Count ?? 0) + (pu?.RreEntries?.Count ?? 0) + (pu?.PoiEntries?.Count ?? 0) + (pu?.InsEntries?.Count ?? 0) + (pu?.GriEntries?.Count ?? 0))</span>
+                </div>
+                @if (hasSanctions) {
+                    @foreach (var s in sanctions)
+                    {
+                        <div style="font-size:14px;padding:2px 0;margin-left:10px;">
+                            @(s.SanctionType!=null?Convert.ToString(s.SanctionType.Description):"-")
+                            <span class="pill @(s.IsCurrent==true?"pill-san":"pill-gray")" style="margin-left:6px;">@(s.IsCurrent==true?"Current":"Previous")</span>
+                        </div>
+                    }
+                }
+                @if (hasAnyRel) {
+                    var allRel = new List<dynamic>();
+                    if(pu.RelEntries != null) allRel.AddRange(pu.RelEntries);
+                    if(pu.RreEntries != null) allRel.AddRange(pu.RreEntries);
+                    if(pu.PoiEntries != null) allRel.AddRange(pu.PoiEntries);
+                    if(pu.InsEntries != null) allRel.AddRange(pu.InsEntries);
+                    if(pu.GriEntries != null) allRel.AddRange(pu.GriEntries);
+
+                    @foreach (var rel in allRel)
+                    {
+                        <div class="ds-law-hdr" style="padding-left:10px;">@rel.Category</div>
+                        <div class="ds-law-summary" style="padding-left:10px;">@rel.Subcategory</div>
+                        <div class="ds-ev-count" style="padding-left:10px;">@rel.Events.Count Event@(rel.Events.Count==1?"":"s")</div>
+                        @foreach (var ev in rel.Events)
+                        {
+                            <div class="ds-evt-indented">
+                                <div class="ds-evt-title">@ev.Type @(ev.Period != null && ev.Period.Years > 0 ? ev.Period.Years + " Years" : "")</div>
+                                <div class="ds-evt-date">@ev.DateIso</div>
+                                <div class="ds-ev-label">@ev.EvidenceIds.Count Evidence</div>
+                                @foreach (var evid in ev.EvidenceIds)
+                                {
+                                    dynamic art = null;
+                                    if (articles != null)
+                                    {
+                                        foreach (var a in articles)
+                                        {
+                                            bool matched = false;
+                                            if (a.EvidenceId == evid) matched = true;
+                                            else if (a.Categories != null)
+                                            {
+                                                foreach (var c in a.Categories) { if (c.Name != null && c.Name.Contains(evid)) { matched = true; break; } }
+                                            }
+                                            if (matched) { art = a; break; }
+                                        }
+                                    }
+
+                                    if (art != null)
+                                    {
+                                        string artCapt = Convert.ToString(art.DateCollected)??"";
+                                        string artPub  = Convert.ToString(art.DatePublished)??"";
+                                        string artTitle = art.EvidenceId ?? (art.Snippet != null ? Convert.ToString(art.Snippet.Title) : "");
+
+                                        <div class="ds-evt-indented" style="border:0;padding-left:0;">
+                                            @if(!string.IsNullOrEmpty(artCapt)){<div class="grid-row" style="grid-template-columns: 140px 1fr;"><span class="grid-lbl" style="font-weight:400;color:#555;">Captured</span><span class="grid-val">@artCapt</span></div>}
+                                            @if(!string.IsNullOrEmpty(artPub)){<div class="grid-row" style="grid-template-columns: 140px 1fr;"><span class="grid-lbl" style="font-weight:400;color:#555;">Published</span><span class="grid-val">@artPub</span></div>}
+                                            @if(!string.IsNullOrEmpty(artTitle)){<div class="grid-row" style="grid-template-columns: 140px 1fr;"><span class="grid-lbl" style="font-weight:400;color:#555;">Title</span><span class="grid-val">@artTitle</span></div>}
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        }
+                    }
+                }
+            </div>
+        }
+
+        @if (hasPepPos)
+        {
+            <div class="ds-block">
+                <div class="ds-subtitle">
+                    Law Enforcement
+                    <span class="ds-badge-cnt">@pepPositions.Count</span>
+                </div>
+            @foreach (var pos in pepPositions)
+            {
+                <div class="ds-evt-indented" style="margin-top:10px;">
+                    <div class="ds-evt-title">@pos.Description</div>
+                    <div class="ds-evt-date">@pos.To</div>
+                    @if (hasArticles)
+                    {
+                        @foreach (var art in articles)
+                        {
+                            // Ideally match evidence here, but just listing for now if positions don't have evidence IDs
+                            string artCapt = Convert.ToString(art.DateCollected)??"";
+                            string artPub  = Convert.ToString(art.DatePublished)??"";
+                            string artTitle = art.EvidenceId ?? (art.Snippet != null ? Convert.ToString(art.Snippet.Title) : "");
+
+                            <div class="ds-evt-indented" style="border:0;padding-left:0;">
+                                @if(!string.IsNullOrEmpty(artCapt)){<div class="grid-row"><span class="grid-sublbl" style="width:110px;">Captured</span><span class="grid-val">@artCapt</span></div>}
+                                @if(!string.IsNullOrEmpty(artPub)){<div class="grid-row"><span class="grid-sublbl" style="width:110px;">Published</span><span class="grid-val">@artPub</span></div>}
+                                @if(!string.IsNullOrEmpty(artTitle)){<div class="grid-row"><span class="grid-sublbl" style="width:110px;">Title</span><span class="grid-val">@artTitle</span></div>}
+                            </div>
+                        }
+                    }
+                </div>
+            }
+            </div>
+        }
+
+        @if (hasAdvMedia && hasArticles)
+        {
+            <div class="ds-block" style="margin-top:15px;">
+                <div class="ds-subtitle">Adverse Media <span class="ds-badge-cnt">@artCount</span></div>
+            </div>
+        }
+    }
+
+    <!-- Evidence -->
+    @if (hasArticles)
+    {
+        <div class="sec-hdr" style="margin-top:28px;">Evidence</div>
+        <hr class="sec-line"/>
+        <div class="ds-subtitle">
+            Evidence
+            <span class="ds-badge-cnt">@artCount</span>
+        </div>
+        @foreach (var art in articles)
+        {
+            evNum++;
+            string artCapt   = Convert.ToString(art.DateCollected)??"";
+            string artPub    = Convert.ToString(art.DatePublished)??"";
+            string artTitle  = art.EvidenceId ?? (art.Snippet != null ? Convert.ToString(art.Snippet.Title) : "");
+            
+            // If evidenceId is present in relEntries, we might want to prioritize it or use it as Title
+            // In the JSON, articles have originalURL, snippet (title, summary), dateCollected.
+            // The RelEntries events have evidenceIds which link to articles.
+            
+            string artUrl    = Convert.ToString(art.OriginalURL)??"";
+            string artSumm   = art.Snippet!=null?(Convert.ToString(art.Snippet.Summary)??""):"";
+            string artCred   = Convert.ToString(art.CredibilityScore)??"";
+            string artCatRaw = (art.Categories!=null&&art.Categories.Count>0)?(Convert.ToString(art.Categories[0].Name)??""):"";
+            string artCode   = dsCode(artCatRaw);
+            string artBadge  = artCode=="REL"?"pill-rel":artCode=="SAN"?"pill-san":artCode=="PEP"?"pill-pep":artCode=="ID"?"pill-id":artCode=="AM"?"pill-am":"pill-gray";
+
+            <div style="margin-bottom:35px;">
+                @if(!string.IsNullOrEmpty(artCapt)){<div class="grid-row"><span class="grid-lbl">Captured</span><span class="grid-val">@artCapt</span></div>}
+                @if(!string.IsNullOrEmpty(artPub)){<div class="grid-row"><span class="grid-lbl">Published</span><span class="grid-val">@artPub</span></div>}
+                @if(!string.IsNullOrEmpty(artTitle)){<div class="grid-row"><span class="grid-lbl">Title</span><span class="grid-val">@artTitle</span></div>}
+                @if(!string.IsNullOrEmpty(artUrl)){<div class="grid-row"><span class="grid-lbl">Source</span><span class="grid-val"><a href="@artUrl" target="_blank" class="cp-link">&copy; @artUrl</a></span></div>}
+                @if(!string.IsNullOrEmpty(artCode) || (art.Datasets != null && art.Datasets.Count > 0)){
+                    <div class="grid-row"><span class="grid-lbl">Datasets</span><span class="grid-val">
+                        @if(art.Datasets != null && art.Datasets.Count > 0) { 
+                            @foreach(var d in art.Datasets) { 
+                                string dlc = d == "ID" ? "pill-id" : d == "REL" ? "pill-rel" : d == "SAN" ? "pill-san" : d == "PEP" ? "pill-pep" : d == "AM" ? "pill-am" : "pill-gray";
+                                <span class="pill @dlc" style="margin-right:4px;">@d</span> 
+                            }
+                        } else { <span class="pill @artBadge">@artCode</span> }
+                    </span></div>
+                }
+                @if(!string.IsNullOrEmpty(artSumm)){<div class="grid-row"><span class="grid-lbl">Summary</span><span class="grid-val cp-text">@artSumm</span></div>}
+                @if(!string.IsNullOrEmpty(artCred)){
+                    string credInfo = artCred == "High" ? "The information was published by an official government or institutional source" : (artCred == "Medium" ? "The information was published by a reputable media source with evidence of official action" : "");
+                    <div class="grid-row"><span class="cp-cred-lbl" style="font-weight:700;">@artCred Credibility Score</span><span class="grid-val cp-text">@credInfo</span></div>
+                }
+            </div>
+        }
+    }
+
+    <!-- Notes -->
+    @if (notes!=null && notes.Count>0)
+    {
+        <div class="sec-hdr" style="margin-top:28px;">Notes</div>
+        <hr class="sec-line"/>
+        @foreach (var note in notes)
+        {
+            string noteSrc  = note.DataSource!=null?(Convert.ToString(note.DataSource.Name)??""):"";
+            string noteTxt  = Convert.ToString(note.Text)??"";
+            string noteCred = ""; try{noteCred=Convert.ToString(note.CredibilityScore)??"";}catch{}
+            <div style="margin-bottom:15px;">
+                @if(!string.IsNullOrEmpty(noteSrc)){<div class="grid-row"><span class="grid-lbl">Source</span><span class="grid-val">@noteSrc</span></div>}
+                @if(!string.IsNullOrEmpty(noteTxt)){<div class="grid-row"><span class="grid-lbl">Summary</span><span class="grid-val cp-text">@noteTxt</span></div>}
+                @if(!string.IsNullOrEmpty(noteCred)){
+                    string credInfo = noteCred == "High" ? "The information was published by an official government or institutional source" : (noteCred == "Medium" ? "The information was published by a reputable media source with evidence of official action" : "");
+                    <div class="grid-row"><span class="cp-cred-lbl" style="font-weight:700;">@noteCred Credibility Score</span><span class="grid-val cp-text">@credInfo</span></div>
+                }
+            </div>
+        }
+    }
+
+    <!-- Linked Entities -->
+    @if ((pu.LinkedBusinesses!=null&&pu.LinkedBusinesses.Count>0)||(pu.LinkedPersons!=null&&pu.LinkedPersons.Count>0))
+    {
+        <div class="sec-hdr" style="margin-top:28px;">Linked Entities</div>
+        <hr class="sec-line"/>
+        @if (pu.LinkedBusinesses!=null && pu.LinkedBusinesses.Count>0)
+        {
+            <table class="pd-table"><tr><td class="pd-group">Businesses</td><td colspan="2"></td></tr>
+            @foreach(var b2 in pu.LinkedBusinesses){<tr><td></td><td class="pd-field">@b2.BusinessName</td><td class="pd-val">@b2.Association</td></tr>}
+            </table>
+        }
+        @if (pu.LinkedPersons!=null && pu.LinkedPersons.Count>0)
+        {
+            <table class="pd-table" style="margin-top:8px;"><tr><td class="pd-group">Persons</td><td colspan="2"></td></tr>
+            @foreach(var p2 in pu.LinkedPersons){<tr><td></td><td class="pd-field">@p2.Name</td><td class="pd-val">@p2.Association</td></tr>}
+            </table>
+        }
+    }
+
+    }
+    else
+    {
+        <div style="padding:40px;text-align:center;color:#9ca3af;font-size:13px;">No profile data available.</div>
+    }
+</div>
+
+<script>
+    $('#loadingdetails').show();
+    $(window).on('load', function(){ $('#loadingdetails').fadeOut('slow'); });
+</script>

@@ -1,0 +1,619 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using AML.Web.Helpers;
+@using static AML.Web.Helpers.NavigationIndicatorHelper;
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var userName = HttpContextAccessor.HttpContext.Session.GetString("SessUsername");
+    var userModules = HttpContextAccessor.HttpContext.Session.GetString("SessModules");
+
+    var clientId = HttpContextAccessor.HttpContext.Session.GetString("SessClientId");
+    var logo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+<style>
+    div::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    div::-webkit-scrollbar-track {
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+        border-radius: 5px;
+    }
+
+    div::-webkit-scrollbar-thumb {
+        border-radius: 5px;
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+    }
+
+    aside::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    aside::-webkit-scrollbar-track {
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+        border-radius: 5px;
+    }
+
+    aside::-webkit-scrollbar-thumb {
+        border-radius: 5px;
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+    }
+
+    #sidebar {
+        position: relative;
+        overflow: hidden;
+        width: 150px; /* note this */
+    }
+
+        #sidebar ul {
+            width: 170px; /* and this */
+            overflow-y: scroll; /* add scrollbar */
+            position: absolute;
+            height: inherit; /* parent height or 100% */
+            background: #ddd;
+        }
+
+</style>
+<aside class="main-sidebar invisiblescrollbar sidebar-dark-primary elevation-4" style="background-image: linear-gradient(to bottom, rgba(124, 167, 245, 0.68), rgba(150, 19, 241, 0.72)),url(/img/bg.jpg);
+    ">
+    <a href="~/Home" class="brand-link" style="padding-left:10%">
+        <img src=@logo alt="AML solution" class="brand-image "
+             style="        opacity: .8;display:none;
+        ">
+        <span class="brand-text font-weight-light">Digi Compliance</span>
+    </a>
+    <div class="sidebar">
+        @*<div class="user-panel mt-3 pb-3 mb-3 d-flex">
+            <div class="image">
+                <img src="" class="img-circle elevation-2" alt="User Image" style="display:none;">
+            </div>
+            <div class="info">
+                <a href="#" class="d-block">@localizer["Hi"], @userName</a>
+            </div>
+        </div>*@
+        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+            <div class="image">
+                <img src="" class="img-circle elevation-2" alt="User Image" style="display:none;">
+            </div>
+            <div class="info" style="width:70%">
+                <a href="#" class="d-block">Hi, @userName</a>
+            </div>
+            <a href="/auth/changepassword" class="dropdown-item" style="width:10%;color:white;background-color:transparent;">
+                <i class="fas fa-key mr-2"></i>
+            </a>
+            <a href="/auth/logout" class="dropdown-item" style="width:10%;color:white;background-color:transparent;">
+                <i class="fas fa-sign-out-alt mr-2"></i>
+            </a>
+        </div>
+        <nav class="mt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                <li class="nav-item">
+                    <a asp-controller="UserAccess" asp-action="Forgot" class="nav-link @Url.MakeActiveClass("UserAccess","Forgot")">
+                        <i class="nav-icon fas fa-key"></i>
+                        <p>
+                            @localizer["Forget Password"]
+                        </p>
+                    </a>
+                </li>
+                <li class="nav-item ">
+                    <a @*asp-controller="Home" asp-action="Index"*@ href="/home" class="nav-link @Url.MakeActiveClass("Home","Index")">
+                        <i class="nav-icon fas fa-tachometer-alt"></i>
+                        <p>
+                            @localizer["Dashboard"]
+                        </p>
+                    </a>
+                </li>
+                <li class="nav-item has-treeview @Url.DisplayNavLink(1,userModules)">
+
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fa fa-check"></i>
+                        <p>
+                            @localizer["Screening"]
+                            @if (CultureHelper.IsRighToLeft())
+                            {
+                                <i class="left fas fa-angle-left"></i>}
+                            else
+                            {
+                                <i class="right fas fa-angle-right"></i>
+                            }
+
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item ">
+                            <a asp-controller="case" asp-action="create" class="nav-link @Url.MakeActiveClass("case","create")">
+                                <i class="fa fa-check-circle nav-icon"></i>
+                                <p>@localizer["Individual"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item ">
+                            <a asp-controller="Corporate" asp-action="CorporateScreening" class="nav-link @Url.MakeActiveClass("Corporate","CorporateScreening")">
+                                <i class="fa fa-check-circle nav-icon"></i>
+                                <p>@localizer["Corporate"]</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a asp-controller="ClientCase" asp-action="UploadExcel" asp-route-type="I" class="nav-link @Url.MakeActiveClass("ClientCase","UploadExcel()")">
+                                <i class="fas fa-file-upload nav-icon"></i>
+                                <p> @localizer["Individual Bulk Upload"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item ">
+                            <a asp-controller="ClientCase" asp-action="UploadExcelCorporate" asp-route-type="C" class="nav-link @Url.MakeActiveClass("ClientCase","UploadExcelCorporate()")">
+                                <i class="fas fa-file-upload nav-icon"></i>
+                                <p> @localizer["Corporate Bulk Upload"]</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item has-treeview @Url.DisplayNavLink(11,userModules)">
+
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fa fa-check"></i>
+                        <p>
+                            @localizer["Kyc"]
+                            @if (CultureHelper.IsRighToLeft())
+                            {
+                                <i class="left fas fa-angle-left"></i>}
+                            else
+                            {
+                                <i class="right fas fa-angle-right"></i>
+                            }
+
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item ">
+                            <a asp-controller="Kyc" asp-action="CreateIndividualKyc" class="nav-link @Url.MakeActiveClass("Kyc","CreateIndividualKyc")">
+                                <i class="fa fa-check-circle nav-icon"></i>
+                                <p>@localizer["Individual"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item ">
+                            <a asp-controller="Kyc" asp-action="CreateCorporateKyc" class="nav-link @Url.MakeActiveClass("Kyc","CreateCorporateKyc")">
+                                <i class="fa fa-check-circle nav-icon"></i>
+                                <p>@localizer["Corporate"]</p>
+                            </a>
+                        </li>
+
+
+                    </ul>
+                </li>
+                <li class="nav-item has-treeview @Url.DisplayNavLink(2,userModules)">
+                    <a asp-controller="SanctionScreening" asp-action="Index" class="nav-link @Url.MakeActiveClass("SanctionScreening","Index")">
+                        <i class="nav-icon fab fa-searchengin"></i>
+                        <p>@localizer["Instant Sanction Screening"]</p>
+                    </a>
+                </li>
+                <li class="nav-item has-treeview men-open @Url.DisplayNavLink(3,userModules)">
+                    <a asp-controller="Case" asp-action="Index" class="nav-link @Url.MakeActiveClass("Case","Index")">
+                        <i class="nav-icon fas fa-calendar"></i>
+                        <p>@localizer["Case Management"]</p>
+                    </a>
+                </li>
+
+
+                <li class="nav-item has-treeview @Url.DisplayNavLink(13,userModules)">
+
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-marker nav-icon"></i>
+                        <p>
+                            @localizer["Transaction Screening"]
+                            @if (CultureHelper.IsRighToLeft())
+                            {
+                                <i class="left fas fa-angle-left"></i>}
+                            else
+                            {
+                                <i class="right fas fa-angle-right"></i>
+                            }
+
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item ">
+                            <a asp-controller="TransactionScreening" asp-action="PendingTransactions" class="nav-link @Url.MakeActiveClass("case","create")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Case Management"]</p>
+                            </a>
+                        </li>
+
+
+                    </ul>
+                </li>
+
+
+
+                <li class="nav-item has-treeview @Url.DisplayNavLink(4,userModules)">
+                    <a href="#" class="nav-link ">
+                        <i class="nav-icon fas fa-digital-tachograph"></i>
+                        <p>
+                            @localizer["Risk Assessment"]
+                            @if (CultureHelper.IsRighToLeft())
+                            {
+                                <i class="left fas fa-angle-left"></i>}
+                            else
+                            {
+                                <i class="right fas fa-angle-right"></i>
+                            }
+
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview ">
+                        <li class="nav-item">
+                            <a asp-controller="Risk" asp-action="Create" class="nav-link @Url.MakeActiveClass("Risk","Create")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Individual"]</p>
+                            </a>
+                        </li>
+                    </ul>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="Risk" asp-action="RiskAssessmentForCorpCustomer" class="nav-link @Url.MakeActiveClass("Risk","RiskAssessmentForCorpCustomer")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Corporate Customer"]</p>
+                            </a>
+                        </li>
+                    </ul>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="Risk" asp-action="RiskAssessmetnForBank" class="nav-link @Url.MakeActiveClass("Risk","RiskAssessmetnForBank")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Bank"]</p>
+                            </a>
+                        </li>
+                    </ul>
+                    <ul class="nav nav-treeview ">
+                        <li class="nav-item">
+                            <a asp-controller="Risk" asp-action="RiskAssessmentForVendors" class="nav-link @Url.MakeActiveClass("Risk","RiskAssessmentForVendors")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Vendor"]</p>
+                            </a>
+                        </li>
+                    </ul>
+
+
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+
+                            <a asp-controller="Risk" asp-action="RiskIndividualBulkUpload" class="nav-link @Url.MakeActiveClass("Risk","RiskIndividualBulkUpload")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Individual Bulk Upload "]</p>
+                            </a>
+                        </li>
+                    </ul>
+                    <ul class="nav nav-treeview">
+
+                        <li class="nav-item">
+
+                            <a asp-controller="Risk" asp-action="RiskCorporateBulkUpload" class="nav-link @Url.MakeActiveClass("Risk","RiskCorporateBulkUpload")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Corporate Bulk Upload "]</p>
+                            </a>
+                        </li>
+                    </ul>
+
+
+
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="Risk" asp-action="RiskConfigurationMaster" class="nav-link @Url.MakeActiveClass("Risk","RiskConfigurationMaster")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Risk Configuration"]</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="nav-item has-treeview @Url.DisplayNavLink(12,userModules)">
+                    <a href="#" class="nav-link ">
+                        <i class="nav-icon fa fa-universal-access"></i>
+                        <p>
+                            @localizer["Transaction Monitoring"]
+                            @if (CultureHelper.IsRighToLeft())
+                            {
+                                <i class="left fas fa-angle-left"></i>}
+                            else
+                            {
+                                <i class="right fas fa-angle-right"></i>
+                            }
+
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="TransactionMonitor" asp-action="TMSRules" class="nav-link @Url.MakeActiveClass("TransactionMonitor","TMSRules")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["TMS Rules Definition"]</p>
+                            </a>
+                        </li>
+                    </ul>
+                    @*<ul class="nav nav-treeview">
+                <li class="nav-item">
+                    <a asp-controller="TransactionMonitor" asp-action="ViewRules" class="nav-link @Url.MakeActiveClass("TransactionMonitor","ViewRules")">
+                        <i class="fas fa-code-branch nav-icon"></i>
+                        <p>@localizer["TMS Rules"]</p>
+                    </a>
+                </li>
+            </ul>
+            <ul class="nav nav-treeview">
+                <li class="nav-item">
+                    <a asp-controller="TransactionMonitor" asp-action="Index" class="nav-link @Url.MakeActiveClass("TransactionMonitor","Index")">
+                        <i class="fas fa-code-branch nav-icon"></i>
+                        <p>@localizer["TMS Case Management"]</p>
+                    </a>
+                </li>
+            </ul>*@
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="TransactionMonitor" asp-action="TMSCase" class="nav-link @Url.MakeActiveClass("TransactionMonitor","Index")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["TMS Case Management - New"]</p>
+                            </a>
+                        </li>
+                    </ul>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="TransactionMonitor" asp-action="TransactionRules" class="nav-link @Url.MakeActiveClass("TransactionMonitor","TransactionRules")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Transaction Monitor Rules"]</p>
+                            </a>
+                        </li>
+                    </ul>
+                    @* <ul class="nav nav-treeview">
+                <li class="nav-item">
+                    <a asp-controller="TransactionMonitor" asp-action="RulesConfig" class="nav-link @Url.MakeActiveClass("TransactionMonitor","RulesConfig")">
+                        <i class="fas fa-code-branch nav-icon"></i>
+                        <p>@localizer["TMS Configuration"]</p>
+                    </a>
+                </li>
+            </ul>*@
+                </li>
+
+                <!--Transaction Monitoring End-->
+                <li class="nav-item has-treeview men-open @Url.DisplayNavLink(5,userModules)">
+                    <a asp-controller="internalwatchlist" asp-action="Create" class="nav-link @Url.MakeActiveClass("Create","internalwatchlist")">
+                        <i class="nav-icon fas fa-laptop-house"></i>
+                        <p>@localizer["Internal Watchlist"]</p>
+                    </a>
+                </li>
+                @*<li class="nav-item has-treeview men-open @Url.DisplayNavLink(6,userModules)">
+            <a asp-controller="DataSource" asp-action="Index" class="nav-link @Url.MakeActiveClass("Index","DataSource")">
+                <i class="nav-icon fab fa-sourcetree"></i>
+                <p>@localizer["Free Source Upload"]</p>
+            </a>
+        </li>*@
+                <li class="nav-item has-treeview">
+                    <a href="#" class="nav-link ">
+                        <i class="nav-icon fas fa-digital-tachograph"></i>
+                        <p>
+                            @localizer["EWRA"]
+                            @if (CultureHelper.IsRighToLeft())
+                            {
+                                <i class="left fas fa-angle-left"></i>}
+                            else
+                            {
+                                <i class="right fas fa-angle-right"></i>
+                            }
+
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="EWRA" asp-action="Assessment" class="nav-link @Url.MakeActiveClass("EWRA","Assessment")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Quantitative Assessment"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="EWRA" asp-action="CategorywiseAssessmentTab" class="nav-link @Url.MakeActiveClass("EWRA","CategorywiseAssessmentTab")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Qualitative Assessment"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="EWRA" asp-action="EWRAConfig" class="nav-link @Url.MakeActiveClass("EWRA","EWRAConfig")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Configuration"]</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item has-treeview men-open">
+                    <a href="#" class="nav-link ">
+                        <i class="nav-icon fas fa-book"></i>
+                        <p>
+                            @localizer["Reports"]
+                            @if (CultureHelper.IsRighToLeft())
+                            {
+                                <i class="left fas fa-angle-left"></i>}
+                            else
+                            {
+                                <i class="right fas fa-angle-right"></i>
+                            }
+
+
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item @Url.DisplayNavLink(1,userModules)">
+                            <a asp-controller="Report" asp-action="CaseReport" class="nav-link @Url.MakeActiveClass("Report","CaseReport")">
+                                <i class="fas fa-file-upload nav-icon"></i>
+                                <p>@localizer["Case"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item @Url.DisplayNavLink(11,userModules)">
+                            <a asp-controller="Report" asp-action="KycReport" class="nav-link @Url.MakeActiveClass("Report","KycReport")">
+                                <i class="fas fa-file-upload nav-icon"></i>
+                                <p>@localizer["KYC Report"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item @Url.DisplayNavLink(1,userModules)">
+                            <a asp-controller="Report" asp-action="TransactionScreeningReport" class="nav-link @Url.MakeActiveClass("Report","TransactionScreeningReport")">
+                                <i class="fas fa-file-upload nav-icon"></i>
+                                <p>@localizer["Transaction Case"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item @Url.DisplayNavLink(1,userModules)">
+                            <a asp-controller="ClientCase" asp-action="DataLoadReport" class="nav-link @Url.MakeActiveClass("ClientCase","DataLoadReport")">
+                                <i class="fas fa-file-upload nav-icon"></i>
+                                <p>@localizer["Customer Bulk Upload Logs"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item @Url.DisplayNavLink(1,userModules)">
+                            <a asp-controller="Report" asp-action="SanctionLogs" class="nav-link @Url.MakeActiveClass("Report","SanctionLogs")">
+                                <i class="fas fa-search  nav-icon"></i>
+                                <p>@localizer["Instant Sanction Screen Logs"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item @Url.DisplayNavLink(1,userModules)">
+                            <a asp-controller="Report" asp-action="SanctionDatabaseLog" class="nav-link @Url.MakeActiveClass("Report","SanctionDatabaseLog")">
+                                <i class="fas fa-search  nav-icon"></i>
+                                <p>@localizer["Sanction Database Upload Logs"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item @Url.DisplayNavLink(1,userModules)">
+                            <a asp-controller="Report" asp-action="DigiSchedulerLogs" class="nav-link @Url.MakeActiveClass("Report","DigiSchedulerLogs")">
+                                <i class="fas fa-search  nav-icon"></i>
+                                <p>@localizer["Scheduler Logs"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item @Url.DisplayNavLink(1,userModules)">
+                            <a asp-controller="Report" asp-action="CustomerListingLogs" class="nav-link @Url.MakeActiveClass("Report","CustomerListingLogs")">
+                                <i class="fas fa-search  nav-icon"></i>
+                                <p>@localizer["Customer Listing (All)"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item @Url.DisplayNavLink(1,userModules)">
+                            <a asp-controller="Report" asp-action="InternalWatchlistUpdateLogs" class="nav-link @Url.MakeActiveClass("Report","InternalWatchlistUpdateLogs")">
+                                <i class="fas fa-search  nav-icon"></i>
+                                <p>@localizer["Internal Watchlist Upload Logs"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item @Url.DisplayNavLink(4,userModules)">
+                            <a asp-controller="Risk" asp-action="GetRiskSummary" class="nav-link @Url.MakeActiveClass("Risk","GetRiskSummary")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Risk Summary"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item @Url.DisplayNavLink(4,userModules)">
+                            <a asp-controller="Risk" asp-action="GetRiskReport" class="nav-link @Url.MakeActiveClass("Risk","GetRiskReport")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Risk Report"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Report" asp-action="UserPasswordLogs" class="nav-link @Url.MakeActiveClass("Report","UserPasswordLogs")">
+                                <i class="fas fa-key mr-2"></i>
+                                <p>@localizer["User Password Change Logs"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="TransactionMonitor" asp-action="TMSNewCaseReport" class="nav-link @Url.MakeActiveClass("TransactionMonitor","TMSNewCaseReport")">
+                                <i class="fas fa-key mr-2"></i>
+                                <p>@localizer["TMS Case Report"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="TransactionMonitor" asp-action="ViewTMSDraftLog" class="nav-link @Url.MakeActiveClass("TransactionMonitor","ViewTMSDraftLog")">
+                                <i class="fas fa-key mr-2"></i>
+                                <p>@localizer["TMS Draft Log"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="EWRA" asp-action="GetEWRAReport" class="nav-link @Url.MakeActiveClass("EWRA","GetEWRAReport")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["EWRA Report"]</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+
+                <li class="nav-item has-treeview @Url.DisplayNavLink(8,userModules)">
+                    <a href="#" class="nav-link ">
+                        <i class="nav-icon fas fa-digital-tachograph"></i>
+                        <p>
+                            @localizer["Masters"]
+                            @if (CultureHelper.IsRighToLeft())
+                            {
+                                <i class="left fas fa-angle-left"></i>}
+                            else
+                            {
+                                <i class="right fas fa-angle-right"></i>
+                            }
+
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="CustomerMaster" asp-action="Index" class="nav-link @Url.MakeActiveClass("CustomerMaster","Index")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Customer Master"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Branch" asp-action="Index" class="nav-link @Url.MakeActiveClass("Branch","Index")">
+                                <i class="fas fa-code-branch nav-icon"></i>
+                                <p>@localizer["Branch"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Department" asp-action="Index" class="nav-link @Url.MakeActiveClass("Department","Index")">
+                                <i class="far fa-building nav-icon"></i>
+                                <p>@localizer["Departments"]</p>
+                            </a>
+                        </li>
+                       @* <li class="nav-item">
+                            <a asp-controller="Designation" asp-action="Index" class="nav-link @Url.MakeActiveClass("Designation","Index")">
+                                <i class="fas fa-user-tag nav-icon"></i>
+                                <p>@localizer["Designation"]</p>
+                            </a>
+                        </li>*@
+                        <li class="nav-item">
+                            <a asp-controller="IdentityType" asp-action="Index" class="nav-link @Url.MakeActiveClass("IdentityType","Index")">
+                                <i class="far fa-id-badge nav-icon"></i>
+                                <p>@localizer["Identity Type"]</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Country" asp-action="Index" class="nav-link @Url.MakeActiveClass("Country","Index")">
+                                <i class="fas fa-globe nav-icon"></i>
+                                <p>@localizer["Country"]</p>
+                            </a>
+                        </li>
+                       @* <li class="nav-item">
+                            <a asp-controller="VisaType" asp-action="Index" class="nav-link @Url.MakeActiveClass("VisaType","Index")">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>@localizer["Visa Type"]</p>
+                            </a>
+                        </li>*@
+                        <li class="nav-item">
+                            <a asp-controller="CodesMaster" asp-action="Index" class="nav-link @Url.MakeActiveClass("CodesMaster","Index")">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>@localizer["Codes Master"]</p>s
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a asp-controller="AdminManagement" asp-action="Index" class="nav-link @Url.MakeActiveClass("AdminManagement","Index")">
+                        <i class="nav-icon fas fa-user-shield"></i>
+                        <p>
+                            @localizer["Admin Management"]
+                        </p>
+                    </a>
+                </li>
+
+                <!--Support-->
+                <li class="nav-item has-treeview men-open">
+                    <a class="nav-link @Url.MakeActiveClass("Index","DataSource")" href="https://support.kycdigi.com:8128" target="_blank">
+                        <i class="nav-icon fa fa-user-cog"></i>
+                        <p>@localizer["Support"]</p>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</aside>
