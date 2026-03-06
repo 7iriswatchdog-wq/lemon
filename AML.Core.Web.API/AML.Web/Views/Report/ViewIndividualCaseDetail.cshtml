@@ -530,6 +530,10 @@
                                     class="h-8 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-blue-600 px-3">
                                 View Version
                             </button> *@
+                                <span id="riskRatingBadge"
+                                      class="px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-600">
+                                    Risk
+                                </span>
                             <button onclick="openModal('versionModal')"
                                     class="h-8 text-[10px] font-bold  tracking-wider text-slate-500 hover:text-blue-600 px-3 border border-slate-300 rounded-md hover:border-blue-600 transition-colors">
                                 View Version
@@ -1155,6 +1159,15 @@
                         </span>
                         <span class="text-xs text-slate-500"> @(Model.Case.CIFNumber) </span>
                     </div>
+                        @if (Model.Case.CustomerType == "I")
+                        {
+                            <div class="grid grid-cols-[180px_1fr] pb-1 border-b border-dotted border-slate-300">
+                                <span class="text-xs font-medium text-black-400 ml-3">
+                                    Employer
+                                </span>
+                                <span class="text-xs text-slate-500"> @(Model.Case.Employer) </span>
+                            </div>
+                        }
                     <div class="grid grid-cols-[180px_1fr] pb-1 border-b border-dotted border-slate-300">
                         <span class="text-xs font-medium text-black-400 ml-3">
                             Match Parameter
@@ -1990,6 +2003,15 @@
                   function applyRiskSelections(riskData,riskDetails) {
             let counter = 0;
 
+                        let rating =
+                                riskDetails.riskAssessmentRating ||
+                                riskDetails.finalRiskScore ||
+                                "";
+
+                            let ratingWithoutOverride =
+                                riskDetails.riskAssessmentRatingWithoutOverride ||
+                                riskDetails.riskScoreBeforeOverride ||
+                                "";
              $('#btntotal').text(riskDetails.riskScoreCount);
              $('#btntotalscore').text(riskDetails.riskScoreSum);
                                              
@@ -2041,6 +2063,46 @@
                     counter++;
                 }
             }
+                        let badge = $("#riskRatingBadge");
+
+                            if (!badge.length) return;
+
+                            badge.removeClass(
+                                "bg-green-500 bg-yellow-400 bg-red-500 text-white blink-risk"
+                            );
+
+                            badge.addClass("px-3 py-1 rounded-full text-xs font-bold text-white");
+
+                            if (rating.toLowerCase() === "low risk") {
+
+                                badge.addClass("bg-green-500");
+
+                            }
+                            else if (rating.toLowerCase() === "medium risk") {
+
+                                badge.addClass("bg-yellow-400");
+
+                            }
+                            else if (rating.toLowerCase() === "high risk") {
+
+                                badge.addClass("bg-red-500");
+
+                            }
+
+                            badge.text(rating);
+
+                            /* ====================================
+                               BLINK ONLY WHEN BOTH ARE HIGH RISK
+                            ===================================== */
+
+                            if (
+                                rating &&
+                                ratingWithoutOverride &&
+                                rating.toLowerCase() === "high risk" &&
+                                ratingWithoutOverride.toLowerCase() === "high risk"
+                            ) {
+                                badge.addClass("blink-risk");
+                            }
         }
 
                 function updateScoreCircle(counter, score, overrideScore) {
@@ -2314,28 +2376,38 @@ function showAllVersions() {
 
 
 
-                      function buildComments() {
+                                 function buildComments() {
 
-            let container = $("#commentsContainer");
-            container.empty();
+                                            console.log(comments);
 
-            if (!comments || comments.length === 0) {
-                container.append(`
-                    <div class="text-sm text-slate-500 italic pb-2">
-                        No comments yet
-                    </div>
-                `);
-                return;
-            }
+                        let container = $("#commentsContainer");
+                        container.empty();
 
-            $.each(comments, function (i, v) {
+                        if (!comments || comments.length === 0) {
+                            container.append(`
+                                <div class="text-sm text-slate-500 italic pb-2">
+                                    No comments yet
+                                </div>
+                            `);
+                            return;
+                        }
 
-                let userName = v.createdUser || "User";
-                let commentText = v.comment || "";
-                let duration = v.duration || "";
-                let version = v.version || (i + 1);
+                        $.each(comments, function (i, v) {
 
-                            let createdOn = v.createdOnDB ? new Date(v.createdOnDB) : null;
+                            let userName = v.createdUser || "User";
+                            let commentText = v.comment || "";
+                            let duration = v.duration || "";
+                            let version = v.version || (i + 1);
+                                        let commentType = (v.commentType || "").toLowerCase();
+
+                            // Check allowed types
+                             let showVersionTypes = ["approved", "rejected", "whitelisted"];
+
+                            let displayText = showVersionTypes.includes(commentType)
+                                ? `Version ${version}`
+                                : "Action";
+
+                                        let createdOn = v.createdOnDB ? new Date(v.createdOnDB) : null;
 
                                 let formattedDateTime = createdOn
                                     ? createdOn.toLocaleString('en-GB', {
@@ -2349,42 +2421,41 @@ function showAllVersions() {
                                       }).replace(',', '')
                                     : "";
 
+                            let html = `
+                                <div class="pl-6 relative">
 
-                let html = `
-                    <div class="pl-6 relative">
+                                    <div class="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-white bg-blue-500">
+                                    </div>
 
-                        <div class="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-white bg-blue-500">
-                        </div>
+                                    <div class="flex flex-col gap-1">
 
-                        <div class="flex flex-col gap-1">
+                                        <div class="flex items-baseline gap-2">
+                                            <span class="text-xs font-bold text-slate-900">
+                                                             ${displayText}
+                                            </span>
 
-                            <div class="flex items-baseline gap-2">
-                                <span class="text-xs font-bold text-slate-900">
-                                    Version ${version}
-                                </span>
+                                            <span class="text-[11px] text-slate-500">
+                                                was actioned by
+                                                <span class="font-semibold text-blue-600">${userName}</span>
+                                            </span>
+                                        </div>
 
-                                <span class="text-[11px] text-slate-500">
-                                    was actioned by
-                                    <span class="font-semibold text-blue-600">${userName}</span>
-                                </span>
-                            </div>
+                                        <p class="text-[11px] font-medium text-slate-700 leading-relaxed">
+                                            ${commentText}
+                                        </p>
 
-                            <p class="text-[11px] font-medium text-slate-700 leading-relaxed">
-                                ${commentText}
-                            </p>
+                                        <span class="text-[10px] font-bold uppercase tracking-wide text-blue-600">
+                                            ${formattedDateTime}
+                                        </span>
 
-                            <span class="text-[10px] font-bold uppercase tracking-wide text-blue-600">
-                                ${formattedDateTime}
-                            </span>
+                                    </div>
 
-                        </div>
+                                </div>
+                            `;
 
-                    </div>
-                `;
-
-                container.append(html);
-            });
-        }
+                            container.append(html);
+                        });
+                    }
 
 
         $(document).on("click", ".case-action-btn", function () {

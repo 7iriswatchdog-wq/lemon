@@ -65,7 +65,7 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_idissuedate", _CustomerMasterDTO.IdIssueDate);
                 parameters.Add("@p_idexpirydate", _CustomerMasterDTO.IdExpiryDate);
                 parameters.Add("@p_residence", _CustomerMasterDTO.Residence);
-
+                parameters.Add("@p_employer", _CustomerMasterDTO.Employer);
                 //parameters.Add("@p_address",_CustomerMasterDTO.Address);
                 //parameters.Add("@p_establishmentdate", _CustomerMasterDTO.EstablishmentDate);
                 var response = ExecuteScalar("ins_customer_master", parameters, commandType: CommandType.StoredProcedure).ParseString();
@@ -995,6 +995,29 @@ namespace AML.Core.Repository.CustomerCase
                 
 
                 var response = ExecuteScalar("Del_shareholders", parameters, commandType: CommandType.StoredProcedure).ParseString();
+                serviceResponse.Result = response;
+                serviceResponse.Message = "Customer master added successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
+
+        public ServiceResponse<string> DeletePendingShareholders(string companyCode)
+        {
+            ServiceResponse<string> serviceResponse = new ServiceResponse<string>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_companyCode", companyCode);
+
+
+
+                var response = ExecuteScalar("Del_shareholders_companycode", parameters, commandType: CommandType.StoredProcedure).ParseString();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Customer master added successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;

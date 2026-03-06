@@ -692,7 +692,9 @@
             });
         });
 
-                function buildComments() {
+               function buildComments() {
+
+                                console.log(comments);
 
             let container = $("#commentsContainer");
             container.empty();
@@ -712,8 +714,16 @@
                 let commentText = v.comment || "";
                 let duration = v.duration || "";
                 let version = v.version || (i + 1);
+                            let commentType = (v.commentType || "").toLowerCase();
 
-                let createdOn = v.createdOnDB ? new Date(v.createdOnDB) : null;
+                // Check allowed types
+                 let showVersionTypes = ["approved", "rejected", "whitelisted"];
+
+                let displayText = showVersionTypes.includes(commentType)
+                    ? `Version ${version}`
+                    : "Action";
+
+                            let createdOn = v.createdOnDB ? new Date(v.createdOnDB) : null;
 
                     let formattedDateTime = createdOn
                         ? createdOn.toLocaleString('en-GB', {
@@ -727,7 +737,6 @@
                           }).replace(',', '')
                         : "";
 
-
                 let html = `
                     <div class="pl-6 relative">
 
@@ -738,7 +747,7 @@
 
                             <div class="flex items-baseline gap-2">
                                 <span class="text-xs font-bold text-slate-900">
-                                    Version ${version}
+                                                 ${displayText}
                                 </span>
 
                                 <span class="text-[11px] text-slate-500">

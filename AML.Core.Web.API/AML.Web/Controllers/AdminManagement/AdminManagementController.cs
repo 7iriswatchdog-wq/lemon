@@ -1,36 +1,38 @@
+using AML.Core.Common.StaticResource;
+using AML.Core.DataContract.Authentication;
+using AML.Core.ServiceContract.Branch;
+using AML.Core.ServiceContract.Country;
+using AML.Core.ServiceContract.CustomerCase;
+using AML.Core.ServiceContract.Department;
+using AML.Core.ServiceContract.Designation;
+using AML.Core.ServiceContract.IdentityType;
+using AML.Core.ServiceContract.User;
+using AML.Core.ServiceContract.UserGroup;
+using AML.Core.ServiceContract.VisaType;
+using AML.DTO.DTO.User;
+using AML.ViewModel.ViewModels.Branch;
+using AML.ViewModel.ViewModels.Common;
+using AML.ViewModel.ViewModels.Country;
+using AML.ViewModel.ViewModels.DataTable;
+using AML.ViewModel.ViewModels.Department;
+using AML.ViewModel.ViewModels.Designation;
+using AML.ViewModel.ViewModels.IdentityType;
+using AML.ViewModel.ViewModels.User;
+using AML.ViewModel.ViewModels.UserGroup;
+using AML.ViewModel.ViewModels.VisaType;
+using AML.Web.CustomFilters;
+using AML.Web.Helper;
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Configuration;
+using NToastNotify;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using AML.ViewModel.ViewModels.User;
-using AML.Core.ServiceContract.User;
-using AutoMapper;
-using Microsoft.Extensions.Configuration;
-using AML.Web.Helper;
-using AML.DTO.DTO.User;
-using AML.Core.ServiceContract.Department;
-using AML.ViewModel.ViewModels.Department;
-using AML.Core.ServiceContract.Designation;
-using AML.Core.ServiceContract.Branch;
-using AML.Core.ServiceContract.UserGroup;
-using AML.ViewModel.ViewModels.Designation;
-using AML.ViewModel.ViewModels.Branch;
-using AML.ViewModel.ViewModels.UserGroup;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using AML.ViewModel.ViewModels.VisaType;
-using AML.Core.ServiceContract.VisaType;
-using AML.Core.ServiceContract.IdentityType;
-using AML.Core.ServiceContract.Country;
-using AML.ViewModel.ViewModels.IdentityType;
-using AML.ViewModel.ViewModels.Country;
-using AML.ViewModel.ViewModels.DataTable;
-using NToastNotify;
-using AML.Web.CustomFilters;
-using Microsoft.AspNetCore.Authorization;
-using AML.ViewModel.ViewModels.Common;
-using AML.Core.ServiceContract.CustomerCase;
 
 namespace AML.Web.Controllers.AdminManagement
 {
@@ -124,7 +126,7 @@ namespace AML.Web.Controllers.AdminManagement
         }
 
         [HttpGet("adminmanagement/details/{id}")]
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
             var result = _customerCaseService.GetClientDetailsByID(id);
             if (result == null) return NotFound();
@@ -151,6 +153,18 @@ namespace AML.Web.Controllers.AdminManagement
             ViewBag.VisaTypes = new SelectList(_mapper.Map<List<VisaTypeModel>>(_visatypeService.GetAll(id)), "Id", "Name");
             ViewBag.IdentityTypes = new SelectList(_mapper.Map<List<IdentityTypeModel>>(_identitytypeService.GetAll(id)), "Id", "Name");
             ViewBag.Countries = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(id)), "Id", "Name");
+
+            TokenRS token = await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, _clientModel.C6BaseUrl, _clientModel.C6Username);
+            if (token.status == 400)
+            {
+                
+                _toastNotification.AddErrorToastMessage(token.message + ". Please contact the Watchdog Administrator for assistance.");
+                return View(_clientModel);
+            }
+            ViewBag.userlimit = Convert.ToInt32(token.user.userLimit);
+            ViewBag.totalcount = Convert.ToInt32(token.user.individualCount) + Convert.ToInt32(token.user.corporateCount);
+            ViewBag.individualCount = Convert.ToInt32(token.user.individualCount);
+            ViewBag.corporateCount =  Convert.ToInt32(token.user.corporateCount);
 
             return View(_clientModel);
         }

@@ -62,6 +62,9 @@ namespace AML.Core.RepositoryContract.CustomerCase
         ServiceResponse<string> DeleteShareholders(int id);
 
 
+        ServiceResponse<string> DeletePendingShareholders(string companyCode);
+
+
 
 
     }

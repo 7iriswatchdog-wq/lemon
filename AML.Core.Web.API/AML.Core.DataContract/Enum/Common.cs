@@ -51,6 +51,13 @@ namespace AML.Core.DataContract.Enum
         Approved = 2,
         AutoApproved = 5,
     }
+    public enum CompletedCaseStatus
+    {
+
+        All = 10,
+        Approved = 2,
+        Rejected = 3,
+    }
 
     public enum SourceType
     {

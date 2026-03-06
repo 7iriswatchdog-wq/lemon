@@ -169,34 +169,109 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-6 items-end">
+
+                <!-- Start Date -->
                 <div class="space-y-2">
-                    <label class="text-[12px] font-bold text-slate-500  ml-0.5">Start Date</label>
+                    <label class="text-[12px] font-bold text-slate-500">Start Date</label>
                     <input type="date" id="startDate" asp-for="StartDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"
-                           class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm ring-offset-white focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-colors placeholder:text-slate-500">
+                           class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
                 </div>
+
+                <!-- End Date -->
                 <div class="space-y-2">
-                    <label class="text-[12px] font-bold text-slate-500  ml-0.5">End Date</label>
+                    <label class="text-[12px] font-bold text-slate-500">End Date</label>
                     <input type="date" id="endDate" asp-for="EndDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"
-                           class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm ring-offset-white focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-colors placeholder:text-slate-500">
+                           class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
                 </div>
+
+                <!-- Customer Type -->
                 <div class="space-y-2">
-                    <label class="text-[12px] font-bold text-slate-500  ml-0.5">Customer Type</label>
-                    <div class="relative">
-                        <select asp-items=@Model.CustomerCategories id="customertype"
-                                class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm ring-offset-white focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-colors appearance-none text-slate-900">
-                            <option value="0">--@localizer["SELECT"]--</option>
-                        </select>
-                        <i data-lucide="chevron-down"
-                           class="absolute right-3 top-3 h-4 w-4 text-slate-400 pointer-events-none"></i>
-                    </div>
+                    <label class="text-[12px] font-bold text-slate-500">Customer Type</label>
+                    <select id="customertype" asp-items="@Model.CustomerCategories"
+                            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                        <option value="0">--SELECT--</option>
+                    </select>
                 </div>
-                <div class="flex gap-2">
+
+                <!-- Filter Type -->
+                <div id="extraFilters" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-slate-500">Filter Type</label>
+                    <select id="columnFilter"
+                            onchange="Colunmfilterfunction()"
+                            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                        <option value="">--Select--</option>
+                        <option value="CaseStatusChangeReason">Case Status Change Reason</option>
+                        <option value="ScreeningScore">Screening Score</option>
+                        <option value="RiskLevel">Risk Score</option>
+                        <option value="User">User</option>
+                        <option value="Status">Status</option>
+                    </select>
+                </div>
+
+                <!-- Case Status Change -->
+                <div id="CaseStatusChangeReasonField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-slate-500">Case Status Change Reason</label>
+                    <input type="text" id="caseStatusChange"
+                           class="h-10 w-full border border-slate-200 rounded-md px-3 text-sm">
+                </div>
+
+                <!-- Screening Score -->
+                <div id="ScreeningScoreField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-slate-500">Screening Score</label>
+                    <select id="screeningScore"
+                            class="h-10 w-full border border-slate-200 rounded-md px-3 text-sm">
+                        <option value="">--Select--</option>
+                        <option value="70-80">70-80</option>
+                        <option value="80-90">80-90</option>
+                        <option value="90-100">90-100</option>
+                    </select>
+                </div>
+
+                <!-- User -->
+                <div id="UserField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-slate-500">User</label>
+                    <select id="user" asp-items="@Model.Users"
+                            class="h-10 w-full border border-slate-200 rounded-md px-3 text-sm">
+                        <option value="0">--SELECT--</option>
+                    </select>
+                </div>
+
+                <!-- Status -->
+                <div id="StatusField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-slate-500">Status</label>
+                    <select id="caseStatus" asp-items="@Model.CaseStatusList"
+                            class="h-10 w-full border border-slate-200 rounded-md px-3 text-sm">
+                        <option value="10">--SELECT--</option>
+                    </select>
+                </div>
+
+                <!-- Risk Level -->
+                <div id="RiskLevelField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-slate-500">Risk Score</label>
+                    <select id="riskScore"
+                            class="h-10 w-full border border-slate-200 rounded-md px-3 text-sm">
+                        <option value="">--Select--</option>
+                        <option value="1">Low</option>
+                        <option value="2">Medium</option>
+                        <option value="3">High</option>
+                    </select>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-2 items-center">
+                    <button type="button"
+                            onclick="toggleExtraFilters()"
+                            class="h-10 w-10 flex items-center justify-center rounded-md border border-slate-300 hover:bg-slate-100 transition">
+                        <i data-lucide="filter" class="h-4 w-4 text-slate-600"></i>
+                    </button>
+
                     <button onclick="applyFilters()"
-                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-4 py-2 rounded-md shadow-sm transition-colors text-sm">
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-4 rounded-md text-sm">
                         Apply Filters
                     </button>
                 </div>
+
             </div>
         </div>
 
@@ -406,6 +481,99 @@
         };
     }
 
+    function toggleExtraFilters() {
+
+        const section = document.getElementById("extraFilters");
+
+        section.classList.toggle("hidden");
+
+        // Reset column filter
+        document.getElementById("columnFilter").value = "";
+
+        // Hide all dynamic fields
+        const dynamicFields = [
+            "CaseStatusChangeReasonField",
+            "ScreeningScoreField",
+            "UserField",
+            "StatusField",
+            "RiskLevelField"
+        ];
+
+        dynamicFields.forEach(id => {
+            document.getElementById(id).classList.add("hidden");
+        });
+
+        resetFieldValues();
+    }
+        function resetFieldValues(){
+
+        const fields = document.querySelectorAll("input, select");
+
+        fields.forEach(field => {
+
+            if (field.id === "user") {
+                field.value = "0";
+            }
+            else if (field.id === "caseStatus") {
+                field.value = "10";
+            }
+            else if (["screeningScore","caseStatusChange","riskScore"].includes(field.id)) {
+                field.value = "";
+            }
+
+        });
+
+    }
+    function applyFilters() {
+        alert("Filters Applied");
+        // Your filter logic here
+    }
+        function Colunmfilterfunction() {
+
+        const selectedValue = document.getElementById("columnFilter").value;
+
+        const fields = [
+            "CaseStatusChangeReasonField",
+            "ScreeningScoreField",
+            "UserField",
+            "StatusField",
+            "RiskLevelField"
+        ];
+
+        // Hide and clear all fields
+        fields.forEach(fieldId => {
+
+            const field = document.getElementById(fieldId);
+
+            field.classList.add("hidden");
+
+            const inputs = field.querySelectorAll("input, select");
+
+            inputs.forEach(input => {
+
+                if (input.id === "user") {
+                    input.value = "0";
+                }
+                else if (input.id === "caseStatus") {
+                    input.value = "10";
+                }
+                else if (["screeningScore","caseStatusChange","riskScore"].includes(input.id)) {
+                    input.value = "";
+                }
+                else {
+                    input.value = "";
+                }
+
+            });
+
+        });
+
+        // Show selected field
+        if (selectedValue) {
+            document.getElementById(selectedValue + "Field").classList.remove("hidden");
+        }
+    }
+
     function getStatusBadge(status) {
         let styles = "";
 
@@ -545,7 +713,12 @@
                 // ⭐ Filters
                 startDate: $('#startDate').val(),
                 endDate: $('#endDate').val(),
-                cust_type: $('#customertype').val()
+                cust_type: $('#customertype').val(),
+                createdBy:$('#user').val(),
+                matchScore:$('#screeningScore').val(),
+                caseStatus:$('#caseStatus').val(),
+                caseStatusChange:$('#caseStatusChange').val(),
+                riskLevel:$('#riskScore').val()
             },
 
             success: function (res) {

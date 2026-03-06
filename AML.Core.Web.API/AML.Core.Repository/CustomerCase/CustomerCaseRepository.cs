@@ -83,16 +83,37 @@ namespace AML.Core.Repository.CustomerCase
             return serviceResponse;
         }
 
-        public ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type)
+        public ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type, string matchScore, int createdBy, int caseStatus, string riskLevel, string caseStatusChange)
         {
             ServiceResponse<List<CustomerCaseDTO>> serviceResponse = new ServiceResponse<List<CustomerCaseDTO>>();
             try
             {
+                int? matchFrom = null;
+                int? matchTo = null;
+
+                if (!string.IsNullOrWhiteSpace(matchScore))
+                {
+                    var parts = matchScore.Split('-');
+
+                    if (parts.Length == 2 &&
+                        int.TryParse(parts[0], out int from) &&
+                        int.TryParse(parts[1], out int to))
+                    {
+                        matchFrom = from;
+                        matchTo = to;
+                    }
+                }
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_userid", userId);
                 parameters.Add("c_from", Convert.ToDateTime(startDate));
                 parameters.Add("c_to", Convert.ToDateTime(endDate));
                 parameters.Add("cust_type", cust_type);
+                parameters.Add("p_matchfrom", matchFrom, DbType.Int32);
+                parameters.Add("p_matchto", matchTo, DbType.Int32);
+                parameters.Add("p_createdBy", createdBy);
+                parameters.Add("c_status", caseStatus);
+                parameters.Add("p_riskLevel", riskLevel);
+                parameters.Add("p_caseChangeStatus", caseStatusChange);
                 serviceResponse.Result = Get<CustomerCaseDTO>("get_all_completed_customercase", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Customer cases fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
@@ -105,17 +126,38 @@ namespace AML.Core.Repository.CustomerCase
             return serviceResponse;
         }
 
-        public ServiceResponse<List<CustomerCaseDTO>> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue,string usergroupName)
+        public ServiceResponse<List<CustomerCaseDTO>> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue, string matchScore, int createdBy, int caseStatus, string riskLevel, string caseStatusChange, string usergroupName)
         {
             ServiceResponse<List<CustomerCaseDTO>> serviceResponse = new ServiceResponse<List<CustomerCaseDTO>>();
             try
             {
+                int? matchFrom = null;
+                int? matchTo = null;
+
+                if (!string.IsNullOrWhiteSpace(matchScore))
+                {
+                    var parts = matchScore.Split('-');
+
+                    if (parts.Length == 2 &&
+                        int.TryParse(parts[0], out int from) &&
+                        int.TryParse(parts[1], out int to))
+                    {
+                        matchFrom = from;
+                        matchTo = to;
+                    }
+                }
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_userid", userId);
                 parameters.Add("c_from", Convert.ToDateTime(startDate));
                 parameters.Add("c_to", Convert.ToDateTime(endDate));
                 parameters.Add("cust_type", cust_type);
                 parameters.Add("@p_searchvalue", searchValue);
+                parameters.Add("p_matchfrom", matchFrom, DbType.Int32);
+                parameters.Add("p_matchto", matchTo, DbType.Int32);
+                parameters.Add("p_createdBy", createdBy);
+                parameters.Add("c_status", caseStatus);
+                parameters.Add("p_riskLevel", riskLevel);
+                parameters.Add("p_caseChangeStatus", caseStatusChange);
                 parameters.Add("@p_usergroupname", usergroupName);
                 serviceResponse.Result = Get<CustomerCaseDTO>("get_all_customercase_by_searchvalue", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Customer cases fetched successfully.";
@@ -129,17 +171,38 @@ namespace AML.Core.Repository.CustomerCase
             return serviceResponse;
         }
 
-        public ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue)
+        public ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue, string matchScore, int createdBy, int caseStatus, string riskLevel, string caseStatusChange)
         {
             ServiceResponse<List<CustomerCaseDTO>> serviceResponse = new ServiceResponse<List<CustomerCaseDTO>>();
             try
             {
+                int? matchFrom = null;
+                int? matchTo = null;
+
+                if (!string.IsNullOrWhiteSpace(matchScore))
+                {
+                    var parts = matchScore.Split('-');
+
+                    if (parts.Length == 2 &&
+                        int.TryParse(parts[0], out int from) &&
+                        int.TryParse(parts[1], out int to))
+                    {
+                        matchFrom = from;
+                        matchTo = to;
+                    }
+                }
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_userid", userId);
                 parameters.Add("c_from", Convert.ToDateTime(startDate));
                 parameters.Add("c_to", Convert.ToDateTime(endDate));
                 parameters.Add("cust_type", cust_type);
                 parameters.Add("@p_searchvalue", searchValue);
+                parameters.Add("p_matchfrom", matchFrom, DbType.Int32);
+                parameters.Add("p_matchto", matchTo, DbType.Int32);
+                parameters.Add("p_createdBy", createdBy);
+                parameters.Add("c_status", caseStatus);
+                parameters.Add("p_riskLevel", riskLevel);
+                parameters.Add("p_caseChangeStatus", caseStatusChange);
                 serviceResponse.Result = Get<CustomerCaseDTO>("get_all_completed_by_searchvalue", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Customer cases fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
@@ -1352,7 +1415,7 @@ namespace AML.Core.Repository.CustomerCase
             return serviceResponse;
         }
 
-        public ServiceResponse<List<ShareholderDTO>> GetAllShareHolders(int clientid,string companyCode)
+        public ServiceResponse<List<ShareholderDTO>> GetAllShareHolders(int clientid,string companyCode,int userId)
         {
             ServiceResponse<List<ShareholderDTO>> serviceResponse = new ServiceResponse<List<ShareholderDTO>>();
             try
@@ -1360,6 +1423,7 @@ namespace AML.Core.Repository.CustomerCase
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_clientid", clientid);
                 parameters.Add("@p_companyCode", companyCode);
+                parameters.Add("@p_userid", userId);
                 serviceResponse.Result = Get<ShareholderDTO>("get_all_shareholders", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Customer cases fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;

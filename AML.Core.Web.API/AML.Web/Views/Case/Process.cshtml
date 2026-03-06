@@ -71,6 +71,26 @@
         .column-transition {
             transition: flex-basis 0.25s ease, opacity 0.25s ease;
         }
+        @@keyframes blinkRisk {
+            0%
+
+        {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.2;
+        }
+
+        100% {
+            opacity: 1;
+        }
+
+        }
+
+        .blink-risk {
+            animation: blinkRisk 1s infinite;
+        }
     </style>
     <style>
         .dt-loader {
@@ -746,10 +766,14 @@
                                     class="h-8 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-blue-600 px-3">
                                 View Version
                             </button> *@
+                                <span id="riskRatingBadge"
+                                      class="px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-600">
+                                    Risk
+                                </span>
                             <button onclick="openModal('versionModal')"
-        class="h-8 text-[10px] font-bold  tracking-wider text-slate-500 hover:text-blue-600 px-3 border border-slate-300 rounded-md hover:border-blue-600 transition-colors">
-    View Version
-</button>
+                                    class="h-8 text-[10px] font-bold  tracking-wider text-slate-500 hover:text-blue-600 px-3 border border-slate-300 rounded-md hover:border-blue-600 transition-colors">
+                                View Version
+                            </button>
 
                             <button onclick="toggleFullscreen('right')"
                                     class="h-8 w-8 text-slate-400 hover:text-blue-600 transition-colors flex items-center justify-center">
@@ -1228,6 +1252,15 @@
                         </span>
                         <span class="text-xs text-slate-500"> @(Model.Case.CIFNumber) </span>
                     </div>
+                    @if (Model.Case.CustomerType == "I")
+                    {
+                        <div class="grid grid-cols-[180px_1fr] pb-1 border-b border-dotted border-slate-300">
+                            <span class="text-xs font-medium text-black-400 ml-3">
+                            Employer
+                        </span>
+                        <span class="text-xs text-slate-500"> @(Model.Case.Employer) </span>
+                    </div>
+                    }
                     <div class="grid grid-cols-[180px_1fr] pb-1 border-b border-dotted border-slate-300">
                             <span class="text-xs font-medium text-black-400 ml-3">
                             Match Parameter
@@ -1886,9 +1919,9 @@
                                 $('#risktxtRemarks').val(data.remarks);
                                 //console.log(data);
                                 const riskDetails = data
-                                //console.log(riskDetails);
-
-                                applyRiskSelections(riskDetails.riskTypeCategoryDTO);
+                                           console.log(riskDetails);
+                                applyRiskSelections(riskDetails)
+                                //applyRiskSelections(riskDetails.riskTypeCategoryDTO);
 
                                 // for (let i = 0; i <= riskDetails.riskTypeCategoryDTO.length - 1; i++) {
                                 //     for (let j = 0; j <= riskDetails.riskTypeCategoryDTO[i].riskTypes.length - 1; j++) {
@@ -1987,7 +2020,7 @@
         }
         else if (selectedVal == 2) {
 
-            el.addClass('bg-yellow-400 text-black');
+            el.addClass('bg-yellow-400 text-white');
             el.text(selectedVal);
             $('#clrScorehdn_' + a).val(selectedVal);
             OverRideVariables[a] = false;
@@ -2139,6 +2172,8 @@
 
                $('#btntotalscoretop').text(riskStatus);
 
+                           updateRiskBadge(riskStatus);
+
                $('#riskScoreSumTxt').val(total);
                $('#riskScoreCountTxt').val(i);
 
@@ -2146,6 +2181,35 @@
 
 
            }
+
+
+                       function updateRiskBadge(riskStatus) {
+
+                let badge = $('#riskRatingBadge');
+
+                if (!badge.length) return;
+
+                badge.removeClass();
+
+                badge.addClass("px-3 py-1 rounded-full text-xs font-bold text-white");
+
+                if (riskStatus.toLowerCase().includes("low")) {
+
+                    badge.addClass("bg-green-500");
+
+                }
+                else if (riskStatus.toLowerCase().includes("medium")) {
+
+                    badge.addClass("bg-yellow-400");
+
+                }
+                else if (riskStatus.toLowerCase().includes("high")) {
+
+                    badge.addClass("bg-red-500");
+                }
+
+                badge.text(riskStatus);
+            }
 
                          function resetRiskAssessment() {
 
@@ -2165,71 +2229,206 @@
                             $("#btntotalscore").text("0");
         }
 
-                function applyRiskSelections(riskData) {
+                                       function applyRiskSelections(riskDetails) {
 
-            let counter = 0;
+                console.log(riskDetails);
 
-            for (let i = 0; i < riskData.length; i++) {
+                if (!riskDetails) return;
 
-                let category = riskData[i];
+                // Support both Individual & Corporate keys
+                let riskData = riskDetails.riskTypeCategoryDTO || [];
 
-                for (let j = 0; j < category.riskTypes.length; j++) {
+                let rating =
+                    riskDetails.riskAssessmentRating ||
+                    riskDetails.finalRiskScore ||
+                    "";
 
-                    let riskType = category.riskTypes[j];
+                let ratingWithoutOverride =
+                    riskDetails.riskAssessmentRatingWithoutOverride ||
+                    riskDetails.riskScoreBeforeOverride ||
+                    "";
 
-                    let dropdown = $(`#ddlItem_${counter}`);
-                    let scoreCircle = $(`#clrScore_${counter}`);
-                    let scoreHidden = $(`#clrScorehdn_${counter}`);
+                let counter = 0;
 
-                    if (!dropdown.length) {
+                for (let i = 0; i < riskData.length; i++) {
+
+                    let category = riskData[i];
+
+                    for (let j = 0; j < category.riskTypes.length; j++) {
+
+                        let riskType = category.riskTypes[j];
+
+                        let dropdown = $(`#ddlItem_${counter}`);
+                        let scoreCircle = $(`#clrScore_${counter}`);
+                        let scoreHidden = $(`#clrScorehdn_${counter}`);
+
+                        if (!dropdown.length) {
+                            counter++;
+                            continue;
+                        }
+
+                        // ⭐ CASE 1 → itemTxt NOT AVAILABLE → RESET
+                        if (!riskType.itemTxt || riskType.itemTxt.trim() === "") {
+
+                            dropdown.val("0").trigger("change");
+
+                            scoreCircle.text("0");
+
+                            scoreCircle.removeClass().addClass(
+                                "score-badge text-[10px] font-semibold inline-flex items-center justify-center w-10 h-6 rounded-full bg-slate-200 text-white"
+                            );
+
+                            scoreHidden.val("0");
+
+                            counter++;
+                            continue;
+                        }
+
+                        // ⭐ CASE 2 → Assign Value
+                        let optionValue = dropdown.find("option").filter(function () {
+
+                            return $(this).text().trim().toLowerCase() ===
+                                riskType.itemTxt.trim().toLowerCase();
+
+                        }).val();
+
+                        if (optionValue) {
+
+                            // Let ItemChange() calculate score
+                            dropdown.val(optionValue).trigger("change");
+
+                        }
+                        else {
+
+                            dropdown.val("0").trigger("change");
+
+                            scoreCircle.text("0");
+
+                            scoreCircle.removeClass().addClass(
+                                "score-badge text-[10px] font-semibold inline-flex items-center justify-center w-10 h-6 rounded-full bg-slate-200 text-white"
+                            );
+
+                            scoreHidden.val("0");
+                        }
+
                         counter++;
-                        continue;
                     }
-
-                    // ⭐ CASE 1 → itemTxt NOT AVAILABLE → RESET EVERYTHING
-                    if (!riskType.itemTxt || riskType.itemTxt.trim() === "") {
-
-                        dropdown.val("0").trigger("change");
-
-                        // Reset score UI
-                        scoreCircle.text("0");
-                        scoreCircle.removeClass().addClass(
-                            "score-badge text-[10px] font-semibold inline-flex items-center justify-center w-10 h-6 rounded-full bg-slate-200 text-slate-400"
-                        );
-
-                        scoreHidden.val("0");
-
-                        counter++;
-                        continue;
-                    }
-
-                    // ⭐ CASE 2 → Assign Value
-                    let optionValue = dropdown.find("option").filter(function () {
-
-                        return $(this).text().trim().toLowerCase() ===
-                               riskType.itemTxt.trim().toLowerCase();
-
-                    }).val();
-
-                    if (optionValue) {
-                        dropdown.val(optionValue).trigger("change");
-                    }
-                    else {
-                        // If value not found → also reset
-                        dropdown.val("0").trigger("change");
-
-                        scoreCircle.text("0");
-                        scoreCircle.removeClass().addClass(
-                            "score-badge text-[10px] font-semibold inline-flex items-center justify-center w-10 h-6 rounded-full bg-slate-200 text-slate-400"
-                        );
-
-                        scoreHidden.val("0");
-                    }
-
-                    counter++;
                 }
+
+                /* ================================
+                   APPLY FINAL RISK RATING BADGE
+                ================================= */
+
+                let badge = $("#riskRatingBadge");
+
+                if (!badge.length) return;
+
+                badge.removeClass(
+                    "bg-green-500 bg-yellow-400 bg-red-500 text-white blink-risk"
+                );
+
+                badge.addClass("px-3 py-1 rounded-full text-xs font-bold text-white");
+
+                if (rating.toLowerCase() === "low risk") {
+
+                    badge.addClass("bg-green-500");
+
+                }
+                else if (rating.toLowerCase() === "medium risk") {
+
+                    badge.addClass("bg-yellow-400");
+
+                }
+                else if (rating.toLowerCase() === "high risk") {
+
+                    badge.addClass("bg-red-500");
+
+                }
+
+                badge.text(rating);
+
+                /* ====================================
+                   BLINK ONLY WHEN BOTH ARE HIGH RISK
+                ===================================== */
+
+                if (
+                    rating &&
+                    ratingWithoutOverride &&
+                    rating.toLowerCase() === "high risk" &&
+                    ratingWithoutOverride.toLowerCase() === "high risk"
+                ) {
+                    badge.addClass("blink-risk");
+                }
+
             }
-        }
+
+     // function applyRiskSelections(riskData) {
+
+     //     console.log(riskData);
+
+     //        let counter = 0;
+
+     //        for (let i = 0; i < riskData.length; i++) {
+
+     //            let category = riskData[i];
+
+     //            for (let j = 0; j < category.riskTypes.length; j++) {
+
+     //                let riskType = category.riskTypes[j];
+
+     //                let dropdown = $(`#ddlItem_${counter}`);
+     //                let scoreCircle = $(`#clrScore_${counter}`);
+     //                let scoreHidden = $(`#clrScorehdn_${counter}`);
+
+     //                if (!dropdown.length) {
+     //                    counter++;
+     //                    continue;
+     //                }
+
+     //                // ⭐ CASE 1 → itemTxt NOT AVAILABLE → RESET EVERYTHING
+     //                if (!riskType.itemTxt || riskType.itemTxt.trim() === "") {
+
+     //                    dropdown.val("0").trigger("change");
+
+     //                    // Reset score UI
+     //                    scoreCircle.text("0");
+     //                    scoreCircle.removeClass().addClass(
+     //                        "score-badge text-[10px] font-semibold inline-flex items-center justify-center w-10 h-6 rounded-full bg-slate-200 text-slate-400"
+     //                    );
+
+     //                    scoreHidden.val("0");
+
+     //                    counter++;
+     //                    continue;
+     //                }
+
+     //                // ⭐ CASE 2 → Assign Value
+     //                let optionValue = dropdown.find("option").filter(function () {
+
+     //                    return $(this).text().trim().toLowerCase() ===
+     //                           riskType.itemTxt.trim().toLowerCase();
+
+     //                }).val();
+
+     //                if (optionValue) {
+     //                    dropdown.val(optionValue).trigger("change");
+     //                }
+     //                else {
+     //                    // If value not found → also reset
+     //                    dropdown.val("0").trigger("change");
+
+     //                    scoreCircle.text("0");
+     //                    scoreCircle.removeClass().addClass(
+     //                        "score-badge text-[10px] font-semibold inline-flex items-center justify-center w-10 h-6 rounded-full bg-slate-200 text-slate-400"
+     //                    );
+
+     //                    scoreHidden.val("0");
+     //                }
+
+     //                counter++;
+     //            }
+     //        }
+     //    }
 
 
         //         function applyRiskSelections(riskData) {
@@ -2308,7 +2507,7 @@
                             // ⭐ RESET FIRST
                             resetRiskAssessment();
 
-                           applyRiskSelections(res.riskTypeCategoryDTO);
+                           applyRiskSelections(res);
 
                             toastr.success("Version loaded successfully");
                             $('.se-pre-con').fadeOut("slow");
@@ -2439,6 +2638,7 @@
 
             // ❌ No Search Type selected → BLOCK (NEW)
             if (!isAnySearchTypeSelected()) {
+                  insertUploadComment("Risk Parameters Has been Updated");
                 $('#loadingeffect').hide();
                // alert('Please select at least one Search Type before saving Risk Assessment.');
                 return true;
@@ -2449,6 +2649,8 @@
             $('#saveriskassementModel')
                 .removeClass('hidden')
                 .addClass('flex');
+
+          
 
             return false;
         }

@@ -1780,7 +1780,7 @@ namespace AML.Web.Controllers.Risk
 
                             if (isNotCountryAndIdMatches || isCountry)
                             {
-                                if (_riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].Id == model1.ReportDataDTO[m].lov_type_id) ;
+                                if (_riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].Id == model1.ReportDataDTO[m].lov_type_id)
                                 {
                                     _riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].ItemTxt = model1.ReportDataDTO[m].lov_risk_data;
                                     _riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].ItemScore = model1.ReportDataDTO[m].lov_risk_score;

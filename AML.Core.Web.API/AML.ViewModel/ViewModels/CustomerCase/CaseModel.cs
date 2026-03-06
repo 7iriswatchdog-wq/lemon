@@ -196,6 +196,8 @@ namespace AML.ViewModel.ViewModels.CustomerCase
 
         public string Residence { get; set; }
 
+        public string Employer { get; set; }
+
 
     }
 

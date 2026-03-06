@@ -159,7 +159,8 @@ namespace AML.Core.Service.CustomerCase
                 ScreeningOptions=_CustomerCaseDT.ScreeningOptions,
                 IdIssueDate=_CustomerCaseDT.IdIssueDate,
                 IdExpiryDate=_CustomerCaseDT.IdExpiryDate,
-                Residence=_CustomerCaseDT.Residence
+                Residence=_CustomerCaseDT.Residence,
+                Employer=_CustomerCaseDT.Employer
 
                 //EstablishmentDate=_CustomerCaseDT.EstablishmentDate,
                 //Address= _CustomerCaseDT.Address
@@ -530,20 +531,20 @@ namespace AML.Core.Service.CustomerCase
             //Perform business requirements here
             return _CustomerCaseRepository.GetAll(userId, startDate, endDate, cust_type, matchscore, createdBy, caseStatus, riskLevel,caseStatusChange, usergroupName).Result;
         }
-        public List<CustomerCaseDTO> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type)
+        public List<CustomerCaseDTO> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type, string matchscore, int createdBy, int caseStatus, string riskLevel, string caseStatusChange)
         {
             //Perform business requirements here
-            return _CustomerCaseRepository.GetAllCompletedCases(userId, startDate, endDate, cust_type).Result;
+            return _CustomerCaseRepository.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchscore, createdBy, caseStatus, riskLevel, caseStatusChange).Result;
         }
-        public List<CustomerCaseDTO> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type,string searchValue, string usergroupName)
+        public List<CustomerCaseDTO> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type,string searchValue, string matchscore, int createdBy, int caseStatus, string riskLevel, string caseStatusChange, string usergroupName)
         {
             //Perform business requirements here
-            return _CustomerCaseRepository.GetAllBySearchValue(userId, startDate, endDate, cust_type,searchValue,usergroupName).Result;
+            return _CustomerCaseRepository.GetAllBySearchValue(userId, startDate, endDate, cust_type,searchValue, matchscore, createdBy, caseStatus, riskLevel, caseStatusChange, usergroupName).Result;
         }
-        public List<CustomerCaseDTO> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue)
+        public List<CustomerCaseDTO> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue, string matchscore, int createdBy, int caseStatus, string riskLevel, string caseStatusChange)
         {
             //Perform business requirements here
-            return _CustomerCaseRepository.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue).Result;
+            return _CustomerCaseRepository.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchscore, createdBy, caseStatus, riskLevel, caseStatusChange).Result;
         }
 
         public List<CustomerCaseDTO> GetAllSanctionDashboard(int clientId , string ctype)
@@ -2124,16 +2125,21 @@ namespace AML.Core.Service.CustomerCase
             //Perform business requirements here
             return _customerMasterRepository.CreateShareholdersData(_shareholderDTO);
         }
-        public List<ShareholderDTO> GetAllShareHolders(int clientid,string companyCode)
+        public List<ShareholderDTO> GetAllShareHolders(int clientid,string companyCode,int userId)
         {
             //Perform business requirements here
-            return _CustomerCaseRepository.GetAllShareHolders(clientid, companyCode).Result;
+            return _CustomerCaseRepository.GetAllShareHolders(clientid, companyCode, userId).Result;
         }
 
         public ServiceResponse<string> DeleteShareholders(int id)
         {
             //Perform business requirements here
             return _customerMasterRepository.DeleteShareholders(id);
+        }
+        public ServiceResponse<string> DeletePendingShareholders(string companyCode)
+        {
+            //Perform business requirements here
+            return _customerMasterRepository.DeletePendingShareholders(companyCode);
         }
     }
 }

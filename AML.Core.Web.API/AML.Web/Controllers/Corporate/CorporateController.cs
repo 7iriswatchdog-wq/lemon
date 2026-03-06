@@ -1999,7 +1999,8 @@ namespace AML.Web.Controllers.Corporate
         public JsonResult GetPendingShareholders(string companyCode)
         {
             var clientId = _clientHandler.GetClientId();
-            var result = _customerCaseService.GetAllShareHolders(clientId, companyCode);
+            var userId = _clientHandler.GetUserId();
+            var result = _customerCaseService.GetAllShareHolders(clientId, companyCode, userId);
 
             
 
@@ -2036,6 +2037,21 @@ namespace AML.Web.Controllers.Corporate
             
 
             return Json(true);
+        }
+
+        [HttpPost]
+        public JsonResult DeletePendingShareholders(string companyCode)
+        {
+            try
+            {
+                _customerCaseService.DeletePendingShareholders(companyCode);
+
+                return Json(new { success = true });
+            }
+            catch (Exception)
+            {
+                return Json(new { success = false });
+            }
         }
     }
 }

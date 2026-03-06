@@ -12,6 +12,8 @@ namespace AML.Core.DataContract.Authentication
     {
         public User user { get; set; }
         public int status { get; set; }
+
+        public string message { get; set; }
     }
 
     public class User
@@ -21,5 +23,11 @@ namespace AML.Core.DataContract.Authentication
         public string id { get; set; }
         public string token { get; set; }
         public DateTime createdDate { get; set; }
+
+        public string userLimit { get; set; }
+
+        public string individualCount { get; set; }
+
+        public string corporateCount { get; set; }
     }
 }

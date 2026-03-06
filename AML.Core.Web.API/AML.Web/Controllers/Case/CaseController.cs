@@ -237,7 +237,7 @@ namespace AML.Web.Controllers.Case
             
             if (searchValue != "" && searchValue != null)
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllBySearchValue(userId, startDate, endDate, cust_type, searchValue, _UserGroupModel.Name));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, caseStatusChange, _UserGroupModel.Name));
 
             }
             else
@@ -3211,7 +3211,16 @@ namespace AML.Web.Controllers.Case
             //model.StartDate = System.DateTime.Now.AddDays(-7);
             model.EndDate = System.DateTime.Now;
             model.CustomerCategories = new SelectList(_mapper.Map<List<CustomerCategoryModel>>(_customerCategoryService.GetAll().Result), "Code", "Name");
-
+            IEnumerable<SelectListItem> userList = from s in _mapper.Map<List<UserModel>>(_userService.GetAll(clientId))
+                                                   select new SelectListItem
+                                                   {
+                                                       Value = Convert.ToString(s.Id),
+                                                       Text = s.FName + " " + s.LName.ToString()
+                                                   };
+            model.Users = new SelectList(userList, "Value", "Text");
+            var items = from CompletedCaseStatus d in Enum.GetValues(typeof(CompletedCaseStatus))
+                        select new { Id = (int)d, Name = d.ToString() };
+            model.CaseStatusList = new SelectList(items, "Id", "Name");
 
 
             return View(model);
@@ -3219,7 +3228,7 @@ namespace AML.Web.Controllers.Case
 
         [HttpPost("/case/completedcasescustompagination")]
         //ToDo
-        public JsonResult completedcasescustompagination(DataTableModel model, string startDate, string endDate, string cust_type, string searchValue)
+        public JsonResult completedcasescustompagination(DataTableModel model, string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string caseStatusChange, string riskLevel)
         {
             var userId = _clientHandler.GetUserId();
             List<CaseModel> abc = new List<CaseModel>();
@@ -3235,14 +3244,30 @@ namespace AML.Web.Controllers.Case
             {
                 cust_type = "I";
             }
+            if (riskLevel == "1")
+            {
+                riskLevel = "Low Risk";
+            }
+            else if (riskLevel == "2")
+            {
+                riskLevel = "Medium Risk";
+            }
+            else if (riskLevel == "3")
+            {
+                riskLevel = "High Risk";
+            }
+            if (caseStatusChange == "0")
+            {
+                caseStatusChange = null;
+            }
             if (searchValue != "" && searchValue != null)
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, caseStatusChange));
 
             }
             else
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedCases(userId, startDate, endDate, cust_type));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel, caseStatusChange));
 
             }
             int totalcount = abc.Count;
