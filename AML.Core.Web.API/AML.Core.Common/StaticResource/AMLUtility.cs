@@ -767,7 +767,7 @@ namespace AML.Core.Common.StaticResource
         {
             TokenRS res = new TokenRS();
             TokenRQ model = new TokenRQ();
-            string result = string.Empty;
+            dynamic result = string.Empty;
             model.username = username;
             #region POST Content Setter
             string postContent = JsonConvert.SerializeObject(model);
@@ -779,14 +779,23 @@ namespace AML.Core.Common.StaticResource
             using (HttpClient client = new HttpClient())
             {
                 client.BaseAddress = new Uri(baseURL);
-                HttpResponseMessage response = await client.PostAsync(baseURL + url, byteContent);
+                HttpResponseMessage response = client.PostAsync(baseURL + url, byteContent).Result;
                 if (response.IsSuccessStatusCode)
                 {
-                    result = await response.Content.ReadAsStringAsync();
+                    result = response.Content.ReadAsStringAsync();
+
+                    if (result != null && !string.IsNullOrEmpty(result.Result))
+                    {
+                        res = JsonConvert.DeserializeObject<TokenRS>(result.Result);
+                    }
                 }
-                if (!string.IsNullOrEmpty(result))
+                else
                 {
-                    res = JsonConvert.DeserializeObject<TokenRS>(result);
+                    result = response.Content.ReadAsStringAsync();
+
+
+                    res = JsonConvert.DeserializeObject<TokenRS>(result.Result);
+                    res.status = 400;
                 }
             }
             #endregion

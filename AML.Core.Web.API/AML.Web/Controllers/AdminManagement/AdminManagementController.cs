@@ -157,7 +157,11 @@ namespace AML.Web.Controllers.AdminManagement
             TokenRS token = await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, _clientModel.C6BaseUrl, _clientModel.C6Username);
             if (token.status == 400)
             {
-                
+                ViewBag.userlimit = "NA";
+                ViewBag.totalcount = "NA";
+                ViewBag.individualCount = "NA";
+                ViewBag.corporateCount = "NA";
+
                 _toastNotification.AddErrorToastMessage(token.message + ". Please contact the Watchdog Administrator for assistance.");
                 return View(_clientModel);
             }
