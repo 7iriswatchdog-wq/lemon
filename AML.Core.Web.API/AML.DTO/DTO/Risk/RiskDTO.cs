@@ -45,6 +45,8 @@ namespace AML.DTO.DTO.Risk
         public string CustomerType { get; set; }
         [Column("remarks")] 
         public string Remarks { get; set; }
+        [Column("riskoverride")]
+        public string RiskOverRide { get; set; }
 
     }
 

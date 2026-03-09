@@ -1,3 +1,4 @@
+using AML.Core.Common.StaticResource;
 using AML.DTO.DTO.Kyc;
 using AML.DTO.DTO.Risk;
 using System;
@@ -146,6 +147,22 @@ namespace AML.DTO.DTO.Report
 
         [Column("whitelisted_for_screening")]
         public string IsWhiteListed { get; set; }
+
+        [Column("match_score")]
+        public int MatchScore { get; set; }
+        [Column("individual_risk_sum")]
+        public string Individual_final_risk_sum { get; set; }
+
+        [Column("corporate_risk_sum")]
+        public string Corporate_final_risk_sum { get; set; }
+        [Column("case_change_status")]
+        public string CaseChangeStatus { get; set; }
+        [Column("created_user")]
+        public string CreatedUser { get; set; }
+
+        [Column("updated_on")]
+        public string UpdatedOn { get; set; }
+        
     }
     public class RiskDashboardDTO
     {

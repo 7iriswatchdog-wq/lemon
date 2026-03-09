@@ -35,6 +35,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="~/plugins/jquery/jquery.min.js"></script>
+       <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -274,6 +276,20 @@
                 <span class="text-[12px]  text-slate-400  tracking-tight">Match Parameter</span>
                 <span class="text-[13px] font-medium text-slate-900 tracking-tight">@Model.Case.Threshold</span>
             </div>
+                    @if(Model.Case.CustomerType == "I")
+                    {
+                      <div class="flex flex-col space-y-1">
+                            <span class="text-[12px]  text-slate-400  tracking-tight">Employer</span>
+                            <span class="text-[13px] font-medium text-slate-900 tracking-tight">@Model.Case.Employer</span>
+                      </div>  
+                      <div class="flex flex-col space-y-1">
+                            <span class="text-[12px]  text-slate-400  tracking-tight">Golden Visa</span>
+                            <span class="text-[13px] font-medium text-slate-900 tracking-tight">@Model.Case.GoldenVisa</span>
+                      </div>  
+                    }
+            
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6 mt-6">
             <div class="flex flex-col space-y-1">
                 <span class="text-[12px]  text-slate-400  tracking-tight">Uploaded Documents</span>
                 @foreach (var item in Model.CaseDocuments)
@@ -311,122 +327,178 @@
             <!-- Body -->
             <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
 
-                @if (Model.DataList != null && Model.DataList.Any())
-                {
-                    <div class="border border-slate-200 rounded-lg overflow-hidden shadow-sm m-5">
-                        <div class="overflow-x-auto">
-                            <table id="APITable" class="w-full text-sm text-left">
-                                <thead class="text-xs text-slate-500  bg-white border-b border-slate-200">
-                                    <tr>
-                                        @* <th class="px-3 py-2">Type</th>
-                                        <th class="px-3 py-2">Category</th> *@
-                                        <th class="px-3 py-2">Name</th>
-                                        <th class="px-3 py-2">Score</th>
-                                        <th class="px-3 py-2">Nationality</th>
-                                        <th class="px-3 py-2">Id No</th>
-                                        <th class="px-3 py-2">Date Of Birth</th>
-                                        <th class="px-3 py-2">Datasets</th>
-                                        <th class="px-3 py-2">Details</th>
-                                        <th class="px-3 py-2">Search Type</th>
-                                        <th class="px-3 py-2">Search Remarks</th>
-                                    </tr>
-                                </thead>
+                        @if (Model.DataList != null && Model.DataList.Any())
+                        {
+                            <div x-data="searchActionTable()" class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+                                <div class="border-slate-200 rounded-lg overflow-hidden shadow-sm m-5">
+                                    <div class="overflow-x-auto">
+                                        <table id="APITable" class="w-full text-sm text-left whitespace-nowrap">
+                                            <thead class="text-xs text-slate-500  bg-white border-b border-slate-200">
+                                                <tr>
+                                                    @* <th class="px-3 py-2">Type</th>
+                                            <th class="px-3 py-2">Category</th> *@
+                                                    <th class="px-3 py-2 whitespace-nowrap min-w-[260px]">Name</th>
+                                                    <th class="px-3 py-2 min-w-[120px]">Score</th>
+                                                    <th class="px-3 py-2 min-w-[140px]">Nationality</th>
+                                                    <!-- <th class="px-3 py-2">Id No</th> -->
+                                                    <th class="px-3 py-2 dob-label  whitespace-nowrap min-w-[120px]">DOB</th>
+                                                    <th class="px-3 py-2 min-w-[120px]">Datasets</th>
+                                                    <th class="px-3 py-2 min-w-[120px]">Details</th>
+                                                    @* <th class="px-3 py-2">Download</th> *@
+                                                    <th class="px-3 py-2 min-w-[140px]">Search Type</th>
+                                                    <th class="px-3 py-2 min-w-[120px]">Search Remarks</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="searchResultsBody" class="divide-y divide-slate-100">
 
-                                <tbody class="divide-y divide-slate-100">
-
-                                    @for (int i = 0; i < Model.DataList.Count; i++)
-                                    {
-                                        <tr class="bg-white hover:bg-slate-50">
-                                           @*  <td class="px-3 py-3 text-[11px] font-bold">@Model.DataList[i].matchtype</td>
-                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchcategory</td> *@
-                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchname</td>
-                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchscore</td>
-                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchnationality</td>
-                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchidno</td>
-                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchdob</td>
-                                            <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchdatasets</td>
-
-                                            <td class="px-3 py-3">
-                                                @if (Model.DataList[i].matchtype == "KYC6")
+                                                @for (int i = 0; i < Model.DataList.Count; i++)
                                                 {
-                                                    <button class="h-7 px-3 text-[10px] bg-blue-600 text-white rounded"
-                                                            onclick="location.href='@Url.Action("GetDetailsApi","Case",
-                                                            new {
-                                                                Id = Model.DataList[i].matchuid,
-                                                                Category = Model.DataList[i].matchcategory,
-                                                                CaseId = Model.Case.Id,
-                                                                Type = Model.DataList[i].matchtype,
-                                                                Resourcesid = Model.DataList[i].matchresourcesid
-                                                            })'">
-                                                        Details
-                                                    </button>
-                                                }
-                                                else
-                                                {
-                                                    <button class="h-7 px-3 text-[10px] bg-blue-600 text-white rounded"
-                                                            onclick="location.href='@Url.Action("GetDetails","Case",
-                                                            new { caseId = Model.Case.Id, index = i })'">
-                                                        Details
-                                                    </button>
-                                                }
-                                            </td>
+                                                    <tr class="bg-white hover:bg-slate-50">
+                                                        <td class="px-3 py-3 text-[11px] font-bold hidden">@Model.DataList[i].matchtype</td>
+                                                        <td class="px-3 py-3 text-[11px] hidden">@Model.DataList[i].matchcategory</td>
+                                                        @*  @* <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchname</td> *@
+                                                        <td class="px-3 py-3 text-[11px] align-top">
+                                                            <div class="max-w-[260px] whitespace-normal break-normal leading-snug">
+                                                                @Model.DataList[i].matchname
+                                                            </div>
+                                                        </td>
+                                                        <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchscore</td>
+                                                        <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchnationality</td>
+                                                        <td class="px-3 py-3 text-[11px] hidden">@Model.DataList[i].matchidno</td>
+                                                        <td class="px-3 py-3 text-[11px] whitespace-nowrap">@Model.DataList[i].matchdob</td>
+                                                        @* <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchdatasets</td> *@
+                                                        <td class="px-3 py-3 text-[11px]">
+                                                            @{
+                                                                var datasets = Model.DataList[i].matchdatasets?.Split(',');
+                                                            }
 
-                                            <td class="px-3 py-3">
-                                                        <div class="relative">
+                                                            @if (datasets != null)
+                                                            {
+                                                                for (int k = 0; k < datasets.Length; k += 2)
+                                                                {
+                                                                    <div>
+                                                                        @datasets[k].Trim()
+                                                                        @if (k + 1 < datasets.Length)
+                                                                        {
+                                                                            @(", " + datasets[k + 1].Trim())
+                                                                        }
+                                                                    </div>
+                                                                }
+                                                            }
+                                                        </td>
 
-                                                            <!-- Trigger Button -->
-                                                            <button type="button"
-                                                                    id="search-trigger-@i"
-                                                                    class="flex h-8 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-2 text-[10px]">
-                                                                <span id="search-text-@i">Select</span>
-                                                                <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24">
-                                                                    <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" />
-                                                                </svg>
+                                                        @if (@Model.DataList[i].matchtype == "KYC6")
+                                                        {
+                                                            <td class="px-3 py-3">
+                                                                <button class="h-7 px-3 text-[10px] bg-blue-600 text-white rounded" onclick="location.href='@Url.Action("GetDetailsApi", "Case", new { Id = @Model.DataList[i].matchuid, Category = @Model.DataList[i].matchcategory, CaseId = Model.Case.Id, Type = @Model.DataList[i].matchtype, Resourcesid = @Model.DataList[i].matchresourcesid })'">
+                                                                    Details
+                                                                </button>
+                                                            </td>
+
+                                                            @if (Model.DataList[i].matchresourcesid != "")
+                                                            {
+                                                                @* <td class="px-3 py-3">
+                                                                <button class="h-7 px-3 text-[10px] bg-blue-600 text-white rounded" onclick="location.href='@Url.Action("CallApi", "Case", new { Id = @Model.DataList[i].matchresourcesid, Category = @Model.DataList[i].matchcategory })'">
+                                                                    Download
+                                                                </button>
+                                                            </td> *@
+                                                                @* <td style="height:auto">
+                                                                <input type="button" class="sas-button" value="Download" id="download"  style="background-image: url(/img/edit.png);background-repeat: no-repeat;background-position: 2px 3px;padding: 5px 10px !important;" />
+                                                            </td> *@
+                                                            }
+                                                            else
+                                                            {
+                                                                @* <td class="px-3 py-3">
+                                                                <button class="h-7 px-3 text-[10px] bg-blue-600 text-white rounded" onclick="location.href='@Url.Action("CallApiMatchuid", "Case", new { Id = @Model.DataList[i].matchuid, Category = @Model.DataList[i].matchcategory })'">
+                                                                    Download
+                                                                </button>
+                                                            </td> *@
+
+
+
+                                                            }
+
+                                                        }
+                                                        else
+                                                        {
+                                                            <td class="px-3 py-3">
+                                                                <button class="h-7 px-3 text-[10px] bg-blue-600 text-white rounded" onclick="location.href='@Url.Action("GetDetails", "Case", new { caseId = Model.Case.Id, index = i })'">
+                                                                    Details
+                                                                </button>
+                                                            </td>
+                                                            @* <td class="px-3 py-3">
+                                                            <button class="h-7 px-3 text-[10px] bg-blue-600 text-white rounded" onclick="location.href='@Url.Action("DownloadPdf", "Case", new { caseId = Model.Case.Id, index = i })'" style="display:none">
+                                                                Download
                                                             </button>
+                                                        </td> *@
 
-                                                            <!-- Dropdown -->
-                                                            <div id="search-popover-@i" class="hidden absolute z-50 mt-1 w-[150px] rounded-md border bg-white p-3 shadow-md">
+                                                        }
 
-                                                                <!-- ALL Checkbox -->
-                                                                <div class="flex items-center gap-2 pb-2 border-b">
-                                                                    <input type="checkbox" id="search-all-@i" class="h-4 w-4">
-                                                                    <label class="text-xs font-bold">ALL</label>
+
+
+                                                        @* Razor table cell example *@
+                                                        <td class="px-3 py-3">
+                                                            <div class="relative">
+
+                                                                <!-- Trigger Button -->
+                                                                <button type="button"
+                                                                        id="search-trigger-@i"
+                                                                        class="flex h-8 w-20 items-center justify-between rounded-md border border-slate-200 bg-white px-2 text-[10px]">
+                                                                    <span id="search-text-@i">Select</span>
+                                                                    <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24">
+                                                                        <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" />
+                                                                    </svg>
+                                                                </button>
+
+                                                                <!-- Dropdown -->
+                                                                <div id="search-popover-@i" class="hidden absolute z-50 mt-1 w-[150px] rounded-md border bg-white p-3 shadow-md">
+
+                                                                    <!-- ALL Checkbox -->
+                                                                    <div class="flex items-center gap-2 pb-2 border-b">
+                                                                        <input type="checkbox" id="search-all-@i" class="h-4 w-4">
+                                                                        <label class="text-xs font-bold">ALL</label>
+                                                                    </div>
+
+                                                                    <!-- Options container -->
+                                                                    <div id="search-options-@i" class="space-y-2 mt-2"></div>
+
+                                                                    <!-- Hidden inputs (for form submit) -->
+                                                                    <div id="search-hidden-@i"></div>
                                                                 </div>
 
-                                                                <!-- Options container -->
-                                                                <div id="search-options-@i" class="space-y-2 mt-2"></div>
-
-                                                                <!-- Hidden inputs (for form submit) -->
-                                                                <div id="search-hidden-@i"></div>
+                                                                <!-- Hidden input holding existing values -->
+                                                                <input type="hidden"
+                                                                       id="searchTypesValue-@i"
+                                                                       value='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DataList[i].searchTypes ?? new List<string>()))' />
                                                             </div>
+                                                        </td>
 
-                                                            <!-- Hidden input holding existing values -->
-                                                            <input type="hidden"
-                                                                   id="searchTypesValue-@i"
-                                                                   value='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DataList[i].searchTypes ?? new List<string>()))' />
-                                                        </div>
-                                                    </td>
 
-                                            <td class="px-3 py-3">
-                                                <textarea asp-for="@Model.DataList[i].remarks"
-                                                          class="h-7 w-[120px] text-[10px] border p-1 rounded"
-                                                          placeholder="Enter"></textarea>
-                                            </td>
-                                        </tr>
-                                    }
 
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                                                        <td class="px-3 py-3">
+                                                            <textarea type="text" asp-for="@Model.DataList[i].remarks"
+                                                                      class="h-7 w-[120px] text-[10px] border p-1 rounded"
+                                                                      placeholder="Enter"></textarea>
+                                                        </td>
+                                                    </tr>
+                                                }
 
-                    <div class="px-5 pb-4">
-                        <button onclick="saveRemarks(@Model.Case.Id,'@Model.Case.CustomerId','@Model.Case.Type')"
-                                class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px]
-                                       h-9 px-6 rounded-md shadow-sm ">
-                            Save Search Action
-                        </button>
-                    </div>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="px-5 pb-4">
+                                    <button x-bind:disabled="!canSave"
+                                            onclick="saveRemarks(@Model.Case.Id,'@Model.Case.CustomerId','@Model.Case.Type')"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] h-9 px-6 rounded-md shadow-sm transition-all tracking-tight disabled:opacity-50 disabled:cursor-not-allowed">
+                                        Save Search Action
+                                    </button>
+                                    @* <button 
+                                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] h-9 px-6 rounded-md shadow-sm transition-all  tracking-tight">
+                                Save Search Action
+                            </button> *@
+                                </div>
+                            </div>
                 }
                 else
                 {
@@ -543,27 +615,30 @@
                <form role="form" id="frmCmment" class="space-y-4" enctype="multipart/form-data" method="post">
                    @* //input type="hidden" name="CaseId" value="@Model.Case.Id" /> *@
                     <input id="hdnCaseId" type="hidden" name="CaseId" value="@Model.Case.Id" />
-                    <div class="space-y-4">
-                        <h3 class="text-sm font-bold text-slate-900">Case Comments</h3>
+                    <input id="hdnCaseId" type="hidden" name="CommentType" value="Comments" />
+                    <div class="space-y-4" x-data="{ comment: '' }">
+                            <h3 class="text-sm font-bold text-slate-900">Case Comments</h3>
 
-                        <div id="commentsContainer" class="space-y-3">
-                            <div id="noCommentsMsg" class="text-sm text-slate-500 italic pb-2">
-                                No comments yet
+                            <div id="commentsContainer" class="space-y-3">
+                                <div id="noCommentsMsg" class="text-sm text-slate-500 italic pb-2">
+                                    No comments yet
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4">
+                                <textarea id="commentText"
+                                          name="Comment"
+                                          x-model="comment"
+                                          class="flex-1 min-h-[44px] h-[44px] py-2.5 bg-white border-slate-200 resize-none text-xs rounded-md border px-3"
+                                          placeholder="Enter Your Comments"></textarea>
+
+                                <button type="submit"
+                                        :disabled="comment.trim() === ''"
+                                        class="h-[44px] px-8 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
+                                    Save
+                                </button>
                             </div>
                         </div>
-
-                        <div class="flex gap-4">
-                            <textarea id="commentText"
-                                      name="Comment"
-                                      class="flex-1 min-h-[44px] h-[44px] py-2.5 bg-white border-slate-200 resize-none text-xs rounded-md border px-3"
-                                      placeholder="Enter Your Comments"></textarea>
-
-                            <button type="submit"
-                                    class="h-[44px] px-8 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 border rounded-md">
-                                Save
-                            </button>
-                        </div>
-                    </div>
 
                </form>
                @{
@@ -662,48 +737,61 @@
         </div>
 </div>
 <div id="uploadModal" style="display: none;"
-     class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+             x-data="{ fileName: 'No file chosen', fileSelected: false }">
 
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
-         x-data="{ fileName: 'No file chosen' }">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
 
-        <!-- Header -->
-        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-            <h3 class="text-lg font-bold text-slate-900">Upload Document</h3>
-            <button type="button" onclick="document.getElementById('uploadModal').style.display='none'"
-                        class="h-9 px-8 text-white rounded-md bg-red-600">
-                    Close
-            </button>
+                <!-- Header -->
+                <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-slate-900">Upload Document</h3>
+                    <button type="button" @@click ="
+                document.getElementById('uploadModal').style.display='none';
+                fileName='No file chosen';
+                fileSelected=false;
+            " class="h-9 px-8 text-white rounded-md bg-red-600">
+                        Close
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <form id="frmDocument" enctype="multipart/form-data" method="post" class="px-6 py-6 space-y-4">
+                    <input type="hidden" name="CaseId" value="@Model.Case.Id" />
+
+                    <label class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors flex flex-col items-center justify-center">
+                        <input type="file" id="txtFile" name="Document" class="hidden"
+                               @@change ="
+                               if ($event.target.files.length> 0) {
+                        fileName = $event.target.files[0].name.length > 20
+                        ? $event.target.files[0].name.substring(0, 20) + '...'
+                        : $event.target.files[0].name;
+                        fileSelected = true;
+                        } else {
+                        fileName = 'No file chosen';
+                        fileSelected = false;
+                        }"
+                        >
+
+                        <i data-lucide="upload-cloud" class="h-10 w-10 text-slate-400 mb-3 group-hover:text-blue-500 transition-colors"></i>
+                        <p class="text-sm font-bold text-slate-700 mb-2">Click to upload or drag and drop</p>
+                        <span id="fileNameDisplay" class="text-xs text-slate-500 font-medium" x-text="fileName">No file chosen</span>
+                        <p class="text-[11px] font-extrabold text-slate-400 mt-8 uppercase tracking-widest opacity-60">
+                            PDF,DOC,DOCX,JPG,PNG(MAX 10MB per file)
+                        </p>
+                    </label>
+                </form>
+
+                <!-- Footer -->
+                <div class="px-6 py-4 border-t border-slate-200 flex justify-end space-x-2">
+                    <button type="submit" form="frmDocument"
+                            x-bind:disabled="!fileSelected"
+                            class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        Upload
+                    </button>
+                </div>
+
+            </div>
         </div>
-
-        <!-- Body -->
-        <form id="frmDocument" enctype="multipart/form-data" method="post" class="px-6 py-6 space-y-4">
-            <input type="hidden" name="CaseId" value="@Model.Case.Id" />
-
-            <label class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors flex flex-col items-center justify-center">
-               <input type="file" id="txtFile" name="Document" class="hidden"
-                           onchange="displayShortFileName(this)">
-
-                    <i data-lucide="upload-cloud" class="h-10 w-10 text-slate-400 mb-3 group-hover:text-blue-500 transition-colors"></i>
-                    <p class="text-sm font-bold text-slate-700 mb-2">Click to upload or drag and drop</p>
-                    <span id="fileNameDisplay" class="text-xs text-slate-500 font-medium">No file chosen</span>
-            </label>
-        </form>
-
-        <!-- Footer -->
-        <div class="px-6 py-4 border-t border-slate-200 flex justify-end space-x-2">
-            <button type="button" onclick="document.getElementById('uploadModal').style.display='none'"
-                    class="px-4 py-2 rounded-md bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition">
-                Cancel
-            </button>
-            <button type="submit" form="frmDocument"
-                    class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
-                Save
-            </button>
-        </div>
-
-    </div>
-</div>
 
     <div id="transferModel" style="display: none;"
          class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1393,6 +1481,8 @@
                 `);
                 return;
             }
+                        let showVersionTypes = ["Approved", "Rejected", "Whitelisted"];
+                let versionCounter = 0;
 
             $.each(comments, function (i, v) {
 
@@ -1400,14 +1490,17 @@
                 let commentText = v.comment || "";
                 let duration = v.duration || "";
                 let version = v.version || (i + 1);
-                            let commentType = (v.commentType || "").toLowerCase();
+                            let commentType = (v.commentType || "");
 
                 // Check allowed types
-                 let showVersionTypes = ["approved", "rejected", "whitelisted"];
+                             let displayText = "";
 
-                let displayText = showVersionTypes.includes(commentType)
-                    ? `Version ${version}`
-                    : "Action";
+                    if (showVersionTypes.includes(commentType)) {
+                        versionCounter++;
+                        displayText = `Version ${versionCounter}`;
+                    } else {
+                        displayText = `Action On ${commentType}`;
+                    }
 
                             let createdOn = v.createdOnDB ? new Date(v.createdOnDB) : null;
 
@@ -1437,7 +1530,7 @@
                                 </span>
 
                                 <span class="text-[11px] text-slate-500">
-                                    was actioned by
+                                     by
                                     <span class="font-semibold text-blue-600">${userName}</span>
                                 </span>
                             </div>
@@ -1740,7 +1833,7 @@
                    //     dataType: "json",
                    success: function (response) {
                            
-                       insertUploadComment("Remarks has been update in the Search Api Result Section");
+                       insertUploadComment("Remarks has been update in the Search Api Result Section","Search API Result");
                              $('#loadingeffect').hide();
                        toastr.success(response);
                                location.reload();
@@ -1769,7 +1862,7 @@
                  contentType: false,
                  processData: false,
                  success: function () {
-                      insertUploadComment("A new document has been added to the case.");
+                      insertUploadComment("A new document has been added to the case.","Upload Document");
                           $('#loadingeffect').hide();
                      clearDocuemnt();
                      toastr.success('Document Updated');
@@ -1778,14 +1871,15 @@
              });
          });
 
-        function insertUploadComment(comment) {
+        function insertUploadComment(comment,type) {
 
             $.ajax({
                 url: '/case/comment',
                 type: 'POST',
                 data: {
                     CaseId: $('#hdnCaseId').val(),
-                   Comment: comment
+                   Comment: comment,
+                   CommentType: type
                 },
                      success: function (response) {
                         comments = response;
@@ -1936,23 +2030,30 @@
                 });
 
                 // Update button text and hidden inputs
-                function updateUI() {
-                    // Update text
-                    if (selected.length === 0) {
-                        text.text("Select");
-                    } else if (selected.length === searchTypeOptions.length) {
-                        text.text("ALL");
-                    } else {
-                        text.text(selected.length + " selected");
-                    }
+                   function updateUI() {
 
-                    // Update hidden inputs for form
-                    hiddenContainer.empty();
-                    selected.forEach(val => {
-                        const input = `<input type="hidden" name="SearchTypes[${rowIndex}]" value="${val}">`;
-                        hiddenContainer.append(input);
-                    });
+                // Update button text
+                if (selected.length === 0) {
+                    text.text("Select");
+                } else if (selected.length === searchTypeOptions.length) {
+                    text.text("ALL");
+                } else {
+                    text.text(selected.length + " selected");
                 }
+
+                // Update hidden inputs for form
+                hiddenContainer.empty();
+                selected.forEach(val => {
+                    const input = `<input type="hidden" name="SearchTypes[${rowIndex}]" value="${val}">`;
+                    hiddenContainer.append(input);
+                });
+
+                // ✅ IMPORTANT: update Alpine hidden input
+                hiddenInput.val(selected.join(","));
+
+                // ✅ Trigger change so Alpine detects it
+                hiddenInput[0].dispatchEvent(new Event("change"));
+            }
 
                 // Update row disable state
                 function updateRowDisableState() {
@@ -2062,6 +2163,55 @@
             
             setScreeningOptions();
         });
+
+            function searchActionTable() {
+                return {
+                    rows: [
+                        @for (int i = 0; i < Model.DataList.Count; i++)
+                        {
+                                var searchTypes = Model.DataList[i].searchTypes != null
+                                                                    ? string.Join(",", Model.DataList[i].searchTypes)
+                                                                    : "";
+                                var remarks = Model.DataList[i].remarks ?? "";
+                                remarks = remarks.Replace("\\", "\\\\").Replace("'", "\\'");
+
+                                <text>{
+                                    searchType: '@searchTypes',
+                                    remarks: '@remarks'
+                                },</text>
+                        }
+                    ],
+
+                    init() {
+                        // Listen for textarea changes
+                        document.querySelectorAll("#searchResultsBody textarea").forEach((el, index) => {
+                            el.addEventListener("input", (e) => {
+                                this.rows[index].remarks = e.target.value;
+                            });
+                        });
+
+                        // Listen for search type hidden input changes
+                                   document.querySelectorAll("[id^='searchTypesValue-']").forEach((el, index) => {
+
+                el.addEventListener("change", () => {
+                    this.rows[index].searchType = el.value;
+                });
+
+                el.addEventListener("input", () => {
+                    this.rows[index].searchType = el.value;
+                });
+
+            });
+                    },
+
+                    get canSave() {
+                        return this.rows.some(r =>
+                            (r.searchType && r.searchType.trim() !== '') ||
+                            (r.remarks && r.remarks.trim() !== '')
+                        );
+                    }
+                }
+            }
     </script>
 </body>
 </html>

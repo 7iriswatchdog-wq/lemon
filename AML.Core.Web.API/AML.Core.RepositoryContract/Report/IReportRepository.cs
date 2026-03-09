@@ -11,6 +11,8 @@ namespace AML.Core.RepositoryContract.Report
 
         ServiceResponse<List<CaseReportListDTO>> GetCaseManagementReportList(CaseReportRequestDTO requestModel);
 
+        ServiceResponse<List<CaseReportListDTO>> GetCaseManagementSearchValueReportList(CaseReportRequestDTO requestModel);
+
         ServiceResponse<List<CaseReportListDTO>> GetCompletedCaseReportList(CaseReportRequestDTO requestModel);
         ServiceResponse<List<CaseReportListDTO>> GetCasePreviousWeekReportList(CaseReportRequestDTO requestModel);
         ServiceResponse<int> GetCustomerCaseCount(int status,int clientId);

@@ -271,6 +271,20 @@
                 <span class="text-[12px]  text-slate-400  tracking-tight">Match Parameter</span>
                 <span class="text-[13px] font-medium text-slate-900 tracking-tight">@Model.Case.Threshold</span>
             </div>
+                    @if(Model.Case.CustomerType == "I")
+                    {
+                      <div class="flex flex-col space-y-1">
+                            <span class="text-[12px]  text-slate-400  tracking-tight">Employer</span>
+                            <span class="text-[13px] font-medium text-slate-900 tracking-tight">@Model.Case.Employer</span>
+                      </div>  
+                      <div class="flex flex-col space-y-1">
+                            <span class="text-[12px]  text-slate-400  tracking-tight">Golden Visa</span>
+                            <span class="text-[13px] font-medium text-slate-900 tracking-tight">@Model.Case.GoldenVisa</span>
+                      </div>  
+                    }
+            
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6 mt-6">
             <div class="flex flex-col space-y-1">
                 <span class="text-[12px]  text-slate-400  tracking-tight">Uploaded Documents</span>
                 @foreach (var item in Model.CaseDocuments)
@@ -691,8 +705,7 @@
                 }
             });
         });
-
-               function buildComments() {
+        function buildComments() {
 
                                 console.log(comments);
 
@@ -707,6 +720,8 @@
                 `);
                 return;
             }
+                        let showVersionTypes = ["Approved", "Rejected", "Whitelisted"];
+                let versionCounter = 0;
 
             $.each(comments, function (i, v) {
 
@@ -714,14 +729,17 @@
                 let commentText = v.comment || "";
                 let duration = v.duration || "";
                 let version = v.version || (i + 1);
-                            let commentType = (v.commentType || "").toLowerCase();
+                            let commentType = (v.commentType || "");
 
                 // Check allowed types
-                 let showVersionTypes = ["approved", "rejected", "whitelisted"];
+                             let displayText = "";
 
-                let displayText = showVersionTypes.includes(commentType)
-                    ? `Version ${version}`
-                    : "Action";
+                    if (showVersionTypes.includes(commentType)) {
+                        versionCounter++;
+                        displayText = `Version ${versionCounter}`;
+                    } else {
+                        displayText = `Action On ${commentType}`;
+                    }
 
                             let createdOn = v.createdOnDB ? new Date(v.createdOnDB) : null;
 
@@ -751,7 +769,7 @@
                                 </span>
 
                                 <span class="text-[11px] text-slate-500">
-                                    was actioned by
+                                     by
                                     <span class="font-semibold text-blue-600">${userName}</span>
                                 </span>
                             </div>

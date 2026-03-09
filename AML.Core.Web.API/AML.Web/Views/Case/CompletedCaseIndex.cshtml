@@ -162,8 +162,9 @@
             <div class="flex items-center justify-between mb-5">
                 <h3 class="text-sm font-bold text-slate-800  tracking-tight">Case Filter</h3>
                 <div class="flex gap-2">
-                    <button onclick="clearFilters()"
-                            class="text-slate-500 hover:text-slate-700 h-8 px-3 text-sm font-medium transition-colors">
+                    <button type="button"
+                            onclick="clearFilters()" id="resetBtn"
+                            class="bg-blue-600 hover:bg-blue-600 text-white font-bold h-10 px-4 rounded-md text-sm">
                         Reset
                     </button>
                 </div>
@@ -201,7 +202,7 @@
                             onchange="Colunmfilterfunction()"
                             class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
                         <option value="">--Select--</option>
-                        <option value="CaseStatusChangeReason">Case Status Change Reason</option>
+                        @* <option value="CaseStatusChangeReason">Case Status Change Reason</option> *@
                         <option value="ScreeningScore">Screening Score</option>
                         <option value="RiskLevel">Risk Score</option>
                         <option value="User">User</option>
@@ -259,17 +260,30 @@
                 </div>
 
                 <!-- Buttons -->
-                <div class="flex gap-2 items-center">
+                <div class="flex items-center gap-3">
+
+                    <!-- Filter Toggle -->
                     <button type="button"
+                            id="filterBtn"
                             onclick="toggleExtraFilters()"
-                            class="h-10 w-10 flex items-center justify-center rounded-md border border-slate-300 hover:bg-slate-100 transition">
-                        <i data-lucide="filter" class="h-4 w-4 text-slate-600"></i>
+                            class="h-10 px-2 flex items-center justify-center rounded-md border border-slate-200 hover:bg-slate-50 transition">
+                        <i data-lucide="filter" class="h-5 w-5 text-slate-600"></i>
                     </button>
 
-                    <button onclick="applyFilters()"
-                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-4 rounded-md text-sm">
-                        Apply Filters
+                    <!-- Apply Filters -->
+                    <button onclick="applyFilters()" id="applyBtn"
+                            class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold h-10 px-5 rounded-md text-sm transition">
+                        @* <i data-lucide="search" class="h-4 w-4"></i> *@
+                        Apply
                     </button>
+
+                    <!-- Export -->
+                    <button onclick="ExportList(false)" id="exportBtn"
+                            class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-5 rounded-md text-sm transition">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                        Export
+                    </button>
+
                 </div>
 
             </div>
@@ -301,15 +315,8 @@
                     Search
                 </button>
 
-                <!-- Export button pushed to RIGHT -->
-                <button onclick="ExportList(false)"
-                        class="sm:ml-auto bg-white border border-slate-200 shadow-sm
-                   hover:bg-slate-50 text-slate-700 font-bold
-                   h-10 px-5 rounded-md flex items-center gap-2
-                   transition-colors text-sm">
-                    <i data-lucide="download" class="h-4 w-4"></i>
-                    Export
-                </button>
+                
+               
 
             </div>
 
@@ -323,7 +330,7 @@
                                 <th class="px-2 py-4 font-small h-12">Updated on</th>
                                 <th class="px-2 py-4 font-small h-12">Customer Type</th>
                                 <th class="px-2 py-4 font-small h-12">Customer Name</th>
-                                <th class="px-2 py-4 font-small h-12">Case Status Change Reason</th>
+                                <th class="px-2 py-4 font-small h-12">DataSets</th>
                                 <th class="px-2 py-4 font-small h-12">Screening Score</th>
                                 <th class="px-2 py-4 font-small h-12 text-center">Risk Score</th>
                                 <th class="px-2 py-4 font-small h-12">User</th>
@@ -342,7 +349,7 @@
                     <!-- Page length dropdown -->
                     <div class="flex items-center gap-2 text-sm">
                         <select id="pageSize"
-                                class="h-8 rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                class="h-8 rounded-md border border-slate-200 bg-white px-2 pr-7 text-sm"
                                 onchange="changePageSize()">
                             <option value="10" selected>10</option>
                             <option value="20">20</option>
@@ -481,18 +488,30 @@
         };
     }
 
-    function toggleExtraFilters() {
+        function toggleExtraFilters() {
 
-        const section = document.getElementById("extraFilters");
+            const section = document.getElementById("extraFilters");
+            const icon = document.getElementById("filterIcon");
 
-        section.classList.toggle("hidden");
+            section.classList.toggle("hidden");
+
+            if (!section.classList.contains("hidden")) {
+                document.getElementById("filterBtn").classList.add("hidden");
+            }
 
         // Reset column filter
         document.getElementById("columnFilter").value = "";
 
         // Hide all dynamic fields
-        const dynamicFields = [
-            "CaseStatusChangeReasonField",
+        // const dynamicFields = [
+        //     "CaseStatusChangeReasonField",
+        //     "ScreeningScoreField",
+        //     "UserField",
+        //     "StatusField",
+        //     "RiskLevelField"
+        // ];
+
+         const dynamicFields = [
             "ScreeningScoreField",
             "UserField",
             "StatusField",
@@ -505,6 +524,28 @@
 
         resetFieldValues();
     }
+    function resetFilters() {
+
+    document.getElementById("extraFilters").classList.add("hidden");
+
+    document.getElementById("filterBtn").classList.remove("hidden");
+    document.getElementById("resetBtn").classList.add("hidden");
+
+    document.getElementById("columnFilter").value = "";
+
+    const dynamicFields = [
+        "ScreeningScoreField",
+        "UserField",
+        "StatusField",
+        "RiskLevelField"
+    ];
+
+    dynamicFields.forEach(id => {
+        document.getElementById(id).classList.add("hidden");
+    });
+
+    resetFieldValues();
+}
         function resetFieldValues(){
 
         const fields = document.querySelectorAll("input, select");
@@ -532,8 +573,15 @@
 
         const selectedValue = document.getElementById("columnFilter").value;
 
+        // const fields = [
+        //     "CaseStatusChangeReasonField",
+        //     "ScreeningScoreField",
+        //     "UserField",
+        //     "StatusField",
+        //     "RiskLevelField"
+        // ];
+
         const fields = [
-            "CaseStatusChangeReasonField",
             "ScreeningScoreField",
             "UserField",
             "StatusField",
@@ -596,6 +644,7 @@
 
             if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
             if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
+            if (t.includes('auto')) return 'bg-blue-100 text-blue-800';
             if (t.includes('transfer')) return 'bg-green-100 text-green-800';
             if (t.includes('rejected')) return 'bg-red-100 text-red-800';
 
@@ -638,9 +687,7 @@
                                     A:${approved}
                                 </span>
 
-                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
-                                    P:${pending}
-                                </span>
+
 
                                 <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
                                     R:${rejected}
@@ -662,6 +709,18 @@
         `;
     }
 
+    function getRiskScoreClass(riskScore) {
+        switch ((riskScore || '').toLowerCase()) {
+            case 'low risk':
+                return 'text-green-500';
+            case 'medium risk':
+                return 'text-yellow-400';
+            case 'high risk':
+                return 'text-red-500';
+            default:
+                return 'text-black';
+        }
+    }
             function formatDateTime(dateStr) {
         if (!dateStr) return { date: '-', time: '-' };
 
@@ -678,11 +737,11 @@
         };
     }
 
-    function getRiskScoreClass(score) {
-        return score >= 85
-            ? "text-red-500"
-            : (score >= 50 ? "text-amber-500" : "text-slate-500");
-    }
+    // function getRiskScoreClass(score) {
+    //     return score >= 85
+    //         ? "text-red-500"
+    //         : (score >= 50 ? "text-amber-500" : "text-slate-500");
+    // }
 
     /* ---------------------- SEARCH TRIGGER ---------------------- */
 
@@ -744,7 +803,14 @@
                     status: r.caseStatus || '',
                     riskScore: r.customerType === 'I'
                         ? r.individual_final_risk_score || ''
-                        : r.corporate_final_risk_score || ''
+                        : r.corporate_final_risk_score || '',
+                    riskSum: r.customerType === 'I'
+                        ? r.individual_final_risk_sum || ''
+                        : r.corporate_final_risk_sum || '',
+                    riskOverride:r.customerType === 'I'
+                                    ? r.individual_Risk_Override || ''
+                                        : r.corporate_Risk_Override || '',
+                    type:r.type || ''
                 }));
 
                 totalRecords = res.recordsFiltered || 0;
@@ -769,13 +835,12 @@
     /* ---------------------- Render Table ---------------------- */
 
         function renderTable() {
-
         const tbody = document.getElementById('casesTableBody');
 
         if (!filteredCases.length) {
             tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="h-24 text-center">
+                <td colspan="10" class="h-24 text-center">
                     <div class="text-slate-500">No results found.</div>
                 </td>
             </tr>`;
@@ -783,66 +848,55 @@
         }
 
         tbody.innerHTML = filteredCases.map(caseItem => {
+            const created = formatDateTime(caseItem.createdOn);
+            const updated = formatDateTime(caseItem.updatedOnDB);
 
-            console.log(caseItem);
-            const { date, time } = formatDate(caseItem.createdOn);
-                const created = formatDateTime(caseItem.createdOn);
-                const updated = formatDateTime(caseItem.updatedOnDB);
-            const riskClass = getRiskScoreClass(caseItem.riskScore);
+            // -------------------------------
+            // Parse main and shareholder statuses
+            // -------------------------------
+            let baseStatus = "Pending"; // default
+            let showRevert = false;
 
-            
-           
+            if (caseItem.status) {
+                const statusLower = caseItem.status.toLowerCase();
 
-                   let baseStatus = caseItem.status ? caseItem.status.split("(")[0].trim() : "";
+                // Main status check
+                if (statusLower.startsWith("approved")) baseStatus = "Approved";
+                else if (statusLower.startsWith("rejected")) baseStatus = "Rejected";
+                else if (statusLower.startsWith("pending")) baseStatus = "Pending";
+                else if (statusLower.startsWith("auto")) baseStatus = "Auto";
 
-                    // let buttonText = "View";
-                    // let buttonLink = "#";
-                    // let onClickAction = "";
+                // If main is approved/rejected → show Revert
+                if (baseStatus === "Approved" || baseStatus === "Rejected") {
+                    showRevert = true;
+                }
 
-                    let rowType = 1;
-    let buttonsHtml = "";
+                // Check shareholders if exist
+                // Matches "Approved 1" or "Rejected 1" in the shareholders part
+                const shareholderMatch = caseItem.status.match(/shareholders:\s*.*$/i);
+                if (shareholderMatch) {
+                    const shText = shareholderMatch[0].toLowerCase();
+                    const approvedMatch = shText.match(/approved\s+(\d+)/i);
+                    const rejectedMatch = shText.match(/rejected\s+(\d+)/i);
+                    if ((approvedMatch && parseInt(approvedMatch[1]) > 0) ||
+                        (rejectedMatch && parseInt(rejectedMatch[1]) > 0)) {
+                        showRevert = true;
+                    }
+                }
+            }
 
-    // if (baseStatus) {
-    //     if (!baseStatus.includes("Auto")) {
-    //         rowType = baseStatus.includes("Pending") ? 3 : 1;
+            let rowType = baseStatus.includes("Pending") ? 3 : 1;
+            let buttonsHtml = "";
 
-    //         if (baseStatus === "Approved" || baseStatus === "Rejected") {
-    //             // Show Revert button
-    //             let rollbackType =
-    //                 caseItem.isWhiteListed === 'YES' ? 4 :
-    //                 baseStatus === "Approved" ? 0 : 1;
-
-    //             buttonsHtml += `<a onclick="$('#loadingCaseDetails').show(); rollbackCase('${caseItem.customerId}', '${rollbackType}'); return false;"
-    //                    class="text-blue-600 font-bold text-xs hover:underline" style="cursor:pointer">
-    //                     Change
-    //                 </a>`;
-    //         }
-
-    //         // Always show View button
-    //         buttonsHtml = `<a  href="/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}"
-    //                    class="text-blue-600 font-bold text-xs hover:underline">
-    //                     View
-    //                 </a> `+ buttonsHtml;
-
-    //     } else {
-    //         // Auto status
-    //         rowType = 2;
-    //         buttonsHtml = `<a  href="/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}"
-    //                    class="text-blue-600 font-bold text-xs hover:underline">
-    //                     View
-    //                 </a>`;
-    //     }
-    // }
-        if (baseStatus) {
-        if (!baseStatus.includes("Auto")) {
-
-            rowType = baseStatus.includes("Pending") ? 3 : 1;
+            const type = (caseItem.type || "").toLowerCase();
+            let viewUrl =
+                (type === "individual" || type === "corporate")
+                    ? `/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}`
+                    : `/report/ViewShareholderCaseDetails?id=${caseItem.customerId}&type=${rowType}`;
 
             let changeButton = "";
-
-            if (baseStatus === "Approved" || baseStatus === "Rejected") {
-
-                let rollbackType =
+            if (showRevert) {
+                const rollbackType =
                     caseItem.isWhiteListed === 'YES' ? 4 :
                     baseStatus === "Approved" ? 0 : 1;
 
@@ -853,101 +907,266 @@
                     </a>`;
             }
 
-            // View + Change with spacing
+            // Buttons HTML
             buttonsHtml = `
                 <div class="flex items-center gap-4">
-                    <a href="/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}"
-                       class="text-blue-600 font-bold text-xs hover:underline">
-                        View
-                    </a>
+                    <a href="${viewUrl}" class="text-blue-600 font-bold text-xs hover:underline">View</a>
                     ${changeButton}
                 </div>
             `;
 
-        } else {
-
-            // Auto status
-            rowType = 2;
-
-            buttonsHtml = `
-                <div class="flex items-center gap-4">
-                    <a href="/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}"
-                       class="text-blue-600 font-bold text-xs hover:underline">
-                        View
-                    </a>
-                </div>
-            `;
-        }
-    }
-
-    
-
             return `
             <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50">
-
                 <td class="px-2 py-4 font-medium text-slate-600">${caseItem.customerId}</td>
-
-                 <td class="px-2 py-4">
-                            <!-- Created -->
-                            <div class="text-xs text-slate-700">
-                                <div>${created?.date || '-'}</div>
-                                <div class="ml-2">
-                                    ${created?.time ? created.time.replace(/\s?(AM|PM)/i, '') : ''}
-                                </div>
-                            </div>
-                        </td>
-
-                        <td class="px-2 py-4">
-                            <!-- Updated (only if exists) -->
-                            ${updated ? `
-                                <div class="text-xs text-slate-700">
-                                    <div>${updated?.date || '-'}</div>
-                                    <div class="ml-2">
-                                        ${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}
-                                    </div>
-                                </div>
-                            ` : ''}
-                        </td>
-
-
+                <td class="px-2 py-4">
+                    <div class="text-xs text-slate-700">
+                        <div>${created?.date || '-'}</div>
+                        <div class="ml-2">${created?.time ? created.time.replace(/\s?(AM|PM)/i, '') : ''}</div>
+                    </div>
+                </td>
+                <td class="px-2 py-4">
+                    ${updated ? `
+                        <div class="text-xs text-slate-700">
+                            <div>${updated?.date || '-'}</div>
+                            <div class="ml-2">${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}</div>
+                        </div>` : ''}
+                </td>
                 <td class="px-2 py-4">
                     <div class="flex items-center gap-2">
                         <i data-lucide="${caseItem.customerType === 'Individual' ? 'user' : 'building-2'}" class="h-4 w-4 text-slate-400"></i>
                         ${caseItem.customerType}
                     </div>
                 </td>
-
-                <td class="px-2 py-4 ">${caseItem.customerName}</td>
-
+                <td class="px-2 py-4">${caseItem.customerName}</td>
                 <td class="px-2 py-4">${caseItem.caseChangeStatus}</td>
-
                 <td class="px-2 py-4 ${
-                        caseItem.matchScore < 70 ? 'text-green-600 font-semibold' :
-                        caseItem.matchScore < 85 ? 'text-orange-500 font-semibold' :
-                        'text-red-600 font-semibold'
-                    }">
-                        ${caseItem.matchScore}
-                    </td>
-                <td class="px-2 py-4 text-center">
-                    <span class="font-bold ${riskClass}">
-                        ${caseItem.riskScore.replace(' Risk', '')}
+                    caseItem.matchScore < 70 ? 'text-green-600 font-semibold' :
+                    caseItem.matchScore < 85 ? 'text-orange-500 font-semibold' :
+                    'text-red-600 font-semibold'
+                }">${caseItem.matchScore}</td>
+                <td class="px-2 py-4">
+                    <span class="font-bold ${getRiskScoreClass(caseItem.riskScore || caseItem.riskScore?.trim())}">
+                        ${caseItem.riskScore
+                            ? (caseItem.riskScore.toLowerCase().includes("high") && caseItem.riskOverride?.toLowerCase() === "override"
+                                ? "High(O)"
+                                : caseItem.riskScore.replace(" Risk", ""))
+                            : ""}
                     </span>
                 </td>
                 <td class="px-2 py-4">${caseItem.createdUser}</td>
                 <td class="px-2 py-4">${formatCaseStatus(caseItem.status)}</td>
-
-                
-
-                <!-- ✅ SAME DESIGN BUTTON -->
-                 <td class="px-4 py-3 text-center">
-            ${buttonsHtml} <!-- View / Revert buttons injected here -->
-        </td>
-
+                <td class="px-4 py-3 text-center">${buttonsHtml}</td>
             </tr>`;
         }).join('');
 
         lucide.createIcons();
     }
+        
+
+    //     function renderTable() {
+
+    //     const tbody = document.getElementById('casesTableBody');
+
+    //     if (!filteredCases.length) {
+    //         tbody.innerHTML = `
+    //         <tr>
+    //             <td colspan="8" class="h-24 text-center">
+    //                 <div class="text-slate-500">No results found.</div>
+    //             </td>
+    //         </tr>`;
+    //         return;
+    //     }
+
+    //     tbody.innerHTML = filteredCases.map(caseItem => {
+
+    //         console.log(caseItem);
+    //         const { date, time } = formatDate(caseItem.createdOn);
+    //             const created = formatDateTime(caseItem.createdOn);
+    //             const updated = formatDateTime(caseItem.updatedOnDB);
+    //         // const riskClass = getRiskScoreClass(caseItem.riskScore);
+                
+
+    //                let baseStatus = caseItem.status ? caseItem.status.split("(")[0].trim() : "";
+
+    //                 // let buttonText = "View";
+    //                 // let buttonLink = "#";
+    //                 // let onClickAction = "";
+
+    //                 let rowType = 1;
+    // let buttonsHtml = "";
+
+    // // if (baseStatus) {
+    // //     if (!baseStatus.includes("Auto")) {
+    // //         rowType = baseStatus.includes("Pending") ? 3 : 1;
+
+    // //         if (baseStatus === "Approved" || baseStatus === "Rejected") {
+    // //             // Show Revert button
+    // //             let rollbackType =
+    // //                 caseItem.isWhiteListed === 'YES' ? 4 :
+    // //                 baseStatus === "Approved" ? 0 : 1;
+
+    // //             buttonsHtml += `<a onclick="$('#loadingCaseDetails').show(); rollbackCase('${caseItem.customerId}', '${rollbackType}'); return false;"
+    // //                    class="text-blue-600 font-bold text-xs hover:underline" style="cursor:pointer">
+    // //                     Change
+    // //                 </a>`;
+    // //         }
+
+    // //         // Always show View button
+    // //         buttonsHtml = `<a  href="/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}"
+    // //                    class="text-blue-600 font-bold text-xs hover:underline">
+    // //                     View
+    // //                 </a> `+ buttonsHtml;
+
+    // //     } else {
+    // //         // Auto status
+    // //         rowType = 2;
+    // //         buttonsHtml = `<a  href="/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}"
+    // //                    class="text-blue-600 font-bold text-xs hover:underline">
+    // //                     View
+    // //                 </a>`;
+    // //     }
+    // // }
+    //     if (baseStatus) {
+    //     if (!baseStatus.includes("Auto")) {
+
+    //         rowType = baseStatus.includes("Pending") ? 3 : 1;
+
+    //         let changeButton = "";
+
+    //         if (baseStatus === "Approved" || baseStatus === "Rejected") {
+
+    //             let rollbackType =
+    //                 caseItem.isWhiteListed === 'YES' ? 4 :
+    //                 baseStatus === "Approved" ? 0 : 1;
+
+    //             changeButton = `
+    //                 <a onclick="rollbackCase('${caseItem.customerId}', '${rollbackType}'); return false;"
+    //                    class="text-orange-600 font-bold text-xs hover:underline cursor-pointer">
+    //                     Revert
+    //                 </a>`;
+    //         }
+    //              const type = (caseItem.type || "").toLowerCase();
+
+    //                 let viewUrl =
+    //         (type === "individual" || type === "corporate")
+    //             ? `/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}`
+    //             : `/report/ViewShareholderCaseDetails?id=${caseItem.customerId}&type=${rowType}`;
+
+    //             // View + Change with spacing
+    //         buttonsHtml = `
+    //             <div class="flex items-center gap-4">
+    //                     <a href="${viewUrl}"
+    //                    class="text-blue-600 font-bold text-xs hover:underline">
+    //                     View
+    //                 </a>
+    //                 ${changeButton}
+    //             </div>
+    //         `;
+
+    //     } else {
+
+                
+
+
+    //         // Auto status
+    //         rowType = 2;
+    //             const type = (caseItem.type || "").toLowerCase();
+
+    //                         let viewUrl =
+    //                 (type === "individual" || type === "corporate")
+    //                     ? `/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}`
+    //                     : `/report/ViewShareholderCaseDetails?id=${caseItem.customerId}&type=${rowType}`;
+
+    //         buttonsHtml = `
+    //             <div class="flex items-center gap-4">
+    //                     <a href="${viewUrl}"
+    //                    class="text-blue-600 font-bold text-xs hover:underline">
+    //                     View
+    //                 </a>
+    //             </div>
+    //         `;
+    //     }
+    // }
+
+    
+
+    //         return `
+    //         <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50">
+
+    //             <td class="px-2 py-4 font-medium text-slate-600">${caseItem.customerId}</td>
+
+    //              <td class="px-2 py-4">
+    //                         <!-- Created -->
+    //                         <div class="text-xs text-slate-700">
+    //                             <div>${created?.date || '-'}</div>
+    //                             <div class="ml-2">
+    //                                 ${created?.time ? created.time.replace(/\s?(AM|PM)/i, '') : ''}
+    //                             </div>
+    //                         </div>
+    //                     </td>
+
+    //                     <td class="px-2 py-4">
+    //                         <!-- Updated (only if exists) -->
+    //                         ${updated ? `
+    //                             <div class="text-xs text-slate-700">
+    //                                 <div>${updated?.date || '-'}</div>
+    //                                 <div class="ml-2">
+    //                                     ${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}
+    //                                 </div>
+    //                             </div>
+    //                         ` : ''}
+    //                     </td>
+
+
+    //             <td class="px-2 py-4">
+    //                 <div class="flex items-center gap-2">
+    //                     <i data-lucide="${caseItem.customerType === 'Individual' ? 'user' : 'building-2'}" class="h-4 w-4 text-slate-400"></i>
+    //                     ${caseItem.customerType}
+    //                 </div>
+    //             </td>
+
+    //             <td class="px-2 py-4 ">${caseItem.customerName}</td>
+
+    //             <td class="px-2 py-4">${caseItem.caseChangeStatus}</td>
+
+    //             <td class="px-2 py-4 ${
+    //                     caseItem.matchScore < 70 ? 'text-green-600 font-semibold' :
+    //                     caseItem.matchScore < 85 ? 'text-orange-500 font-semibold' :
+    //                     'text-red-600 font-semibold'
+    //                 }">
+    //                     ${caseItem.matchScore}
+    //                 </td>
+    //                       <td class="px-2 py-4">
+    //                         <span class="font-bold ${
+    //                             getRiskScoreClass(caseItem.riskScore || caseItem.riskScore?.trim())
+    //                         }">
+    //                         ${
+    //                             caseItem.riskScore
+    //                                 ? (
+    //                                     caseItem.riskScore.toLowerCase().includes("high") &&
+    //                                         caseItem.riskOverride?.toLowerCase() === "override"
+    //                                   )
+    //                                     ? "High(O)"
+    //                                     : caseItem.riskScore.replace(" Risk", "")
+    //                                 : ""
+    //                         }
+    //                         </span>
+    //                     </td>
+    //             <td class="px-2 py-4">${caseItem.createdUser}</td>
+    //             <td class="px-2 py-4">${formatCaseStatus(caseItem.status)}</td>
+
+                
+
+    //             <!-- ✅ SAME DESIGN BUTTON -->
+    //              <td class="px-4 py-3 text-center">
+    //         ${buttonsHtml} <!-- View / Revert buttons injected here -->
+    //     </td>
+
+    //         </tr>`;
+    //     }).join('');
+
+    //     lucide.createIcons();
+    // }
 
 
     
@@ -983,15 +1202,46 @@
         loadCases(1);
     }
 
-    function clearFilters() {
+        function clearFilters() {
 
-        $('#startDate').val('');
-        $('#endDate').val('');
-        $('#customertype').val(0);
-        $('#searchInput').val('');
+            // Reset values
+            $('#startDate').val('');
+            $('#endDate').val('');
+            $('#customertype').val(0);
+            $('#searchInput').val('');
+            $('#user').val(0);
+            $('#caseStatus').val(10);
+            $('#screeningScore').val('');
+            $('#columnFilter').val('');
+            $('#riskScore').val('');
+            $('#caseStatusChange').val('');
 
-        loadCases(1);
-    }
+            // Show filter icon again
+            document.getElementById("filterBtn").classList.remove("hidden");
+
+            // Hide extra filters section
+            document.getElementById("extraFilters").classList.add("hidden");
+
+            // Hide all dynamic filter fields
+            $('#CaseStatusChangeReasonField').addClass('hidden');
+            $('#ScreeningScoreField').addClass('hidden');
+            $('#UserField').addClass('hidden');
+            $('#StatusField').addClass('hidden');
+            $('#RiskLevelField').addClass('hidden');
+
+
+                checkFilterValues();
+        }
+
+    // function clearFilters() {
+
+    //     $('#startDate').val('');
+    //     $('#endDate').val('');
+    //     $('#customertype').val(0);
+    //     $('#searchInput').val('');
+
+    //     loadCases(1);
+    // }
 
     /* ---------------------- Export ---------------------- */
 
@@ -1101,9 +1351,63 @@
             'startDate=' + $('#startDate').val() +
             '&endDate=' + $('#endDate').val() +
             '&cust_type=' + $('#customertype').val() +
+            '&createdBy=' + $('#user').val() +
+            '&matchScore=' + $('#screeningScore').val() +
+            '&caseStatus=' + $('#caseStatus').val() +
+            '&caseStatusChange=' + $('#caseStatusChange').val() +
+            '&riskLevel=' + $('#riskScore').val() +
+            '&searchValue='  + $('#searchInput').val() || ''+
             '&IsPDF=' + isPDF;
 
         $("#loadingCaseDetails").hide();
     }
-    //      </script>
+        function checkFilterValues() {
+
+            const fields = [
+                document.getElementById("startDate"),
+                document.getElementById("endDate"),
+                document.getElementById("customertype"),
+                document.getElementById("columnFilter"),
+                document.getElementById("caseStatusChange"),
+                document.getElementById("screeningScore"),
+                document.getElementById("user"),
+                document.getElementById("caseStatus"),
+                document.getElementById("riskScore")
+            ];
+
+            const applyBtn = document.getElementById("applyBtn");
+            const exportBtn = document.getElementById("exportBtn");
+
+            let hasValue = false;
+
+            fields.forEach(field => {
+                if (!field) return;
+
+                if (field.tagName === "SELECT") {
+                    if (field.value !== "" && field.value !== "0" && field.value !== "10") {
+                        hasValue = true;
+                    }
+                } else {
+                    if (field.value.trim() !== "") {
+                        hasValue = true;
+                    }
+                }
+            });
+
+            applyBtn.disabled = !hasValue;
+            exportBtn.disabled = !hasValue;
+
+            if (!hasValue) {
+                applyBtn.classList.add("opacity-50","cursor-not-allowed");
+                exportBtn.classList.add("opacity-50","cursor-not-allowed");
+            } else {
+                applyBtn.classList.remove("opacity-50","cursor-not-allowed");
+                exportBtn.classList.remove("opacity-50","cursor-not-allowed");
+            }
+        }
+            document.querySelectorAll("input, select").forEach(el => {
+            el.addEventListener("change", checkFilterValues);
+            el.addEventListener("input", checkFilterValues);
+        });
+          </script>
 

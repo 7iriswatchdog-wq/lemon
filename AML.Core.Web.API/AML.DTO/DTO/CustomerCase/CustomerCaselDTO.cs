@@ -232,6 +232,10 @@ namespace AML.DTO.DTO.CustomerCase
         [Column("employer")]
 
         public string Employer { get; set; }
+
+        [Column("goldenvisa")]
+
+        public string GoldenVisa { get; set; }
     }
     public class CreatedAndUpdatedByNames
     {
@@ -402,6 +406,17 @@ namespace AML.DTO.DTO.CustomerCase
 
         [Column("corporate_risk_score")]
         public string corporate_final_risk_score { get; set; }
+        [Column("individual_risk_sum")]
+        public string Individual_final_risk_sum { get; set; }
+
+        [Column("corporate_risk_sum")]
+        public string Corporate_final_risk_sum { get; set; }
+
+        [Column("individual_risk_override")]
+        public string Individual_Risk_Override { get; set; }
+
+        [Column("corporate_risk_override")]
+        public string Corporate_Risk_Override { get; set; }
         [Column("no_match")]
         public int NoMatch { get; set; }
         [Column("true_dometic_pep")]
@@ -459,6 +474,10 @@ namespace AML.DTO.DTO.CustomerCase
         [Column("employer")]
 
         public string Employer { get; set; }
+
+        [Column("goldenvisa")]
+
+        public string GoldenVisa { get; set; }
 
         public string onb_cust_ref_id { get; set; }
 
@@ -615,11 +634,21 @@ namespace AML.DTO.DTO.CustomerCase
 
         [Column("companyname")]
         public string CompanyName { get; set; }
-        
-        //[Column("document_full_path")]
-        //public string DocFullPath { get; set; }
-        //[Column("document_file_name")]
-        //public string DocumentFileName { get; set; }
+
+        [Column("document_full_path")]
+        public string DocFullPath { get; set; }
+        [Column("document_file_name")]
+        public string DocumentFileName { get; set; }
+
+        [Column("residence")]
+        public string Residence { get; set; }
+        [Column("employer")]
+        public string Employer { get; set; }
+        [Column("goldenvisa")]
+        public string GoldenVisa { get; set; }
+
+        [Column("cust_type")]
+        public string CustType { get; set; }
 
 
     }

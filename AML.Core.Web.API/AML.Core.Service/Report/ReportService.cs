@@ -23,6 +23,11 @@ namespace AML.Core.Service.Report
             //Perform business requirements here
             return _reportRepository.GetCaseManagementReportList(model).Result;
         }
+        public List<CaseReportListDTO> GetCaseManagementSearchValueReportList(CaseReportRequestDTO model)
+        {
+            //Perform business requirements here
+            return _reportRepository.GetCaseManagementSearchValueReportList(model).Result;
+        }
         public List<CaseReportListDTO> GetCompletedCaseReportList(CaseReportRequestDTO model)
         {
             //Perform business requirements here

@@ -237,34 +237,34 @@ namespace AML.Web.Controllers.Case
             
             if (searchValue != "" && searchValue != null)
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, caseStatusChange, _UserGroupModel.Name));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, _UserGroupModel.Name));
 
             }
             else
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAll(userId, startDate, endDate, cust_type, matchScore,createdBy,caseStatus,riskLevel,caseStatusChange, _UserGroupModel.Name));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAll(userId, startDate, endDate, cust_type, matchScore,createdBy,caseStatus,riskLevel, _UserGroupModel.Name));
 
             }
                 int totalcount = abc.Count;
-            if (!string.IsNullOrEmpty(model.search.value))
-            {
-                var words = model.search.value.Trim().Split(' ');
-                foreach (var item in words)
-                {
-                    abc = abc.Where(m => m.CustomerId.ToLower().Contains(model.search.value.ToLower())
-                || m.FirstName.ToLower().Contains(item.ToLower())
-                || m.LastName.ToLower().Contains(item.ToLower())
-                || m.MiddleName.ToLower().Contains(item.ToLower())
-                || m.CompanyCode.ToString().ToLower().Contains(model.search.value.ToLower())
-                ).ToList();
-                }
-                //abc = abc.Where(m => m.CustomerId.ToLower().Contains(model.search.value.ToLower())
-                //|| m.FirstName.ToLower().Contains(model.search.value.ToLower())
-                //|| m.LastName.ToLower().Contains(model.search.value.ToLower())
-                //|| m.MiddleName.ToLower().Contains(model.search.value.ToLower()) 
-                //|| m.CompanyCode.ToString().ToLower().Contains(model.search.value.ToLower())
-                //).ToList();
-            }
+            //if (!string.IsNullOrEmpty(model.search.value))
+            //{
+            //    var words = model.search.value.Trim().Split(' ');
+            //    foreach (var item in words)
+            //    {
+            //        abc = abc.Where(m => m.CustomerId.ToLower().Contains(model.search.value.ToLower())
+            //    || m.FirstName.ToLower().Contains(item.ToLower())
+            //    || m.LastName.ToLower().Contains(item.ToLower())
+            //    || m.MiddleName.ToLower().Contains(item.ToLower())
+            //    || m.CompanyCode.ToString().ToLower().Contains(model.search.value.ToLower())
+            //    ).ToList();
+            //    }
+            //    //abc = abc.Where(m => m.CustomerId.ToLower().Contains(model.search.value.ToLower())
+            //    //|| m.FirstName.ToLower().Contains(model.search.value.ToLower())
+            //    //|| m.LastName.ToLower().Contains(model.search.value.ToLower())
+            //    //|| m.MiddleName.ToLower().Contains(model.search.value.ToLower()) 
+            //    //|| m.CompanyCode.ToString().ToLower().Contains(model.search.value.ToLower())
+            //    //).ToList();
+            //}
             int filteredcount = abc.Count;
             //var data = abc.Skip(model.start).Take(model.length).ToList();
 
@@ -369,6 +369,8 @@ namespace AML.Web.Controllers.Case
 
                 // No need to keep TempData unless you plan to use it again
             }
+            model.IsCaseCreated = TempData["IsCaseCreated"] != null && (bool)TempData["IsCaseCreated"];
+            model.CaseRefId = TempData["CaseRefId"]?.ToString();
 
             return View(model);
         }
@@ -1242,7 +1244,7 @@ namespace AML.Web.Controllers.Case
 
         [HttpGet("/case/Process/{CaseId}")]
         public async Task<ActionResult> Process(int CaseId)
-       {
+        {
             CaseProcessModel model = new CaseProcessModel();
             try
             {
@@ -2100,6 +2102,7 @@ namespace AML.Web.Controllers.Case
             var userName = HttpContext.Session.GetString("SessUsername");
             var comment = string.Format("Transferred Case To {0}", model.TransferUser);
 
+
             UserModel _UserModel = _mapper.Map<UserModel>(_userService.GetDetails(model.UserId));
             model.Email = _UserModel.UserDetail.Email;
             string body = string.Empty;
@@ -2114,6 +2117,7 @@ namespace AML.Web.Controllers.Case
                 CaseCommentModel remarkModel = new CaseCommentModel();
                 remarkModel.CaseId = model.CaseId;
                 remarkModel.Comment = model.Comment;
+                
                 remarkModel.CreatedBy = _clientHandler.GetUserId();
                 var remarkResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
             }
@@ -2121,6 +2125,7 @@ namespace AML.Web.Controllers.Case
             commentModel.CaseId = model.CaseId;
             commentModel.Comment = comment;
             commentModel.CreatedBy = _clientHandler.GetUserId();
+            commentModel.CommentType = "Transferred Case Section";
             var commentResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(commentModel));
 
             await Task.Run(() => SendCaseTransferedMailAsync(body, model));
@@ -2232,6 +2237,7 @@ namespace AML.Web.Controllers.Case
             else if(model.Action == 4)
             {
                 response = "Customer case is  forwarded to Senior Management.";
+                commenttype = "Senior Management";
             }
             //response = model.Action == 2 ? "Customer case approved." : "Customer case rejected.";
             if (model.Action == 1)
@@ -3262,12 +3268,12 @@ namespace AML.Web.Controllers.Case
             }
             if (searchValue != "" && searchValue != null)
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, caseStatusChange));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel));
 
             }
             else
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel, caseStatusChange));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel));
 
             }
             int totalcount = abc.Count;
@@ -3495,6 +3501,13 @@ namespace AML.Web.Controllers.Case
         //        return BadRequest(new { success = false, message = ex.Message });
         //    }
         //}
+
+        
+
+        
+
+        
+        
 
     }
 }

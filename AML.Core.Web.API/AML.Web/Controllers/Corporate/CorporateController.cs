@@ -1524,7 +1524,7 @@ namespace AML.Web.Controllers.Corporate
             }
         }
 
-        public async Task<IActionResult>  CreateShareholder(ShareholderFormModel model)
+        public async Task<IActionResult>  CreateShareholder(ShareholderFormModel model, string screeningType)
         {
             if (model.Shareholders == null || !model.Shareholders.Any())
                 return BadRequest("No shareholders provided");
@@ -1565,12 +1565,14 @@ namespace AML.Web.Controllers.Corporate
             string caseRefId = null;
             foreach (var sh in sortedShareholders)
             {
+                bool isCorporate = sh.Type == "Corporate Shareholder" || sh.Type == "Corporate UnderScore Party";
+
                 CaseModel caseModel = new CaseModel
                 {
                     LastName = sh.Name,
                     Type = sh.Type,
-                    CustomerType = sh.Type != "Corporate Shareholder" ? "I" : "C",
-                    MatchCategory = sh.Type != "Corporate Shareholder" ? "INDIVIDUAL" : "CORPORATE",
+                    CustomerType = isCorporate  ? "C" : "I",
+                    MatchCategory = isCorporate  ? "CORPORATE" : "INDIVIDUAL",
                     ClientId = sh.ClientID,
                     //CreatedBy = sh.UserId,
                     CompanyCode = sh.CompanyCode,
@@ -1582,11 +1584,13 @@ namespace AML.Web.Controllers.Corporate
                     IdIssueDate = sh.IssueDate,
                     IdExpiryDate = sh.IdExpiry,
                     Nationality = sh.Nationality,
-                    //Residence = sh.Residence,
                     //Share = sh.Share,
                     //Designation = sh.Designation,
                     Tradelicense = sh.TradeLicence,
-                    CIFNumber = sh.Cif
+                    CIFNumber = sh.Cif,
+                    Residence=sh.Residence,
+                    Employer=sh.Employer,
+                    GoldenVisa=sh.GoldenVisa
                 };
 
                 // Determine ParentId from TempId (everything before last dot)
@@ -1625,6 +1629,20 @@ namespace AML.Web.Controllers.Corporate
                 var customerId = result.Result.Split('�')[1];
                 parentIdMap[sh.DisplayId] = customerId; // map TempId -> real CustomerId
 
+                if (!string.IsNullOrEmpty(sh.Document))
+                {
+                    CaseDocumentModel _caseDoc = new CaseDocumentModel();
+                    _caseDoc.CaseId = _customerCaseService.GetCaseId(_ccDTO.CustomerId).ToString();
+                    _caseDoc.CreatedBy = _clientHandler.GetUserId();
+                    _caseDoc.CreatedOn = DateTime.Now;
+                    _caseDoc.ClientId = _clientHandler.GetClientId();
+
+                    _caseDoc.DocumentFileName = sh.Document;
+                    _caseDoc.DocumentFullPath = sh.DocumentFullPath; // or stored path
+                    _caseDoc.DocumentName = sh.Name;
+
+                    _caseDocumentService.Create(_mapper.Map<CaseDocumentDTO>(_caseDoc));
+                }
                 // Screening logic
                 if (CallC6Screening == "Y")
                 {
@@ -1694,7 +1712,14 @@ namespace AML.Web.Controllers.Corporate
                 TempData["CaseRefId"] = caseRefId;
                 TempData["IsCaseCreated"]= true;
             }
-            return RedirectToAction("CorporateScreening");
+
+            if (screeningType == "Individual")
+            {
+                return RedirectToAction("Create", "Case");
+            }
+            else {
+                return RedirectToAction("CorporateScreening");
+            }
         }
 
 
@@ -1992,13 +2017,13 @@ namespace AML.Web.Controllers.Corporate
             return Json(customers);
         }
 
-        public JsonResult SearchCompanyCode(string CompanyCode)
+        public JsonResult SearchCompanyCode(string CompanyCode,string CustomerType)
         {
             var clientId = _clientHandler.GetClientId();
 
             List<CaseModel> abc = new List<CaseModel>();
 
-            abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetCompanyCode(CompanyCode, clientId));
+            abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetCompanyCode(CompanyCode, clientId,CustomerType));
 
 
 
@@ -2006,11 +2031,11 @@ namespace AML.Web.Controllers.Corporate
             return Json(abc);
         }
 
-        public JsonResult GetPendingShareholders(string companyCode)
+        public JsonResult GetPendingShareholders(string companyCode,string customerType)
         {
             var clientId = _clientHandler.GetClientId();
             var userId = _clientHandler.GetUserId();
-            var result = _customerCaseService.GetAllShareHolders(clientId, companyCode, userId);
+            var result = _customerCaseService.GetAllShareHolders(clientId, companyCode, userId,customerType);
 
             
 
@@ -2020,26 +2045,69 @@ namespace AML.Web.Controllers.Corporate
         }
 
         [HttpPost]
-        public IActionResult SaveShareholders([FromBody] List<ShareholderModel> model)
+        public IActionResult SaveShareholders(string data, List<IFormFile> Documents)
         {
+            if (string.IsNullOrEmpty(data))
+                return Json(false);
+
+            var model = Newtonsoft.Json.JsonConvert.DeserializeObject<List<ShareholderModel>>(data);
+
             if (model == null || !model.Any())
                 return Json(false);
+
+            int docIndex = 0;
 
             foreach (var item in model)
             {
                 ShareholderDTO _ccDTO = _mapper.Map<ShareholderDTO>(item);
                 _ccDTO.ClientId = _clientHandler.GetClientId();
                 _ccDTO.UserId = _clientHandler.GetUserId();
-                //DocumentsModel _documentsModel = _fileUploader.UploadFile(_ccDTO.ClientId, ItemType.caseDocument, _clientHandler.GetBranchId(), item.Document);
-                //_ccDTO.DocFullPath = _documentsModel.DocFullPath;
-                //_ccDTO.DocumentFileName = item.Document.FileName;
+
+                //Attach document if available
+                if (Documents != null && Documents.Count > docIndex)
+                    {
+                           var file = Documents[docIndex];
+
+                    DocumentsModel _documentsModel = _fileUploader.UploadFile(
+                        _ccDTO.ClientId,
+                        ItemType.caseDocument,
+                        _clientHandler.GetBranchId(),
+                        file
+                    );
+
+                    _ccDTO.DocFullPath = _documentsModel.DocFullPath;
+                    _ccDTO.DocumentFileName = file.FileName;
+                }
+
+                docIndex++;
+
                 var result = _customerCaseService.CreateShareholdersData(_ccDTO);
             }
 
-            
-
             return Json(true);
         }
+
+        //[HttpPost]
+        //public IActionResult SaveShareholders([FromBody] List<ShareholderModel> model)
+        //{
+        //    if (model == null || !model.Any())
+        //        return Json(false);
+
+        //    foreach (var item in model)
+        //    {
+        //        ShareholderDTO _ccDTO = _mapper.Map<ShareholderDTO>(item);
+        //        _ccDTO.ClientId = _clientHandler.GetClientId();
+        //        _ccDTO.UserId = _clientHandler.GetUserId();
+        //        //DocumentsModel _documentsModel = _fileUploader.UploadFile(_ccDTO.ClientId, ItemType.caseDocument, _clientHandler.GetBranchId(), item.Document);
+        //        //_ccDTO.DocFullPath = _documentsModel.DocFullPath;
+        //        //_ccDTO.DocumentFileName = item.Document.FileName;
+        //        var result = _customerCaseService.CreateShareholdersData(_ccDTO);
+        //    }
+
+
+
+        //    return Json(true);
+        //}
 
         public JsonResult DeleteShareholder(int id)
         {
