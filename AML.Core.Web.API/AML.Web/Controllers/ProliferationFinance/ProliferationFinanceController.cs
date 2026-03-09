@@ -5,6 +5,7 @@ using AML.Core.ServiceContract.CaseDocument;
 using AML.Core.ServiceContract.CaseComment;
 using AML.DTO.DTO.CaseDocument;
 using AML.DTO.DTO.CaseComment;
+using AML.Web.Helper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -23,17 +24,23 @@ namespace AML.Web.Controllers.ProliferationFinance
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ICaseDocumentService _caseDocumentService;
         private readonly ICaseCommentService _caseCommentService;
+        private readonly IViewRenderService _viewRenderService;
+        private readonly IExportDataService _exportDataService;
 
         public ProliferationFinanceController(
             IProliferationFinanceService proliferationFinanceService, 
             IHttpContextAccessor httpContextAccessor,
             ICaseDocumentService caseDocumentService,
-            ICaseCommentService caseCommentService)
+            ICaseCommentService caseCommentService,
+            IViewRenderService viewRenderService,
+            IExportDataService exportDataService)
         {
             _proliferationFinanceService = proliferationFinanceService;
             _httpContextAccessor = httpContextAccessor;
             _caseDocumentService = caseDocumentService;
             _caseCommentService = caseCommentService;
+            _viewRenderService = viewRenderService;
+            _exportDataService = exportDataService;
         }
 
         public IActionResult CaseCreation()
@@ -333,6 +340,46 @@ namespace AML.Web.Controllers.ProliferationFinance
             catch (Exception)
             {
                 return RedirectToAction("CaseManager");
+            }
+        }
+
+        [HttpGet("/ProliferationFinance/DownloadDetails/{id}")]
+        public async Task<IActionResult> DownloadDetails(int id)
+        {
+            try
+            {
+                var caseDetails = _proliferationFinanceService.GetCaseById(id);
+                if (caseDetails == null) return NotFound();
+
+                var model = new ProliferationFinanceModel
+                {
+                    CaseId = caseDetails.Id,
+                    CustomerType = caseDetails.CustomerType,
+                    CorporateId = caseDetails.CorporateId,
+                    CompanyName = caseDetails.CompanyName,
+                    HsCode = caseDetails.HsCode,
+                    CasNumber = caseDetails.CasNumber,
+                    Eccn = caseDetails.Eccn,
+                    ChemicalName = caseDetails.ChemicalName,
+                    SynonymName = caseDetails.SynonymName,
+                    Status = caseDetails.Status,
+                    CreatedOn = caseDetails.CreatedOn,
+                    UpdatedOn = caseDetails.UpdatedOn,
+                    Score = caseDetails.Score ?? "0",
+                    StatusReason = caseDetails.StatusReason,
+                    MatchedChemicalName = caseDetails.MatchedChemicalName,
+                    SearchHitDetails = caseDetails.SearchHitDetails
+                };
+
+                string html = await _viewRenderService.RenderToStringAsync("ProliferationFinance/_DetailsReport", model);
+                var pdfBytes = _exportDataService.HtmlToPDFforChecklistLogs(html);
+                
+                string fileName = $"PF_MatchReport_{model.CorporateId}_{DateTime.Now:yyyyMMdd}.pdf";
+                return File(pdfBytes, "application/pdf", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Error generating PDF: " + ex.Message);
             }
         }
 

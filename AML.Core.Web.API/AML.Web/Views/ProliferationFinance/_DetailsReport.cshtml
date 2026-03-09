@@ -1,0 +1,147 @@
+@model AML.ViewModel.ViewModels.ProliferationFinance.ProliferationFinanceModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Arial', sans-serif; color: #334155; margin: 0; padding: 20px; }
+        .header { border-bottom: 2px solid #E2E8F0; padding-bottom: 20px; margin-bottom: 30px; }
+        .title { font-size: 24px; font-weight: bold; color: #0F172A; margin: 0; }
+        .subtitle { font-size: 14px; color: #64748B; margin-top: 5px; }
+        .section { margin-bottom: 30px; }
+        .section-title { font-size: 16px; font-weight: bold; color: #0F172A; text-transform: uppercase; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px; margin-bottom: 15px; }
+        .grid { display: block; width: 100%; border-collapse: collapse; }
+        .grid td { padding: 10px; border: 1px solid #F1F5F9; vertical-align: top; width: 33.33%; }
+        .label { font-size: 11px; font-weight: bold; color: #64748B; text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .value { font-size: 13px; color: #0F172A; font-weight: 600; }
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .bg-blue { background-color: #DBEAFE; color: #1E40AF; }
+        .bg-green { background-color: #DCFCE7; color: #166534; }
+        .bg-red { background-color: #FEE2E2; color: #991B1B; }
+        .bg-yellow { background-color: #FEF9C3; color: #854D0E; }
+        .bg-slate { background-color: #F1F5F9; color: #334155; }
+        .paragraph-box { background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 15px; margin-bottom: 15px; line-height: 1.6; font-size: 13px; font-style: italic; }
+        .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 10px; color: #94A3B8; border-top: 1px solid #E2E8F0; padding-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">PROLIFERATION FINANCE MATCH REPORT</h1>
+        <div class="subtitle">Company: @Model.CompanyName | Corporate ID: @Model.CorporateId</div>
+    </div>
+
+    <!-- Case Summary -->
+    <div class="section">
+        <div class="section-title">Case Summary</div>
+        <table class="grid">
+            <tr>
+                <td>
+                    <span class="label">Customer Type</span>
+                    <span class="value">@Model.CustomerType</span>
+                </td>
+                <td>
+                    <span class="label">Created On</span>
+                    <span class="value">@(Model.CreatedOn?.ToString("dd-MMM-yyyy") ?? "-")</span>
+                </td>
+                <td>
+                    <span class="label">Status</span>
+                    @{
+                        var s = (Model.Status ?? "").ToLower();
+                        var cls = "bg-slate";
+                        if (s.Contains("pending")) cls = "bg-yellow";
+                        else if (s.Contains("approved") || s.Contains("true match")) cls = "bg-blue";
+                        else if (s.Contains("transfer")) cls = "bg-green";
+                        else if (s.Contains("rejected") || s.Contains("false match")) cls = "bg-red";
+                    }
+                    <span class="status-badge @cls">@Model.Status</span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class="label">Search Term</span>
+                    <span class="value">@Model.ChemicalName</span>
+                </td>
+                <td colspan="2">
+                    <span class="label">Decision Reason</span>
+                    <span class="value">@Model.StatusReason</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Chemical Specifications -->
+    <div class="section">
+        <div class="section-title">Chemical Specifications (UAE Control List Matching)</div>
+        @if (Model.Score != "0" && (!string.IsNullOrEmpty(Model.MatchedChemicalName) || !string.IsNullOrEmpty(Model.HsCode) || !string.IsNullOrEmpty(Model.CasNumber)))
+        {
+            <table class="grid">
+                <tr>
+                    <td>
+                        <span class="label">Matched Chemical Name</span>
+                        <span class="value">@(!string.IsNullOrEmpty(Model.MatchedChemicalName) ? Model.MatchedChemicalName : "-")</span>
+                    </td>
+                    <td>
+                        <span class="label">HS Code</span>
+                        <span class="value">@(!string.IsNullOrEmpty(Model.HsCode) ? Model.HsCode : "-")</span>
+                    </td>
+                    <td>
+                        <span class="label">CAS Number</span>
+                        <span class="value">@(!string.IsNullOrEmpty(Model.CasNumber) ? Model.CasNumber : "-")</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <span class="label">ECCN</span>
+                        <span class="value">@(!string.IsNullOrEmpty(Model.Eccn) ? Model.Eccn : "-")</span>
+                    </td>
+                    <td>
+                        <span class="label">Synonym</span>
+                        <span class="value">@(!string.IsNullOrEmpty(Model.SynonymName) ? Model.SynonymName : "-")</span>
+                    </td>
+                    <td>
+                        <span class="label">Match Score</span>
+                        <span class="value">@Model.Score%</span>
+                    </td>
+                </tr>
+            </table>
+        }
+        else
+        {
+            <div style="font-style: italic; color: #94A3B8; padding: 20px; border: 1px dashed #E2E8F0; text-align: center;">
+                No chemical matches recorded for this case.
+            </div>
+        }
+    </div>
+
+    <!-- Non-Chemical Matching -->
+    <div class="section">
+        <div class="section-title">Non-Chemical Matching (Document Scan Snippets)</div>
+        @{
+            var pdfSrc = Model.CustomerType == "Non-Chemical" ? Model.ChemicalName : Model.SearchHitDetails;
+        }
+        @if (!string.IsNullOrEmpty(pdfSrc))
+        {
+            var paragraphs = pdfSrc.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var para in paragraphs)
+            {
+                <div class="paragraph-box">
+                    "@para"
+                </div>
+            }
+        }
+        else
+        {
+            <div style="font-style: italic; color: #94A3B8; padding: 20px; border: 1px dashed #E2E8F0; text-align: center;">
+                No PDF content matches recorded for this case.
+            </div>
+        }
+    </div>
+
+    <div class="footer">
+        PROLIFERATION FINANCE MONITORING SYSTEM - CONFIDENTIAL REPORT - GENERATED ON @DateTime.Now.ToString("dd-MMM-yyyy HH:mm")
+    </div>
+</body>
+</html>
