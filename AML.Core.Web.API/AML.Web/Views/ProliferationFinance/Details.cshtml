@@ -1,0 +1,371 @@
+@model AML.ViewModel.ViewModels.ProliferationFinance.ProliferationFinanceModel
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Case Details";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<style>
+    :root {
+        --font-lexend: 'Lexend', sans-serif;
+        --font-inter: 'Inter', sans-serif;
+    }
+
+    body {
+        background-color: #F8FAFC;
+        font-family: var(--font-inter);
+    }
+
+    .report-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+        width: 100%;
+    }
+
+    .report-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+
+    .report-header {
+        border-bottom: 1px solid #E2E8F0;
+        padding: 24px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .report-title-area {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .report-profile-img {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #E2E8F0;
+        color: #64748B;
+        border: 2px solid #E2E8F0;
+    }
+
+    .lexend-font {
+        font-family: var(--font-lexend);
+    }
+
+    .report-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn-secondary {
+        padding: 8px 16px;
+        background: #F1F5F9;
+        color: #475569;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 14px;
+        border: 1px solid #E2E8F0;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-secondary:hover {
+        background: #E2E8F0;
+        color: #0F172A;
+    }
+
+    .btn-primary {
+        padding: 8px 16px;
+        background: #2563EB;
+        color: #ffffff;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 14px;
+        border: none;
+        transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+        background: #1D4ED8;
+    }
+
+    .report-content {
+        padding: 32px;
+    }
+
+    .report-section {
+        margin-bottom: 32px;
+    }
+
+    .report-section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0F172A;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #F1F5F9;
+        font-family: var(--font-lexend);
+    }
+
+    .report-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 24px;
+    }
+
+    .info-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 12px;
+    }
+
+    .info-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 4px;
+    }
+
+    .info-value {
+        font-size: 15px;
+        color: #0F172A;
+        font-weight: 600;
+        line-height: 1.5;
+    }
+
+    .tab-nav {
+        display: flex;
+        gap: 24px;
+        border-bottom: 1px solid #E2E8F0;
+        margin-bottom: 24px;
+    }
+
+    .tab-link {
+        padding: 12px 4px;
+        font-weight: 600;
+        font-size: 14px;
+        color: #64748B;
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        cursor: pointer;
+    }
+
+    .tab-link.active {
+        color: #2563EB;
+        border-bottom-color: #2563EB;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #F1F5F9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #CBD5E1;
+        border-radius: 10px;
+    }
+
+    /* Print styling */
+    @@media print {
+        .report-actions, .tab-nav { display: none !important; }
+        .report-card { border: none !important; box-shadow: none !important; }
+        .report-container { max-width: 100% !important; padding: 0 !important; }
+        .tab-content { display: block !important; }
+    }
+</style>
+
+<div class="report-container mt-6">
+    <div class="report-card">
+        <!-- Header -->
+        <div class="report-header">
+            <div class="report-title-area">
+                <div class="report-profile-img">
+                    <i class="fa fa-flask fa-2x"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900 lexend-font mb-1">@Model.CompanyName</h1>
+                    <div class="text-slate-500 font-medium flex items-center gap-3">
+                        <span>Proliferation Finance Match Report</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+                            ID: @Model.CorporateId
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="report-actions">
+                <button onclick="window.print()" class="btn-secondary">
+                    <i class="fa fa-download mr-2"></i> Download
+                </button>
+                <a href="/ProliferationFinance/Process/@Model.CaseId" class="btn-secondary details-back-btn">
+                    <i class="fa fa-arrow-left mr-2"></i> Back
+                </a>
+            </div>
+        </div>
+
+        <div class="report-content">
+            <!-- Tabs -->
+            <div class="tab-nav">
+                <button class="tab-link active" onclick="switchTab('chemical', this)">Chemical Matching</button>
+                <button class="tab-link" onclick="switchTab('non-chemical', this)">Non-Chemical Matching</button>
+            </div>
+
+            <!-- Chemical Tab -->
+            <div id="chemical-tab" class="tab-pane">
+                <div class="report-section">
+                    <h3 class="report-section-title">Case Summary</h3>
+                    <div class="report-grid-3">
+                        <div class="info-group">
+                            <span class="info-label">Customer Type</span>
+                            <span class="info-value">@Model.CustomerType</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label">Created On</span>
+                            <span class="info-value">@(Model.CreatedOn?.ToString("dd-MMM-yyyy") ?? "-")</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label text-blue-600">Search Term</span>
+                            <span class="info-value text-blue-700 italic font-bold">@Model.ChemicalName</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label">Current Status</span>
+                            <span class="info-value">
+                                @{
+                                    var statusClass = "bg-slate-100 text-slate-800";
+                                    var s = (Model.Status ?? "").ToLower();
+                                    if (s.Contains("pending")) statusClass = "bg-yellow-100 text-yellow-800";
+                                    else if (s.Contains("approved") || s.Contains("true match")) statusClass = "bg-blue-100 text-blue-800";
+                                    else if (s.Contains("transfer")) statusClass = "bg-green-100 text-green-800";
+                                    else if (s.Contains("rejected") || s.Contains("false match")) statusClass = "bg-red-100 text-red-800";
+                                }
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold @statusClass ring-1 ring-inset @statusClass.Replace("bg-", "ring-").Replace("100", "200")">
+                                    @Model.Status
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h3 class="report-section-title">Chemical Specifications</h3>
+                    @if (Model.Score != "0" && (!string.IsNullOrEmpty(Model.MatchedChemicalName) || !string.IsNullOrEmpty(Model.HsCode) || !string.IsNullOrEmpty(Model.CasNumber)))
+                    {
+                        <div class="report-grid-3">
+                            <div class="info-group">
+                                <span class="info-label">Matched Chemical Name</span>
+                                <span class="info-value text-blue-700">@(!string.IsNullOrEmpty(Model.MatchedChemicalName) ? Model.MatchedChemicalName : "-")</span>
+                            </div>
+                            <div class="info-group">
+                                <span class="info-label">HS Code</span>
+                                <span class="info-value">@(!string.IsNullOrEmpty(Model.HsCode) ? Model.HsCode : "-")</span>
+                            </div>
+                            <div class="info-group">
+                                <span class="info-label">CAS Number</span>
+                                <span class="info-value">@(!string.IsNullOrEmpty(Model.CasNumber) ? Model.CasNumber : "-")</span>
+                            </div>
+                            <div class="info-group">
+                                <span class="info-label">ECCN</span>
+                                <span class="info-value">@(!string.IsNullOrEmpty(Model.Eccn) ? Model.Eccn : "-")</span>
+                            </div>
+                            <div class="info-group">
+                                <span class="info-label">Synonym</span>
+                                <span class="info-value">@(!string.IsNullOrEmpty(Model.SynonymName) ? Model.SynonymName : "-")</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-8 text-slate-400 italic bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                            No chemical matches recorded for this case.
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Non-Chemical Tab -->
+            <div id="non-chemical-tab" class="tab-pane" style="display: none;">
+                <div class="report-section">
+                    <h3 class="report-section-title">Matched Content Snippets</h3>
+                    <div class="space-y-6">
+                        @{
+                            var pdfSrc = Model.CustomerType == "Non-Chemical" ? Model.ChemicalName : Model.SearchHitDetails;
+                        }
+                        @if (!string.IsNullOrEmpty(pdfSrc))
+                        {
+                            <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center gap-3 mb-4">
+                                <i class="fa fa-file-pdf-o text-blue-500"></i>
+                                <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Source: UAE Proliferation Finance PDF</span>
+                            </div>
+                            
+                            var paragraphs = pdfSrc.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var para in paragraphs)
+                            {
+                                <div class="bg-slate-50 rounded-xl border border-slate-100 p-6">
+                                    <div class="info-label mb-3">Matched Paragraph</div>
+                                    <div class="pdf-snippet italic text-slate-700 leading-relaxed text-sm bg-white p-6 rounded-lg border border-slate-200 shadow-inner">
+                                        "@para"
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-12 text-slate-400 italic">
+                                No PDF content matches recorded for this case.
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(tabId, btn) {
+        $('.tab-pane').hide();
+        $(`#${tabId}-tab`).show();
+        $('.tab-link').removeClass('active');
+        $(btn).addClass('active');
+    }
+
+    function highlightSnippets() {
+        const searchTerm = "@Model.ChemicalName";
+        if (!searchTerm || searchTerm.length < 2) return;
+
+        const regex = new RegExp(`(${searchTerm})`, 'gi');
+        $('.pdf-snippet').each(function() {
+            const $this = $(this);
+            const html = $this.html();
+            const newHtml = html.replace(regex, '<mark class="bg-yellow-200 text-slate-900 rounded px-1">$1</mark>');
+            $this.html(newHtml);
+        });
+    }
+
+    $(document).ready(function() {
+        highlightSnippets();
+    });
+</script>

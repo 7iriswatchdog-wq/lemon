@@ -97,12 +97,27 @@
                     <i data-lucide="search" class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400"></i>
                     <input type="text"
                            id="searchInput"
-                           placeholder="Search by Client ID, Name, or Prefix..."
+                           placeholder="Search"
                            class="pl-10 h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm
                                   ring-offset-white focus-visible:outline-none focus-visible:ring-2
                                   focus-visible:ring-blue-500/20 focus-visible:border-blue-500
                                   shadow-sm transition-all placeholder:text-slate-500">
                 </div>
+                <!-- Filter Option -->
+                <div class="relative w-40">
+                    <select id="statusFilter" class="h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500">
+                        <option value="">All Status</option>
+                        <option value="1">Active</option>
+                        <option value="0">Blocked/Expired</option>
+                    </select>
+                </div>
+                <!-- Export Option -->
+                <button onclick="exportTableToCSV('clients.csv')" class="h-11 px-4 inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-md transition-colors border border-slate-200">
+                    <i data-lucide="download" class="h-4 w-4"></i> Export
+                </button>
+                <button onclick="resetFilters()" class="h-11 px-4 inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-md transition-colors border border-slate-200">
+                    <i data-lucide="rotate-ccw" class="h-4 w-4"></i> Reset
+                </button>
             </div>
 
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -113,6 +128,12 @@
                                 <th class="px-6 py-4 font-small h-12 sortable" onclick="sortTable(0, this)">Client ID</th>
                                 <th class="px-6 py-4 font-small h-12 sortable" onclick="sortTable(1, this)">Client Name</th>
                                 <th class="px-6 py-4 font-small h-12 sortable" onclick="sortTable(2, this)">Prefix</th>
+                                <th class="px-6 py-4 font-small h-12">Users</th>
+                                <th class="px-6 py-4 font-small h-12">Limit</th>
+                                <th class="px-6 py-4 font-small h-12">Usage</th>
+                                <th class="px-6 py-4 font-small h-12">Expiry</th>
+                                <th class="px-6 py-4 font-small h-12">Status</th>
+                                <th class="px-6 py-4 font-small h-12">Blocked</th>
                                 <th class="px-6 py-4 font-small h-12 text-center">Action</th>
                             </tr>
                         </thead>
@@ -171,7 +192,71 @@
             currentPage = 1;
             loadData();
         });
+
+        $('#statusFilter').on('change', function() {
+            currentPage = 1;
+            loadData();
+        });
     });
+
+    function resetFilters() {
+        $('#searchInput').val('');
+        $('#statusFilter').val('');
+        currentPage = 1;
+        loadData();
+    }
+
+    function exportTableToCSV(filename) {
+        // We will fetch all data from backend for export to get the complete dataset
+        $('#loader').removeClass('hidden').addClass('flex');
+        $.ajax({
+            url: '/adminmanagement/custompagination',
+            type: 'POST',
+            data: {
+                draw: 1,
+                start: 0,
+                length: -1, // Fetch all records for export if supported, otherwise just current total
+                orderColumn: orderColumn,
+                orderDirection: orderDirection,
+                search: { value: $('#searchInput').val() },
+                clientStatus: $('#statusFilter').val()
+            },
+            success: function (resp) {
+                let csv = [];
+                let headers = ['Client ID', 'Client Name', 'Prefix', 'Users', 'Limit', 'Usage', 'Expiry', 'Status'];
+                csv.push(headers.join(','));
+                
+                resp.data.forEach(row => {
+                    const expDate = row.applicationEndDate ? new Date(row.applicationEndDate).toLocaleDateString() : '-';
+                    const isExpired = row.applicationEndDate ? new Date(row.applicationEndDate) < new Date() : false;
+                    let stat = row.isActive === 1 && !isExpired ? 'Active' : 'Expired';
+                    let r = [
+                        row.clientId,
+                        `"${(row.clientName || '').replace(/"/g, '""')}"`,
+                        `"${(row.prefix || '').replace(/"/g, '""')}"`,
+                        row.userCount || 0,
+                        row.searchCount || 0,
+                        row.usageCount || 0,
+                        expDate,
+                        stat
+                    ];
+                    csv.push(r.join(','));
+                });
+                
+                let csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
+                let downloadLink = document.createElement('a');
+                downloadLink.download = filename;
+                downloadLink.href = window.URL.createObjectURL(csvFile);
+                downloadLink.style.display = 'none';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            },
+            complete: function() {
+                $('#loader').addClass('hidden').removeClass('flex');
+            }
+        });
+    }
 
     function sortTable(columnIndex, element) {
         $('.sortable').removeClass('active asc desc');
@@ -196,9 +281,14 @@
                 length: pageSize,
                 orderColumn: orderColumn,
                 orderDirection: orderDirection,
-                search: { value: $('#searchInput').val() }
+                search: { value: $('#searchInput').val() },
+                clientStatus: $('#statusFilter').val()
             },
             success: function (resp) {
+                if (resp.error) {
+                    $('#clientsTableBody').empty().append('<tr><td colspan="4" class="h-24 text-center text-red-500">Error: ' + resp.error + '</td></tr>');
+                    return;
+                }
                 renderTable(resp.data);
                 totalRecords = resp.recordsFiltered;
                 updatePagination();
@@ -206,8 +296,8 @@
             complete: function () { 
                 $('#loader').addClass('hidden').removeClass('flex'); 
             },
-            error: function () { 
-                alert('Error loading client data'); 
+            error: function (xhr) { 
+                $('#clientsTableBody').empty().append('<tr><td colspan="4" class="h-24 text-center text-red-500">HTTP Error: ' + xhr.status + ' ' + xhr.statusText + '</td></tr>');
             }
         });
     }
@@ -220,6 +310,18 @@
         }
 
         data.forEach(row => {
+            const expDate = row.applicationEndDate ? new Date(row.applicationEndDate).toLocaleDateString() : '-';
+            const isExpired = row.applicationEndDate ? new Date(row.applicationEndDate) < new Date() : false;
+            let statusText = row.isActive === 1 ? 'Active' : 'Expired';
+            if(isExpired && row.isActive === 1) statusText = 'Expired';
+            let statusBadge = (row.isActive === 1 && !isExpired) 
+                ? '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span>Active</span>'
+                : '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span>Expired</span>';
+            
+            let blockedIcon = row.isActive === 0 
+                ? '<i data-lucide="lock" class="h-4 w-4 text-red-500" title="Blocked"></i>' 
+                : '<i data-lucide="unlock" class="h-4 w-4 text-green-500" title="Active"></i>';
+
             tbody.append(`
                 <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                     <td class="px-6 py-4 font-medium text-slate-600">${row.clientId}</td>
@@ -229,16 +331,18 @@
                         </a>
                     </td>
                     <td class="px-6 py-4 text-slate-600">${row.prefix || '-'}</td>
+                    <td class="px-6 py-4 text-slate-600 font-medium">${row.userCount || 0}</td>
+                    <td class="px-6 py-4 text-slate-600 font-medium">${row.searchCount || 0}</td>
+                    <td class="px-6 py-4 text-slate-600 font-medium">${row.usageCount || 0}</td>
+                    <td class="px-6 py-4 text-slate-600">${expDate}</td>
+                    <td class="px-6 py-4">${statusBadge}</td>
+                    <td class="px-6 py-4 text-center cursor-pointer">${blockedIcon}</td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex items-center justify-center gap-2">
                             <a href="/adminmanagement/details/${row.clientId}" 
                                class="inline-flex items-center gap-1 text-blue-600 font-bold text-xs hover:bg-blue-50 px-3 py-1.5 rounded-md transition-colors border border-slate-200 bg-white shadow-sm hover:border-blue-100" title="Manage Client">
                                 <i data-lucide="settings-2" class="h-3.5 w-3.5"></i>
                                 Manage
-                            </a>
-                            <a href="/Client/ClientRight/${row.clientId}" 
-                               class="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50 transition-all shadow-sm" title="Client Rights">
-                                <i data-lucide="shield-check" class="h-3.5 w-3.5"></i>
                             </a>
                         </div>
                     </td>

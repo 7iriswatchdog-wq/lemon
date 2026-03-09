@@ -385,6 +385,23 @@ namespace AML.Core.Repository.CustomerCase
 
 
         }
+        public ServiceResponse<List<ClientMasterDTO>> GetAllAdminClients()
+        {
+            ServiceResponse<List<ClientMasterDTO>> serviceResponse = new ServiceResponse<List<ClientMasterDTO>>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                serviceResponse.Result = Get<ClientMasterDTO>("get_all_clients_admin", parameters, commandType: CommandType.StoredProcedure).ToList();
+                serviceResponse.Message = "Admin client details fetched successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
         // Start
 
         public async Task<ServiceResponse<List<CustomerCaseDTO>>> GetApprovedListAsync(int clientId)
@@ -500,6 +517,9 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_description", _clientDTO.Description);
                 parameters.Add("@p_complem", _clientDTO.Complem);
                 parameters.Add("@p_C6BaseUrl", _clientDTO.C6BaseUrl);
+                parameters.Add("@p_ApplicationStartDate", _clientDTO.ApplicationStartDate);
+                parameters.Add("@p_ApplicationEndDate", _clientDTO.ApplicationEndDate);
+                parameters.Add("@p_SearchCount", _clientDTO.SearchCount);
                 var response = ExecuteScalar("ins_client", parameters, commandType: CommandType.StoredProcedure).ParseInt();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Client added successfully.";
@@ -574,6 +594,9 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_updatedBy", _clientDTO.CreatedBy);
                 parameters.Add("@p_complem", _clientDTO.Complem);
                 parameters.Add("@p_C6BaseUrl", _clientDTO.C6BaseUrl);
+                parameters.Add("@p_ApplicationStartDate", _clientDTO.ApplicationStartDate);
+                parameters.Add("@p_ApplicationEndDate", _clientDTO.ApplicationEndDate);
+                parameters.Add("@p_SearchCount", _clientDTO.SearchCount);
                 var response = ExecuteScalar("mod_client", parameters, commandType: CommandType.StoredProcedure).ParseInt();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Client Updated successfully.";

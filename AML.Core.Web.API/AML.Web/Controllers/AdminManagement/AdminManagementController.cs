@@ -85,17 +85,29 @@ namespace AML.Web.Controllers.AdminManagement
         }
 
         [HttpPost("adminmanagement/custompagination")]
-        public JsonResult CustomPagination(DataTableModel model, int orderColumn = 0, string orderDirection = "desc")
+        public JsonResult CustomPagination(DataTableModel model, int orderColumn = 0, string orderDirection = "desc", string clientStatus = null)
         {
             try
             {
-                var clients = _customerCaseService.GetAllClients()
-                    .Select(dto => new ClientMaster
+                var result = _customerCaseService.GetAllAdminClients();
+                var clients = result.Select(dto => new ClientMaster
                     {
                         ClientId = dto.ClientId,
                         ClientName = dto.ClientName,
-                        Prefix = dto.Prefix
+                        Prefix = dto.Prefix,
+                        ApplicationStartDate = dto.ApplicationStartDate,
+                        ApplicationEndDate = dto.ApplicationEndDate,
+                        SearchCount = dto.SearchCount,
+                        UsageCount = dto.UsageCount,
+                        UserCount = dto.UserCount,
+                        isActive = dto.isActive
                     }).ToList();
+
+                if (!string.IsNullOrEmpty(clientStatus))
+                {
+                    int s = int.Parse(clientStatus);
+                    clients = clients.Where(c => c.isActive == s).ToList();
+                }
 
                 if (!string.IsNullOrEmpty(model.search?.value))
                 {
@@ -115,13 +127,19 @@ namespace AML.Web.Controllers.AdminManagement
                 int recordsTotal = clients.Count;
                 int recordsFiltered = clients.Count;
 
-                var pagedData = sortedClients.Skip(model.start).Take(model.length).ToList();
+                var query = sortedClients.Skip(model.start);
+                if (model.length > 0)
+                {
+                    query = query.Take(model.length);
+                }
+                var pagedData = query.ToList();
 
                 return Json(new { draw = model.draw, recordsTotal = recordsTotal, recordsFiltered = recordsFiltered, data = pagedData });
             }
             catch (Exception ex)
             {
-                return Json(new { draw = model.draw, recordsTotal = 0, recordsFiltered = 0, data = new List<ClientMaster>(), error = ex.Message });
+                // Better error logging for debugging
+                return Json(new { draw = model.draw, recordsTotal = 0, recordsFiltered = 0, data = new List<ClientMaster>(), error = ex.Message + " | " + ex.InnerException?.Message });
             }
         }
 
