@@ -89,15 +89,15 @@ namespace AML.Core.Service.CustomerCase
                 CompanyCode = _CustomerCaseDT.CompanyCode,
             };
             ServiceResponse<string> _res = _customerMasterRepository.Create(custDetails);
-            //var resu = _res.Result.Split('�');
+            //var resu = _res.Result.Split('Ø');
             //string CustId = resu[1];
             var resu = _res.Result;
             var resu1 = "";
             string CustId = "";
             if (_res.Result.ToString() != "0")
             {
-                resu = _res.Result.Split('�')[0];
-                resu1 = _res.Result.Split('�')[1];
+                resu = _res.Result.Split('Ø')[0];
+                resu1 = _res.Result.Split('Ø')[1];
                 CustId = resu1;
             }
             else
@@ -173,8 +173,8 @@ namespace AML.Core.Service.CustomerCase
 
             if (_res.Result.ToString() != "0")
             {
-                resu = _res.Result.Split('�')[0];
-                resu1 = _res.Result.Split('�')[1];
+                resu = _res.Result.Split('Ø')[0];
+                resu1 = _res.Result.Split('Ø')[1];
             }
 
             else
@@ -273,8 +273,8 @@ namespace AML.Core.Service.CustomerCase
 
             if (_res.Result.ToString() != "0" || _res.Result ==null)
             {
-                resu = _res.Result.Split('�')[0];
-                resu1 = _res.Result.Split('�')[1];
+                resu = _res.Result.Split('Ø')[0];
+                resu1 = _res.Result.Split('Ø')[1];
             }
 
             else
@@ -696,7 +696,7 @@ namespace AML.Core.Service.CustomerCase
                                     string Cust_Id = "";
                                     if (_res.Result.ToString() != "0")
                                     {
-                                        var resu = _res.Result.Split('�');
+                                        var resu = _res.Result.Split('Ø');
                                         Case_Id = resu[0];
                                         Cust_Id = resu[1];
                                     }
@@ -843,7 +843,7 @@ namespace AML.Core.Service.CustomerCase
                                     };
 
                                     ServiceResponse<string> _res = _customerMasterRepository.Create(custDetails);
-                                    //var resu = _res.Result.Split('�');
+                                    //var resu = _res.Result.Split('Ø');
                                     var resu = _res.Result;
                                     var resu1 = "";
                                     if (_res.Result.ToString() == "0")
@@ -854,8 +854,8 @@ namespace AML.Core.Service.CustomerCase
                                     }
                                     else
                                     {
-                                        resu = _res.Result.Split('�')[0];
-                                        resu1 = _res.Result.Split('�')[1];
+                                        resu = _res.Result.Split('Ø')[0];
+                                        resu1 = _res.Result.Split('Ø')[1];
                                         if (_res.Status == StaticResource.SuccessStatusCode)
                                         {
                                             int CustId = resu.ParseInt();
@@ -965,7 +965,7 @@ namespace AML.Core.Service.CustomerCase
             ServiceResponse<string> _corpCustomer = this.Create(_CustomerCaseDT);
             if (_corpCustomer.Status == StaticResource.SuccessStatusCode)
             {
-                string _corpCust = _corpCustomer.Result.Split('�')[1];
+                string _corpCust = _corpCustomer.Result.Split('Ø')[1];
                 //string _corpCust = _corpCustomer.Result;
                 model.CustomerId = _corpCust;
                 _CustomerCaseDT.CustomerId = _corpCust;   
@@ -1383,7 +1383,7 @@ namespace AML.Core.Service.CustomerCase
                                         }
                                         else
                                         {
-                                            var _spStr = str1.Result.Split('�');
+                                            var _spStr = str1.Result.Split('Ø');
                                             var proflovId = _spStr[0];
                                             var natlovId = _spStr[1];
                                             var reslovId = _spStr[2];
@@ -1403,7 +1403,7 @@ namespace AML.Core.Service.CustomerCase
                                             }
                                             else
                                             {
-                                                var spStr = str.Result.Split('�');
+                                                var spStr = str.Result.Split('Ø');
                                                 var profId = spStr[0];
                                                 var natId = spStr[1];
                                                 var resId = spStr[2];
@@ -1636,7 +1636,7 @@ namespace AML.Core.Service.CustomerCase
                                         }
                                         else
                                         {
-                                            var _spStr = str1.Result.Split('�');
+                                            var _spStr = str1.Result.Split('Ø');
                                             var proflovId = _spStr[0];
                                             var natlovId = _spStr[1];
                                             var reslovId = _spStr[2];
@@ -1662,7 +1662,7 @@ namespace AML.Core.Service.CustomerCase
                                              }
                                             else
                                             {
-                                                var spStr = str.Result.Split('�');
+                                                var spStr = str.Result.Split('Ø');
                                                 var profId = spStr[0];
                                                 var natId = spStr[1];
                                                 var resId = spStr[2];
