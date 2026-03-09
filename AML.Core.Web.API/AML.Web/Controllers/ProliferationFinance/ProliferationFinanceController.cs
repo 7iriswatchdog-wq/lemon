@@ -372,7 +372,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                 };
 
                 string html = await _viewRenderService.RenderToStringAsync("ProliferationFinance/_DetailsReport", model);
-                var pdfBytes = _exportDataService.HtmlToPDFforChecklistLogs(html);
+                var pdfBytes = _exportDataService.HtmlToPDF(html, null);
                 
                 string fileName = $"PF_MatchReport_{model.CorporateId}_{DateTime.Now:yyyyMMdd}.pdf";
                 return File(pdfBytes, "application/pdf", fileName);
