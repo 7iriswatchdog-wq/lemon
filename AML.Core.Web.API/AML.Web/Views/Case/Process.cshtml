@@ -820,7 +820,7 @@
                             Risk assessment is Not Completed.
                         </div>
                     }else{
-                    <form role="form" id="riskassessmentform" asp-controller="@controllerName" asp-action="@actionName" class="form-horizontal" enctype="multipart/form-data" method="post" onsubmit="return saveRiskAssessment();">
+                    <form role="form" id="riskassessmentform" asp-controller="@controllerName" asp-action="@actionName" class="form-horizontal" enctype="multipart/form-data" method="post" onsubmit="return saveRiskAssessment(),updateComments();">
                     <div>
                 <input type="hidden" asp-for="IsWhiteListed" id="hfIsWhiteListed" />
                 <input type="hidden" name="CaseId" value="@Model.Case.Id" />
@@ -953,7 +953,7 @@
                             </div>*@
 
 
-                                            <button id="btnSaveRisk" disabled
+                                            <button id="btnSaveRisk" 
                                                 onclick=""
                                                 class="w-full bg-blue-600 hover:bg-blue-700 text-white h-9 text-[11px]
                    font-black uppercase tracking-widest shadow-md shadow-blue-200">
@@ -2172,6 +2172,12 @@
                $('#btntotalscore').text(total);
                $('#btntotal').text(i);
 
+             if (i === 0) {
+                $("#btnSaveRisk").prop("disabled", true);
+            } else {
+                $("#btnSaveRisk").prop("disabled", false);
+            }
+
                $('#btnAsPerRiskScore').show();
 
                var highscoreVal = (i * 3);
@@ -2686,6 +2692,8 @@
             debugger;
 
             $('#loadingeffect').show();
+             insertUploadComment("Risk Parameters Has been Updated","Risk Assessment");
+            // updateComments();
 
             const selected = document.querySelector('.versionRadio:checked');
 
@@ -2706,12 +2714,15 @@
 
             // ❌ No Search Type selected → BLOCK (NEW)
             if (!isAnySearchTypeSelected()) {
-                  insertUploadComment("Risk Parameters Has been Updated","Risk Assessment");
+                  //insertUploadComment("Risk Parameters Has been Updated","Risk Assessment");
                 $('#loadingeffect').hide();
                // alert('Please select at least one Search Type before saving Risk Assessment.');
                 return true;
             }
-           insertUploadComment("Risk Parameters Has been Updated","Risk Assessment");
+           
+
+    // Existing function
+    
             // ✅ All validations passed → SHOW MODAL
             $('#loadingeffect').hide();
             $('#saveriskassementModel')
@@ -2722,6 +2733,9 @@
 
             return false;
         }
+
+        
+        
 
         /* =====================================================
            SHOW MORE

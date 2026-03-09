@@ -797,7 +797,7 @@ namespace AML.Web.Controllers.Case
 
                                     log.Debug("After checking from interanl watch list");
 
-                                    UpdateSanctionRecords(_ccDTO, apiResultModel, result.Result.Split('�')[1]);
+                                    UpdateSanctionRecords(_ccDTO, apiResultModel, result.Result.Split('Ø')[1]);
 
                                     string body = string.Empty;
                                     using (StreamReader reader = new StreamReader(@"Views/Risk/RiskEmailBody.html"))
