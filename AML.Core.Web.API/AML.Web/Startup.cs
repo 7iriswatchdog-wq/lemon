@@ -161,6 +161,10 @@ using AML.Core.RepositoryContract.RiskV2;
 using AML.Core.Repository.RiskV2;
 using AML.Core.RepositoryContract.LovMasterV2;
 using AML.Core.Repository.LovMasterV2;
+using AML.Core.RepositoryContract.ProliferationFinance;
+using AML.Core.ServiceContract.ProliferationFinance;
+using AML.Core.Repository.ProliferationFinance;
+using AML.Core.Service.ProliferationFinance;
 
 namespace AML.Web
 {
@@ -426,6 +430,10 @@ namespace AML.Web
             services.AddScoped<IProdMasterRepository, ProdMasterRepository>();
             services.AddScoped<IEWRARepository, EWRARepository>();
             services.AddScoped<ITransactionScreeningRepository, TransactionScreeningRepository>();
+            
+            services.AddTransient<IProliferationFinanceService, ProliferationFinanceService>();
+            services.AddScoped<IProliferationFinanceRepository, ProliferationFinanceRepository>();
+
             services.AddControllersWithViews();
 
             services.AddSingleton<IConfiguration>(Configuration);

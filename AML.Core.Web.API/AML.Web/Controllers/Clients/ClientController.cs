@@ -289,6 +289,24 @@ namespace AML.Web.Controllers.Client
             }
             return View(_ClientModel);
         }
+        [HttpGet("client/GetClientRightsData/{id}")]
+        public JsonResult GetClientRightsData(int id)
+        {
+            var result = _customerCaseService.GetClientRightsByClientId(id);
+            var menus = _customerCaseService.GetAllMenus();
+            
+            var clientRightsIds = result.Select(r => r.Menu_Id).ToList();
+            
+            var menuModels = menus.Select(menu => new {
+                Menu_Id = menu.Menu_Id,
+                Menu_Name = menu.Menu_Name,
+                isChecked = clientRightsIds.Contains(menu.Menu_Id),
+                is_active = menu.is_active
+            }).ToList();
+            
+            return Json(menuModels);
+        }
+
         //[HttpGet("client/ClientRight/{id}")]
         public ActionResult ClientRight(int id)
         {

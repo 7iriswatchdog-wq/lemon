@@ -62,6 +62,7 @@ namespace AML.Core.ServiceContract.CustomerCase
         List<CustomerCaseDTO> GetCasespendingScheduler();
         int InsertDigiSchedulerLogs(int totalHits, int totalRecords, int clientId);
         List<ClientMasterDTO> GetAllClients();
+        List<ClientMasterDTO> GetAllAdminClients();
 
         Task<ServiceResponse<List<ClientMasterDTO>>> GetAllClientsAsync();
 

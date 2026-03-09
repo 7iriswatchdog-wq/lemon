@@ -37,6 +37,17 @@ namespace AML.DTO.DTO.Common
         public string DocumentDetails { get; set; }
         public string DocumentName { get; set; }
         public int type { get; set; }
+
+        [Column("ApplicationStartDate")]
+        public DateTime? ApplicationStartDate { get; set; }
+        [Column("ApplicationEndDate")]
+        public DateTime? ApplicationEndDate { get; set; }
+        [Column("SearchCount")]
+        public int SearchCount { get; set; }
+        [Column("UsageCount")]
+        public int UsageCount { get; set; }
+        [Column("UserCount")]
+        public int UserCount { get; set; }
     }
     public class ClientRightsDTO
     {

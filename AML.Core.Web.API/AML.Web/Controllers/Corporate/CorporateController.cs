@@ -118,9 +118,19 @@ namespace AML.Web.Controllers.Corporate
             baseURL = configuration.GetSection("AMLBaseApiUrl").GetSection("BaseUrl").Value;
             clientId = clientHandler.GetClientId();
             var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
-            _c6Username = clientDetails.C6Username;
-            checkThreshold = clientDetails.Threshold;
-            baseC6URL = clientDetails.C6BaseUrl;
+            if (clientDetails != null)
+            {
+                _c6Username = clientDetails.C6Username;
+                checkThreshold = clientDetails.Threshold;
+                baseC6URL = clientDetails.C6BaseUrl;
+            }
+            else
+            {
+                // Fallback or default values if client details are missing
+                _c6Username = string.Empty;
+                checkThreshold = 0;
+                baseC6URL = string.Empty;
+            }
             _kycService = kycService;
             //baseC6URL = configuration.GetSection("C6BaseApiUrl").GetSection("BaseUrl").Value;
             //_c6Username = _configuration.GetSection("C6BaseApiUrl:Username").Value;
@@ -684,7 +694,7 @@ namespace AML.Web.Controllers.Corporate
 
             //var result = _customerCaseService.CreatePrefix(_ccDTO);
             var result = _customerCaseService.Create(_ccDTO);
-            _ccDTO.CustomerId = result.Result.Split('Ø')[1];
+            _ccDTO.CustomerId = result.Result.Split('ï¿½')[1];
             CaseDocumentModel _caseDoc = new CaseDocumentModel();
             _caseDoc.CaseId = _customerCaseService.GetCaseId(_ccDTO.CustomerId).ToString();
             //model.CodesTable = _mapper.Map<List<CodesTableModel>>(_customerCaseService.GetCodesByClientID(model.ClientId));
@@ -760,7 +770,7 @@ namespace AML.Web.Controllers.Corporate
                     List<ApiResultModel> apiResultModel = JsonConvert.DeserializeObject<List<ApiResultModel>>(data);
                     //response = AMLUtility.FormatJsonToPlainText(data);
 
-                    _commonService.UpdateSanctionRecords(_ccDTO, apiResultModel, result.Result.Split('Ø')[1]);
+                    _commonService.UpdateSanctionRecords(_ccDTO, apiResultModel, result.Result.Split('ï¿½')[1]);
 
                     string body = string.Empty;
                     using (StreamReader reader = new StreamReader(@"Views/Risk/RiskEmailBody.html"))
@@ -823,7 +833,7 @@ namespace AML.Web.Controllers.Corporate
                     body = reader.ReadToEnd();
                 };
 
-                var x = await _commonService.CustomerScreeningCall(_ccDTO, baseURL, baseC6URL, "INDIVIDUAL", body, model.Threshold, result.Result.Split('Ø')[1]);
+                var x = await _commonService.CustomerScreeningCall(_ccDTO, baseURL, baseC6URL, "INDIVIDUAL", body, model.Threshold, result.Result.Split('ï¿½')[1]);
 
                 if (x.sendMail == 1)
                 {
@@ -1231,7 +1241,7 @@ namespace AML.Web.Controllers.Corporate
                                             _toastNotification.AddWarningToastMessage("Unable to calculate risk due to insufficient data.");
                                             return View(model);
                                         }
-                                        var spStr1 = str1.Result.Split('Ø');
+                                        var spStr1 = str1.Result.Split('ï¿½');
                                         var entlovId = spStr1[2];
                                         var buslovId = spStr1[4];
                                         var incorplovId = spStr1[3];
@@ -1252,7 +1262,7 @@ namespace AML.Web.Controllers.Corporate
                                             _toastNotification.AddWarningToastMessage("Unable to calculate risk due to insufficient data.");
                                             return View(model);
                                         }
-                                        var spStr = str.Result.Split('Ø');
+                                        var spStr = str.Result.Split('ï¿½');
                                         var entId = spStr[2];
                                         var busId = spStr[4];
                                         var incorpId = spStr[3];
@@ -1612,7 +1622,7 @@ namespace AML.Web.Controllers.Corporate
                 }
 
                 // Get real CustomerId from DB
-                var customerId = result.Result.Split('Ø')[1];
+                var customerId = result.Result.Split('ï¿½')[1];
                 parentIdMap[sh.DisplayId] = customerId; // map TempId -> real CustomerId
 
                 // Screening logic
@@ -1738,7 +1748,7 @@ namespace AML.Web.Controllers.Corporate
 
         //        //var result = _customerCaseService.CreatePrefix(_ccDTO);
         //        var result1 = _customerCaseService.Create(_ccDTO);
-        //        _ccDTO.CustomerId = result1.Result.Split('Ø')[1];
+        //        _ccDTO.CustomerId = result1.Result.Split('ï¿½')[1];
         //        CaseDocumentModel _caseDoc = new CaseDocumentModel();
         //        _caseDoc.CaseId = _customerCaseService.GetCaseId(_ccDTO.CustomerId).ToString();
         //        //model.CodesTable = _mapper.Map<List<CodesTableModel>>(_customerCaseService.GetCodesByClientID(model.ClientId));
@@ -1814,7 +1824,7 @@ namespace AML.Web.Controllers.Corporate
         //        //        List<ApiResultModel> apiResultModel = JsonConvert.DeserializeObject<List<ApiResultModel>>(data);
         //        //        //response = AMLUtility.FormatJsonToPlainText(data);
 
-        //        //        _commonService.UpdateSanctionRecords(_ccDTO, apiResultModel, result.Result.Split('Ø')[1]);
+        //        //        _commonService.UpdateSanctionRecords(_ccDTO, apiResultModel, result.Result.Split('ï¿½')[1]);
 
         //        //        string body = string.Empty;
         //        //        using (StreamReader reader = new StreamReader(@"Views/Risk/RiskEmailBody.html"))
@@ -1881,11 +1891,11 @@ namespace AML.Web.Controllers.Corporate
         //            CustomerCaseDTO x = new CustomerCaseDTO();
         //            if (model.CustomerType == "I")
         //            {
-        //                x = await _commonService.CustomerScreeningCall(_ccDTO, baseURL, baseC6URL, "INDIVIDUAL", body, model.Threshold, result1.Result.Split('Ø')[1]);
+        //                x = await _commonService.CustomerScreeningCall(_ccDTO, baseURL, baseC6URL, "INDIVIDUAL", body, model.Threshold, result1.Result.Split('ï¿½')[1]);
         //            }
         //            else
         //            {
-        //                 x = await _commonService.CustomerScreeningCall(_ccDTO, baseURL, baseC6URL, "CORPORATE", body, model.Threshold, result1.Result.Split('Ø')[1]);
+        //                 x = await _commonService.CustomerScreeningCall(_ccDTO, baseURL, baseC6URL, "CORPORATE", body, model.Threshold, result1.Result.Split('ï¿½')[1]);
         //            }
 
 

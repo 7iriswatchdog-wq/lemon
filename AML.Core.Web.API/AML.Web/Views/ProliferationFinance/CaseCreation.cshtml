@@ -1,0 +1,792 @@
+@using Microsoft.AspNetCore.Http;
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@inject IHttpContextAccessor HttpContextAccessor
+@using Newtonsoft.Json;
+@{
+    ViewData["Title"] = "Proliferation Finance - Case Creation";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@model AML.ViewModel.ViewModels.ProliferationFinance.ProliferationFinanceModel
+
+<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.0.min.js" type="text/javascript"></script>
+<script src="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/jquery-ui.min.js" type="text/javascript"></script>
+<link href="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/themes/blitzer/jquery-ui.css" rel="Stylesheet" type="text/css" />
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proliferation Finance Case Creation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        [x-cloak] { display: none !important; }
+        .scrollbar-thin::-webkit-scrollbar { width: 5px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dt-loader { display: inline-block; position: relative; width: 80px; height: 20px; }
+        .dt-loader div { position: absolute; top: 8px; width: 13px; height: 13px; border-radius: 50%; background: #2563eb; animation-timing-function: cubic-bezier(0, 1, 1, 0); }
+        .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+        .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+        @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+        @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+    </style>
+</head>
+
+<body class="bg-[#f8fafc] text-slate-900 overflow-hidden" x-data="caseCreationData()">
+    <div class="flex h-screen overflow-hidden">
+        <div id="loadingeffect" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;" x-show="isLoading">
+            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        </div>
+
+        <div class="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
+            <!-- Header -->
+            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-40 shrink-0">
+                <div class="flex items-center gap-4">
+                    <button onclick="sidebarOpen = !sidebarOpen" class="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500">
+                        <i data-lucide="panel-left-close" class="w-5 h-5"></i>
+                    </button>
+                    <h2 class="text-xl font-bold text-slate-900 tracking-tight">Proliferation Finance - Case Creation</h2>
+                </div>
+            </header>
+
+            <!-- Page Body -->
+            <main class="flex-1 overflow-hidden p-8">
+                <div class="flex h-full gap-8 max-w-[1600px] mx-auto">
+
+                    <!-- Left: Method Selection -->
+                    <div class="w-full lg:w-1/4 flex flex-col gap-6 shrink-0 overflow-y-auto pr-2 scrollbar-thin">
+                        <div class="space-y-1">
+                            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Case Creation</h1>
+                            <p class="text-slate-500 text-sm font-medium leading-relaxed">Select an input method to get started.</p>
+                        </div>
+
+                        <div class="grid gap-3">
+                            <!-- Goods Details Card (Consolidated) -->
+                            <div @@click="selectedMethod = 'goods'; showResults = false"
+                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-4 group"
+                                 :class="selectedMethod === 'goods' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'">
+                                <div class="p-2 rounded-lg shrink-0 transition-colors"
+                                     :class="selectedMethod === 'goods' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                    <i data-lucide="package" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-bold text-sm tracking-tight" :class="selectedMethod === 'goods' ? 'text-blue-900' : 'text-slate-900'">Goods Details</h3>
+                                    <p class="text-[11px] font-medium text-slate-500 mt-0.5 leading-relaxed">Search via Chemical Details or Keywords</p>
+                                </div>
+                                <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-600 absolute top-4 right-4" x-show="selectedMethod === 'goods'"></i>
+                            </div>
+
+                            <!-- Bulk Upload Card -->
+                            <div @@click="selectedMethod = 'bulkupload'; showResults = false"
+                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-4 group"
+                                 :class="selectedMethod === 'bulkupload' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'">
+                                <div class="p-2 rounded-lg shrink-0 transition-colors"
+                                     :class="selectedMethod === 'bulkupload' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                    <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-bold text-sm tracking-tight" :class="selectedMethod === 'bulkupload' ? 'text-blue-900' : 'text-slate-900'">Bulk Upload</h3>
+                                    <p class="text-[11px] font-medium text-slate-500 mt-0.5 leading-relaxed">Upload multiple cases via Excel template</p>
+                                </div>
+                                <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-600 absolute top-4 right-4" x-show="selectedMethod === 'bulkupload'"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Dynamic Content Area -->
+                    <div class="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                        <div class="flex-1 overflow-y-auto p-8 scrollbar-thin">
+
+                            <!-- Creation Forms -->
+                            <div x-show="!showResults" class="space-y-6">
+                                <!-- FORM HEADER -->
+                                <div class="pb-6 border-b mb-6">
+                                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight" x-text="selectedMethod === 'goods' ? 'Goods Details Input' : 'Bulk Screening Upload'"></h2>
+                                    <p class="text-sm text-slate-500 font-medium mt-1" x-text="selectedMethod === 'goods' ? 'Enter Corporate ID and at least one chemical or keyword detail to search and create a case.' : 'Upload an Excel file to process multiple cases simultaneously.'"></p>
+                                </div>
+
+                                <!-- GOODS DETAILS FORM (Consolidated) -->
+                                <div x-show="selectedMethod === 'goods'" x-transition:enter="transition duration-300" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-8">
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
+                                        <!-- Corporate ID -->
+                                        <div class="space-y-2 md:col-span-4">
+                                            <label class="text-[13px] font-bold text-slate-700">Corporate ID <span class="text-red-500">*</span></label>
+                                            <input type="text" x-model="formData.corporateId" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter Corporate ID">
+                                        </div>
+                                        <!-- Fetch Button -->
+                                        <div class="md:col-span-2">
+                                            <button type="button" @@click="fetchCorporateDetails()" class="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center justify-center">
+                                                Fetch Details
+                                            </button>
+                                        </div>
+                                        <!-- Fetched Company Name Display -->
+                                        <div class="space-y-2 md:col-span-6">
+                                            <label class="text-[13px] font-bold text-slate-700">Company Name</label>
+                                            <input type="text" x-model="formData.companyName" disabled class="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-700 cursor-not-allowed">
+                                        </div>
+                                    </div>
+
+                                    <!-- Goods Search Fields (Hidden until Company Found) -->
+                                    <div x-show="formData.companyName" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-8 mt-8" style="display:none;">
+                                        <div class="col-span-2 pt-4 border-t border-slate-100">
+                                            <h3 class="text-sm font-bold text-slate-900 mb-4">Screening Details <span class="text-xs font-normal text-slate-500 ml-2">(Fill at least one to search)</span></h3>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+                                            <div class="space-y-2">
+                                                <label class="text-[13px] font-bold text-slate-700">HS Code</label>
+                                                <input type="text" x-model="formData.hsCode" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter HS Code">
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                <label class="text-[13px] font-bold text-slate-700">CAS Number</label>
+                                                <input type="text" x-model="formData.casNumber" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter CAS Number">
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                <label class="text-[13px] font-bold text-slate-700">ECCN</label>
+                                                <input type="text" x-model="formData.eccn" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter ECCN">
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                <label class="text-[13px] font-bold text-slate-700">Chemical Name</label>
+                                                <input type="text" x-model="formData.chemicalName" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter Chemical Name">
+                                            </div>
+
+                                            <div class="space-y-2 col-span-2 md:col-span-1">
+                                                <label class="text-[13px] font-bold text-slate-700">Synonym Name</label>
+                                                <input type="text" x-model="formData.synonymName" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter Synonym Name">
+                                            </div>
+                                        </div>
+
+                                        <!-- Actions -->
+                                        <div class="grid grid-cols-4 gap-4 mt-12 pt-8 border-t border-slate-100">
+                                            <button type="button" @@click="submitSearch()" class="col-span-3 h-14 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-2xl shadow-xl shadow-blue-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3">
+                                                <i data-lucide="search" class="w-5 h-5"></i> Search & Create Case
+                                            </button>
+                                            <button type="button" @@click="resetForm()" class="h-14 bg-white border-2 border-slate-200 text-slate-600 font-extrabold rounded-2xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                                                <i data-lucide="rotate-ccw" class="w-4 h-4 text-slate-400"></i> Reset
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <!-- BULK UPLOAD FORM -->
+                                <div x-show="selectedMethod === 'bulkupload'" x-transition:enter="transition duration-300" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-8" style="display:none;">
+                                    <!-- Instruction Block -->
+                                    <div class="bg-blue-50/80 border border-blue-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
+                                        <div class="flex items-center gap-5">
+                                            <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600">
+                                                <i data-lucide="info" class="w-6 h-6"></i>
+                                            </div>
+                                            <div class="space-y-1">
+                                                <h3 class="text-[15px] font-extrabold text-blue-900 leading-none">Need a template?</h3>
+                                                <p class="text-xs text-blue-700 font-bold opacity-80">Download our template to ensure proper formatting and faster processing.</p>
+                                            </div>
+                                        </div>
+                                        <a href="/ProliferationFinance/DownloadBulkTemplate" class="px-6 h-11 bg-blue-600 text-white font-extrabold rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-2 text-sm leading-none">
+                                            <i data-lucide="download" class="w-4 h-4"></i> Download
+                                        </a>
+                                    </div>
+
+                                    <div class="space-y-6">
+                                        <!-- Drag & Drop Area -->
+                                        <div @@dragover.prevent="isDragging = true"
+                                             @@dragleave.prevent="isDragging = false"
+                                             @@drop.prevent="isDragging = false; handleFileSelect($event.dataTransfer.files[0])"
+                                             @@click="$refs.fileInput.click()"
+                                             class="border-2 border-dashed rounded-[32px] p-20 text-center transition-all cursor-pointer group"
+                                             :class="isDragging ? 'border-blue-500 bg-blue-50/50 scale-[0.99]' : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50/50'">
+                                            
+                                            <input type="file" x-ref="fileInput" class="hidden" accept=".xlsx, .xls" @@change="handleFileSelect($event.target.files[0])">
+                                            
+                                            <div class="w-20 h-20 bg-slate-100 rounded-[24px] flex items-center justify-center mx-auto mb-8 transition-transform group-hover:scale-110 duration-500">
+                                                <i data-lucide="file-spreadsheet" class="w-10 h-10 text-slate-400 group-hover:text-blue-500 transition-colors"></i>
+                                            </div>
+                                            
+                                            <h3 class="text-xl font-extrabold text-slate-900 tracking-tight">Drag and drop your file here</h3>
+                                            <p class="text-sm font-bold text-slate-400 mt-2 mb-8 uppercase tracking-widest">or</p>
+                                            
+                                            <button type="button" class="bg-blue-600 text-white font-extrabold px-12 h-14 rounded-2xl shadow-xl shadow-blue-500/20 hover:scale-105 transition-transform">
+                                                Browse Files
+                                            </button>
+                                            
+                                            <p class="text-[11px] font-extrabold text-slate-400 mt-8 uppercase tracking-widest opacity-60">Supported formats: XLSX, XLS</p>
+                                        </div>
+
+                                        <!-- Selected File Status -->
+                                        <div x-show="selectedFile" class="animate-in fade-in slide-in-from-bottom-4">
+                                            <div class="bg-white border-2 border-blue-50 relative overflow-hidden rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                                                <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div>
+                                                <div class="flex items-center gap-4">
+                                                    <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                                                        <i data-lucide="file-text" class="w-6 h-6 text-blue-600"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-extrabold text-slate-900 text-[15px]" x-text="selectedFile ? selectedFile.name : ''"></p>
+                                                        <p class="text-xs font-bold text-slate-400" x-text="selectedFile ? (selectedFile.size / 1024).toFixed(2) + ' KB' : ''"></p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-3">
+                                                    <span class="text-xs font-extrabold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">File Selected</span>
+                                                    <button type="button" @@click="selectedFile = null; bulkResults = null" class="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        
+                                        <!-- Action Buttons -->
+                                        <div class="flex gap-4 pt-4 border-t border-slate-100">
+                                            <button type="button" @@click="submitBulkUpload()" :disabled="!selectedFile || isLoading"
+                                                    class="flex-1 h-14 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-extrabold rounded-2xl shadow-xl shadow-blue-500/20 transition-all active:scale-95 flex items-center justify-center gap-3">
+                                                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" x-show="isLoading"></div>
+                                                <i data-lucide="play" class="w-5 h-5" x-show="!isLoading"></i>
+                                                <span x-text="isLoading ? 'Processing...' : 'Start Bulk Screening'"></span>
+                                            </button>
+                                            <button type="button" @@click="resetForm()" class="px-8 h-14 border-2 border-slate-200 text-slate-600 font-extrabold rounded-2xl hover:bg-slate-50 transition-all">
+                                                Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bulk Progress / Results View -->
+                                <template x-if="bulkResults">
+                                    <div x-show="bulkResults" x-transition class="space-y-6 pt-6 border-t border-slate-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <h3 class="text-base font-bold text-slate-900 tracking-tight">Processing Result</h3>
+                                                <p class="text-xs text-slate-500 font-medium">Summary of your bulk upload request</p>
+                                            </div>
+                                            <div class="flex items-center gap-2 bg-slate-100 px-4 py-1.5 rounded-full font-bold text-[11px] text-slate-600">
+                                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                                                ROWS PROCESSED: <span x-text="bulkResults.total" class="text-slate-900 border-l border-slate-300 ml-1 pl-1"></span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-3 gap-6">
+                                            <div class="bg-white border-2 border-emerald-100 p-5 rounded-2xl shadow-sm">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Success</p>
+                                                    <div class="p-1.5 bg-emerald-50 rounded-lg text-emerald-600"><i data-lucide="check" class="w-4 h-4"></i></div>
+                                                </div>
+                                                <p class="text-3xl font-black text-slate-900 mt-1" x-text="bulkResults.success"></p>
+                                            </div>
+                                            <div class="bg-white border-2 border-blue-100 p-5 rounded-2xl shadow-sm">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Matches Found</p>
+                                                    <div class="p-1.5 bg-blue-50 rounded-lg text-blue-600"><i data-lucide="search" class="w-4 h-4"></i></div>
+                                                </div>
+                                                <p class="text-3xl font-black text-slate-900 mt-1" x-text="bulkResults.matches"></p>
+                                            </div>
+                                            <div class="bg-white border-2 border-red-100 p-5 rounded-2xl shadow-sm">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <p class="text-[10px] font-bold text-red-600 uppercase tracking-widest">Failed / Errors</p>
+                                                    <div class="p-1.5 bg-red-50 rounded-lg text-red-600"><i data-lucide="alert-triangle" class="w-4 h-4"></i></div>
+                                                </div>
+                                                <p class="text-3xl font-black text-slate-900 mt-1" x-text="bulkResults.failed"></p>
+                                            </div>
+                                        </div>
+
+                                        <div x-show="bulkResults.errors && bulkResults.errors.length > 0" class="bg-red-50/30 border border-red-100 rounded-2xl p-6">
+                                            <div class="flex items-center gap-2 text-red-700 mb-4 font-bold text-sm">
+                                                <i data-lucide="x-circle" class="w-4 h-4"></i> Detailed Error Log
+                                            </div>
+                                            <div class="space-y-3 max-h-60 overflow-y-auto pr-2 scrollbar-thin">
+                                                <template x-for="err in bulkResults.errors">
+                                                    <div class="flex items-start gap-4 p-3 bg-white/50 border border-red-100/50 rounded-xl text-xs text-slate-700 group hover:border-red-200 transition-colors">
+                                                        <span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded-md min-w-[50px] text-center" x-text="'Row ' + err.row"></span>
+                                                        <span class="flex-1 font-medium leading-relaxed" x-text="err.message"></span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                         <div x-show="bulkResults.results && bulkResults.results.length > 0" class="mt-8 border-t border-slate-100 pt-8">
+                                             <div class="flex items-center gap-2 mb-4">
+                                                 <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+                                                     <i data-lucide="list" class="w-4 h-4"></i>
+                                                 </div>
+                                                 <h3 class="text-sm font-bold text-slate-900">Detailed Screening Results</h3>
+                                             </div>
+                                             
+                                             <div class="overflow-x-auto rounded-2xl border border-slate-100 shadow-sm">
+                                                 <table class="w-full text-left border-collapse bg-white">
+                                                     <thead class="bg-slate-50 border-b border-slate-100">
+                                                         <tr>
+                                                             <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Row</th>
+                                                             <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Corporate ID</th>
+                                                             <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category</th>
+                                                             <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status / Score</th>
+                                                             <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Action</th>
+                                                         </tr>
+                                                     </thead>
+                                                     <tbody class="divide-y divide-slate-50">
+                                                         <template x-for="res in bulkResults.results">
+                                                             <tr class="hover:bg-slate-50/50 transition-colors">
+                                                                 <td class="px-5 py-4 text-xs font-bold text-slate-400" x-text="res.row"></td>
+                                                                 <td class="px-5 py-4 font-bold text-slate-900 text-sm" x-text="res.corporateId"></td>
+                                                                 <td class="px-5 py-4 text-xs">
+                                                                     <span class="px-2.5 py-1 rounded-full font-bold uppercase tracking-wider text-[10px]" 
+                                                                           :class="res.category === 'Chemical' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'"
+                                                                           x-text="res.category"></span>
+                                                                 </td>
+                                                                 <td class="px-5 py-4">
+                                                                     <div class="flex items-center gap-3">
+                                                                         <span class="text-sm font-black text-slate-900" x-text="res.score + '%'"></span>
+                                                                         <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md"
+                                                                               :class="res.score === '100' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'"
+                                                                               x-text="res.score === '100' ? 'Match' : 'No Match'"></span>
+                                                                     </div>
+                                                                 </td>
+                                                                 <td class="px-5 py-4">
+                                                                     <template x-if="res.caseId > 0">
+                                                                         <a :href="'/ProliferationFinance/Process/' + res.caseId" 
+                                                                            class="text-blue-600 hover:text-blue-700 font-bold text-xs flex items-center gap-1">
+                                                                             Process <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                                                                         </a>
+                                                                     </template>
+                                                                 </td>
+                                                             </tr>
+                                                         </template>
+                                                     </tbody>
+                                                 </table>
+                                             </div>
+                                         </div>
+
+                                         <div class="flex justify-center pt-8">
+                                             <a href="/ProliferationFinance/CaseManager" class="h-14 px-8 bg-slate-900 text-white rounded-2xl font-bold text-[15px] hover:bg-slate-800 transition-all flex items-center gap-3 shadow-xl shadow-slate-900/10">
+                                                 Go to Case Manager <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                                             </a>
+                                         </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- State: Results View (Removed for Individual Search, only Success Modal shown) -->
+<template x-if="false">
+                            <div x-show="showResults" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-8" style="display:none;">
+                                <div class="flex items-center justify-between pb-6 border-b border-slate-100">
+                                    <button @@click="showResults = false" class="flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold transition-colors">
+                                        <i data-lucide="arrow-left" class="w-5 h-5"></i> <span class="text-sm">Back to Search</span>
+                                    </button>
+                                    <span x-show="(selectedMethod === 'chemical' && searchResults.length > 0) || (selectedMethod === 'nonchemical' && formData.matchedParagraph)" class="bg-emerald-100 text-emerald-700 text-xs font-bold px-4 py-1.5 rounded-full ring-1 ring-emerald-200/50">
+                                        Search Completed & Case Created
+                                    </span>
+                                </div>
+                                <h2 class="text-xl font-bold text-slate-900 tracking-tight">Search Results</h2>
+                                
+                                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="results-container">
+                                     <!-- Chemical Result Cards -->
+                                     <template x-if="selectedMethod === 'chemical'">
+                                         <template x-for="(result, index) in searchResults" :key="index">
+                                             <div class="bg-white rounded-xl border border-blue-600/30 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300">
+                                                 <div class="h-2 w-full bg-blue-600"></div>
+                                                 <div class="p-6 space-y-4">
+                                                     <div class="flex justify-between items-start border-b border-slate-50 pb-3">
+                                                         <div class="flex-1">
+                                                              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chemical Name</p>
+                                                              <p class="text-[15px] font-bold text-slate-900 mt-0.5 leading-snug" x-text="(result.chemicalName || result.ChemicalName) || 'N/A'"></p>
+                                                         </div>
+                                                     </div>
+                                                     <div class="grid grid-cols-2 gap-x-6 gap-y-4 pt-1">
+                                                         <div>
+                                                              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">HS Code</p>
+                                                              <p class="text-sm font-semibold text-slate-700 mt-0.5" x-text="(result.hsCode || result.HsCode) || 'N/A'"></p>
+                                                         </div>
+                                                         <div>
+                                                              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">CAS Number</p>
+                                                              <p class="text-sm font-semibold text-slate-700 mt-0.5" x-text="(result.casNumber || result.CasNumber) || 'N/A'"></p>
+                                                         </div>
+                                                         <div class="col-span-2">
+                                                              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ECCN</p>
+                                                              <p class="text-sm font-semibold text-slate-700 mt-0.5" x-text="(result.eccn || result.Eccn) || 'N/A'"></p>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         </template>
+                                     </template>
+
+                                     <!-- Non-Chemical Result Card -->
+                                     <template x-if="selectedMethod === 'nonchemical' && formData.matchedParagraph">
+                                         <div class="col-span-2">
+                                             <div class="bg-white rounded-xl border border-blue-600/30 shadow-sm overflow-hidden p-6 space-y-4">
+                                                 <div class="flex items-center gap-3 border-b border-slate-50 pb-4">
+                                                     <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+                                                         <i data-lucide="file-check" class="w-6 h-6"></i>
+                                                     </div>
+                                                     <div>
+                                                         <h3 class="text-sm font-bold text-slate-900">PDF Match Found</h3>
+                                                         <p class="text-[11px] text-slate-500">Keyword: <span class="font-bold text-blue-600" x-text="formData.searchKeyword"></span></p>
+                                                     </div>
+                                                 </div>
+                                                 <div class="bg-slate-50 p-6 rounded-xl border border-slate-100 italic text-slate-700 leading-relaxed text-sm whitespace-pre-wrap" x-html="highlightKeyword(formData.matchedParagraph, formData.searchKeyword)"></div>
+                                                 <div class="flex items-center gap-2 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full w-fit">
+                                                     <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                                                     CASE CREATED SUCCESSFULLY
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </template>
+                                 </div>
+
+                                <!-- No Results State -->
+                                <div x-show="showResults && searchResults.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
+                                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
+                                        <i data-lucide="search-x" class="w-8 h-8"></i>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-slate-900">No matches found</h3>
+                                    <p class="text-sm text-slate-500 mt-1 max-w-[250px]">Try adjusting your search terms to find a match in the UAE Control List.</p>
+                                </div>
+                            </div>
+</template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UAE Good Details Modal -->
+                <div x-show="isModalOpen" 
+                     class="fixed inset-0 z-50 overflow-y-auto" 
+                     aria-labelledby="modal-title" 
+                     role="dialog" 
+                     aria-modal="true"
+                     style="display:none;">
+                    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div x-show="isModalOpen" 
+                             x-transition:enter="ease-out duration-300" 
+                             x-transition:enter-start="opacity-0" 
+                             x-transition:enter-end="opacity-100" 
+                             x-transition:leave="ease-in duration-200" 
+                             x-transition:leave-start="opacity-100" 
+                             x-transition:leave-end="opacity-0" 
+                             class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+                             aria-hidden="true"></div>
+
+                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div x-show="isModalOpen" 
+                             x-transition:enter="ease-out duration-300" 
+                             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
+                             x-transition:leave="ease-in duration-200" 
+                             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
+                             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                             class="inline-block align-bottom bg-white text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle w-full sm:max-w-4xl border-t-4 border-[#c19b48]">
+                            
+                            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div class="flex justify-between items-center mb-6 pb-4 border-b">
+                                    <h3 class="text-xl leading-6 font-medium text-gray-900" id="modal-title">
+                                        UAE Good Details
+                                    </h3>
+                                    <button @@click="isModalOpen = false" class="text-gray-400 hover:text-gray-500">
+                                        <i data-lucide="x" class="w-6 h-6"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                    <div class="col-span-2 space-y-6">
+                                        <div class="grid grid-cols-2 gap-6">
+                                            <div>
+                                                <h4 class="text-[#c19b48] text-sm font-medium">CAS Number</h4>
+                                                <p class="text-slate-900 mt-1" x-text="(selectedResult.casNumber || selectedResult.CasNumber) || '-'"></p>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-[#c19b48] text-sm font-medium">Synonym Name</h4>
+                                                <p class="text-slate-900 mt-1" x-text="(selectedResult.synonymName || selectedResult.SynonymName) || '-'"></p>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-[#c19b48] text-sm font-medium">HS Code</h4>
+                                                <p class="text-slate-900 mt-1" x-text="(selectedResult.hsCode || selectedResult.HsCode) || '-'"></p>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-[#c19b48] text-sm font-medium">Chemical Name</h4>
+                                                <p class="text-slate-900 mt-1" x-text="(selectedResult.chemicalName || selectedResult.ChemicalName) || '-'"></p>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-[#c19b48] text-sm font-medium">ECCN</h4>
+                                                <p class="text-slate-900 mt-1" x-text="(selectedResult.eccn || selectedResult.Eccn) || '-'"></p>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-[#c19b48] text-sm font-medium">Physical State</h4>
+                                                <p class="text-slate-900 mt-1" x-text="(selectedResult.physicalState || selectedResult.PhysicalState) || '-'"></p>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-[#c19b48] text-sm font-medium">Permit required from</h4>
+                                                <p class="text-slate-900 mt-1" x-text="(selectedResult.permitRequired || selectedResult.PermitRequired) || '-'"></p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <h4 class="text-[#c19b48] text-sm font-medium mb-2">Description</h4>
+                                            <div class="bg-gray-100 p-4 rounded text-slate-700 min-h-[80px]" x-text="(selectedResult.description || selectedResult.Description) || '-'"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-span-1 border-l border-gray-200 pl-6">
+                                        <h4 class="text-[#c19b48] text-sm font-medium mb-4">Chemical Structure</h4>
+                                        <div class="bg-gray-100 h-48 rounded flex items-center justify-center text-gray-400 flex-col">
+                                            <i data-lucide="flask-conical" class="w-12 h-12 mb-2"></i>
+                                            <span class="text-sm font-medium tracking-widest uppercase">No Photo</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t">
+                                <button type="button" @@click="isModalOpen = false" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2 bg-[#c19b48] text-base font-medium text-white hover:bg-[#a6853d] focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                                    Close
+                                </button>
+                                <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2 bg-[#c19b48] text-base font-medium text-white hover:bg-[#a6853d] focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                    Apply For Service
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Alpine.js Application Logic -->
+    <script>
+        function caseCreationData() {
+            return {
+                sidebarOpen: true,
+                selectedMethod: 'goods',
+                isLoading: false,
+                showResults: false,
+                isModalOpen: false,
+                isSuccessModalOpen: false,
+                caseRefId: '',
+                score: '0',
+                copied: false,
+                formData: {
+                    customerType: 'Goods',
+                    corporateId: '',
+                    companyName: '',
+                    hsCode: '',
+                    casNumber: '',
+                    eccn: '',
+                    chemicalName: '',
+                    synonymName: '',
+                    searchKeyword: '',
+                    matchedParagraph: ''
+                },
+                nonChemicalResults: [],
+                nonChemicalError: '',
+                searchResults: [],
+                selectedResult: {},
+                selectedFile: null,
+                isDragging: false,
+                bulkResults: null,
+
+                resetForm() {
+                    this.formData = {
+                        customerType: 'Goods',
+                        corporateId: this.formData.corporateId, 
+                        companyName: this.formData.companyName,
+                        hsCode: '',
+                        casNumber: '',
+                        eccn: '',
+                        chemicalName: '',
+                        synonymName: '',
+                        searchKeyword: '',
+                        matchedParagraph: ''
+                    };
+                    this.showResults = false;
+                    this.searchResults = [];
+                    this.nonChemicalResults = [];
+                    this.selectedFile = null;
+                    this.bulkResults = null;
+                    this.isDragging = false;
+                    this.matchParam = 70;
+                },
+
+                async fetchCorporateDetails() {
+                    if (!this.formData.corporateId) {
+                        alert('Please enter a Corporate ID');
+                        return;
+                    }
+                    this.isLoading = true;
+                    try {
+                        let result = await fetch('/Corporate/SearchCompanyCode?CompanyCode=' + this.formData.corporateId);
+                        let data = await result.json();
+                        if (data && data.length > 0) {
+                            this.formData.companyName = data[0].firstName || data[0].companyName;
+                        } else {
+                            this.formData.companyName = '';
+                            alert('No company found for this ID.');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('Error fetching company details.');
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                async submitSearch() {
+                    // Validation: At least one field populated
+                    const fd = this.formData;
+                    if (!fd.hsCode && !fd.casNumber && !fd.eccn && !fd.chemicalName && !fd.synonymName && !fd.searchKeyword) {
+                        alert('Please fill at least one screening detail field.');
+                        return;
+                    }
+                    if (!fd.corporateId) {
+                        alert('Corporate ID is required to create a case.');
+                        return;
+                    }
+
+                    this.isLoading = true;
+                    try {
+                        let response = await fetch('/ProliferationFinance/SearchChemicals', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.formData)
+                        });
+                        
+                        let data = await response.json();
+                        
+                        if (data && data.success) {
+                            this.caseRefId = data.caseRefId;
+                            this.score = data.score || '0';
+                            this.isSuccessModalOpen = true;
+                        } else {
+                            alert(data.message || 'Error creating case');
+                        }
+                    } catch (e) {
+                         console.error(e);
+                         alert('Server error occurred.');
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+
+                closeSuccess() {
+                    this.isSuccessModalOpen = false;
+                    this.resetForm();
+                },
+
+                highlightKeyword(text, keyword) {
+                    if (!text || !keyword) return text || '';
+                    // Escape special regex chars in keyword, then wrap matches in <mark>
+                    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const regex = new RegExp(`(${escaped})`, 'gi');
+                    return text.replace(regex, '<mark style="background:#fef08a;color:#713f12;border-radius:3px;padding:0 2px;font-weight:600;">$1</mark>');
+                },
+
+                openModal(resultItem) {
+                    this.selectedResult = resultItem;
+                    this.isModalOpen = true;
+                },
+
+                handleFileSelect(file) {
+                    if (!file) return;
+                    this.selectedFile = file;
+                    this.bulkResults = null;
+                },
+
+                async submitBulkUpload() {
+                    if (!this.selectedFile) return;
+                    
+                    this.isLoading = true;
+                    this.bulkResults = null;
+                    
+                    const formData = new FormData();
+                    formData.append('file', this.selectedFile);
+
+                    try {
+                        let response = await fetch('/ProliferationFinance/BulkUploadCases', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        let data = await response.json();
+                        if (data && data.success) {
+                            this.bulkResults = data.summary;
+                            this.$nextTick(() => lucide.createIcons());
+                        } else {
+                            alert(data.message || 'Error occurred during bulk upload');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Server error processing Excel file.');
+                    } finally {
+                        this.isLoading = false;
+                        // Reset file input
+                        if (this.$refs.fileInput) {
+                            this.$refs.fileInput.value = '';
+                        }
+                    }
+                }
+            }
+        }
+
+        // Initialize Lucide icons
+        document.addEventListener('alpine:init', () => {
+             lucide.createIcons();
+        });
+    </script>
+
+    <!-- MODAL: SUCCESS -->
+    <div x-show="isSuccessModalOpen" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md transition-all duration-200"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        <div @@click.away="closeSuccess()"
+             class="bg-white rounded-[32px] shadow-2xl w-full max-w-md p-10 text-center relative overflow-hidden">
+            <button @@click="closeSuccess()"
+                    class="absolute top-5 right-5 text-slate-400 hover:text-slate-700 transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="absolute top-0 left-0 right-0 h-2 bg-emerald-500"></div>
+            <div class="flex flex-col items-center gap-8">
+                <div class="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center ring-8 ring-emerald-50/50">
+                    <i data-lucide="check-circle" class="w-12 h-12 text-emerald-500"></i>
+                </div>
+                <div class="space-y-3">
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Case Created Successful!</h2>
+                    <div class="flex items-center justify-center gap-6 py-2">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Reference ID</p>
+                            <p class="text-xl font-black text-blue-600" x-text="caseRefId"></p>
+                        </div>
+                    </div>
+                    <p class="text-sm font-medium text-slate-500 leading-relaxed px-4">
+                        Your case has been successfully created and submitted for screening and risk assessment.
+                    </p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 w-full pt-4">
+                    <button class="h-14 border-2 border-slate-200 rounded-2xl font-extrabold text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2"
+                            @@click="navigator.clipboard.writeText(caseRefId);copied=true;setTimeout(()=>copied = false, 2000);">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                    </button>
+                    <a href="/ProliferationFinance/CaseManager"
+                       class="h-14 bg-blue-600 text-white font-extrabold rounded-2xl flex items-center justify-center w-full">
+                        Go to Manager
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

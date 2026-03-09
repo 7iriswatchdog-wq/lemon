@@ -42,6 +42,13 @@ namespace AML.ViewModel.ViewModels.Common
         public string DocumentName { get; set; }
         public int type { get; set; }
 
+        // New properties for Admin Management List
+        public DateTime? ApplicationStartDate { get; set; }
+        public DateTime? ApplicationEndDate { get; set; }
+        public int SearchCount { get; set; }
+        public int UsageCount { get; set; }
+        public int UserCount { get; set; }
+        public DateTime? CreatedOn { get; set; }
     }
     public class ClientRightsModel
     {
