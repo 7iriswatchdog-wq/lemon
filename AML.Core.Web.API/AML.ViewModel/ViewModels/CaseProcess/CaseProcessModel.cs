@@ -62,6 +62,8 @@ namespace AML.ViewModel.ViewModels.CaseProcess
         public string RiskAssessmentRating { get; set; }
         public string RiskAssessmentRatingWithoutOverride { get; set; }
 
+        public string RiskOverRide { get; set; }
+
         //public List<PassportDetails> passportDetails { get; set; }
     }
 }

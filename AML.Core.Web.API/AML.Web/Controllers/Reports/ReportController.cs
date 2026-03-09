@@ -2,6 +2,7 @@ using AML.Core.Common.StaticResource;
 using AML.Core.DataContract.Authentication;
 using AML.Core.DataContract.Enum;
 using AML.Core.RepositoryContract.FreeSource;
+using AML.Core.Service.UserGroup;
 using AML.Core.ServiceContract.CaseComment;
 using AML.Core.ServiceContract.CaseDocument;
 using AML.Core.ServiceContract.Common;
@@ -16,6 +17,7 @@ using AML.Core.ServiceContract.Report;
 using AML.Core.ServiceContract.Risk;
 using AML.Core.ServiceContract.TransactionScreening;
 using AML.Core.ServiceContract.User;
+using AML.Core.ServiceContract.UserGroup;
 using AML.DTO.DTO.CaseComment;
 using AML.DTO.DTO.CaseDocument;
 using AML.DTO.DTO.Common;
@@ -38,6 +40,7 @@ using AML.ViewModel.ViewModels.Risk;
 using AML.ViewModel.ViewModels.Sanction;
 using AML.ViewModel.ViewModels.TransactionScreening;
 using AML.ViewModel.ViewModels.User;
+using AML.ViewModel.ViewModels.UserGroup;
 using AML.Web.CustomFilters;
 using AML.Web.Helper;
 using AutoMapper;
@@ -102,10 +105,11 @@ namespace AML.Web.Controllers.Reports
         private IRiskService _riskService;
         private IKycService _kycService;
         private ILovMasterService _lovMasterService;
-        
+        private IUserGroupService _UserGroupService;
+
         public ReportController(IUserService userService, IMapper mapper, IReportService reportService,
          IHttpClientHandler clientHandler, ICaseCommentService caseCommentService, ICustomerCategoryService customerCategoryService,
-        IViewRenderService viewRenderService, IExportDataService exportService, ICustomerScreeningService customerScreeningService,
+        IViewRenderService viewRenderService, IExportDataService exportService, ICustomerScreeningService customerScreeningService, IUserGroupService UserGroupService,
         ICustomerCaseService customerCaseService, ICaseDocumentService caseDocumentService, IFreeSourceRepository freeSourceRepository, IKycService kycService, ILovMasterService lovMasterService, IRiskService RiskService,
         ICountryService countryService, ICustomerMasterService customerMasterService, ITransactionScreeningService transactionScreeningService, IToastNotification toastNotification, ICommonService commonService)
         {
@@ -133,6 +137,7 @@ namespace AML.Web.Controllers.Reports
             _lovMasterService = lovMasterService;
             _kycService = kycService;
             baseC6URL = clientDetails.C6BaseUrl;
+            _UserGroupService = UserGroupService;
 
         }
         public IActionResult SanctionLogs()
@@ -1669,9 +1674,16 @@ public IActionResult CustomerList(DataTableModel model,
         }
 
         [HttpGet("Report/ExportCaseManagementReport")]
-        public async Task<IActionResult> ExportCaseManagementReport(string startDate, string endDate,string cust_type, bool isPDF)
+        public async Task<IActionResult> ExportCaseManagementReport(string startDate, string endDate,string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string caseStatusChange, string riskLevel, bool isPDF)
         {
+            var BranchId = _clientHandler.GetBranchId();
+            var GroupId = _clientHandler.GetGroupId();
+
+
             var userId = _clientHandler.GetUserId();
+
+
+            var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
             if (endDate == null)
             {
                 endDate = System.DateTime.Now.ToString();
@@ -1688,21 +1700,70 @@ public IActionResult CustomerList(DataTableModel model,
             {
                 cust_type = "S";
             }
+            if (riskLevel == "1")
+            {
+                riskLevel = "Low Risk";
+            }
+            else if (riskLevel == "2")
+            {
+                riskLevel = "Medium Risk";
+            }
+            else if (riskLevel == "3")
+            {
+                riskLevel = "High Risk";
+            }
+            if (caseStatusChange == "0")
+            {
+                caseStatusChange = null;
+            }
+            //List<CaseReportListModel> abc = new List<CaseReportListModel>();
+            List<CaseModel> abc = new List<CaseModel>();
+            if (searchValue != "" && searchValue != null)
+            {
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, _UserGroupModel.Name));
+
+            }
+            else
+            {
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAll(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel, _UserGroupModel.Name));
+
+            }
+            //if (searchValue != "" && searchValue != null)
+            //{
+            //    abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseManagementSearchValueReportList(new CaseReportRequestDTO()
+            //    {
+            //        User = userId.ToString(),
+            //        StartDate = startDate,
+            //        EndDate = endDate,
+            //        Cust_type = cust_type,
+            //        ClientId = _clientHandler.GetClientId(),
+            //        matchscore = matchScore,
+            //        createdBy = createdBy,
+            //        caseStatus = caseStatus,
+            //        riskLevel = riskLevel,
+            //        usergroupName = _UserGroupModel.Name,
+            //        SearchValue=searchValue,
+            //    }));
+            //}
             //else
             //{
-            //    cust_type = " ";
+            //    abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseManagementReportList(new CaseReportRequestDTO()
+            //    {
+            //        User = userId.ToString(),
+            //        StartDate = startDate,
+            //        EndDate = endDate,
+            //        Cust_type = cust_type,
+            //        ClientId = _clientHandler.GetClientId(),
+            //        matchscore = matchScore,
+            //        createdBy = createdBy,
+            //        caseStatus = caseStatus,
+            //        riskLevel = riskLevel,
+            //        usergroupName = _UserGroupModel.Name
+            //    }));
             //}
-            List<CaseReportListModel> abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseManagementReportList(new CaseReportRequestDTO()
-            {
-                User = userId.ToString(),
-                StartDate = startDate,
-                EndDate = endDate,
-                Cust_type = cust_type,
-                ClientId = _clientHandler.GetClientId()
-            }));
             int fileType = isPDF ? (int)OperationType.PDF : (int)OperationType.Excel;
             CaseReportDownloadModel downloadModel = new CaseReportDownloadModel();
-            downloadModel.Data = abc;
+            downloadModel.Data1 = abc;
             downloadModel.TotalRows = abc.Count;
             var clientData = _customerCaseService.GetClientDetailsByID(_clientHandler.GetClientId());
 
@@ -1772,22 +1833,42 @@ public IActionResult CustomerList(DataTableModel model,
                 excelModel.Details = details;
 
                 excelData = (from res in abc
-                                 select new CaseManagementReportExcelModel
-                                 {
+                             select new CaseManagementReportExcelModel
+                             {
+                                 CustomerId = res.CustomerId,
+                                 CreationDate = res.CreatedOn.ToString("dd/MM/yyyy HH:mm:ss"),
+                                 UpdationDate = Convert.ToDateTime(res.UpdatedOnDB).ToString("dd/MM/yyyy HH:mm:ss"),
+                                 CustomerType = res.CustomerType == "I" ? "Individual" : "Corporate",
+                                 CustomerName = res.FirstName + " " + res.LastName,
+                                 CaseStatusChangeReason = res.CaseChangeStatus,
+                                 ScreeningScore = res.MatchScore,
 
-                                     CustomerId = res.CustomerID,
-                                     CreationDate = res.CreatedOn,
-                                     CustomerType = res.CustomerType,
-                                     CustomerName = res.CustomerName,
-                                     Nationality=res.Nationality,
-                                     CaseStatus = res.CaseStatus,
-                                     RiskScore = res.CustomerType == "I"
-                             ? res.Individual_final_risk_score
-                             : res.corporate_final_risk_score,
-                                     CreatedBy = res.CreatedBy,
-                                     
-                                     
-                                 }).ToList();
+                                 RiskScore =
+                                 !string.IsNullOrEmpty(res.CustomerType == "I"
+                                     ? res.Individual_final_risk_score
+                                     : res.corporate_final_risk_score)
+                                 ? (
+                                     ((res.CustomerType == "I"
+                                         ? res.Individual_final_risk_score
+                                         : res.corporate_final_risk_score) ?? "")
+                                     .ToLower().Contains("high")
+                                     && ((res.CustomerType == "I"
+                                         ? res.Individual_Risk_Override
+                                         : res.Corporate_Risk_Override) ?? "")
+                                     .ToLower() == "override"
+                                     ? "High(O)"
+                                     : ((res.CustomerType == "I"
+                                         ? res.Individual_final_risk_score
+                                         : res.corporate_final_risk_score) ?? "")
+                                     .Replace(" Risk", "")
+                                   )
+                                 : "",
+
+                                 CreatedBy = res.CreatedUser,
+                                 CaseStatus = res.CaseStatus
+
+                             }).ToList();
+
                 excelData.Add(excelModel);
 
                 return new ExcelResult<CaseManagementReportExcelModel>((excelData), "Case Report", "Case_Report_" + DateTime.Now.Ticks);
@@ -1849,8 +1930,8 @@ public IActionResult CustomerList(DataTableModel model,
                 PdfPCell _dateRange = new PdfPCell(new Phrase("\n"));
                 PdfPCell filters = new PdfPCell(new Phrase(     "Filters Applied   :   "+filter));
                 PdfPCell _filters = new PdfPCell(new Phrase("\n"));
-                PdfPCell createdBy = new PdfPCell(new Phrase(   "Created by        :   "+clientData.CreatedBy));
-                PdfPCell _createdBy = new PdfPCell(new Phrase("\n"));
+                //PdfPCell createdBy = new PdfPCell(new Phrase(   "Created by        :   "+clientData.CreatedBy));
+                //PdfPCell _createdBy = new PdfPCell(new Phrase("\n"));
 
                 //hd.HorizontalAlignment = Element.ALIGN_LEFT;
                 //hd.FixedHeight = 20f;
@@ -1858,12 +1939,12 @@ public IActionResult CustomerList(DataTableModel model,
                 hd.Border = 0;
                 dateRange.Border= 0;
                 filters.Border = 0;
-                createdBy.Border = 0;
+                //createdBy.Border = 0;
                 
                 _hd.Border = 0;
                 _dateRange.Border = 0;
                 _filters.Border = 0;
-                _createdBy.Border = 0;
+                //_createdBy.Border = 0;
                 
                 header.AddCell(hd);
                 header.AddCell(_hd);
@@ -1871,8 +1952,8 @@ public IActionResult CustomerList(DataTableModel model,
                 header.AddCell(_dateRange);
                 header.AddCell(filters);
                 header.AddCell(_filters);
-                header.AddCell(createdBy);
-                header.AddCell(_createdBy);
+                //header.AddCell(createdBy);
+                //header.AddCell(_createdBy);
                 
                 document.Add(header);
                 PdfPTable table = new PdfPTable(9);
@@ -2025,9 +2106,16 @@ public IActionResult CustomerList(DataTableModel model,
             }
         }
         [HttpGet("Report/ExportCompletedCasesReport")]
-        public async Task<IActionResult> ExportCompletedCasesReport(string startDate, string endDate, string cust_type, bool isPDF)
+        public async Task<IActionResult> ExportCompletedCasesReport(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string caseStatusChange, string riskLevel, bool isPDF)
         {
+            var BranchId = _clientHandler.GetBranchId();
+            var GroupId = _clientHandler.GetGroupId();
+
+
             var userId = _clientHandler.GetUserId();
+            List<CaseModel> abc = new List<CaseModel>();
+
+            var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
             if (endDate == null)
             {
                 endDate = System.DateTime.Now.ToString();
@@ -2044,21 +2132,43 @@ public IActionResult CustomerList(DataTableModel model,
             {
                 cust_type = "S";
             }
-            //else
-            //{
-            //    cust_type = " ";
-            //}
-            List<CaseReportListModel> abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCompletedCaseReportList(new CaseReportRequestDTO()
+            if (riskLevel == "1")
             {
-                User = userId.ToString(),
-                StartDate = startDate,
-                EndDate = endDate,
-                Cust_type = cust_type,
-                ClientId = _clientHandler.GetClientId()
-            }));
+                riskLevel = "Low Risk";
+            }
+            else if (riskLevel == "2")
+            {
+                riskLevel = "Medium Risk";
+            }
+            else if (riskLevel == "3")
+            {
+                riskLevel = "High Risk";
+            }
+            if (caseStatusChange == "0")
+            {
+                caseStatusChange = null;
+            }
+            if (searchValue != "" && searchValue != null)
+            {
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel));
+
+            }
+            else
+            {
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel));
+
+            }
+            //List<CaseReportListModel> abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCompletedCaseReportList(new CaseReportRequestDTO()
+            //{
+            //    User = userId.ToString(),
+            //    StartDate = startDate,
+            //    EndDate = endDate,
+            //    Cust_type = cust_type,
+            //    ClientId = _clientHandler.GetClientId()
+            //}));
             int fileType = isPDF ? (int)OperationType.PDF : (int)OperationType.Excel;
             CaseReportDownloadModel downloadModel = new CaseReportDownloadModel();
-            downloadModel.Data = abc;
+            downloadModel.Data1 = abc;
             downloadModel.TotalRows = abc.Count;
             var clientData = _customerCaseService.GetClientDetailsByID(_clientHandler.GetClientId());
 
@@ -2131,16 +2241,37 @@ public IActionResult CustomerList(DataTableModel model,
                              select new CaseManagementReportExcelModel
                              {
 
-                                 CustomerId = res.CustomerID,
-                                 CreationDate = res.CreatedOn,
-                                 CustomerType = res.CustomerType,
-                                 CustomerName = res.CustomerName,
-                                 Nationality = res.Nationality,
-                                 CaseStatus = res.CaseStatus,
-                                 RiskScore = res.CustomerType == "I"
-                         ? res.Individual_final_risk_score
-                         : res.corporate_final_risk_score,
-                                 CreatedBy = res.CreatedBy,
+                                 CustomerId = res.CustomerId,
+                                 CreationDate = res.CreatedOn.ToString("dd/MM/yyyy HH:mm:ss"),
+                                 UpdationDate = Convert.ToDateTime(res.UpdatedOnDB).ToString("dd/MM/yyyy HH:mm:ss"),
+                                 CustomerType = res.CustomerType == "I" ? "Individual" : "Corporate",
+                                 CustomerName = res.FirstName + " " + res.LastName,
+                                 CaseStatusChangeReason = res.CaseChangeStatus,
+                                 ScreeningScore = res.MatchScore,
+
+                                 RiskScore =
+                                 !string.IsNullOrEmpty(res.CustomerType == "I"
+                                     ? res.Individual_final_risk_score
+                                     : res.corporate_final_risk_score)
+                                 ? (
+                                     ((res.CustomerType == "I"
+                                         ? res.Individual_final_risk_score
+                                         : res.corporate_final_risk_score) ?? "")
+                                     .ToLower().Contains("high")
+                                     && ((res.CustomerType == "I"
+                                         ? res.Individual_Risk_Override
+                                         : res.Corporate_Risk_Override) ?? "")
+                                     .ToLower() == "override"
+                                     ? "High(O)"
+                                     : ((res.CustomerType == "I"
+                                         ? res.Individual_final_risk_score
+                                         : res.corporate_final_risk_score) ?? "")
+                                     .Replace(" Risk", "")
+                                   )
+                                 : "",
+
+                                 CreatedBy = res.CreatedUser,
+                                 CaseStatus = res.CaseStatus
 
 
                              }).ToList();
@@ -2205,8 +2336,8 @@ public IActionResult CustomerList(DataTableModel model,
                 PdfPCell _dateRange = new PdfPCell(new Phrase("\n"));
                 PdfPCell filters = new PdfPCell(new Phrase("Filters Applied   :   " + filter));
                 PdfPCell _filters = new PdfPCell(new Phrase("\n"));
-                PdfPCell createdBy = new PdfPCell(new Phrase("Created by        :   " + clientData.CreatedBy));
-                PdfPCell _createdBy = new PdfPCell(new Phrase("\n"));
+                //PdfPCell createdBy = new PdfPCell(new Phrase("Created by        :   " + clientData.CreatedBy));
+                //PdfPCell _createdBy = new PdfPCell(new Phrase("\n"));
 
                 //hd.HorizontalAlignment = Element.ALIGN_LEFT;
                 //hd.FixedHeight = 20f;
@@ -2214,12 +2345,12 @@ public IActionResult CustomerList(DataTableModel model,
                 hd.Border = 0;
                 dateRange.Border = 0;
                 filters.Border = 0;
-                createdBy.Border = 0;
+                //createdBy.Border = 0;
 
                 _hd.Border = 0;
                 _dateRange.Border = 0;
                 _filters.Border = 0;
-                _createdBy.Border = 0;
+                //_createdBy.Border = 0;
 
                 header.AddCell(hd);
                 header.AddCell(_hd);
@@ -2227,8 +2358,8 @@ public IActionResult CustomerList(DataTableModel model,
                 header.AddCell(_dateRange);
                 header.AddCell(filters);
                 header.AddCell(_filters);
-                header.AddCell(createdBy);
-                header.AddCell(_createdBy);
+                //header.AddCell(createdBy);
+                //header.AddCell(_createdBy);
 
                 document.Add(header);
                 PdfPTable table = new PdfPTable(9);
@@ -3260,32 +3391,37 @@ public IActionResult CustomerList(DataTableModel model,
             [IncludeInReport(Order = 2)]
             [Display(Name = "Created On")]
             public string CreationDate { get; set; }
-
             [IncludeInReport(Order = 3)]
-            [Display(Name = "Type")]
-            public string CustomerType { get; set; }
+            [Display(Name = "Updated On")]
+            public string UpdationDate { get; set; }
 
             [IncludeInReport(Order = 4)]
-            [Display(Name = "Customer Name")]
-            public string CustomerName { get; set; }
+            [Display(Name = "Customer Type")]
+            public string CustomerType { get; set; }
 
             [IncludeInReport(Order = 5)]
-            [Display(Name = "Nationality")]
-            public string Nationality { get; set; }
-
+            [Display(Name = "Customer Name")]
+            public string CustomerName { get; set; }
             [IncludeInReport(Order = 6)]
+            [Display(Name = "DataSets")]
+            public string CaseStatusChangeReason { get; set; }
+
+            [IncludeInReport(Order = 7)]
+            [Display(Name = "Screening Score")]
+            public int ScreeningScore { get; set; }
+
+            [IncludeInReport(Order = 8)]
+            [Display(Name = "Risk Score")]
+            public string RiskScore { get; set; }
+            [IncludeInReport(Order = 9)]
+            [Display(Name = "User")]
+            public string CreatedBy { get; set; }
+
+            [IncludeInReport(Order = 10)]
             [Display(Name = "Status")]
             public string CaseStatus { get; set; }
 
-            [IncludeInReport(Order = 7)]
-            [Display(Name = "Risk Score")]
-            public string RiskScore { get; set; }
-
-            [IncludeInReport(Order = 8)]
-            public string CreatedBy { get; set; }
-
-
-            [IncludeInReport(Order = 9)]
+            [IncludeInReport(Order = 11)]
             [Display(Name = "Report Details")]
             public string Details { get; set; }
         }

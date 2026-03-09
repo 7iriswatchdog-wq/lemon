@@ -1119,6 +1119,7 @@ namespace AML.Core.Service.Common
                     _CustomerCaseDTO.MatchScore = IsBlackListed.exists ? 100 : (apiResp.users.results.matches.Count() > 0 ? apiResp.users.results.matches.FirstOrDefault().score : 0);
                     _CustomerCaseDTO.SourceUniqueId = IsBlackListed.exists ? IsBlackListed.response[0].TYPE : Convert.ToString(apiResp.users.results.matches.Count() > 0 ? Convert.ToString(apiResp.users.results.matches.FirstOrDefault().qrCode) : null);
                     _CustomerCaseDTO.Status = _CustomerCaseDTO.MatchScore.IsNotNullOrEmpty() ? (_CustomerCaseDTO.MatchScore < checkThreshold ? 5 : 0) : 5;
+                    _CustomerCaseDTO.CaseChangeStatus= IsBlackListed.exists ? (IsBlackListed.response[0].TYPE) : "KYC6";
                 }
                 if (IsBlackListed.response2 != null && IsBlackListed.response2.Count() != 0)
                 {
@@ -1126,6 +1127,8 @@ namespace AML.Core.Service.Common
                     _CustomerCaseDTO.MatchScore = IsBlackListed.exists ? 100 : (apiResp.users.results.matches.Count() > 0 ? apiResp.users.results.matches.FirstOrDefault().score : 0);
                     _CustomerCaseDTO.SourceUniqueId = IsBlackListed.exists ? IsBlackListed.response2[0].TYPE : Convert.ToString(apiResp.users.results.matches.Count() > 0 ? Convert.ToString(apiResp.users.results.matches.FirstOrDefault().qrCode) : null);
                     _CustomerCaseDTO.Status = _CustomerCaseDTO.MatchScore.IsNotNullOrEmpty() ? (_CustomerCaseDTO.MatchScore < checkThreshold ? 5 : 0) : 5;
+                    _CustomerCaseDTO.CaseChangeStatus = IsBlackListed.exists ? (IsBlackListed.response2[0].TYPE) : "KYC6";
+
                 }
             }
             

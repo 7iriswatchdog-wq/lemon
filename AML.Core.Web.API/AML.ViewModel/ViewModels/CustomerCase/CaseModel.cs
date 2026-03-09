@@ -1,5 +1,6 @@
 using AML.ViewModel.ViewModels.CaseDocument;
 using AML.ViewModel.ViewModels.CodesMaster;
+using AML.ViewModel.ViewModels.Corporate;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
@@ -103,6 +104,18 @@ namespace AML.ViewModel.ViewModels.CustomerCase
 
         public string corporate_final_risk_score { get; set; }
 
+        
+        public string Individual_final_risk_sum { get; set; }
+
+        
+        public string Corporate_final_risk_sum { get; set; }
+
+        
+        public string Individual_Risk_Override { get; set; }
+
+        
+        public string Corporate_Risk_Override { get; set; }
+
         public string CaseChangeStatus { get; set; }
         public int NoMatch { get; set; }
         
@@ -198,7 +211,9 @@ namespace AML.ViewModel.ViewModels.CustomerCase
 
         public string Employer { get; set; }
 
+        public string GoldenVisa { get; set; }
 
+        public List<ShareholderModel> Shareholders { get; set; } = new List<ShareholderModel>();
     }
 
     

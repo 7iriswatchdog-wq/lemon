@@ -34,13 +34,13 @@ namespace AML.Core.ServiceContract.CustomerCase
 
         ServiceResponse<int> UpdateCase(int caseid,int userid);
         ServiceResponse<int> Delete(int Id);
-        List<CustomerCaseDTO> GetAll(int userId, string startDate, string endDate, string cust_type,string matchscore,int createdBy,int caseStatus,string riskLevel,string caseStatusChange, string usergroupName);
+        List<CustomerCaseDTO> GetAll(int userId, string startDate, string endDate, string cust_type,string matchscore,int createdBy,int caseStatus,string riskLevel, string usergroupName);
 
-        List<CustomerCaseDTO> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type, string matchscore, int createdBy, int caseStatus, string riskLevel, string caseStatusChange);
+        List<CustomerCaseDTO> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type, string matchscore, int createdBy, int caseStatus, string riskLevel);
 
-        List<CustomerCaseDTO> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string SearchValue, string matchscore, int createdBy, int caseStatus, string riskLevel, string caseStatusChange);
+        List<CustomerCaseDTO> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string SearchValue, string matchscore, int createdBy, int caseStatus, string riskLevel);
 
-        List<CustomerCaseDTO> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type,string SearchValue, string matchscore, int createdBy, int caseStatus, string riskLevel, string caseStatusChange,string usergroupName);
+        List<CustomerCaseDTO> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type,string SearchValue, string matchscore, int createdBy, int caseStatus, string riskLevel,string usergroupName);
         List<CustomerCaseDTO> GetAllSanctionDashboard(int clientid, string ctype);
         ServiceResponse<List<EtlBatchDTO>> DataLoadReport(ETLDataLoadReportDTO _ETLDataLoadReportDTO);
         ServiceResponse<List<CustomerCaseDTO>> DataLoadReportByBatch(int BatchId, int clientId);
@@ -101,11 +101,11 @@ namespace AML.Core.ServiceContract.CustomerCase
 
         List<CustomerCaseDTO> GetDuplicateNames(string FullName,string type,int clientid);
 
-        List<CustomerCaseDTO> GetCompanyCode(string CompanyCode, int clientid);
+        List<CustomerCaseDTO> GetCompanyCode(string CompanyCode, int clientid,string CustomerType);
 
         ServiceResponse<string> CreateShareholdersData(ShareholderDTO _customerCaseDTO);
 
-        List<ShareholderDTO> GetAllShareHolders(int clientid,string shareholders,int userId);
+        List<ShareholderDTO> GetAllShareHolders(int clientid,string shareholders,int userId,string CustomerType);
 
         ServiceResponse<string> DeleteShareholders(int id);
 

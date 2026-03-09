@@ -36,6 +36,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="~/plugins/jquery/jquery.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -90,6 +91,10 @@
 
         .blink-risk {
             animation: blinkRisk 1s infinite;
+        }
+
+        .grid-cols-15 {
+            grid-template-columns: repeat(15, minmax(0, 1fr));
         }
     </style>
     <style>
@@ -169,6 +174,11 @@
 
         <!-- Header -->
         <div class="shrink-0 pb-2">
+            <div class="flex items-center gap-2 text-slate-500 text-xs mb-2">
+                <a href="/Case" class="hover:text-blue-600">Due Diligence</a>
+                <i data-lucide="chevron-right" class="h-3 w-3"></i>
+                <span class="text-slate-900 font-medium">View Case Details</span>
+            </div>
             <h1 class="text-lg font-black text-slate-900 tracking-tight  mb-2">Case Manager</h1>
 
             <!-- Case Details Summary -->
@@ -377,6 +387,7 @@
                     <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
                     @if (Model.DataList != null && Model.DataList.Any())
     {
+                            <div x-data="searchActionTable()" class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
                         <div class="border-slate-200 rounded-lg overflow-hidden shadow-sm m-5">
                             <div class="overflow-x-auto">
                                 <table id="APITable" class="w-full text-sm text-left whitespace-nowrap">
@@ -535,11 +546,17 @@
                             </div>
                         </div>
                         <div class="px-5 pb-4">
-                            <button onclick="saveRemarks(@Model.Case.Id,'@Model.Case.CustomerId','@Model.Case.Type')"
+                                        <button x-bind:disabled="!canSave"
+                                            onclick="saveRemarks(@Model.Case.Id,'@Model.Case.CustomerId','@Model.Case.Type')"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] h-9 px-6 rounded-md shadow-sm transition-all tracking-tight disabled:opacity-50 disabled:cursor-not-allowed">
+                                        Save Search Action
+                                    </button>
+                            @* <button 
                                     class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] h-9 px-6 rounded-md shadow-sm transition-all  tracking-tight">
                                 Save Search Action
-                            </button>
+                            </button> *@
                         </div>
+                    </div>
                         }
                         else
                         {
@@ -623,16 +640,20 @@
 
                                 // Content Columns
                                 html.Append($@"
-                                        <div class='flex-1 grid grid-cols-12 gap-2 items-center pl-2'>
+                                          <div class='flex-1 grid grid-cols-15 gap-2 items-center pl-2'>
                                             <div class='col-span-3 text-xs font-bold text-slate-700'>{child.CustomerId}</div>
-                                            <div class='col-span-4 text-xs font-semibold text-slate-900'>{child.LastName}</div>
+                                            <div class='col-span-5 text-xs font-semibold text-slate-900'>{child.LastName}</div>
                                             <div class='col-span-3 text-[11px] font-medium text-slate-500 truncate'>{child.Type}</div>
+                                            <div class='col-span-2 text-[11px]  truncate'><span class='px-2 py-0.5 rounded text-[10px] font-semibold'
+                                                                  data-status='{child.CaseStatus}'>
+                                                                {child.CaseStatus}
+                                                            </span></div>
                                             <div class='col-span-2 text-right pr-2 text-blue-600 text-[11px] font-bold'>");
 
                                 if (child.Status == 5 || child.Status == 0 || child.Status == 6)
                                     html.Append($"<a target='_blank' href='/case/Shareholder/{child.Id}' class='hover:underline'>Process</a>");
                                 else
-                                    html.Append($"<a target='_blank' href='/report/ViewShareholderCaseDetails?id={child.CustomerId}&type={child.CustomerType}' class='hover:underline'>View</a>");
+                                    html.Append($"<a target='_blank' href='/report/ViewShareholderCaseDetails?id={child.CustomerId}&type=1' class='hover:underline'>View</a>");
 
                                 html.Append("</div></div></div>");
                                 
@@ -646,24 +667,26 @@
                         }
                     }
 
-                    @if (Model.Case.CustomerType == "C" && Model.ShareholdersData != null && Model.ShareholdersData.Any())
+                    @if (Model.ShareholdersData != null && Model.ShareholdersData.Any())
                     {
                         <div id="shareholdersSection" class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[350px] flex-1">
                             <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between shrink-0">
                                 <h3 class="text-sm font-bold text-slate-900">Corporate Shareholders Detail</h3>
-                                <div class="flex items-center gap-2">
+                                @* <div class="flex items-center gap-2">
                                     <button class="h-6 w-6 text-slate-400 hover:text-blue-600 flex items-center justify-center transition-colors" onclick="toggleFullscreen('right')">
                                         <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.14645 11.1464C1.95118 11.3417 1.95118 11.6583 2.14645 11.8536C2.34171 12.0488 2.65829 12.0488 2.85355 11.8536L6.5 8.20711V11.5C6.5 11.7761 6.72386 12 7 12C7.27614 12 7.5 11.7761 7.5 11.5V6.5C7.5 6.22386 7.27614 6 7 6H2C1.72386 6 1.5 6.22386 1.5 6.5C1.5 6.77614 1.72386 7 2 7H5.29289L2.14645 10.1464C2.14645 10.1464 2.14645 11.1464 2.14645 11.1464ZM8.85355 3.85355C9.04882 3.65829 9.04882 3.34171 8.85355 3.14645C8.65829 2.95118 8.34171 2.95118 8.14645 3.14645L4.5 6.79289V3.5C4.5 3.22386 4.27614 3 4 3C3.72386 3 3.5 3.22386 3.5 3.5V8.5C3.5 8.77614 3.72386 9 4 9H9C9.27614 9 9.5 8.77614 9.5 8.5C9.5 8.22386 9.27614 8 9 8H5.70711L8.85355 4.85355C8.85355 4.85355 8.85355 3.85355 8.85355 3.85355Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path></svg>
                                     </button>
-                                </div>
+                                </div> *@
                             </div>
 
                             <div class="flex items-center py-2 px-4 border-b border-slate-100 bg-white">
                                 <div class="flex-none w-[24px]"></div>
-                                <div class="flex-1 grid grid-cols-12 gap-2">
+                                @* //<div class="flex-1 grid grid-cols-12 gap-2"> *@
+                                <div class="flex-1 grid grid-cols-15 gap-2">
                                     <div class="col-span-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-2">ID</div>
-                                    <div class="col-span-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Name</div>
+                                    <div class="col-span-5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Name</div>
                                     <div class="col-span-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Shareholder Type</div>
+                                    <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</div>
                                     <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right pr-2">Link</div>
                                 </div>
                             </div>
@@ -700,10 +723,18 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="flex-1 grid grid-cols-12 gap-2 items-center pl-2">
+                                                @* <div class="flex-1 grid grid-cols-12 gap-2 items-center pl-2"> *@
+                                                    <div class="flex-1 grid grid-cols-15 gap-2 items-center pl-2">
                                                     <div class="col-span-3 text-xs font-bold text-slate-700">@parent.CustomerId</div>
-                                                    <div class="col-span-4 text-xs font-semibold text-slate-900">@parent.LastName</div>
+                                                    <div class="col-span-5 text-xs font-semibold text-slate-900">@parent.LastName</div>
                                                     <div class="col-span-3 text-[11px] font-medium text-slate-500 truncate">@parent.Type</div>
+                                                    @* <div class="col-span-2 text-[11px] font-medium text-slate-500 truncate">@parent.CaseStatus</div> *@
+                                                        <div class="col-span-2 text-[11px] truncate">
+                                                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold"
+                                                                  data-status="@parent.CaseStatus">
+                                                                @parent.CaseStatus
+                                                            </span>
+                                                        </div>
                                                     <div class="col-span-2 text-right pr-2 text-blue-600 text-[11px] font-bold">
                                                         @if (parent.Status == 5 || parent.Status == 0 || parent.Status == 6)
                                                         {
@@ -711,7 +742,7 @@
                                                         }
                                                         else
                                                         {
-                                                            <a target="_blank" href="/report/ViewShareholderCaseDetails?id=@parent.CustomerId&type=@parent.CustomerType" class="hover:underline">View</a>
+                                                            <a target="_blank" href="/report/ViewShareholderCaseDetails?id=@parent.CustomerId&type=1" class="hover:underline">View</a>
                                                         }
                                                     </div>
                                                 </div>
@@ -825,6 +856,8 @@
                             <input type="hidden" asp-for="RiskAssessmentRatingWithoutOverride" id="riskAssessmentRatingWithoutOverrideTxt" />
                         }
 
+                         <input type="hidden" asp-for="RiskOverRide" id="OverrideRatingTxt" />
+
                         <div class="p-5 overflow-y-auto flex-1 custom-scrollbar">
 
     
@@ -835,7 +868,7 @@
 
         @for (int i = 0; i < Model.RiskTypeCategoryDTO.Count; i++)
         {
-            <div class="space-y-3">
+            <div class="space-y-3 mt-3">
 
                 <h4 class="text-[10px] font-bold bg-slate-100 px-3 py-2 rounded">
                     @Model.RiskTypeCategoryDTO[i].RiskCategory
@@ -905,7 +938,7 @@
                             </div>
 
 
-                            <div class="flex items-center gap-2">
+                            @*<div class="flex items-center gap-2">
                                 <div class="w-[60px] h-8 rounded flex items-center justify-center text-[11px] font-black bg-slate-400 text-white shadow-sm">
                                     8.94
                                 </div>
@@ -917,7 +950,7 @@
                                 <div class="w-[60px] h-8 rounded flex items-center justify-center text-[11px] font-black bg-slate-200 text-slate-400">
                                     18.00
                                 </div>
-                            </div>
+                            </div>*@
 
 
                                         <button id="btnSaveRisk"
@@ -945,33 +978,38 @@
                <form role="form" id="frmCmment" class="space-y-4" enctype="multipart/form-data" method="post">
                    @* //input type="hidden" name="CaseId" value="@Model.Case.Id" /> *@
                     <input id="hdnCaseId" type="hidden" name="CaseId" value="@Model.Case.Id" />
-                    <div class="space-y-4">
-                        <h3 class="text-sm font-bold text-slate-900">Case Comments</h3>
+                        <input id="hdnCaseId" type="hidden" name="CommentType" value="Comments" />
 
-                        <div id="commentsContainer" class="space-y-3">
-                            <div id="noCommentsMsg" class="text-sm text-slate-500 italic pb-2">
-                                No comments yet
+                        <div class="space-y-4" x-data="{ comment: '' }">
+                            <h3 class="text-sm font-bold text-slate-900">Case Comments</h3>
+
+                            <div id="commentsContainer" class="space-y-3">
+                                <div id="noCommentsMsg" class="text-sm text-slate-500 italic pb-2">
+                                    No comments yet
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4">
+                                <textarea id="commentText"
+                                          name="Comment"
+                                          x-model="comment"
+                                          class="flex-1 min-h-[44px] h-[44px] py-2.5 bg-white border-slate-200 resize-none text-xs rounded-md border px-3"
+                                          placeholder="Enter Your Comments"></textarea>
+
+                                <button type="submit"
+                                        :disabled="comment.trim() === ''"
+                                        class="h-[44px] px-8 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
+                                    Save
+                                </button>
                             </div>
                         </div>
-
-                        <div class="flex gap-4">
-                            <textarea id="commentText"
-                                      name="Comment"
-                                      class="flex-1 min-h-[44px] h-[44px] py-2.5 bg-white border-slate-200 resize-none text-xs rounded-md border px-3"
-                                      placeholder="Enter Your Comments"></textarea>
-
-                            <button type="submit"
-                                    class="h-[44px] px-8 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 border rounded-md">
-                                Save
-                            </button>
-                        </div>
-                    </div>
+                    
 
                </form>
                @{
                     bool disableButtons = false;
 
-                    if (Model.Case.CustomerType == "C" && Model.ShareholdersData != null)
+                    if (Model.ShareholdersData != null)
                     {
                         disableButtons = Model.ShareholdersData
                             .Any(s => s.Status == 5 || s.Status == 0 || s.Status == 6);
@@ -1256,10 +1294,16 @@
                     {
                         <div class="grid grid-cols-[180px_1fr] pb-1 border-b border-dotted border-slate-300">
                             <span class="text-xs font-medium text-black-400 ml-3">
-                            Employer
+                            Employer Name
                         </span>
                         <span class="text-xs text-slate-500"> @(Model.Case.Employer) </span>
                     </div>
+                            <div class="grid grid-cols-[180px_1fr] pb-1 border-b border-dotted border-slate-300">
+                                <span class="text-xs font-medium text-black-400 ml-3">
+                                    Golden Visa
+                                </span>
+                                <span class="text-xs text-slate-500"> @(Model.Case.GoldenVisa) </span>
+                            </div>
                     }
                     <div class="grid grid-cols-[180px_1fr] pb-1 border-b border-dotted border-slate-300">
                             <span class="text-xs font-medium text-black-400 ml-3">
@@ -1410,49 +1454,65 @@
 </div>
 
 
-    <div id="uploadModal" style="display: none;"
-     class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div id="uploadModal" style="display: none;"
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+             x-data="{ fileName: 'No file chosen', fileSelected: false }">
 
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
-         x-data="{ fileName: 'No file chosen' }">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
 
-        <!-- Header -->
-        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-            <h3 class="text-lg font-bold text-slate-900">Upload Document</h3>
-            <button type="button" onclick="document.getElementById('uploadModal').style.display='none'"
-                        class="h-9 px-8 text-white rounded-md bg-red-600">
-                    Close
-            </button>
+                <!-- Header -->
+                <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-slate-900">Upload Document</h3>
+                    <button type="button" @@click ="
+                document.getElementById('uploadModal').style.display='none';
+                fileName='No file chosen';
+                fileSelected=false;
+            " class="h-9 px-8 text-white rounded-md bg-red-600">
+                        Close
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <form id="frmDocument" enctype="multipart/form-data" method="post" class="px-6 py-6 space-y-4">
+                    <input type="hidden" name="CaseId" value="@Model.Case.Id" />
+
+                    <label class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors flex flex-col items-center justify-center">
+                        <input type="file" id="txtFile" name="Document" class="hidden"
+                               @@change ="
+                               if ($event.target.files.length> 0) {
+                        fileName = $event.target.files[0].name.length > 20
+                        ? $event.target.files[0].name.substring(0, 20) + '...'
+                        : $event.target.files[0].name;
+                        fileSelected = true;
+                        } else {
+                        fileName = 'No file chosen';
+                        fileSelected = false;
+                        }"
+                        >
+
+                        <i data-lucide="upload-cloud" class="h-10 w-10 text-slate-400 mb-3 group-hover:text-blue-500 transition-colors"></i>
+                        <p class="text-sm font-bold text-slate-700 mb-2">Click to upload or drag and drop</p>
+                        <span id="fileNameDisplay" class="text-xs text-slate-500 font-medium" x-text="fileName">No file chosen</span>
+                        <p class="text-[11px] font-extrabold text-slate-400 mt-8 uppercase tracking-widest opacity-60">
+                            PDF,DOC,DOCX,JPG,PNG(MAX 10MB per file)
+                        </p>
+                    </label>
+                </form>
+
+                <!-- Footer -->
+                <div class="px-6 py-4 border-t border-slate-200 flex justify-end space-x-2">
+                    <button type="submit" form="frmDocument"
+                            x-bind:disabled="!fileSelected"
+                            class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        Upload
+                    </button>
+                </div>
+
+            </div>
         </div>
 
-        <!-- Body -->
-        <form id="frmDocument" enctype="multipart/form-data" method="post" class="px-6 py-6 space-y-4">
-            <input type="hidden" name="CaseId" value="@Model.Case.Id" />
-
-            <label class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors flex flex-col items-center justify-center">
-               <input type="file" id="txtFile" name="Document" class="hidden"
-                           onchange="displayShortFileName(this)">
-
-                    <i data-lucide="upload-cloud" class="h-10 w-10 text-slate-400 mb-3 group-hover:text-blue-500 transition-colors"></i>
-                    <p class="text-sm font-bold text-slate-700 mb-2">Click to upload or drag and drop</p>
-                    <span id="fileNameDisplay" class="text-xs text-slate-500 font-medium">No file chosen</span>
-                     <p class="text-[11px] font-extrabold text-slate-400 mt-8 uppercase tracking-widest opacity-60">
-                       PDF,DOC,DOCX,JPG,PNG(MAX 10MB perfile)
-                     </p>
-            </label>
-        </form>
-
-        <!-- Footer -->
-        <div class="px-6 py-4 border-t border-slate-200 flex justify-end space-x-2">
-           
-            <button type="submit" form="frmDocument"
-                    class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
-                Upload
-            </button>
-        </div>
-
-    </div>
-</div>
+        <!-- Make sure Alpine is loaded -->
+        
 
     <div id="transferModel" style="display: none;"
          class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
@@ -2153,17 +2213,25 @@
                $('#riskScoreBeforeOverrideTxt').val(riskStatus);
                $('#riskAssessmentRatingWithoutOverrideTxt').val(riskStatus);
 
-               var OverRides = "false";
+               // var OverRides = "false";
 
-               for (x = 0; x <= b; x++) {
+               // for (x = 0; x <= b; x++) {
 
-                   OverRides = OverRides + "||" + OverRideVariables[x];
-                   if (OverRides.includes("true")) {
-                       riskStatus = '@localizer["High Risk"]';
-                       $('#btntotalscoretop').removeClass();
-                       $('#btntotalscoretop').addClass('btn btn-danger form-control br-50');
-                   }
-               }
+               //     OverRides = OverRides + "||" + OverRideVariables[x];
+               //     if (OverRides.includes("true")) {
+               //         riskStatus = '@localizer["High Risk"]';
+               //         $('#btntotalscoretop').removeClass();
+               //         $('#btntotalscoretop').addClass('btn btn-danger form-control br-50');
+               //     }
+               // }
+
+           let hasOverride = OverRideVariables.some(v => v === true);
+          $('#OverrideRatingTxt').val('');
+            // Check override ONLY when riskStatus is High Risk
+            if (riskStatus.toLowerCase().includes("high") && hasOverride) {
+                $('#OverrideRatingTxt').val('Override');
+                riskStatus = '@localizer["High Risk"] (O)';
+            }
                //Set final risk score
                $('#finalRiskScoreTxt').val(riskStatus);
                $('#riskAssessmentRatingTxt').val(riskStatus);
@@ -2183,7 +2251,7 @@
            }
 
 
-                       function updateRiskBadge(riskStatus) {
+           function updateRiskBadge(riskStatus) {
 
                 let badge = $('#riskRatingBadge');
 
@@ -2229,7 +2297,7 @@
                             $("#btntotalscore").text("0");
         }
 
-                                       function applyRiskSelections(riskDetails) {
+        function applyRiskSelections(riskDetails) {
 
                 console.log(riskDetails);
 
@@ -2238,14 +2306,12 @@
                 // Support both Individual & Corporate keys
                 let riskData = riskDetails.riskTypeCategoryDTO || [];
 
+                            let reportData = riskDetails.reportDataDTO || [];
+
+
                 let rating =
                     riskDetails.riskAssessmentRating ||
                     riskDetails.finalRiskScore ||
-                    "";
-
-                let ratingWithoutOverride =
-                    riskDetails.riskAssessmentRatingWithoutOverride ||
-                    riskDetails.riskScoreBeforeOverride ||
                     "";
 
                 let counter = 0;
@@ -2319,46 +2385,46 @@
                    APPLY FINAL RISK RATING BADGE
                 ================================= */
 
-                let badge = $("#riskRatingBadge");
 
-                if (!badge.length) return;
 
-                badge.removeClass(
-                    "bg-green-500 bg-yellow-400 bg-red-500 text-white blink-risk"
-                );
+            let badge = $("#riskRatingBadge");
 
-                badge.addClass("px-3 py-1 rounded-full text-xs font-bold text-white");
+            if (!badge.length) return;
 
-                if (rating.toLowerCase() === "low risk") {
+            badge.removeClass(
+                "bg-green-500 bg-yellow-400 bg-red-500 text-white"
+            );
 
-                    badge.addClass("bg-green-500");
+            badge.addClass("px-3 py-1 rounded-full text-xs font-bold text-white");
+                       
 
-                }
-                else if (rating.toLowerCase() === "medium risk") {
+            // Check if any individual risk parameter has override score 3
+                       let hasHighOverride = reportData.some(riskType =>
+                Number(riskType.over_ride_Score) === 3
+            );
 
-                    badge.addClass("bg-yellow-400");
+            console.log("Has Override 3:", hasHighOverride);
+                                                console.log("rating:", rating);
 
-                }
-                else if (rating.toLowerCase() === "high risk") {
+            let displayRating = rating;
 
-                    badge.addClass("bg-red-500");
+            // If High Risk and override exists → show High Risk(O)
+            if (rating.toLowerCase() === "high risk" && hasHighOverride) {
+                displayRating = "High Risk (O)";
+            }
 
-                }
+            // Apply badge color
+            if (rating.toLowerCase() === "low risk") {
+                badge.addClass("bg-green-500");
+            }
+            else if (rating.toLowerCase() === "medium risk") {
+                badge.addClass("bg-yellow-400");
+            }
+            else if (rating.toLowerCase() === "high risk") {
+                badge.addClass("bg-red-500");
+            }
 
-                badge.text(rating);
-
-                /* ====================================
-                   BLINK ONLY WHEN BOTH ARE HIGH RISK
-                ===================================== */
-
-                if (
-                    rating &&
-                    ratingWithoutOverride &&
-                    rating.toLowerCase() === "high risk" &&
-                    ratingWithoutOverride.toLowerCase() === "high risk"
-                ) {
-                    badge.addClass("blink-risk");
-                }
+            badge.text(displayRating);
 
             }
 
@@ -2617,6 +2683,8 @@
 
         function saveRiskAssessment() {
 
+            debugger;
+
             $('#loadingeffect').show();
 
             const selected = document.querySelector('.versionRadio:checked');
@@ -2638,12 +2706,12 @@
 
             // ❌ No Search Type selected → BLOCK (NEW)
             if (!isAnySearchTypeSelected()) {
-                  insertUploadComment("Risk Parameters Has been Updated");
+                  insertUploadComment("Risk Parameters Has been Updated","Risk Assessment");
                 $('#loadingeffect').hide();
                // alert('Please select at least one Search Type before saving Risk Assessment.');
                 return true;
             }
-
+           insertUploadComment("Risk Parameters Has been Updated","Risk Assessment");
             // ✅ All validations passed → SHOW MODAL
             $('#loadingeffect').hide();
             $('#saveriskassementModel')
@@ -2869,6 +2937,8 @@
                 `);
                 return;
             }
+                        let showVersionTypes = ["Approved", "Rejected", "Whitelisted"];
+                let versionCounter = 0;
 
             $.each(comments, function (i, v) {
 
@@ -2876,14 +2946,17 @@
                 let commentText = v.comment || "";
                 let duration = v.duration || "";
                 let version = v.version || (i + 1);
-                            let commentType = (v.commentType || "").toLowerCase();
+                            let commentType = (v.commentType || "");
 
                 // Check allowed types
-                 let showVersionTypes = ["approved", "rejected", "whitelisted"];
+                             let displayText = "";
 
-                let displayText = showVersionTypes.includes(commentType)
-                    ? `Version ${version}`
-                    : "Action";
+                    if (showVersionTypes.includes(commentType)) {
+                        versionCounter++;
+                        displayText = `Version ${versionCounter}`;
+                    } else {
+                        displayText = `Action On ${commentType}`;
+                    }
 
                             let createdOn = v.createdOnDB ? new Date(v.createdOnDB) : null;
 
@@ -2913,7 +2986,7 @@
                                 </span>
 
                                 <span class="text-[11px] text-slate-500">
-                                    was actioned by
+                                     by
                                     <span class="font-semibold text-blue-600">${userName}</span>
                                 </span>
                             </div>
@@ -2936,52 +3009,7 @@
         }
 
 
-        //           function buildComments() { 
-
-        //     let container = $("#commentsContainer");
-        //     container.empty();
-
-        //     if (!comments || comments.length === 0) {
-        //         container.append(`
-        //             <div id="noCommentsMsg" class="text-sm text-slate-500 italic pb-2">
-        //                 No comments yet
-        //             </div>
-        //         `);
-        //         return;
-        //     }
-
-        //     $.each(comments, function (i, v) {
-
-        //         let userName = v.createdUser || "User";
-        //         let commentText = v.comment || "";
-        //         let duration = v.duration || "";
-
-        //         let firstLetter = userName.toString().charAt(0).toUpperCase();
-
-        //         let commentHtml = `
-        //             <div class="flex items-start gap-3 bg-slate-50 p-3 rounded-md border border-slate-200">
-
-        //                 <div class="w-8 h-8 flex items-center justify-center rounded-full bg-green-500 text-white font-bold text-xs">
-        //                     ${firstLetter}
-        //                 </div>
-
-        //                 <div class="flex-1">
-        //                     <div class="flex justify-between items-center">
-        //                         <span class="text-xs font-bold text-slate-800">${userName}</span>
-        //                         <span class="text-[10px] text-slate-400">${duration}</span>
-        //                     </div>
-
-        //                     <div class="text-xs text-slate-600 mt-1">
-        //                         ${commentText}
-        //                     </div>
-        //                 </div>
-
-        //             </div>
-        //         `;
-
-        //         container.append(commentHtml);
-        //     });
-        // }
+        
 
 
    $(document).on("click", ".case-action-btn", function () {
@@ -3038,115 +3066,7 @@
         });
 
 
-        //      $('#frmCloseCase').submit(function (e) {
-        //     e.preventDefault();
-
-        //     //alert("hai");
-
-        //     // var arr = [];
-
-        //     // $('input[name="amlcheck"]:checked').each(function () {
-        //     //     //alert("hai");
-        //     //   //alert($(this).val());
-
-        //     //     arr.push($(this).val());
-
-        //     //     //alert(arr);
-
-        //     //     if (arr.indexOf('No Match') !== -1) {
-        //     //         $('#hdnnomatch').val(1);
-
-        //     //     }
-        //     //     if (arr.indexOf('True Domestic PEP') !== -1) {
-
-        //     //        // alert("UAE");
-
-        //     //         $('#hdndometicpep').val(1);
-
-        //     //     }
-        //     //     if (arr.indexOf('True Foreign PEP') !== -1) {
-
-        //     //        // alert("othersanction");
-
-        //     //         $('#hdntrueforeignpep').val(1);
-        //     //     }
-        //     //     if (arr.indexOf('True Adverse Media') !== -1) {
-
-        //     //         //alert("adversemedia");
-        //     //         $('#hdntrueadversemedia').val(1);
-        //     //     }
-        //     //     if (arr.indexOf('Partial Domestic PEP') !== -1) {
-
-        //     //         //alert("adversemedia");
-        //     //         $('#hdnpartialdometicpep').val(1);
-        //     //     }
-        //     //     if (arr.indexOf('Partial Foreign PEP') !== -1) {
-
-        //     //         //alert("adversemedia");
-        //     //         $('#hdnpartialforeignpep').val(1);
-        //     //     }
-        //     //     if (arr.indexOf('Partial Adverse Media') !== -1) {
-
-        //     //         //alert("adversemedia");
-        //     //         $('#hdnpartialadversemedia').val(1);
-        //     //     }
-        //     //      if (arr.indexOf('True UAE/UN Santion') !== -1) {
-
-        //     //         //alert("adversemedia");
-        //     //         $('#hdntrueuaeunsanction').val(1);
-        //     //     }
-        //     //      if (arr.indexOf('True Other Sanction') !== -1) {
-
-        //     //         //alert("adversemedia");
-        //     //         $('#hdntrueothersanction').val(1);
-        //     //     }
-        //     // });
-
-        //     //    $(".aml-checkbox")
-        //     //{
-
-        //     //}
-
-        //     //$('#pepcheckbox').
-        //     //{
-        //     //    //alert(true);
-        //     //  $('#hdnpep').val(1);
-        //     //}
-        //     //$('#')
-
-
-        //     $('#hdnRemark').val($('#txtCaseActionRemarks').val());
-        //     var val = $("input[type=submit][clicked=true]").val();
-        //     if (val == 'Approve') {
-        //         $('#hdnAction').val(2);
-        //     } else if (val == 'Whitelist') {
-        //         $('#hdnAction').val(1);
-        //     }
-        //     else if (val == 'Reject') {
-        //         $('#hdnAction').val(3);
-        //     }
-        //     else if (val == 'Transfer Case') {
-        //         $('#hdnTransferUser').val($("#ddlUsers option:selected").text());
-        //         $('#hdnAction').val(4);
-        //     }
-        //     $.ajax({
-        //         url: '/case/close',
-        //         type: 'post',
-        //         data: $('#frmCloseCase').serialize(),
-        //         success: function (response) {
-        //             $('#txtCaseActionRemarks').val('');
-        //             $('#txtCaseActionRemarks').attr('disabled', 'disabled');
-        //             $("input[type=submit]").attr('disabled', 'disabled');
-        //             $('#ddlUsers').attr('disabled', 'disabled');
-        //             $("#btnTransfer").attr('disabled', 'disabled');
-
-        //             toastr.success(response);
-        //             setTimeout(function () { location.href = '/case'; }, 3000);
-        //             location.href = '/case';
-
-        //         }
-        //     });
-        // });
+        
 
         $("#frmCloseCase input[type=submit]").click(function () {
             $("input[type=submit]", $(this).parents("form")).removeAttr("clicked");
@@ -3215,7 +3135,7 @@
                    //     dataType: "json",
                    success: function (response) {
                            
-                       insertUploadComment("Remarks has been update in the Search Api Result Section");
+                       insertUploadComment("Remarks has been update in the Search Api Result Section","Search API Result");
                              $('#loadingeffect').hide();
                        toastr.success(response);
                                location.reload();
@@ -3244,7 +3164,7 @@
                  contentType: false,
                  processData: false,
                  success: function () {
-                      insertUploadComment("A new document has been added to the case.");
+                      insertUploadComment("A new document has been added to the case.","Upload Document");
                           $('#loadingeffect').hide();
                      clearDocuemnt();
                      toastr.success('Document Updated');
@@ -3253,14 +3173,15 @@
              });
          });
 
-        function insertUploadComment(comment) {
+        function insertUploadComment(comment,type) {
 
             $.ajax({
                 url: '/case/comment',
                 type: 'POST',
                 data: {
                     CaseId: $('#hdnCaseId').val(),
-                   Comment: comment
+                   Comment: comment,
+                   CommentType: type
                 },
                      success: function (response) {
                         comments = response;
@@ -3533,23 +3454,47 @@
                 });
 
                 // Update button text and hidden inputs
-                function updateUI() {
-                    // Update text
-                    if (selected.length === 0) {
-                        text.text("Select");
-                    } else if (selected.length === searchTypeOptions.length) {
-                        text.text("ALL");
-                    } else {
-                        text.text(selected.length + " selected");
-                    }
+                            function updateUI() {
 
-                    // Update hidden inputs for form
-                    hiddenContainer.empty();
-                    selected.forEach(val => {
-                        const input = `<input type="hidden" name="SearchTypes[${rowIndex}]" value="${val}">`;
-                        hiddenContainer.append(input);
-                    });
+                // Update button text
+                if (selected.length === 0) {
+                    text.text("Select");
+                } else if (selected.length === searchTypeOptions.length) {
+                    text.text("ALL");
+                } else {
+                    text.text(selected.length + " selected");
                 }
+
+                // Update hidden inputs for form
+                hiddenContainer.empty();
+                selected.forEach(val => {
+                    const input = `<input type="hidden" name="SearchTypes[${rowIndex}]" value="${val}">`;
+                    hiddenContainer.append(input);
+                });
+
+                // ✅ IMPORTANT: update Alpine hidden input
+                hiddenInput.val(selected.join(","));
+
+                // ✅ Trigger change so Alpine detects it
+                hiddenInput[0].dispatchEvent(new Event("change"));
+            }
+                // function updateUI() {
+                //     // Update text
+                //     if (selected.length === 0) {
+                //         text.text("Select");
+                //     } else if (selected.length === searchTypeOptions.length) {
+                //         text.text("ALL");
+                //     } else {
+                //         text.text(selected.length + " selected");
+                //     }
+
+                //     // Update hidden inputs for form
+                //     hiddenContainer.empty();
+                //     selected.forEach(val => {
+                //         const input = `<input type="hidden" name="SearchTypes[${rowIndex}]" value="${val}">`;
+                //         hiddenContainer.append(input);
+                //     });
+                // }
 
                 // Update row disable state
                 function updateRowDisableState() {
@@ -3670,6 +3615,101 @@
             }
 
         });
+
+                    document.addEventListener("DOMContentLoaded", function () {
+
+                document.querySelectorAll("[data-status]").forEach(el => {
+
+                    const statusText = el.getAttribute("data-status");
+                        const statusClass = formatCaseStatus(statusText);
+
+                    el.classList.add(...statusClass.split(" "));
+                });
+
+            });
+
+              function formatCaseStatus(statusText) {
+                if (!statusText) return '';
+
+                const t = statusText.toLowerCase().trim();
+
+                    //alert(statusText);
+
+                if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
+                if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
+                if (t.includes('auto')) return     'bg-amber-100 text-amber-800';
+                //if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
+                if (t.includes('transfer')) return 'bg-green-100 text-green-800';
+                if (t.includes('rejected')) return 'bg-red-100 text-red-800';
+
+                return 'bg-slate-100 text-slate-800';
+            }
+
+
+
+
+                            function searchActionTable() {
+                return {
+                    rows: [
+                        @for (int i = 0; i < Model.DataList.Count; i++)
+                        {
+                                var searchTypes = Model.DataList[i].searchTypes != null
+                                                                    ? string.Join(",", Model.DataList[i].searchTypes)
+                                                                    : "";
+                                var remarks = Model.DataList[i].remarks ?? "";
+                                remarks = remarks.Replace("\\", "\\\\").Replace("'", "\\'");
+
+                                <text>{
+                                    searchType: '@searchTypes',
+                                    remarks: '@remarks'
+                                },</text>
+                        }
+                    ],
+
+                    init() {
+                        // Listen for textarea changes
+                        document.querySelectorAll("#searchResultsBody textarea").forEach((el, index) => {
+                            el.addEventListener("input", (e) => {
+                                this.rows[index].remarks = e.target.value;
+                            });
+                        });
+
+                        // Listen for search type hidden input changes
+                                   document.querySelectorAll("[id^='searchTypesValue-']").forEach((el, index) => {
+
+                el.addEventListener("change", () => {
+                    this.rows[index].searchType = el.value;
+                });
+
+                el.addEventListener("input", () => {
+                    this.rows[index].searchType = el.value;
+                });
+
+            });
+                    },
+
+                    get canSave() {
+                        return this.rows.some(r =>
+                            (r.searchType && r.searchType.trim() !== '') ||
+                            (r.remarks && r.remarks.trim() !== '')
+                        );
+                    }
+                }
+            }
+
+            $(document).ready(function () {
+
+    // Run once on page load (important)
+    checkRiskSaveButton();
+
+    // Run when dropdown changes
+    $(document).on("change", "select[id^='ddlItem_']", function () {
+        checkRiskSaveButton();
+    });
+
+});
+
+        
     </script>
 
    

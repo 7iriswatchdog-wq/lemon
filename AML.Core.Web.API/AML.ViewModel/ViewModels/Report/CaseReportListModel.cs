@@ -1,12 +1,14 @@
+using AML.Core.Common.StaticResource;
+using AML.DTO.DTO.CustomerCase;
+using AML.ViewModel.ViewModels.CaseDocument;
+using AML.ViewModel.ViewModels.CustomerCase;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
-using AML.DTO.DTO.CustomerCase;
-using AML.ViewModel.ViewModels.CaseDocument;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AML.ViewModel.ViewModels.Report
 {
@@ -17,7 +19,12 @@ namespace AML.ViewModel.ViewModels.Report
         public string CustomerName { get; set; }
         public string Status { get; set; }
         public string CreatedBy { get; set; }
+
+        public string CreatedUser { get; set; }
         public string CreatedOn { get; set; }
+
+        public string UpdatedOn { get; set; }
+        
 
         public string Match { get; set; }
         public string IsMatched { get; set; }
@@ -117,7 +124,16 @@ namespace AML.ViewModel.ViewModels.Report
         public string corporate_final_risk_score { get; set; }
 
 
+        public int MatchScore { get; set; }
 
+        
+
+        public string Individual_final_risk_sum { get; set; }
+
+
+        public string Corporate_final_risk_sum { get; set; }
+
+        public string CaseChangeStatus { get; set; }
 
 
     }
@@ -129,6 +145,8 @@ namespace AML.ViewModel.ViewModels.Report
         public int Matched { get; set; }
         public int UnMatched { get; set; }
         public List<CaseReportListModel> Data { get; set; }
+
+        public List<CaseModel> Data1 { get; set; }
         public List<ApiResultModel> ApiResultsjson { get; set; }
     }
 

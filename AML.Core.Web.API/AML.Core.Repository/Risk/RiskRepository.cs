@@ -55,6 +55,7 @@ namespace AML.Core.Repository.Risk
                 parameters.Add("@p_created_by", _riskDTO.CreatedBy);
                 parameters.Add("@p_version", _riskDTO.version);
                 parameters.Add("@p_remarks", _riskDTO.Remarks);
+                parameters.Add("@p_riskoverride", _riskDTO.RiskOverRide);
                 var response = ExecuteScalar("ins_transaction_risk_individual", parameters, commandType: CommandType.StoredProcedure).ParseInt();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Risk Assessment for Individual added successfully.";
@@ -103,6 +104,7 @@ namespace AML.Core.Repository.Risk
                 parameters.Add("@p_created_by", _riskDTO.CreatedBy);
                 parameters.Add("@p_version", _riskDTO.version);
                 parameters.Add("@p_remarks", _riskDTO.Remarks);
+                parameters.Add("@p_riskoverride", _riskDTO.RiskOverRide);
                 var response = ExecuteScalar("ins_transaction_risk_Corporate", parameters, commandType: CommandType.StoredProcedure).ParseInt();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Risk Assesment for Corporate Customer added successfully.";

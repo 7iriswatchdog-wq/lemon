@@ -74,7 +74,12 @@
     <div class="p-4 sm:p-6 min-h-screen flex flex-col">
         <!-- Header -->
         <div class="shrink-0 pb-2">
-            <h1 class="text-lg font-black text-slate-900 tracking-tight mb-2">Case Manager</h1>
+            <div class="flex items-center gap-2 text-slate-500 text-xs mb-2">
+                <a href="/CompletedCaseIndex" class="hover:text-blue-600">Completed Cases</a>
+                <i data-lucide="chevron-right" class="h-3 w-3"></i>
+                <span class="text-slate-900 font-medium">Process</span>
+            </div>
+            <h1 class="text-lg font-black text-slate-900 tracking-tight mb-2">Completed Case Manager</h1>
 
             <!-- Case Details Summary -->
             <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
@@ -601,7 +606,7 @@
 
                                         @for (int i = 0; i < Model.RiskTypeCategoryDTO.Count; i++)
                                         {
-                                            <div class="space-y-3">
+                                            <div class="space-y-3 mt-3">
 
                                                 <h4 class="text-[10px] font-bold bg-slate-100 px-3 py-2 rounded">
                                                     @Model.RiskTypeCategoryDTO[i].RiskCategory
@@ -720,7 +725,7 @@
                                         </div>
 
 
-                                        <div class="flex items-center gap-2">
+                                       @*<div class="flex items-center gap-2">
                                             <div class="w-[60px] h-8 rounded flex items-center justify-center text-[11px] font-black bg-slate-400 text-white shadow-sm">
                                                 8.94
                                             </div>
@@ -732,7 +737,7 @@
                                             <div class="w-[60px] h-8 rounded flex items-center justify-center text-[11px] font-black bg-slate-200 text-slate-400">
                                                 18.00
                                             </div>
-                                        </div>
+                                        </div>*@
 
 
 
@@ -2376,7 +2381,7 @@ function showAllVersions() {
 
 
 
-                                 function buildComments() {
+                                                       function buildComments() {
 
                                             console.log(comments);
 
@@ -2391,6 +2396,8 @@ function showAllVersions() {
                             `);
                             return;
                         }
+                                    let showVersionTypes = ["Approved", "Rejected", "Whitelisted"];
+                            let versionCounter = 0;
 
                         $.each(comments, function (i, v) {
 
@@ -2398,14 +2405,17 @@ function showAllVersions() {
                             let commentText = v.comment || "";
                             let duration = v.duration || "";
                             let version = v.version || (i + 1);
-                                        let commentType = (v.commentType || "").toLowerCase();
+                                        let commentType = (v.commentType || "");
 
                             // Check allowed types
-                             let showVersionTypes = ["approved", "rejected", "whitelisted"];
+                                         let displayText = "";
 
-                            let displayText = showVersionTypes.includes(commentType)
-                                ? `Version ${version}`
-                                : "Action";
+                                if (showVersionTypes.includes(commentType)) {
+                                    versionCounter++;
+                                    displayText = `Version ${versionCounter}`;
+                                } else {
+                                    displayText = `Action On ${commentType}`;
+                                }
 
                                         let createdOn = v.createdOnDB ? new Date(v.createdOnDB) : null;
 
@@ -2435,7 +2445,7 @@ function showAllVersions() {
                                             </span>
 
                                             <span class="text-[11px] text-slate-500">
-                                                was actioned by
+                                                 by
                                                 <span class="font-semibold text-blue-600">${userName}</span>
                                             </span>
                                         </div>

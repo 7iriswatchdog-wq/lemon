@@ -291,7 +291,18 @@ namespace AML.ViewModel.ViewModels.Corporate
 
         public string DisplayId { get; set; }
 
-        
+        public string Employer { get; set; }
+
+        public string GoldenVisa { get; set; }
+
+        public string CustType { get; set; }
+
+        public string Document { get; set; }
+
+       
+        public string DocumentFullPath { get; set; }
+
+
     }
 
     public class ShareholderFormModel

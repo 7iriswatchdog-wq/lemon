@@ -1,4 +1,4 @@
-﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
 @using Newtonsoft.Json;
 @{
 	ViewData["Title"] = @localizer["Customer Screening"];
@@ -46,6 +46,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -73,6 +75,114 @@
             color:red;
             font-size:small;
         }
+        /* Tree Branch Styles */
+        .tree-connector {
+            position: absolute;
+            left: -1.25rem;
+            top: 0;
+            width: 1.25rem;
+            height: 50%;
+            border-bottom: 2px solid #e2e8f0;
+            border-left: 2px solid #e2e8f0;
+            border-bottom-left-radius: 0.75rem;
+            z-index: -1;
+        }
+
+        .validstyle {
+            color: red;
+            font-size: small;
+        }
+
+        /* Sheet/Modal Styles */
+        .sheet-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+        }
+
+        .sheet-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            max-width: 48rem; /* 768px */
+            background-color: white;
+            box-shadow: -10px 0 25px rgba(0, 0, 0, 0.15);
+            z-index: 50;
+            overflow-y: auto;
+        }
+
+        /* Drag Handle Styles */
+        .drag-handle {
+            cursor: move;
+            padding: 0.5rem;
+            transition: color 0.2s ease;
+            color: #94a3b8;
+        }
+
+            .drag-handle:hover {
+                color: #1e40af;
+            }
+
+        /* Drag Ghost/Placeholder */
+        .sortable-ghost {
+            opacity: 0.4;
+            background: #f0f9ff;
+            border: 2px dashed #3b82f6;
+        }
+
+        /* Item Being Dragged */
+        .sortable-drag {
+            opacity: 1;
+            background: white;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            cursor: grabbing;
+        }
+
+        /* Item When Selected */
+        .sortable-chosen {
+            background: #eff6ff;
+            border-color: #3b82f6;
+        }
+
+        /* Tree Item Styles */
+        /*  .tree-item {
+                .tree-item {
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                }
+
+                .tree-item:hover {
+                    transform: translateY(-1px);
+                }
+
+                /* Nested Sortable Styles */
+        .nested-sortable-list {
+            min-height: 10px; /* Allow dropping into empty lists */
+            padding-left: 2rem; /* Indentation */
+        }
+
+        /* Drop Target Highlighting */
+        .corporate-drop-target {
+            background-color: #eff6ff;
+            border: 2px dashed #3b82f6;
+        }
+
+        /* Remove default list styles */
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .tree-item {
+            transition: 0.2s;
+        }
+
+            .tree-item:hover {
+                background: #f8fafc;
+            }
 
     </style>
     <style>
@@ -150,9 +260,27 @@
     showResults: false,
     isDuplicateModalOpen: false,
     isSuccessModalOpen: false,
+showTreeSheet: false,
     matchParam: 70,
     files: [],
-    isDragging: false
+    isDragging: false,
+hasSearched: false,
+    activeShareholderTab: 'parties',
+    searchQuery: '',
+    manualForm: {
+        screeningOption: '',
+        companyName: '',
+        country: '',
+        residence: '',
+        tradeLicense: '',
+        regDate: '',
+        expiryDate: '',
+        legalStatus: '',
+        businessActivities: '',
+        product: '',
+        deliveryChannel: '',
+        cif: ''
+    }
 }">
     <div x-data="{
     isSuccessModalOpen: @(Model?.IsCaseCreated.ToString().ToLower() ?? "false"),
@@ -213,96 +341,235 @@
 
             <!-- Page Body -->
             <main class="flex-1 overflow-hidden p-8">
-                <div class="flex h-full gap-8 max-w-[1600px] mx-auto">
+                    <div class="flex h-full gap-8 max-w-[1600px] mx-auto overflow-hidden">
 
                     <!-- Left: Method Selection -->
-                    <div class="w-full lg:w-1/4 flex flex-col gap-6 shrink-0 overflow-y-auto pr-2 scrollbar-thin">
-                        <div class="space-y-1">
-                            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Case Creation</h1>
-                            <p class="text-slate-500 text-sm font-medium leading-relaxed">
-                                Select an input method to get
-                                started.
+                        <div class="w-full lg:w-1/4 flex flex-col gap-6 bg-white rounded-[32px] border border-slate-200 shadow-sm shrink-0 overflow-hidden">
+                            <div class="p-8 space-y-8 flex-1 overflow-y-auto scrollbar-thin">
+                                <div class="space-y-2">
+                            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Individual Case Creation</h1>
+                            <p class="text-slate-500 text-sm  leading-relaxed">
+                                Create and Screen Individual Cases using bulk upload,OCR,Underscore Parties or Manual Entry
                             </p>
+
+                                
                         </div>
+                            <div class="space-y-4 mt-3">
+                                <p class="text-slate-500 text-sm font-medium leading-relaxed">
+                                    Select Input Method
+                                </p>
+                            
 
                         <div class="grid gap-3">
-                            <!-- OCR Card -->
-                            <div @@click="selectedMethod = 'ocr'; showResults = false"
-                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-4 group"
-                                 :class="selectedMethod === 'ocr' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'">
-                                <div class="p-2 rounded-lg shrink-0 transition-colors"
-                                     :class="selectedMethod === 'ocr' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-500'">
-                                    <i data-lucide="clock" class="w-5 h-5"></i>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="font-bold text-sm tracking-tight"
-                                        :class="selectedMethod === 'ocr' ? 'text-blue-900' : 'text-slate-900'">
-                                        OCR
-                                        Upload
-                                    </h3>
-                                    <p class="text-[11px] font-medium text-slate-500 mt-0.5 leading-relaxed">
-                                        Upload
-                                        document image for automatic extraction
-                                    </p>
-                                </div>
-                                <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-600 absolute top-4 right-4"
-                                   x-show="selectedMethod === 'ocr'"></i>
-                            </div>
+                            
+                            
 
                             <!-- Manual Card -->
                             <div @@click="selectedMethod = 'manual'; showResults = false"
-                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-4 group"
+                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-4 group h-[104px]"
                                  :class="selectedMethod === 'manual' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'">
                                 <div class="p-2 rounded-lg shrink-0 transition-colors"
-                                     :class="selectedMethod === 'manual' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                     :class="selectedMethod === 'manual' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-500'">
                                     <i data-lucide="pen-line" class="w-5 h-5"></i>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <h3 class="font-bold text-sm tracking-tight"
-                                        :class="selectedMethod === 'manual' ? 'text-blue-900' : 'text-slate-900'">
-                                        Manual
-                                        Input
+                                    <h3 class="font-bold text-sm tracking-tight text-slate-900">
+                                        Manual Input
                                     </h3>
                                     <p class="text-[11px] font-medium text-slate-500 mt-0.5 leading-relaxed">
                                         Enter case
                                         details manually
                                     </p>
                                 </div>
-                                <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-600 absolute top-4 right-4"
+                                <i data-lucide="check" class="w-5 h-5 text-blue-600 absolute top-4 right-4"
                                    x-show="selectedMethod === 'manual'"></i>
                             </div>
 
-                            <!-- Bulk Card -->
-                            <div @@click="selectedMethod = 'bulk'; showResults = false"
-                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-4 group"
-                                 :class="selectedMethod === 'bulk' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'">
+                            <!-- Parties Card -->
+                                <div @@click="selectedMethod = 'parties';window.dispatchEvent(new Event('load-pending-shareholders'))"
+                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-4 group h-[104px]"
+                                 :class="selectedMethod === 'parties' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'">
                                 <div class="p-2 rounded-lg shrink-0 transition-colors"
-                                     :class="selectedMethod === 'bulk' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-500'">
-                                    <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                                     :class="selectedMethod === 'parties' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                    <i data-lucide="users" class="w-5 h-5"></i>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <h3 class="font-bold text-sm tracking-tight"
-                                        :class="selectedMethod === 'bulk' ? 'text-blue-900' : 'text-slate-900'">
-                                        Bulk
-                                        Upload
+                                    <h3 class="font-bold text-sm tracking-tight text-slate-900">
+                                        Add Parties
                                     </h3>
                                     <p class="text-[11px] font-medium text-slate-500 mt-0.5 leading-relaxed">
-                                        Upload CSV
-                                        or Excel file with multiple cases
+                                        Add individual and corporate parties
                                     </p>
                                 </div>
-                                <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-600 absolute top-4 right-4"
+                                <i data-lucide="check" class="w-5 h-5 text-blue-600 absolute top-4 right-4"
+                                   x-show="selectedMethod === 'parties'"></i>
+                            </div>
+                                <!-- OCR Card -->
+                                <div @@click="selectedMethod = 'ocr'; showResults = false"
+                                     class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-4 group h-[104px]"
+                                     :class="selectedMethod === 'ocr' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'">
+                                     <div class="p-2 rounded-lg shrink-0 transition-colors"
+                                          :class="selectedMethod === 'ocr' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                         <i data-lucide="history" class="w-5 h-5"></i>
+                                     </div>
+                                     <div class="flex-1 min-w-0">
+                                         <h3 class="font-bold text-sm tracking-tight text-slate-900">
+                                             OCR Upload
+                                         </h3>
+                                        <p class="text-[11px] font-medium text-slate-500 mt-0.5 leading-relaxed">
+                                            Upload image for automatic extraction
+                                        </p>
+                                    </div>
+                                    <i data-lucide="check" class="w-5 h-5 text-blue-600 absolute top-4 right-4"
+                                       x-show="selectedMethod === 'ocr'"></i>
+                                </div>
+
+                            <!-- Bulk Card -->
+                            <div @@click="selectedMethod = 'bulk'; showResults = false"
+                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-4 group h-[104px]"
+                                 :class="selectedMethod === 'bulk' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'">
+                                <div class="p-2 rounded-lg shrink-0 transition-colors"
+                                     :class="selectedMethod === 'bulk' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                    <i data-lucide="file-up" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-bold text-sm tracking-tight text-slate-900">
+                                        Bulk Upload
+                                    </h3>
+                                    <p class="text-[11px] font-medium text-slate-500 mt-0.5 leading-relaxed">
+                                        Upload CSV or Excel file with cases
+                                    </p>
+                                </div>
+                                <i data-lucide="check" class="w-5 h-5 text-blue-600 absolute top-4 right-4"
                                    x-show="selectedMethod === 'bulk'"></i>
                             </div>
+                            </div>
+                        </div>
+                                <div class="h-px bg-slate-100 mx-[-32px]"></div>
+                                <div x-show="selectedMethod === 'parties'" x-transition>
+                                    <div class="space-y-6" x-data="companySearch()">
+
+                                        <h3 class="text-sm font-bold text-slate-900">
+                                            Under Score Parties Ready for Screening
+                                        </h3>
+
+                                        <!-- ⭐ COMPANY DETAILS -->
+                                        <div class="space-y-1" x-show="hasPending">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-[13px] font-medium text-slate-400">Customer Code:</span>
+                                                <span class="text-[13px] font-bold text-slate-700 uppercase" x-text="companyCode" id="CompanyCode"></span>
+                                            </div>
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="text-[13px] font-medium text-slate-400">Name of the Customer:</span>
+                                                <span class="text-[13px] font-bold text-slate-700 uppercase" x-text="companyName" id="CompanyName"></span>
+                                            </div>
+                                        </div>
+
+                                        <div class="h-px bg-slate-100" x-show="hasPending"></div>
+
+                                        <!-- ⭐ DRAG HEADER -->
+                                        <div class="space-y-3" x-show="hasPending">
+                                            <div class="flex items-center justify-between">
+                                                <h4 class="text-[13px] font-bold text-slate-900">Drag and Drop</h4>
+                                                <button @@click="showTreeSheet = true"
+                                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors">
+                                                    View Tree Structure
+                                                </button>
+                                            </div>
+                                            <p class="text-[11px] text-slate-500 font-medium leading-relaxed">
+                                                Drag and Drop Shareholders, Authorized Signatories, Senior Management Respective Position
+                                            </p>
+                                        </div>
+
+                                        <!-- ⭐ LOADING MESSAGE -->
+                                        <div x-show="isLoading" class="text-sm text-blue-600 font-medium">
+                                            Loading pending shareholders...
+                                        </div>
+
+                                        <!-- ⭐ NO PENDING MESSAGE -->
+                                        <div x-show="!isLoading && !hasPending" class="text-sm text-slate-400 font-medium">
+                                            No pending shareholder screening found.
+                                        </div>
+
+                                        <!-- ⭐ SHAREHOLDER LIST FORM -->
+                                        <form id="myForm2" asp-controller="Corporate" asp-action="CreateShareholder" enctype="multipart/form-data" method="post" x-data="shareholderList()" x-on:submit.prevent="submitshareholderForm">
+                                            <input type="hidden" id="ScreeningTypeHidden" name="screeningType" >
+                                            <div class="space-y-2.5" x-show="hasPending">
+                                                <template x-for="(item, index) in flattenedItems()" :key="item.id">
+                                                    <div class="flex items-center gap-2" :style="'margin-left:' + (item.depth * 20) + 'px'">
+                                                        <i data-lucide="chevron-down" class="w-3 h-3 text-slate-300"></i>
+                                                        <div class="flex-1 flex items-center justify-between bg-blue-50/50 border border-blue-100 rounded-lg px-3 py-2 shadow-sm">
+                                                            <div class="flex items-center gap-2.5">
+                                                                <div class="w-7 h-7 rounded-full bg-blue-600 text-[10px] font-black text-white flex items-center justify-center"
+                                                                     x-text="item.initials"></div>
+                                                                <div class="flex items-baseline gap-1.5 min-w-0">
+                                                                    <!-- Visible text -->
+                                                                    <span class="text-xs font-bold text-slate-700" x-text="item.name"></span>
+                                                                    <span class="text-[10px] text-slate-400" x-text="'(' + item.type + ')'"></span>
+                                                                    <span class="text-[10px] text-slate-400" x-text="item.displayId"></span>
+
+                                                                    <!-- Hidden inputs for form submission -->
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].DisplayId'" :value="item.displayId">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].Name'" :value="item.name">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].Type'" :value="item.type">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].ParentId'" :value="item.parentId">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].Id'" :value="item.id">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].CompanyCode'" :value="item.companyCode">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].TradeLicence'" :value="item.tradeLicence">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].Nationality'" :value="item.nationality">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].IdNumber'" :value="item.idNumber">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].IdExpiry'" :value="item.idExpiry">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].Cif'" :value="item.cif">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].IssueDate'" :value="item.issueDate">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].RegistrationDate'" :value="item.registrationDate">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].Share'" :value="item.share">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].Thershold'" :value="item.thershold">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].Designation'" :value="item.designation">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].Employer'" :value="item.employer">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].GoldenVisa'" :value="item.goldenVisa">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].Document'" :value="item.documentFileName">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].DocumentFullPath'" :value="item.docFullPath">
+                                                                    @* :value="item.documentFileName"> *@
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].Residence'" :value="item.residence">
+
+                                                                </div>
+                                                            </div>
+                                                            <button type="button"
+                                                                    @@click="deleteShareholder(item.id)"
+                                                                    class="text-red-400 hover:text-red-600"
+                                                                    :data-id="item.id">
+                                                                ✖
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+
+                                            <!-- Hidden fields for company info -->
+                                            <input type="hidden" name="CompanyCode" x-model="companyCode" id="CompanyCodeHidden">
+                                            <input type="hidden" name="CompanyName" x-model="companyName" id="CompanyNameHidden">
+                                            <input type="hidden" name="Thershold" x-model="threshold" id="CompanyThershold">
+
+                                            <!-- Submit Button -->
+                                            <div class="p-8 bg-slate-50/30 border-t border-slate-100">
+                                                <button type="submit"
+                                                        class="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] text-[14px]">
+                                                    Create Case
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
                         </div>
                     </div>
+               
 
                     <!-- Right: Dynamic Content Area -->
-                    <div class="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                        <div class="flex-1 overflow-y-auto p-8 scrollbar-thin">
+                    <div class="flex-1 bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                        <div class="flex-1 overflow-y-auto p-10 scrollbar-thin">
 
                             <!-- State: Results View -->
-                            <div x-show="showResults" x-transition:enter="transition ease-out duration-300 transform"
+                            @* <div x-show="showResults" x-transition:enter="transition ease-out duration-300 transform"
                                  x-transition:enter-start="opacity-0 translate-y-4"
                                  x-transition:enter-end="opacity-100 translate-y-0" class="space-y-8">
                                 <div class="flex items-center justify-between pb-6 border-b border-slate-100">
@@ -365,7 +632,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </div> *@
 
                             <!-- State: Creation Forms -->
                             <div x-show="!showResults" class="space-y-6">
@@ -373,10 +640,10 @@
                                 <!-- FORM HEADER -->
                                 <div class="pb-6 border-b mb-6">
                                     <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight"
-                                        x-text="selectedMethod === 'manual' ? 'Manual Input' : (selectedMethod === 'ocr' ? 'OCR Document Upload' : 'Bulk Data Import')">
+                                        x-text="selectedMethod === 'manual' ? 'Manual Input' : (selectedMethod === 'ocr' ? 'OCR Document Upload' : (selectedMethod === 'parties' ? 'Add Parties' : 'Bulk Data Import'))">
                                     </h2>
                                     <p class="text-sm text-slate-500 font-medium mt-1"
-                                       x-text="selectedMethod === 'manual' ? 'Enter individual case details manually.' : (selectedMethod === 'ocr' ? 'Upload document image for automatic extraction' : 'Upload CSV or Excel file with multiple cases')">
+                                       x-text="selectedMethod === 'manual' ? 'Enter individual case details manually.' : (selectedMethod === 'ocr' ? 'Upload document image for automatic extraction' : (selectedMethod === 'parties' ? 'Add individual and corporate parties' : 'Upload CSV or Excel file with multiple cases'))">
                                     </p>
                                 </div>
 
@@ -481,14 +748,20 @@
 
                                                             <!-- Check Verification Icon -->
                                                             <svg xmlns="http://www.w3.org/2000/svg"
-                                                                 class="w-5 h-5"
+                                                                 class="w-7 h-7"
                                                                  fill="none"
-                                                                 viewBox="0 0 24 24"
+                                                                 viewBox="0 0 28 24"
                                                                  stroke="currentColor"
                                                                  stroke-width="2">
-                                                                <circle cx="12" cy="12" r="9"></circle>
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                      d="M9 12l2 2 4-4"></path>
+
+                                                                <!-- Left search -->
+                                                                <circle cx="8" cy="10" r="4"></circle>
+                                                                <line x1="11" y1="13" x2="13.5" y2="15.5" stroke-linecap="round"></line>
+
+                                                                <!-- Right search -->
+                                                                <circle cx="18" cy="10" r="4"></circle>
+                                                                <line x1="21" y1="13" x2="23.5" y2="15.5" stroke-linecap="round"></line>
+
                                                             </svg>
 
                                                         </button>
@@ -663,10 +936,22 @@
                                             </div>
                                                 <div class="space-y-2.5">
                                                     <label class="text-[13px] font-bold text-slate-700">
-                                                        Employer
+                                                        Employer Name
                                                     </label>
                                                     <div class="relative">
-                                                        <input type="text" placeholder="Enter Employer Number" asp-for="Employer" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="cifnumber">
+                                                        <input type="text" placeholder="Enter Employer Name" asp-for="Employer" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="cifnumber">
+                                                    </div>
+                                                </div>
+                                                <div class="space-y-2.5">
+                                                    <label class="text-[13px] font-bold text-slate-700">
+                                                        Golden Visa
+                                                    </label>
+                                                    <div class="relative">
+                                                        <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" id="goldenVisa"  asp-for="GoldenVisa">
+                                                            <option value="">Select</option>
+                                                            <option value="Yes">Yes</option>
+                                                            <option value="No">No</option>
+                                                        </select>
                                                     </div>
                                                 </div>
                                                 
@@ -751,6 +1036,452 @@
                                         </div>
                                     </form>
                                 </div>
+
+                                <!-- ADD PARTIES VIEW -->
+                                    <div x-show="selectedMethod === 'parties'" x-transition class="space-y-8">
+                                        <!-- Header -->
+                                        @* <div class="pb-6 border-b border-slate-100 flex flex-col gap-2">
+                                            <h2 class="text-xl font-bold text-slate-900">Manual Input for Business</h2>
+                                            <p class="text-[13px] text-slate-500 font-medium">Enter case details manually</p>
+                                        </div> *@
+
+                                        <!-- Info Banner -->
+                                        <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-3 flex items-center gap-2 text-yellow-800 text-[11px] font-medium">
+                                            <i data-lucide="info" class="w-4 h-4 text-yellow-600"></i>
+                                            Fields marked with * are mandatory for screening
+                                        </div>
+
+                                        <!-- Corporate Search -->
+                                        <div class="space-y-2">
+                                            <label class="text-xs font-semibold text-slate-700">
+                                                Existing Individual Lemon Id <span class="text-red-500">*</span>
+                                            </label>
+                                            <div class="flex gap-2">
+                                                <input type="text" x-model="searchQuery" placeholder="CSC211" id="CompanyCodeInput"
+                                                       class="flex-1 h-10 border border-slate-200 rounded-md px-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                                <input type="text" placeholder="companyName" id="CompanyName" hidden
+                                                       class="flex-1 h-10 border border-slate-200 rounded-md px-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                                <input type="text" placeholder="Thershold" id="Thershold" hidden
+                                                       class="flex-1 h-10 border border-slate-200 rounded-md px-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                                <button @@click="searchCompanyCodefunction()"
+                                                        class="bg-blue-600 hover:bg-blue-700 text-white px-8 h-10 rounded-md font-bold text-sm transition-colors shadow-lg shadow-blue-500/10">
+                                                    Search
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Actions Area - Only Visible After Search -->
+                                        <div x-data="{ hasSearched: false, activeShareholderTab: 'shareholder' }"
+                                             x-on:company-searched.window="
+                                                hasSearched = true;
+                                                activeShareholderTab = 'shareholder';
+                                             "
+                                             x-on:company-notfound.window="hasSearched = false"
+                                             class="space-y-6 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div x-show="hasSearched" x-transition>
+
+                                                <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-4">
+                                                    <button @@click="activeShareholderTab = 'shareholder'"
+                                                            :class="activeShareholderTab === 'shareholder'
+                                                    ? 'bg-blue-600 text-white border-blue-600'
+                                                    : 'bg-white text-slate-600 border-slate-300'" class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
+                                                            data-type="shareholder">
+                                                        Add Individual UnderScore Parties
+                                                    </button>
+                                                    <button  class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
+                                                            data-type="corporate_shareholder">
+                                                        Add Corporate UnderScore Parties
+                                                    </button>
+                                                </div>
+
+                                               
+                                                <!-- Shareholder Repeater -->
+                                                <div x-data="shareholderRepeater(activeShareholderTab)" class="shareholder-repeater pt-2">
+
+                                                    <!-- Repeat Forms -->
+                                                    <template x-for="(form,index) in forms" :key="index">
+                                                        <div class="border-b border-slate-200 pb-6 mb-6">
+
+                                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+
+                                                                <!-- Name -->
+                                                                <div class="space-y-2">
+                                                                    <label class="text-xs font-semibold text-slate-700"
+                                                                           x-text="form.type === 'shareholder' ? 'Name of Individual Shareholder *' : form.type === 'corporate_shareholder' ? 'Name of Corporate Shareholder *' : ''">
+                                                                    </label>
+                                                                    <input type="text"
+                                                                           x-model="form.name"
+                                                                           class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                                           placeholder="Enter name">
+                                                                </div>
+
+                                                                <!-- Share Percentage -->
+                                                                <template x-if="form.type === 'shareholder' || form.type === 'corporate_shareholder'">
+                                                                    <div class="space-y-2">
+                                                                        <label class="text-xs font-semibold text-slate-700">Share Percentage</label>
+                                                                        <input type="text"
+                                                                               x-model="form.share"
+                                                                               placeholder="e.g. 25"
+                                                                               class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm outline-none">
+                                                                    </div>
+                                                                </template>
+
+                                                                <!-- Designation -->
+                                                                @* <template x-if="form.type === 'signatories' || form.type === 'management'">
+                                                                    <div class="space-y-2">
+                                                                        <label class="text-xs font-semibold text-slate-700">Designation</label>
+                                                                        <input type="text"
+                                                                               x-model="form.designation"
+                                                                               placeholder="e.g. Director"
+                                                                               class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm outline-none">
+                                                                    </div>
+                                                                </template>
+ *@
+                                                                <!-- Nationality -->
+                                                                <div class="space-y-2">
+                                                                    <label class="text-xs font-semibold text-slate-700">Nationality</label>
+                                                                    <select x-model="form.nationality" asp-items="Model.Nationalities"
+                                                                            class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm bg-white">
+                                                                        <option value="">Select</option>
+
+                                                                    </select>
+                                                                </div>
+
+                                                                <!-- Residence -->
+                                                                <div class="space-y-2">
+                                                                    <label class="text-xs font-semibold text-slate-700">Residence</label>
+                                                                    <select x-model="form.residence" asp-items="Model.Nationalities"
+                                                                            class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm bg-white">
+                                                                        <option value="">Select</option>
+                                                                    </select>
+                                                                </div>
+
+                                                                <!-- Corporate Only -->
+                                                                <template x-if="form.type === 'corporate_shareholder'">
+                                                                    <div class="contents">
+                                                                        <div class="space-y-2">
+                                                                            <label class="text-xs font-semibold text-slate-700">Trade Licence Number</label>
+                                                                            <input type="text" x-model="form.tradeLicence" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                        </div>
+                                                                        <div class="space-y-2">
+                                                                            <label class="text-xs font-semibold text-slate-700">Date of Registration</label>
+                                                                            <input type="date" x-model="form.registrationDate" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                                        </div>
+                                                                        <div class="space-y-2">
+                                                                            <label class="text-xs font-semibold text-slate-700">Date of Expiry</label>
+                                                                            <input type="date" x-model="form.expiryDate" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                                        </div>
+                                                                    </div>
+                                                                </template>
+
+                                                                <!-- Individual ID -->
+                                                                <template x-if="form.type !== 'corporate_shareholder'">
+                                                                    <div class="contents">
+                                                                        <div class="space-y-2">
+                                                                            <label class="text-xs font-semibold text-slate-700">ID Type</label>
+                                                                            <select x-model="form.idType" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                                <option>Select</option>
+                                                                                <option>Passport</option>
+                                                                                <option>Emirates ID</option>
+                                                                            </select>
+                                                                        </div>
+                                                                        <div class="space-y-2">
+                                                                            <label class="text-xs font-semibold text-slate-700">ID Number</label>
+                                                                            <input type="text" x-model="form.idNumber" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                        </div>
+                                                                        <div class="space-y-2">
+                                                                            <label class="text-xs font-semibold text-slate-700">ID Issue Date</label>
+                                                                            <input type="date" x-model="form.issueDate" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                                        </div>
+                                                                        <div class="space-y-2">
+                                                                            <label class="text-xs font-semibold text-slate-700">ID Expiry Date</label>
+                                                                            <input type="date" x-model="form.idExpiry" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                                        </div>
+                                                                    </div>
+                                                                </template>
+
+                                                                <!-- CIF -->
+                                                                <div class="space-y-2">
+                                                                    <label class="text-xs font-semibold text-slate-700">Customer CIF No</label>
+                                                                    <input type="text" x-model="form.cif" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                </div>
+                                                                <template x-if="form.type === 'shareholder'">
+                                                                    <div class="contents">
+                                                                        <div class="space-y-2">
+                                                                            <label class="text-xs font-semibold text-slate-700">Employer Name</label>
+                                                                            <input type="text" x-model="form.employername" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                        </div>
+                                                                        <div class="space-y-2">
+                                                                            <label class="text-xs font-semibold text-slate-700">Golden Visa</label>
+                                                                            <select x-model="form.goldenvisa" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                                <option value="">Select</option>
+                                                                                <option value="Yes">Yes</option>
+                                                                                <option value="No">No</option>
+                                                                            </select>
+                                                                           
+                                                                        </div>
+                                                                    </div>
+                                                                </template>
+
+                                                                <div x-data="{ fileName: 'No file chosen' }" class="space-y-2">
+                                                                    <label class="text-xs font-semibold text-slate-700">Document</label>
+
+                                                                    <div class="relative flex items-center">
+
+                                                                        <!-- Hidden File Input -->
+                                                                        <input type="file"
+                                                                               class="hidden"
+                                                                               x-ref="docUpload"
+                                                                               x-on:change="
+                                                                               if ($event.target.files.length> 0) {
+                                                                        form.document = $event.target.files[0];
+                                                                        let fullName = $event.target.files[0].name;
+                                                                        fileName = fullName.length > 10 ? fullName.substring(0, 10) + '...' : fullName;
+                                                                        } else {
+                                                                        fileName = 'No file chosen';
+                                                                        }
+                                                                        ">
+
+                                                                        <!-- Custom UI -->
+                                                                        <div x-on:click="$refs.docUpload.click()"
+                                                                             class="w-full h-10 bg-white border border-slate-200 rounded-md px-3 py-2 text-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
+
+                                                                            <!-- Short Display Name -->
+                                                                            <span class="text-slate-500 text-xs" x-text="fileName"></span>
+
+                                                                            <span class="text-[11px] text-blue-600 font-bold border border-blue-600 rounded-md px-3 py-0.5">
+                                                                                Choose file
+                                                                            </span>
+
+                                                                        </div>
+                                                                    </div>
+
+
+                                                                </div>
+
+                                                            </div>
+
+                                                            <!-- Remove Button -->
+                                                            <div class="flex justify-end pt-3">
+                                                                <button x-show="forms.length > 1"
+                                                                        @@click="removeForm(index)"
+                                                                        class="h-9 px-8 text-white rounded-md bg-red-600">
+                                                                    Remove
+                                                                </button>
+                                                            </div>
+
+                                                        </div>
+                                                    </template>
+
+                                                    <!-- Add Button -->
+                                                    <div class="flex justify-start pt-6 mb-6">
+                                                        <button @@click="addForm()"
+                                                                class="bg-blue-600 hover:bg-blue-700 text-white px-8 h-10 rounded-md font-bold text-sm shadow-sm">
+                                                            Add
+                                                        </button>
+                                                    </div>
+
+                                                    <!-- Submit Button -->
+                                                    <div class="pt-4">
+                                                        <button @@click="submitForms()"
+                                                                class="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg text-sm">
+                                                            Submit
+                                                        </button>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @* <div x-show="selectedMethod === 'parties'" x-transition:enter="transition duration-300"
+                                     x-transition:enter-start="opacity-0 translate-x-4" class="space-y-8"
+                                     x-data="partyRepeater('individual_party')"
+                                     @@reload-parties.window="loadSavedParties()">
+
+                                    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                                        <div class="bg-slate-50 border-b border-slate-200 px-6 py-4">
+                                            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                                <i data-lucide="users" class="w-5 h-5 text-blue-600"></i> Parties
+                                            </h3>
+                                            <p class="text-sm text-slate-500 mt-1">Add Individual and Corporate Parties.</p>
+                                        </div>
+
+                                        <!-- TABS -->
+                                        <div class="flex border-b border-slate-200 px-6 overflow-x-auto hide-scrollbar">
+                                            <button class="relative h-12 px-6 flex items-center gap-2 text-sm font-bold transition-colors whitespace-nowrap"
+                                                    :class="activeTab === 'individual_party' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'"
+                                                    @@click="activeTab = 'individual_party'">
+                                                <i data-lucide="user" class="w-4 h-4"></i>
+                                                Individual Party
+                                                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 transition-transform origin-left"
+                                                     x-show="activeTab === 'individual_party'" x-transition:enter="duration-200 ease-out" x-transition:enter-start="scale-x-0" x-transition:enter-end="scale-x-100"></div>
+                                            </button>
+                                            <button class="relative h-12 px-6 flex items-center gap-2 text-sm font-bold transition-colors whitespace-nowrap"
+                                                    :class="activeTab === 'corporate_party' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'"
+                                                    @@click="activeTab = 'corporate_party'">
+                                                <i data-lucide="building-2" class="w-4 h-4"></i>
+                                                Corporate Party
+                                                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 transition-transform origin-left"
+                                                     x-show="activeTab === 'corporate_party'" x-transition:enter="duration-200 ease-out" x-transition:enter-start="scale-x-0" x-transition:enter-end="scale-x-100"></div>
+                                            </button>
+                                        </div>
+
+                                        <div class="p-6">
+                                            <template x-for="(form, index) in forms" :key="form.id">
+                                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-6 relative group transition-all duration-300 hover:shadow-md mb-6"
+                                                     x-show="form.type === activeTab"
+                                                     x-transition:enter="transition-opacity duration-300"
+                                                     x-transition:enter-start="opacity-0"
+                                                     x-transition:enter-end="opacity-100">
+
+                                                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
+                                                        <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                                            <i data-lucide="user-plus" class="w-4 h-4 text-blue-500"></i>
+                                                            <span x-text="(activeTab === 'individual_party' ? 'Individual Party' : 'Corporate Party') + ' ' + getIndexInType(form.id)"></span>
+                                                        </h4>
+                                                        <button type="button" @@click="removeForm(form.id)"
+                                                                class="w-8 h-8 flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                                                                title="Remove">
+                                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                        </button>
+                                                    </div>
+
+                                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+
+                                                        <template x-if="activeTab === 'individual_party'">
+                                                            <div class="contents">
+                                                                <div class="space-y-2">
+                                                                    <label class="text-[13px] font-bold text-slate-700">First Name <span class="text-red-500">*</span></label>
+                                                                    <input type="text" x-model="form.firstName" class="w-full h-10 bg-white border border-slate-200 rounded-xl px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium placeholder:text-slate-400" placeholder="Enter first name" required>
+                                                                </div>
+                                                                <div class="space-y-2">
+                                                                    <label class="text-[13px] font-bold text-slate-700">Last Name</label>
+                                                                    <input type="text" x-model="form.lastName" class="w-full h-10 bg-white border border-slate-200 rounded-xl px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium placeholder:text-slate-400" placeholder="Enter last name">
+                                                                </div>
+                                                                <div class="space-y-2">
+                                                                    <label class="text-[13px] font-bold text-slate-700">Nationality</label>
+                                                                    <div class="relative">
+                                                                        <select x-model="form.nationality" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium appearance-none outline-none focus:ring-2 focus:ring-blue-500/10">
+                                                                            <option value="">Select</option>
+                                                                            @foreach(var nat in Model.Nationalities) {
+                                                                                <option value="@nat.Value">@nat.Text</option>
+                                                                            }
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="space-y-2">
+                                                                    <label class="text-[13px] font-bold text-slate-700">Date of Birth</label>
+                                                                    <input type="date" x-model="form.dob" class="w-full h-10 bg-white border border-slate-200 rounded-xl px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium" max="@DateTime.Now.ToString("yyyy-MM-dd")">
+                                                                </div>
+                                                            </div>
+                                                        </template>
+
+                                                        <template x-if="activeTab === 'corporate_party'">
+                                                            <div class="contents">
+                                                                <div class="space-y-2">
+                                                                    <label class="text-[13px] font-bold text-slate-700">Corporate Name <span class="text-red-500">*</span></label>
+                                                                    <input type="text" x-model="form.firstName" class="w-full h-10 bg-white border border-slate-200 rounded-xl px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium placeholder:text-slate-400" placeholder="Enter corporate name" required>
+                                                                </div>
+                                                                <div class="space-y-2">
+                                                                    <label class="text-[13px] font-bold text-slate-700">License Number</label>
+                                                                    <input type="text" x-model="form.licenseNumber" class="w-full h-10 bg-white border border-slate-200 rounded-xl px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium placeholder:text-slate-400" placeholder="Enter license number">
+                                                                </div>
+                                                                <div class="space-y-2">
+                                                                    <label class="text-[13px] font-bold text-slate-700">Issuing Authority</label>
+                                                                    <input type="text" x-model="form.issuingAuthority" class="w-full h-10 bg-white border border-slate-200 rounded-xl px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium placeholder:text-slate-400" placeholder="Enter issuing authority">
+                                                                </div>
+                                                                <div class="space-y-2">
+                                                                    <label class="text-[13px] font-bold text-slate-700">Country of Incorporation</label>
+                                                                    <div class="relative">
+                                                                        <select x-model="form.nationality" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium appearance-none outline-none focus:ring-2 focus:ring-blue-500/10">
+                                                                            <option value="">Select</option>
+                                                                            @foreach(var nat in Model.Nationalities) {
+                                                                                <option value="@nat.Value">@nat.Text</option>
+                                                                            }
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </template>
+                                                        
+                                                        <div class="space-y-2 lg:col-span-2 xl:col-span-4 mt-2">
+                                                            <label class="text-[13px] font-bold text-slate-700 block mb-3">Upload Document</label>
+                                                            <label class="relative flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer hover:bg-blue-50/50 hover:border-blue-400 transition-all group overflow-hidden">
+                                                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                                                    <i data-lucide="cloud-upload" class="w-8 h-8 text-slate-400 group-hover:text-blue-500 mb-2 transition-colors"></i>
+                                                                    <p class="text-sm text-slate-500" x-show="!form.document"><span class="font-bold text-blue-600">Click to upload</span> or drag and drop</p>
+                                                                    <p class="text-xs text-slate-400 mt-1" x-show="!form.document">PDF, JPG, PNG (Max 5MB)</p>
+                                                                    
+                                                                    <div class="flex flex-col items-center gap-2" x-show="form.document">
+                                                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                                            <i data-lucide="file-check-2" class="w-5 h-5 text-blue-600"></i>
+                                                                        </div>
+                                                                        <p class="text-sm font-bold text-slate-700 max-w-[200px] truncate" x-text="form.document ? form.document.name : ''"></p>
+                                                                        <button type="button" @@click.prevent="form.document = null; $refs['fileInput_'+form.id].value = ''" class="text-xs font-bold text-red-500 hover:text-red-700">Remove File</button>
+                                                                    </div>
+                                                                </div>
+                                                                <input :ref="'fileInput_'+form.id" type="file" class="hidden" @@change="form.document = $event.target.files[0]">
+                                                            </label>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </template>
+
+                                            <!-- Table of Saved Parties -->
+                                            <div x-show="savedParties.filter(p => p.type === activeTab).length > 0" class="mt-8 mb-8 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                                                <div class="bg-slate-50 border-b border-slate-200 px-6 py-3">
+                                                    <h4 class="text-sm font-bold text-slate-800" x-text="'Saved ' + (activeTab === 'individual_party' ? 'Individual' : 'Corporate') + ' Parties'"></h4>
+                                                </div>
+                                                <div class="overflow-x-auto">
+                                                    <table class="w-full text-left text-sm">
+                                                        <thead class="bg-white text-[11px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                                                            <tr>
+                                                                <th class="px-6 py-4">Name</th>
+                                                                <th class="px-6 py-4">Nationality / Country</th>
+                                                                <th class="px-6 py-4">Date of Birth</th>
+                                                                <th class="px-6 py-4 w-20 text-center">Action</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody class="divide-y divide-slate-100 bg-white">
+                                                            <template x-for="party in savedParties.filter(p => p.type === activeTab)" :key="party.id">
+                                                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                                                    <td class="px-6 py-4 font-bold text-slate-800" x-text="party.firstName + ' ' + (party.lastName || '')"></td>
+                                                                    <td class="px-6 py-4 font-medium text-slate-600" x-text="party.nationalityCode || party.nationality || '-'"></td>
+                                                                    <td class="px-6 py-4 font-medium text-slate-600" x-text="party.dob || '-'"></td>
+                                                                    <td class="px-6 py-4 text-center">
+                                                                        <button type="button" @@click="deleteSavedParty(party.id)" class="text-red-500 hover:text-red-700 p-1 rounded-md hover:bg-red-50 transition-colors" title="Delete Saved">
+                                                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            </template>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+
+                                            <!-- Add Row Button & Submit -->
+                                            <div class="flex items-center justify-between border-t border-slate-200 pt-6 mt-6">
+                                                <button type="button" @@click="addForm()"
+                                                        class="h-10 px-5 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-2">
+                                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                                    Add <span x-text="activeTab === 'individual_party' ? 'Individual' : 'Corporate'"></span>
+                                                </button>
+                                                <div class="flex gap-4">
+                                                    <button type="button" @@click="saveForms()"
+                                                            class="h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2"
+                                                            :disabled="forms.filter(f => f.type === activeTab).length === 0 || isLoading"
+                                                            :class="{'opacity-50 cursor-not-allowed': forms.filter(f => f.type === activeTab).length === 0 || isLoading}">
+                                                        <span x-show="!isLoading" class="flex gap-2 items-center"><i data-lucide="save" class="w-4 h-4"></i>
+                                                        Save Purgatory <span x-text="activeTab === 'individual_party' ? 'Individual' : 'Corporate'"></span> Parties</span>
+                                                        <span x-show="isLoading" class="flex gap-2 items-center"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div> *@
 
                                 <!-- BULK UPLOAD VIEW -->
                                 <div x-show="selectedMethod === 'bulk'" x-transition class="space-y-8 pt-4">
@@ -1233,14 +1964,20 @@
 
                                                                 <!-- Check Verification Icon -->
                                                                 <svg xmlns="http://www.w3.org/2000/svg"
-                                                                     class="w-5 h-5"
+                                                                     class="w-7 h-7"
                                                                      fill="none"
-                                                                     viewBox="0 0 24 24"
+                                                                     viewBox="0 0 28 24"
                                                                      stroke="currentColor"
                                                                      stroke-width="2">
-                                                                    <circle cx="12" cy="12" r="9"></circle>
-                                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                                          d="M9 12l2 2 4-4"></path>
+
+                                                                    <!-- Left search -->
+                                                                    <circle cx="8" cy="10" r="4"></circle>
+                                                                    <line x1="11" y1="13" x2="13.5" y2="15.5" stroke-linecap="round"></line>
+
+                                                                    <!-- Right search -->
+                                                                    <circle cx="18" cy="10" r="4"></circle>
+                                                                    <line x1="21" y1="13" x2="23.5" y2="15.5" stroke-linecap="round"></line>
+
                                                                 </svg>
 
                                                             </button>
@@ -1388,10 +2125,22 @@
                                                     </div>
                                                     <div class="space-y-2.5">
                                                         <label class="text-[13px] font-bold text-slate-700">
-                                                            Employer
+                                                            Employer Name
                                                         </label>
                                                         <div class="relative">
-                                                            <input type="text" placeholder="Enter Employer Number" asp-for="Employer" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="cifnumber">
+                                                            <input type="text" placeholder="Enter Employer Name" asp-for="Employer" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="cifnumber">
+                                                        </div>
+                                                    </div>
+                                                    <div class="space-y-2.5">
+                                                        <label class="text-[13px] font-bold text-slate-700">
+                                                            Golden Visa
+                                                        </label>
+                                                        <div class="relative">
+                                                            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" id="goldenVisa" asp-for="GoldenVisa">
+                                                                <option value="">Select</option>
+                                                                <option value="Yes">Yes</option>
+                                                                <option value="No">No</option>
+                                                            </select>
                                                         </div>
                                                     </div>
 
@@ -1795,7 +2544,175 @@
         </div>
     </div>
     </div>
+        <div x-show="showTreeSheet"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @@click="showTreeSheet = false"
+             class="sheet-overlay"
+             x-cloak>
+        </div>
 
+        <div x-show="showTreeSheet"
+             x-transition:enter="transition ease-out duration-300 transform"
+             x-transition:enter-start="translate-x-full"
+             x-transition:enter-end="translate-x-0"
+             x-transition:leave="transition ease-in duration-200 transform"
+             x-transition:leave-start="translate-x-0"
+             x-transition:leave-end="translate-x-full"
+             class="sheet-panel"
+             x-effect="if(showTreeSheet && window.renderShareholderTree) window.renderShareholderTree()"
+             x-cloak>
+
+            <!-- Sheet Header -->
+            <div class="sticky top-0 bg-white border-b border-slate-200 px-8 py-6 z-10">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Shareholder Structure</h2>
+                        <p class="text-sm text-slate-500 mt-1">Visualize and reorder the shareholder hierarchy</p>
+                    </div>
+                    <button @@click="showTreeSheet = false"
+                            class="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sheet Content -->
+            <div class="p-8">
+                <!-- Info Banner -->
+                @* <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-start gap-3"> *@
+                @* <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600 mt-0.5 shrink-0">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg> *@
+                <div class="text-sm text-blue-800">
+                    @* <p class="font-semibold mb-1">Drag and Drop to Reorder</p>
+                        <!-- Initials Circle -->
+                        <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-blue-500/20"
+                             x-text="item.initials">
+                        </div> *@
+
+                    <!-- Name and Type -->
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-baseline gap-2">
+                            <span class="font-bold text-slate-900 text-sm" x-text="item.name"></span>
+                            <span class="text-xs text-slate-400" x-text="'(' + item.type + ')'"></span>
+                        </div>
+                    </div>
+
+                    <!-- Position Indicator -->
+                    <div class="text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full"
+                         x-text="'#' + (index + 1)">
+                    </div>
+                </div>
+                @* </div> *@
+                </template>
+
+                <!-- Empty State -->
+                @* <div x-show="!$store.screeningStore.screeningList || $store.screeningStore.screeningList.length === 0"
+                     class="text-center py-12">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-slate-300 mb-4">
+                        <rect x="16" y="16" width="6" height="6" rx="1"></rect>
+                        <rect x="2" y="16" width="6" height="6" rx="1"></rect>
+                        <rect x="9" y="2" width="6" height="6" rx="1"></rect>
+                        <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path>
+                        <path d="M12 12V8"></path>
+                    </svg>
+                    <p class="text-slate-400 font-medium">No shareholders added yet</p>
+                    <p class="text-sm text-slate-400 mt-1">Add shareholders to see them here</p>
+                </div> *@
+            </div>
+
+            <div x-data="shareholderTree()" x-init="initSortable()" class="p-6">
+
+                <div id="shareholderTreeContainer">
+
+                    <template x-for="item in flattenedItems()" :key="item.id">
+
+                        <div :data-id="item.id"
+                             :style="'margin-left:' + (item.depth * 30) + 'px'">
+
+                            <div class="flex gap-3 border p-3">
+
+                                <span class="drag-handle cursor-move">☰</span>
+
+                                <span class="text-blue-600"
+                                      x-text="item.displayId"></span>
+
+                                <span x-text="item.name"></span>
+
+                                <span x-text="'(' + item.type + ')'"></span>
+
+                            </div>
+
+                        </div>
+
+                    </template>
+
+                </div>
+
+
+            </div>
+
+        </div>
+        <div id="rollbackModal"
+             class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
+
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5">
+
+                <!-- Header -->
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-red-100 text-red-600">
+                        <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                    </div>
+
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">
+                            Pending Shareholders Found
+                        </h3>
+
+                        <p class="text-xs text-slate-500">
+                            Select a company to continue with pending shareholders.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Company List -->
+                <div id="pendingCompanyList"
+                     class="max-h-44 overflow-y-auto border border-slate-200 rounded-lg divide-y bg-slate-50">
+
+                    <!-- JS will populate this -->
+
+                </div>
+
+                <!-- Footer Buttons -->
+                <div class="flex justify-end gap-3 pt-2">
+
+                    <!-- Continue New Search -->
+                    <button onclick="continueNewSearch()"
+                            class="h-9 px-5 rounded-md text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition">
+                        New Case Creation
+                    </button>
+
+                    <!-- Open Pending -->
+                    <button onclick="openPendingShareholder()"
+                            class="h-9 px-5 rounded-md text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition">
+                        Pending Related Parties
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
 
         @* <script>
             $("form").submit(function () {
@@ -1836,6 +2753,20 @@
                 });
 
             });
+                        document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
+
+                    window.addEventListener('beforeunload', () => {
+                    sessionStorage.removeItem('activeShareholderTab');
+                });
+                            document.addEventListener('alpine:init', () => {
+
+                        Alpine.store('screeningStore', {
+                            screeningList: []
+                        });
+
+                    });
+
+                       
 
                         $(function () {
 
@@ -1975,193 +2906,44 @@
             }
 
 
-            // $(function () {
-            //     const $form = $("#myForm");
+            
 
-            //     $form.off("submit.customValidation").on("submit.customValidation", function (e) {
-            //         console.log("Form submit validation started");
+            function validateIdNumber(isSubmit = false) {
+                    const $idType = $("#ddlIdType");
+                    const $idNumber = $("#txtIdNumber");
 
-            //         // Clear previous errors
-            //         $("span[data-valmsg-for]").text('').removeClass('field-validation-error');
-            //         $(".is-invalid").removeClass('is-invalid');
+                    if (!$idType.length || !$idNumber.length) return true;
 
-            //         let isValid = true;
-            //         let $firstErrorElement = null;
+                    const idType = ($idType.val() || "").trim();
+                    const idNumber = ($idNumber.val() || "").trim();
 
-            //         const fullName = ($("#fullName").val() || "").trim();
-            //         const occupation = ($("#ddlOccupation").val() || "").trim();
-            //         const producttype = ($("#ddlProductType").val() || "").trim();
-            //         const deliverychannel = ($("#ddlDeliveryChannel").val() || "").trim();
-            //         const modeofpayment = ($("#ddlModeofpayment").val() || "").trim();
-            //         const residentStatus = ($("#ddlResidenceStatus").val() || "").trim();
+                    $idNumber.removeClass("is-invalid");
+                    $("span[data-valmsg-for='CustomerIdNumber']").text("").removeClass("field-validation-error");
 
-            //         function markInvalid(valFor, selector, message) {
-            //             $("span[data-valmsg-for='" + valFor + "']").text(message).addClass('field-validation-error');
-            //             $(selector).addClass('is-invalid');
-            //             if (!$firstErrorElement) $firstErrorElement = $(selector);
-            //             isValid = false;
-            //         }
+                    if (idType === "Emirates ID" && idNumber !== "") {
+                        if (!idNumber.startsWith("784")) {
+                            $idNumber.addClass("is-invalid");
+                            $("span[data-valmsg-for='CustomerIdNumber']")
+                                .text("Emirates ID must start with 784.")
+                                .addClass("field-validation-error");
 
-            //         // --- Required field checks ---
-            //         if (fullName === "") markInvalid("FirstName", "#fullName", "Full Name is required.");
-            //         if (!occupation || occupation === "0") markInvalid("OccupatinTypeTxt", "#ddlOccupation", "Occupation Type is required.");
-            //         if (!producttype || producttype === "0") markInvalid("ProductName", "#ddlProductType", "Product Type is required.");
-            //         if (!deliverychannel || deliverychannel === "0") markInvalid("DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
-            //         if (!modeofpayment || modeofpayment === "0") markInvalid("Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
-            //         if (!residentStatus || residentStatus === "0") markInvalid("ResidenceStatus", "#ddlResidenceStatus", "Resident Status is required.");
-
-            //         // --- Emirates ID validation ---
-            //         if (!validateIdNumber(true)) {
-            //             toastr.clear();
-            //             toastr.error("Please correct the Emirates ID before submitting. Emirates ID must start with 784.");
-            //             isValid = false;
-            //         }
-
-            //         // --- Scroll to first error if invalid ---
-            //         if (!isValid) {
-            //             if ($firstErrorElement && $firstErrorElement.length) {
-            //                 $("html, body").animate({ scrollTop: $firstErrorElement.offset().top - 150 }, 400);
-            //                 $firstErrorElement.focus();
-            //             }
-            //             e.preventDefault(); // Stop submission only if invalid
-            //             return false;
-            //         }
-
-            //         // --- Form is valid: show loader and allow submission ---
-            //         $('#loadingeffect').show();          // Show loader
-            //         $('#btn-ld').prop('disabled', true); // Disable submit button
-
-            //         // --- Preserve threshold value ---
-            //         const thresholdValue = $("#threshold").val();
-
-            //         // Remove the custom submit handler temporarily to allow real form submission
-            //         $form.off("submit.customValidation");
-
-            //         // Delay reset until after submission is complete
-            //         // If you want page reloads: do not reset here, the page reload will clear fields
-            //         // If you want AJAX submission: use $.ajax and then reset all except threshold
-            //         setTimeout(() => {
-            //             $('#btn-ld').prop('disabled', false);
-            //             $("#threshold").val(thresholdValue);
-            //         }, 2000);
-            //     });
-
-            //     function validateIdNumber(isSubmit = false) {
-            //         const $idType = $("#ddlIdType");
-            //         const $idNumber = $("#txtIdNumber");
-
-            //         if (!$idType.length || !$idNumber.length) return true;
-
-            //         const idType = ($idType.val() || "").trim();
-            //         const idNumber = ($idNumber.val() || "").trim();
-
-            //         $idNumber.removeClass("is-invalid");
-            //         $("span[data-valmsg-for='CustomerIdNumber']").text("").removeClass("field-validation-error");
-
-            //         if (idType === "Emirates ID" && idNumber !== "") {
-            //             if (!idNumber.startsWith("784")) {
-            //                 $idNumber.addClass("is-invalid");
-            //                 $("span[data-valmsg-for='CustomerIdNumber']")
-            //                     .text("Emirates ID must start with 784.")
-            //                     .addClass("field-validation-error");
-
-            //                 if (isSubmit) {
-            //                     setTimeout(() => {
-            //                         const $firstError = $(".is-invalid:visible").first();
-            //                         if ($firstError.length) {
-            //                             $("html, body").animate({ scrollTop: $firstError.offset().top - 150 }, 400);
-            //                             $firstError.focus();
-            //                         }
-            //                     }, 50);
-            //                 }
-            //                 return false;
-            //             }
-            //         }
-            //         return true;
-            //     }
+                            if (isSubmit) {
+                                setTimeout(() => {
+                                    const $firstError = $(".is-invalid:visible").first();
+                                    if ($firstError.length) {
+                                        $("html, body").animate({ scrollTop: $firstError.offset().top - 150 }, 400);
+                                        $firstError.focus();
+                                    }
+                                }, 50);
+                            }
+                            return false;
+                        }
+                    }
+                    return true;
+                }
             // });
 
-            //             $(function () {
-            //                const $form = $("#myOCRForm");
-
-            //                 $form.off("submit.customValidation").on("submit.customValidation", function (e) {
-            //                     console.log("Form submit validation started");
-
-            //                     // Clear previous errors
-            //                     $("span[data-valmsg-for]").text('').removeClass('field-validation-error');
-            //                     $(".is-invalid").removeClass('is-invalid');
-
-            //                     let isValid = true;
-            //                     let $firstErrorElement = null;
-
-            //                     const fullName = ($("#fullName").val() || "").trim();
-            //                     const occupation = ($("#ddlOccupation").val() || "").trim();
-            //                     const producttype = ($("#ddlProductType").val() || "").trim();
-            //                     const deliverychannel = ($("#ddlDeliveryChannel").val() || "").trim();
-            //                     const modeofpayment = ($("#ddlModeofpayment").val() || "").trim();
-            //                     const residentStatus = ($("#ddlResidenceStatus").val() || "").trim();
-
-            //                     function markInvalid(valFor, selector, message) {
-            //                         $("span[data-valmsg-for='" + valFor + "']").text(message).addClass('field-validation-error');
-            //                         $(selector).addClass('is-invalid');
-            //                         if (!$firstErrorElement) $firstErrorElement = $(selector);
-            //                         isValid = false;
-            //                     }
-
-            //                     // --- Required field checks ---
-            //                     if (fullName === "") markInvalid("FirstName", "#fullName", "Full Name is required.");
-            //                     if (!occupation || occupation === "0") markInvalid("OccupatinTypeTxt", "#ddlOccupation", "Occupation Type is required.");
-            //                     if (!producttype || producttype === "0") markInvalid("ProductName", "#ddlProductType", "Product Type is required.");
-            //                     if (!deliverychannel || deliverychannel === "0") markInvalid("DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
-            //                     if (!modeofpayment || modeofpayment === "0") markInvalid("Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
-            //                     if (!residentStatus || residentStatus === "0") markInvalid("ResidenceStatus", "#ddlResidenceStatus", "Resident Status is required.");
-
-            //                     // --- Emirates ID validation ---
-            //                     if (!validateIdNumber(true)) {
-            //                         toastr.clear();
-            //                         toastr.error("Please correct the Emirates ID before submitting. Emirates ID must start with 784.");
-            //                         isValid = false;
-            //                     }
-
-            //                     // --- Scroll to first error if invalid ---
-            //                     if (!isValid) {
-            //                         if ($firstErrorElement && $firstErrorElement.length) {
-            //                             $("html, body").animate({ scrollTop: $firstErrorElement.offset().top - 150 }, 400);
-            //                             $firstErrorElement.focus();
-            //                         }
-            //                         e.preventDefault(); // Stop submission only if invalid
-            //                         return false;
-            //                     }
-
-            //                     // --- Form is valid: show loader and allow submission ---
-            //                     $('#loadingeffect').show();          // Show loader
-            //                     $('#btn-ld').prop('disabled', true); // Disable submit button
-
-            //                     // --- Preserve threshold value ---
-            //                     const thresholdValue = $("#threshold").val();
-
-            //                     // Remove the custom submit handler temporarily to allow real form submission
-            //                     $form.off("submit.customValidation");
-
-            //                     // Delay reset until after submission is complete
-            //                     // If you want page reloads: do not reset here, the page reload will clear fields
-            //                     // If you want AJAX submission: use $.ajax and then reset all except threshold
-            //                     setTimeout(() => {
-            //                         $('#btn-ld').prop('disabled', false);
-            //                         $("#threshold").val(thresholdValue);
-            //                     }, 2000);
-            //                 });
-
-            //                 function validateIdNumber(isSubmit = false) {
-            //                     const $idType = $("#ddlIdType");
-            //                     const $idNumber = $("#txtIdNumber");
-
-            //                     if (!$idType.length || !$idNumber.length) return true;
-
-            //                     const idType = ($idType.val() || "").trim();
-            //                     const idNumber = ($idNumber.val() || "").trim();
-
-            //                     $idNumber.removeClass("is-invalid");
+                       //                     $idNumber.removeClass("is-invalid");
             //                     $("span[data-valmsg-for='CustomerIdNumber']").text("").removeClass("field-validation-error");
 
             //                     if (idType === "Emirates ID" && idNumber !== "") {
@@ -3112,12 +3894,667 @@
 
 
 
-                          
-            
+                       function searchCompanyCodefunction() {
+                                var CompanyCode = Alpine.store('searchQuery') || document.getElementById('CompanyCodeInput').value;
+                                var CustomerType="I";
+
+                        if (!CompanyCode || CompanyCode.trim() === '') {
+                            toastr.error("Please enter a valid Corporate ID");
+                            return;
+                        }
+
+                        $("#loader").show();
+
+                                    //alert(CompanyCode);
+
+                        $.ajax({
+                            url: '/corporate/searchcompanycode',
+                            type: 'POST',
+                                        data: { CompanyCode: CompanyCode,CustomerType:CustomerType },
+                            success: function (data) {
+                                console.log(data);
+
+                                if (data && data.length > 0) {
+
+                                    // Dispatch event for company found
+                                    window.dispatchEvent(new CustomEvent('company-searched', {
+                                        detail: data
+                                    }));
+
+                                    // Load pending shareholders (if any)
+                                    window.dispatchEvent(new Event('load-pending-shareholders'));
+                                }
+                                else {
+                                    window.dispatchEvent(new CustomEvent('company-notfound'));
+
+                                    toastr.error('No Individual ID was found for the entered value.', {
+                                        tapToDismiss: true,
+                                        showMethod: 'fadeIn',
+                                        showDuration: 200
+                                    });
+                                }
+                            },
+                            error: function (xhr) {
+                                console.error('Error:', xhr.responseText);
+                                toastr.error("Error loading company details");
+                            },
+                            complete: function () {
+                                $("#loader").hide();
+                            }
+                        });
+                    }
+
+                    function companySearch() {
+                    debugger;
+                        return {
+                            companyCode: '',
+                            companyName: '',
+                            hasPending: false,
+                            isLoading: false,
+                            showPendingModal:false,
+                            skipPendingModal:false,
+
+                            init() {
+                                // Listen company search
+                                window.addEventListener('company-searched', (event) => {
+                                    let company = event.detail[0];
+                                            console.log("company details:",company);
+                                                        
+                                         this.companyCode = company.customerId || company.companyCode;
+                                         this.companyName =(company.firstName || company.lastName) ? `${company.firstName || ''} ${company.lastName || ''}`.trim() : company.companyName;
+                                                      this.thershold =company.thershold;
+                                                   $('#CompanyCodeInput').val(this.companyCode);
+                                                   $('#CompanyCode').text(this.companyCode);
+                                                   $('#CompanyCodeHidden').val(this.companyCode);
+                                                   $('#CompanyNameHidden').val(this.companyName);
+                                                   $('#CompanyThershold').val(this.thershold);
+                                                   $('#CompanyName').text(this.companyName);
+                                                                                        
+                                        
+                                                   $('#Thershold').val(this.thershold);
+
+                                    // Load pending shareholders
+                                    window.dispatchEvent(new Event('load-pending-shareholders'));
+                                });
+
+                                // Load shareholders
+           window.addEventListener('load-pending-shareholders', async (event) => {
+                debugger;
+                this.isLoading = true;
+
+                try {
+
+                                let response = await fetch(`/corporate/GetPendingShareholders?companyCode=${this.companyCode}&customerType=${'I'}`);
+                    let data = await response.json();
+
+                    console.log(data);
+
+                    const skipModal = event?.detail?.skipModal ?? false;
+
+                    if (Array.isArray(data) && data.length > 0) {
+
+                        this.hasPending = true;
+
+                        // Save globally
+                        window.pendingShareholderData = data;
+
+                        // Populate modal list
+                                              let uniqueCompanies = [...new Set(data.map(x => x.companyCode))];
+
+                                    let html = "";
+
+                                    uniqueCompanies.forEach(code => {
+
+                                                html += `
+                                        <label class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-sm">
+
+                                            <div class="flex items-center gap-3 cursor-pointer">
+
+                                                <input type="radio"
+                                                       name="pendingCompany"
+                                                       value="${code}"
+                                                       class="w-4 h-4 text-blue-600 border-slate-300">
+
+                                                <span class="font-medium text-slate-700">
+                                                    ${code}
+                                                </span>
+
+                                            </div>
+
+                                            <button onclick="deletePendingCompany('${code}')"
+                                                class="ml-auto text-red-500 hover:text-red-700 text-lg font-bold leading-none">
+                                                ×
+                                            </button>
+
+                                        </label>
+                                        
+                                    `;
+
+                                    });
+
+                            document.getElementById("pendingCompanyList").innerHTML = html;
+
+                        // Show modal ONLY if skipModal = false
+                                    if (!skipModal && !this.skipPendingModal) {
+                                        $('#rollbackModal').removeClass('hidden').addClass('flex');
+
+                                        // After first display, prevent future popup
+                                        this.skipPendingModal = true;
+                                    }
+
+                        this.companyCode = data[0].companyCode;
+                        this.companyName = (data[0].firstName || data[0].lastName) ? `${data[0].firstName || ''} ${data[0].lastName || ''}`.trim() : data[0].companyName;;
+                        this.thershold = data[0].thershold;
+                                                
+                        $('#CompanyCodeInput').val(this.companyCode);
+                        $('#CompanyCode').text(this.companyCode);
+                                    $('#CompanyCodeHidden').val(this.companyCode);
+                                                               $('#CompanyNameHidden').val(this.companyName);
+                                                               $('#CompanyThershold').val(this.thershold);
+                        $('#CompanyName').text(this.companyName);
+                        $('#Thershold').val(this.thershold);
+
+                        Alpine.store('screeningStore').screeningList = data.map(item => ({
+                            id: Number(item.id),
+                            name: item.name,
+                            type: item.type,
+                            parentId: item.parentId ? Number(item.parentId) : null,
+                            initials: item.name.split(' ').map(x => x[0]).join('').toUpperCase(),
+                            companyCode: item.companyCode || '',
+                            tradeLicence: item.tradeLicence || '',
+                            nationality: item.nationality || '',
+                            registrationDate: item.registrationDate || '',
+                            idType: item.idType || '',
+                            idNumber: item.idNumber || '',
+                            designation: item.designation || '',
+                            share: item.share || 0,
+                            issueDate: item.issueDate || null,
+                            idExpiry: item.idExpiry || null,
+                            cif: item.cif || '',
+                            employer: item.employer || '',
+                            goldenVisa: item.goldenVisa || '',
+                            documentFileName: item.documentFileName || '',
+                            docFullPath:item.docFullPath || '',
+                            residence:item.residence || ''
+                        }));
+
+                        // Trigger tree refresh
+                        window.dispatchEvent(new Event('store-updated'));
+
+                    } else {
+
+                        this.hasPending = false;
+
+                        $('#rollbackModal').addClass('hidden').removeClass('flex');
+                                     // $('#CompanyCodeInput').val('');
+                                     // $('#CompanyCode').text('');
+                                     //  $('#CompanyCodeHidden').val('');
+                                     //   $('#CompanyName').text('');
+                                     //  $('#Thershold').val('');
+
+                        Alpine.store('screeningStore').screeningList = [];
+
+                        window.dispatchEvent(new Event('store-updated'));
+                    }
+
+                } catch (e) {
+                    console.error(e);
+                }
+
+                this.isLoading = false;
+
+            });
+               
+                            }
+                        }
+                    }
+
+            function continueNewSearch() {
+
+                $('#rollbackModal').addClass('hidden').removeClass('flex');
+
+                                                        $('#CompanyCodeInput').val('');
+                                                        $('#CompanyCode').text('');
+                                                        $('#CompanyCodeHidden').val('');
+                                                        $('#CompanyName').text('');
+                                                        $('#Thershold').val('');
+                Alpine.store('screeningStore').screeningList = [];
+
+                window.dispatchEvent(new Event('store-updated'));
+
+            }
+                        function openPendingShareholder() {
+
+                const selected = document.querySelector('input[name="pendingCompany"]:checked');
+
+                if (!selected) {
+                    toastr.error("Please Select a Company");
+                    return;
+                }
+
+                const selectedCode = selected.value;
+
+                // Filter only selected company data
+                const filtered = window.pendingShareholderData.filter(x => x.companyCode === selectedCode);
+                            console.log(filtered);
+                if (filtered.length === 0) return;
+                                        
+                // Update Alpine store
+                Alpine.store('screeningStore').screeningList = filtered.map(item => ({
+                    id: Number(item.id),
+                    name: item.name,
+                    type: item.type,
+                    parentId: item.parentId ? Number(item.parentId) : null,
+                    initials: item.name.split(' ').map(x => x[0]).join('').toUpperCase(),
+                    companyCode: item.companyCode || '',
+                    tradeLicence: item.tradeLicence || '',
+                    nationality: item.nationality || '',
+                    registrationDate: item.registrationDate || '',
+                    idType: item.idType || '',
+                    idNumber: item.idNumber || '',
+                    designation: item.designation || '',
+                    share: item.share || 0,
+                    issueDate: item.issueDate || null,
+                    idExpiry: item.idExpiry || null,
+                    cif: item.cif || '',
+                    employer: item.employer || '',        
+                    goldenVisa: item.goldenVisa || '',    
+                    documentFileName: item.documentFileName || '',
+                    docFullPath:item.docFullPath || '',
+                    residence:item.residence || ''
+                }));
+
+                            $('#CompanyCodeInput').val(filtered[0].companyCode);
+                            $('#CompanyCode').text(filtered[0].companyCode);
+                            $('#CompanyCodeHidden').val(filtered[0].companyCode);
+                            $('#CompanyName').text(filtered[0].companyName);
+                            $('#Thershold').val(filtered[0].thershold);
+
+                            //window.dispatchEvent(new CustomEvent('company-searched'));
+                                         window.dispatchEvent(new CustomEvent('company-searched', {
+                                                    detail: filtered
+                                    }));
+                // Refresh tree
+                window.dispatchEvent(new Event('store-updated'));
+
+                // Close modal
+                $('#rollbackModal').addClass('hidden').removeClass('flex');
+            }
+
+                        async function deletePendingCompany(companyCode) {
+
+                // if (!confirm("Are you sure you want to delete this company and its shareholders?")) {
+                //     return;
+                // }
+
+                try {
+
+                    let response = await fetch(`/corporate/DeletePendingShareholders?companyCode=${companyCode}`, {
+                        method: 'POST'
+                    });
+
+                    let result = await response.json();
+
+                    if (result.success) {
+
+                        // Remove from global data
+                        window.pendingShareholderData =
+                            window.pendingShareholderData.filter(x => x.companyCode !== companyCode);
+
+                        let remainingCompanies = [...new Set(window.pendingShareholderData.map(x => x.companyCode))];
+
+                        if (remainingCompanies.length === 0) {
+
+                            // Close modal
+                            $('#rollbackModal').addClass('hidden').removeClass('flex');
+
+                        } else {
+
+                            // Rebuild modal list
+                            let html = "";
+
+                            remainingCompanies.forEach(code => {
+
+                                html += `
+                                            <label class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-sm">
+
+                                    <div class="flex items-center gap-3 cursor-pointer">
+
+                                        <input type="radio"
+                                               name="pendingCompany"
+                                               value="${code}"
+                                               class="w-4 h-4 text-blue-600 border-slate-300">
+
+                                        <span class="font-medium text-slate-700">
+                                            ${code}
+                                        </span>
+
+                                    </div>
+
+                                    <button onclick="deletePendingCompany('${code}')"
+                                        class="ml-auto text-red-500 hover:text-red-700 text-lg font-bold leading-none">
+                                        ×
+                                    </button>
+
+                                </label>`;
+                            });
+
+                            document.getElementById("pendingCompanyList").innerHTML = html;
+                        }
+
+                    }
+
+                } catch (e) {
+                    console.error(e);
+                }
+
+            }
+             function shareholderList() {
+                        debugger;
+                        return {
+                            items: [],
+
+                            init() {
+                                this.syncFromStore();
+                                window.addEventListener('store-updated', () => this.syncFromStore());
+                            },
+
+                            syncFromStore() {
+                                this.items = JSON.parse(JSON.stringify(Alpine.store('screeningStore').screeningList || []));
+                            },
+
+                            flattenedItems() {
+                                const list = this.items || [];
+                                function build(parentId = null, prefix = "", depth = 0) {
+                                    const children = list.filter(i => i.parentId === parentId);
+                                    return children.flatMap((item, index) => {
+                                        const number = prefix ? `${prefix}.${index + 1}` : `${index + 1}`;
+                                        return [{ ...item, depth, displayId: number }, ...build(item.id, number, depth + 1)];
+                                    });
+                                }
+                                return build();
+                            },
+
+                            // deleteShareholder(id) {
+                            //     if (!confirm('Are you sure you want to remove this shareholder?')) return;
+                            //     const store = Alpine.store('screeningStore');
+                            //     store.screeningList = store.screeningList.filter(i => i.id !== id && i.parentId !== id);
+                            //     window.dispatchEvent(new Event('store-updated'));
+                            // },
+                        submitshareholderForm() {
+                            $('#loadingeffect').show();
+                            var screeningType="Individual";
+                         const form = document.getElementById('myForm2');
+                         // Copy company details to hidden inputs
+                         document.getElementById('CompanyCodeHidden').value = Alpine.store('companyStore')?.companyCode || '';
+                         document.getElementById('CompanyNameHidden').value = Alpine.store('companyStore')?.companyName || '';
+
+                         document.getElementById('ScreeningTypeHidden').value = screeningType;
+                         // Submit form
+                         form.submit();
+                     }
+                        }
+                    }
+                         function shareholderRepeater(parentTab) {
+                            return {
+                                forms: [{ type: parentTab }],
+                                maxForms: 5,
+                                activeShareholderTab: parentTab, // track current tab
+
+                                // Add a new form
+                                addForm() {
+                                    if (this.forms.length >= this.maxForms) {
+                                        toastr.error("Only 5 forms allowed");
+                                        return;
+                                    }
+                                    this.forms.push({ type: this.activeShareholderTab });
+                                },
+
+                                // Remove a form
+                                removeForm(index) {
+                                    this.forms.splice(index, 1);
+                                },
+
+                                // Update all forms type when tab changes
+                                updateFormsType(newType) {
+                                    this.activeShareholderTab = newType;
+                                    this.forms.forEach(f => f.type = newType); // update all existing forms
+                                },
+
+                                // Submit forms to the server
+                                async submitForms() {
+                                    const payload = [];
+                                    const formData = new FormData();
+                                    const CompanyCode = $('#CompanyCodeInput').val() || "";
+                                    const CompanyName = $('#CompanyNameHidden').val() || "";
+                                    const Thershold = parseInt($('#Thershold').val() || 0);
+
+                                    // Prepare payload only from filled forms
+                                                           this.forms.forEach((form,index) => {
+
+                            if (!form.name || form.name.trim() === "") return;
+
+                                        const typeValue = form.type === 'shareholder'
+                                        ? 'Individual UnderScore Party'
+                                        : form.type === 'corporate_shareholder'
+                                        ? 'Corporate UnderScore Party'
+                                        : '';
+
+                            const obj = {
+                                Name: form.name,
+                                Share: parseInt(form.share || 0),
+                                Designation: form.designation || "",
+                                Nationality: form.nationality || "",
+                                Residence: form.residence || "",
+                                TradeLicence: form.tradeLicence || "",
+                                RegistrationDate: form.registrationDate || "",
+                                IdType: form.idType || "",
+                                IdNumber: form.idNumber || "",
+                                IssueDate: form.issueDate || "",
+                                IdExpiry: form.idExpiry || "",
+                                Cif: form.cif || "",
+                                Type: typeValue,
+                                CompanyCode: CompanyCode,
+                                CompanyName: CompanyName,
+                                Thershold: Thershold,
+                                Employer: form.employername || "",
+                                GoldenVisa: form.goldenvisa || "",
+                                CustType:"I",
+                                ClientID: 0,
+                                UserId: 0,
+
+                            };
+
+                            payload.push(obj);
+
+                            if (form.document) {
+                                formData.append("Documents", form.document);
+                            }
+                        });
+
+                        // THIS LINE WAS MISSING
+                        formData.append("data", JSON.stringify(payload));
 
 
 
-    </script>
+                                    if (payload.length === 0) {
+                                        toastr.warning("No shareholder details to save");
+                                        return;
+                                    }
+
+                                    try {
+                                        // Send payload to server
+                                    const res = await fetch('/Corporate/SaveShareholders', {
+                                    method: 'POST',
+                                    body: formData
+                                });
+
+                                        if (!res.ok) throw new Error("Save failed");
+
+                                        toastr.success("Saved Successfully");
+
+                                        // Refresh pending shareholders via event
+                                        //window.dispatchEvent(new Event('load-pending-shareholders'));
+                                                    window.dispatchEvent(new CustomEvent('load-pending-shareholders', {
+                                                    detail: { skipModal: true }
+                                                }));
+
+                                        // Optionally, clear forms after submit
+                                                               this.forms.forEach((form, index) => {
+                                                // reset fields
+                                                for (let key in form) {
+                                                    if (key !== 'type') form[key] = null;
+                                                }
+
+                                                // reset displayed file name
+                                                form.fileName = 'No file chosen';
+
+                                                // reset file input
+                                                const fileInput = this.$refs['docUpload_' + index];
+                                                if (fileInput) fileInput.value = '';
+                                            });
+
+                                            // Reset forms array
+                                            this.forms = [{ type: this.activeShareholderTab }];
+
+                                    } catch (err) {
+                                        console.error("Error saving shareholders:", err);
+                                        toastr.error("Failed to save shareholders");
+                                    }
+                                }
+                            };
+                        }
+
+                                      function shareholderTree() {
+
+                                return {
+
+                                    items: [],
+
+                                    syncFromStore() {
+
+                                        this.items = JSON.parse(
+                                            JSON.stringify(Alpine.store('screeningStore').screeningList || [])
+                                        );
+                                    },
+
+                                    init() {
+
+                                        this.syncFromStore();
+
+                                        this.$nextTick(() => {
+                                            this.initSortable();
+                                        });
+
+                                        window.addEventListener('store-updated', () => {
+                                            this.syncFromStore();
+                                        });
+                                    },
+
+
+                                    // ⭐ Numbering + Tree Build
+                                    flattenedItems() {
+
+                                        let list = this.items || [];
+
+                                        function build(parentId = null, prefix = "", depth = 0) {
+
+                                            let children = list.filter(x => x.parentId === parentId);
+
+                                            return children.flatMap((item, index) => {
+
+                                                let number = prefix
+                                                    ? `${prefix}.${index + 1}`
+                                                    : `${index + 1}`;
+
+                                                return [
+                                                    { ...item, depth, displayId: number },
+                                                    ...build(item.id, number, depth + 1)
+                                                ];
+                                            });
+                                        }
+
+                                        return build();
+                                    },
+
+
+                                    // ⭐ Drag Logic
+                                    initSortable() {
+
+                                        let self = this;
+                                        let container = document.getElementById("shareholderTreeContainer");
+
+                                        if (!container) return;
+
+                                        new Sortable(container, {
+
+                                            animation: 150,
+                                            handle: ".drag-handle",
+
+                                            onEnd(evt) {
+
+                                                if (!evt.item || !evt.item.dataset.id) return;
+
+                                                let movedId = Number(evt.item.dataset.id);
+                                                let prev = evt.item.previousElementSibling;
+
+                                                let newParentId = null;
+
+                                                if (prev && prev.dataset.id) {
+
+                                                    let prevId = Number(prev.dataset.id);
+                                                    let prevItem = self.items.find(x => x.id === prevId);
+
+                                                    if (prevItem) {
+
+                                                        if (prevItem.type === "Corporate UnderScore Party") {
+                                                            newParentId = prevItem.id;
+                                                        }
+                                                        else {
+                                                            newParentId = prevItem.parentId ?? null;
+                                                        }
+                                                    }
+                                                }
+
+                                                let store = Alpine.store('screeningStore');
+                                                let moved = store.screeningList.find(x => x.id === movedId);
+
+                                                if (!moved) return;
+
+                                                moved.parentId = newParentId;
+
+                                                window.dispatchEvent(new Event('store-updated'));
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+
+                                           $(document).ready(function() {
+                        $('.shareholder-tab').click(function() {
+                            var newType = $(this).data('type');
+
+                            // Update active tab UI
+                            $('.shareholder-tab').removeClass('bg-blue-600 text-white border-blue-600 shadow-sm')
+                                                 .addClass('bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100');
+                            $(this).removeClass('bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100')
+                                   .addClass('bg-blue-600 text-white border-blue-600 shadow-sm');
+
+                            // Update all existing forms type
+                            if (Alpine && Alpine.$data) {
+                                $('.shareholder-repeater').each(function() {
+                                    var comp = Alpine.$data(this);
+                                    if (comp && comp.forms) {
+                                        comp.activeShareholderTab = newType;
+                                        comp.forms.forEach(f => f.type = newType);
+                                    }
+                                });
+                            }
+                        });
+                    });
+
+
+        </script>
 </body>
 
 </html>

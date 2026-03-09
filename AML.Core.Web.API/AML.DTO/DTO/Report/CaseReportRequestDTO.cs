@@ -45,6 +45,15 @@ namespace AML.DTO.DTO.Report
 
         public string SearchValue { get; set; }
 
+       public string matchscore { get; set; }
+        public int createdBy { get; set; }
+        public int caseStatus { get; set; }
+        public string riskLevel { get; set; }
+        
+        public string usergroupName { get; set; }
+
+
+
 
     }
 }
