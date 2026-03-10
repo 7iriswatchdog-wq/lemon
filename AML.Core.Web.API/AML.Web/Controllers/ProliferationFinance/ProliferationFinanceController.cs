@@ -5,7 +5,11 @@ using AML.Core.ServiceContract.CaseDocument;
 using AML.Core.ServiceContract.CaseComment;
 using AML.DTO.DTO.CaseDocument;
 using AML.DTO.DTO.CaseComment;
+using AML.Core.ServiceContract.CustomerCase;
+using AML.Core.ServiceContract.Common;
 using AML.Web.Helper;
+using AML.ViewModel.ViewModels.CustomerCase;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -26,6 +30,9 @@ namespace AML.Web.Controllers.ProliferationFinance
         private readonly ICaseCommentService _caseCommentService;
         private readonly IViewRenderService _viewRenderService;
         private readonly IExportDataService _exportDataService;
+        private readonly ICustomerCaseService _customerCaseService;
+        private readonly IHttpClientHandler _clientHandler;
+        private readonly IMapper _mapper;
 
         public ProliferationFinanceController(
             IProliferationFinanceService proliferationFinanceService, 
@@ -33,7 +40,10 @@ namespace AML.Web.Controllers.ProliferationFinance
             ICaseDocumentService caseDocumentService,
             ICaseCommentService caseCommentService,
             IViewRenderService viewRenderService,
-            IExportDataService exportDataService)
+            IExportDataService exportDataService,
+            ICustomerCaseService customerCaseService,
+            IHttpClientHandler clientHandler,
+            IMapper mapper)
         {
             _proliferationFinanceService = proliferationFinanceService;
             _httpContextAccessor = httpContextAccessor;
@@ -41,6 +51,9 @@ namespace AML.Web.Controllers.ProliferationFinance
             _caseCommentService = caseCommentService;
             _viewRenderService = viewRenderService;
             _exportDataService = exportDataService;
+            _customerCaseService = customerCaseService;
+            _clientHandler = clientHandler;
+            _mapper = mapper;
         }
 
         public IActionResult CaseCreation()
@@ -372,7 +385,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                 };
 
                 string html = await _viewRenderService.RenderToStringAsync("ProliferationFinance/_DetailsReport", model);
-                var pdfBytes = _exportDataService.HtmlToPDF(html, null);
+                var pdfBytes = _exportDataService.HtmlToPDFforChecklistLogs(html);
                 
                 string fileName = $"PF_MatchReport_{model.CorporateId}_{DateTime.Now:yyyyMMdd}.pdf";
                 return File(pdfBytes, "application/pdf", fileName);
@@ -430,6 +443,21 @@ namespace AML.Web.Controllers.ProliferationFinance
                             {
                                 var customerId = worksheet.Cells[row, 1].Value?.ToString();
                                 var companyName = worksheet.Cells[row, 2].Value?.ToString();
+
+                                // Fetch company name if missing but customerId is present
+                                if (string.IsNullOrEmpty(companyName) && !string.IsNullOrEmpty(customerId))
+                                {
+                                    try
+                                    {
+                                        var clientId = _clientHandler.GetClientId();
+                                        var companyData = _customerCaseService.GetCompanyCode(customerId, clientId, "C");
+                                        if (companyData != null && companyData.Count > 0)
+                                        {
+                                            companyName = companyData[0].FirstName ?? companyData[0].CompanyName;
+                                        }
+                                    }
+                                    catch (Exception) { /* Fallback to null if service call fails */ }
+                                }
                                 
                                 // Chemical fields
                                 var hsCode = worksheet.Cells[row, 3].Value?.ToString();
