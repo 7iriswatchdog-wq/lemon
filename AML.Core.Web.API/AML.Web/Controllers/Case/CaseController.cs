@@ -2335,6 +2335,7 @@ namespace AML.Web.Controllers.Case
 
                         if (row.searchTypes.Any(x => x == "Domestic PEP"))
                         {
+                            
                             // You can set flags or store risk level
                             model1.Domesticpep = "Yes";
 

@@ -733,11 +733,11 @@ hasSearched: false,
                                                                class="flex-1 h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium
                                                                   focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all
                                                                   fullNameField"
-                                                               oninput="toggleDuplicateBtn()" />
+                                                               oninput="toggleDuplicateBtn(this)" />
 
                                                         <!-- Icon Button -->
                                                         <button type="button"
-                                                                id="btnCheckDuplicate"
+                                                                id="btnCheckDuplicate1"
                                                                 disabled
                                                                 title="Check Duplicate"
                                                                 class="flex items-center justify-center w-11 h-11 border-2 border-blue-600 text-blue-600 rounded-xl
@@ -1753,7 +1753,7 @@ hasSearched: false,
 
 
                                     <!-- Instructions Block -->
-                                    <div class="bg-slate-50 border border-slate-200 rounded-[24px] p-6 shadow-sm">
+                                        <div id="uploadInstruction" class="bg-slate-50 border border-slate-200 rounded-[24px] p-6 shadow-sm">
                                         <h3 class="text-sm font-black text-slate-900 mb-4 uppercase tracking-tighter">
                                             Upload Instructions:
                                         </h3>
@@ -1800,7 +1800,7 @@ hasSearched: false,
                                          x-transition
                                          class="space-y-8 pt-10">
 
-                                        <div class="max-w-xl mx-auto">
+                                        <div class="max-w-xl mx-auto" >
 
                                         <!-- Hidden File Input -->
                                         <input type="file"
@@ -1810,7 +1810,7 @@ hasSearched: false,
                                                @@change="uploadFile($event)">
 
                                         <!-- Upload Card -->
-                                        <div @@click="$refs.fileInput.click()"
+                                        <div x-show="uploadVisible" @@click="$refs.fileInput.click()"
                                              class="border-2 border-dashed border-slate-200 rounded-[32px] p-16 text-center transition-all cursor-pointer hover:border-blue-400 hover:bg-slate-50 relative overflow-hidden group">
 
                                             <!-- Loader Overlay -->
@@ -1949,11 +1949,10 @@ hasSearched: false,
                                                                    id="fullName"
                                                                    class="flex-1 h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium
                                                                             focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all
-                                                                            fullNameField"
-                                                                    />
+                                                                            fullNameField" oninput="toggleDuplicateBtn(this)" />
 
                                                             <button type="button"
-                                                                    id="btnCheckDuplicate"
+                                                                    id="btnCheckDuplicate2"
                                                                     disabled
                                                                     title="Check Duplicate"
                                                                     class="flex items-center justify-center w-11 h-11 border-2 border-blue-600 text-blue-600 rounded-xl
@@ -2264,7 +2263,55 @@ hasSearched: false,
 
     <!-- MODAL: DUPLICATE CHECK -->
         <!-- MODAL -->
-        <div x-show="isDuplicateModalOpen" id="isDuplicateModalOpen"
+        <div x-show="isDuplicateModalOpen"
+             x-cloak
+             id="isDuplicateModalOpen"
+             class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+             x-transition>
+
+            <!-- Modal -->
+            <div @@click.away="closeDuplicateModalClose()"
+                 class="bg-white rounded-xl shadow-xl w-full max-w-7xl">
+
+                <!-- Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b">
+
+                    <h2 class="text-lg font-semibold text-gray-800">
+                        Search Duplicates
+                    </h2>
+
+                    <button @@click="closeDuplicateModalClose()"
+                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm">
+                        Close
+                    </button>
+
+                </div>
+
+                <!-- Table -->
+                <div class="max-h-[350px] overflow-y-auto">
+
+                    <table class="w-full text-sm text-left">
+
+                        <thead class="bg-gray-100 text-gray-600 sticky top-0">
+                            <tr>
+                                <th class="px-6 py-3">Ref ID</th>
+                                <th class="px-6 py-3">Created on</th>
+                                <th class="px-6 py-3">Cust. Name</th>
+                                <th class="px-6 py-3">Case Status</th>
+                                <th class="px-6 py-3">Link</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="duplicateTableBody" class="divide-y">
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+        </div>
+        @* <div x-show="isDuplicateModalOpen" id="isDuplicateModalOpen"
              x-cloak
              class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md transition-all duration-200"
              x-transition:enter="transition ease-out duration-200"
@@ -2319,7 +2366,7 @@ hasSearched: false,
                 </div>
 
             </div>
-        </div>
+        </div> *@
 
         <div x-data="{ isExcelUploadModalOpen: @Model.ShowExcelUploadModal.ToString().ToLower() }" id="isExcelUploadModalOpen"
              x-show="isExcelUploadModalOpen"
@@ -2735,16 +2782,27 @@ hasSearched: false,
         </script> *@
 
     <script>
-        function toggleDuplicateBtn() {
-    const input = document.getElementById('fullName');
-    const btn = document.getElementById('btnCheckDuplicate');
+           function toggleDuplicateBtn(input) {
 
-    if (input.value.trim().length > 0) {
-        btn.disabled = false;
-    } else {
-        btn.disabled = true;
-    }
-}
+                const form = input.closest('form');
+                const btn = form.querySelector('[id^="btnCheckDuplicate"]');
+
+                if (input.value.trim().length > 0) {
+                    btn.disabled = false;
+                } else {
+                    btn.disabled = true;
+                }
+            }
+//         function toggleDuplicateBtn() {
+//     const input = document.getElementById('fullName');
+//     const btn = document.getElementById('btnCheckDuplicate');
+
+//     if (input.value.trim().length > 0) {
+//         btn.disabled = false;
+//     } else {
+//         btn.disabled = true;
+//     }
+// }
 
                     document.addEventListener('alpine:init', () => {
 
@@ -3169,10 +3227,50 @@ hasSearched: false,
                     }
                 }
             }
+                        function formatCaseStatus(statusText) {
+                    if (!statusText) return '';
+                                function getStatusClass(text) {
 
+                                    const t = text.toLowerCase().trim();
 
+                                    if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
+                                    if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
+                                    if (t.includes('auto')) return     'bg-amber-100 text-amber-800';
+                                    //if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
+                                    if (t.includes('transfer')) return 'bg-green-100 text-green-800';
+                                    if (t.includes('rejected')) return 'bg-red-100 text-red-800';
+
+                                    return 'bg-slate-100 text-slate-800';
+                                }
+                        const statusClass = getStatusClass(statusText);
+
+                    return `
+                                                <span class="inline-flex items-center justify-center min-w-[120px] px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+                ${statusText}
+            </span>`;
+                        }
+
+                         
+
+                                function formatDateTime(dateStr) {
+                    if (!dateStr) return { date: '-', time: '-' };
+
+                    const d = new Date(dateStr);
+
+                    return {
+                        date: d.toLocaleDateString('en-GB'), // 20/02/2026
+                        time: d.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',   // ✅ added
+                            hour12: true
+                        }) // 06:43:15 PM
+                    };
+                }
 
             function checkDuplicatefunction(buttonElement) {
+
+                             $('#loadingeffect').show();
 
                             let form = $(buttonElement).closest('form');
             let fullname = form.find('.fullNameField').val();
@@ -3193,6 +3291,7 @@ hasSearched: false,
                             data.forEach(function (item) {
 
                                 let createdDate = new Date(item.createdOn);
+                                const created = formatDateTime(item.createdOn);
 
                                     let row = `
                                   <tr class="hover:bg-slate-50/50 transition-colors">
@@ -3201,8 +3300,8 @@ hasSearched: false,
                                     <td class="px-6 py-6 text-slate-600 font-medium">
                                         ${createdDate.toLocaleDateString('en-GB')}
                                         <br>
-                                        <span class="text-[10px] text-slate-400">
-                                            ${createdDate.toLocaleTimeString()}
+                                        <span class="ml-2">
+                                            ${created?.time ? created.time.replace(/\s?(AM|PM)/i, '') : ''}
                                         </span>
                                     </td>
 
@@ -3211,9 +3310,9 @@ hasSearched: false,
                                     </td>
 
                                     <td class="px-6 py-6">
-                                        <span class="bg-emerald-100 text-emerald-700 text-[10px] font-extrabold px-3 py-1 rounded-full">
-                                            ${item.caseStatus}
-                                        </span>
+                                        
+                                       ${formatCaseStatus(item.caseStatus)}
+                                        
                                     </td>
 
                                     <td class="px-6 py-6">
@@ -3239,9 +3338,11 @@ hasSearched: false,
                             });
 
                         } else {
-                            tbody.append(`<tr><td colspan="5">No duplicates found</td></tr>`);
+                                        tbody.append(`<tr> <td colspan="5" class="text-center py-10 text-slate-500 font-medium">
+                    No duplicates found
+                </td></tr>`);
                         }
-
+                                     $('#loadingeffect').hide();
                         $('#isDuplicateModalOpen').show();
                     }
                 });
@@ -3610,6 +3711,7 @@ hasSearched: false,
                         loading: false,
                         fileName: "",
                         errorMessage: "",
+                                    uploadVisible: true,
                    
                         async uploadFile(event) {
 
@@ -3639,6 +3741,8 @@ hasSearched: false,
                                 $('#loadingeffect').hide();
                                 toastr.error("OCR Failed. Please fill the form manually");
                                 $('#manualForm').show();
+                                this.uploadVisible = false;
+                                $('#uploadInstruction').hide();
                                 return;
                             }
 
@@ -3650,19 +3754,26 @@ hasSearched: false,
                                 $('#loadingeffect').hide();
                                 toastr.error("MRZ data not found. Please fill the form manually");
                                 $('#manualForm').show();
+                                this.uploadVisible = false;
+                                $('#uploadInstruction').hide();
                                 return;
                             }
 
                             $('#loadingeffect').hide();
                             $('#manualForm').show();
+                            $('#uploadInstruction').hide();
+                            this.uploadVisible = false;
 
                             let form = document.getElementById("myOCRForm");
 
                             /* =========================
                                FIELD MAPPING (FIXED)
                                ========================= */
+                            let nameInput = form.querySelector("#fullName");
+                            nameInput.value = mrzData.full_name || "";
+                            toggleDuplicateBtn(nameInput);
 
-                            form.querySelector("#fullName").value = mrzData.full_name || "";
+                            //form.querySelector("#fullName").value = mrzData.full_name || "";
                             form.querySelector("#txtIdNumber").value = mrzData.document_number || "";
 
                             /* Gender */
@@ -4553,6 +4664,7 @@ hasSearched: false,
                         });
                     });
 
+                   
 
         </script>
 </body>

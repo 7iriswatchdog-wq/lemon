@@ -414,7 +414,7 @@
                         }
                     }
 
-                    @if (Model.Case.CustomerType == "C" && Model.ShareholdersData != null && Model.ShareholdersData.Any())
+                    @if (Model.ShareholdersData != null && Model.ShareholdersData.Any())
                     {
                         <div id="shareholdersSection" class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[350px] flex-1">
                             <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between shrink-0">
@@ -2005,110 +2005,103 @@
              //     }
              // }
 
-                  function applyRiskSelections(riskData,riskDetails) {
-            let counter = 0;
+                 function applyRiskSelections(riskData, riskDetails) {
 
-                        let rating =
-                                riskDetails.riskAssessmentRating ||
-                                riskDetails.finalRiskScore ||
-                                "";
+                let counter = 0;
 
-                            let ratingWithoutOverride =
-                                riskDetails.riskAssessmentRatingWithoutOverride ||
-                                riskDetails.riskScoreBeforeOverride ||
-                                "";
-             $('#btntotal').text(riskDetails.riskScoreCount);
-             $('#btntotalscore').text(riskDetails.riskScoreSum);
-                                             
+                let rating =
+                    riskDetails.riskAssessmentRating ||
+                    riskDetails.finalRiskScore ||
+                    "";
 
-            for (let i = 0; i < riskData.length; i++) {
-                let category = riskData[i];
+                let ratingWithoutOverride =
+                    riskDetails.riskAssessmentRatingWithoutOverride ||
+                    riskDetails.riskScoreBeforeOverride ||
+                    "";
 
-                for (let j = 0; j < category.riskTypes.length; j++) {
-                    let riskType = category.riskTypes[j];
+                $('#btntotal').text(riskDetails.riskScoreCount);
+                $('#btntotalscore').text(riskDetails.riskScoreSum);
 
-                    let inputField = $(`#RiskItemTxt_${counter}`);
-                    let scoreCircle = $(`#clrScore_${counter}`);
-                    let scoreHidden = $(`#clrScorehdn_${counter}`);
+                let hasHighOverride = false;
 
-                    if (!inputField.length) {
-                        counter++;
-                        continue;
+                for (let i = 0; i < riskData.length; i++) {
+                    let category = riskData[i];
+
+                    for (let j = 0; j < category.riskTypes.length; j++) {
+                        if (Number(category.riskTypes[j].overrideScore) === 3) {
+                            hasHighOverride = true;
+                            break;
+                        }
                     }
-                    console.log(counter, riskType.itemTxt, riskType.itemScore, riskType.score);
 
-                    // Set readonly input value
-                    inputField.val(riskType.itemTxt || "");
-
-                    // Determine score
-                    let score = riskType.itemScore || riskType.score || 0;
-
-                    // Update hidden input
-                    scoreHidden.val(score);
-
-                    // Update visible score circle
-                    scoreCircle.text(score);
-
-                    let overrideScore = riskType.overrideScore || 0; // optional
-
-            // ⭐ Update Score Circle with colors
-            updateScoreCircle(counter, score, overrideScore);
-
-                    // Reset classes based on score
-                    // if (score > 0) {
-                    //     scoreCircle.removeClass().addClass(
-                    //         "text-[10px] font-semibold inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700"
-                    //     );
-                    // } else {
-                    //     scoreCircle.removeClass().addClass(
-                    //         "text-[10px] font-semibold inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-400"
-                    //     );
-                    // }
-
-                    counter++;
+                    if (hasHighOverride) break;
                 }
+
+                for (let i = 0; i < riskData.length; i++) {
+                    let category = riskData[i];
+
+                    for (let j = 0; j < category.riskTypes.length; j++) {
+
+                        let riskType = category.riskTypes[j];   // ⭐ DEFINE HERE
+
+                        let inputField = $(`#RiskItemTxt_${counter}`);
+                        let scoreCircle = $(`#clrScore_${counter}`);
+                        let scoreHidden = $(`#clrScorehdn_${counter}`);
+
+                        if (!inputField.length) {
+                            counter++;
+                            continue;
+                        }
+
+                        console.log(counter, riskType.itemTxt, riskType.itemScore, riskType.score);
+
+                        inputField.val(riskType.itemTxt || "");
+
+                        let score = riskType.itemScore || riskType.score || 0;
+
+                        scoreHidden.val(score);
+
+                        scoreCircle.text(score);
+
+                        let overrideScore = riskType.overrideScore || 0;
+
+                        updateScoreCircle(counter, score, overrideScore);
+
+                        counter++;
+                    }
+                }
+
+                let badge = $("#riskRatingBadge");
+
+                if (!badge.length) return;
+
+                badge.removeClass("bg-green-500 bg-yellow-400 bg-red-500 text-white");
+
+                badge.addClass("px-3 py-1 rounded-full text-xs font-bold text-white");
+
+                let displayRating = rating;
+
+                if ((rating || "").toLowerCase() === "high risk" && hasHighOverride) {
+                    displayRating = "High Risk(O)";
+                }
+
+               let ratingLower = (displayRating || "").toLowerCase();
+
+            if (ratingLower.includes("low risk")) {
+                            badge.removeClass("text-slate-600")
+                                        badge.addClass("bg-green-500 text-white-600");
             }
-                        let badge = $("#riskRatingBadge");
+            else if (ratingLower.includes("medium risk")) {
+                            badge.removeClass("text-slate-600")
+                                        badge.addClass("bg-yellow-400 text-white-600");
+            }
+            else if (ratingLower.includes("high risk")) {
+                            badge.removeClass("text-slate-600")
+                                        badge.addClass("bg-red-500 text-white-600");   // ⭐ works for both High Risk and High Risk (O)
+            }
 
-                            if (!badge.length) return;
-
-                            badge.removeClass(
-                                "bg-green-500 bg-yellow-400 bg-red-500 text-white blink-risk"
-                            );
-
-                            badge.addClass("px-3 py-1 rounded-full text-xs font-bold text-white");
-
-                            if (rating.toLowerCase() === "low risk") {
-
-                                badge.addClass("bg-green-500");
-
-                            }
-                            else if (rating.toLowerCase() === "medium risk") {
-
-                                badge.addClass("bg-yellow-400");
-
-                            }
-                            else if (rating.toLowerCase() === "high risk") {
-
-                                badge.addClass("bg-red-500");
-
-                            }
-
-                            badge.text(rating);
-
-                            /* ====================================
-                               BLINK ONLY WHEN BOTH ARE HIGH RISK
-                            ===================================== */
-
-                            if (
-                                rating &&
-                                ratingWithoutOverride &&
-                                rating.toLowerCase() === "high risk" &&
-                                ratingWithoutOverride.toLowerCase() === "high risk"
-                            ) {
-                                badge.addClass("blink-risk");
-                            }
-        }
+                            badge.text(displayRating);
+                        }
 
                 function updateScoreCircle(counter, score, overrideScore) {
             let el = $(`#clrScore_${counter}`);

@@ -386,6 +386,7 @@ namespace AML.Web.Controllers
                 string OverrideRiskStatus = "Low Risk";
                 string RiskStatus = "Low";
                 string RiskAsPerScore = "";
+                string RiskOverRide = "";
                 RiskModel riskmodel = new RiskModel();
                 riskmodel.CustomerCode = model.CustomerId;
                 riskmodel.RiskTypeCategoryDTO = new List<RiskTypeCategoryDTO>();
@@ -472,6 +473,9 @@ namespace AML.Web.Controllers
                 {
                     if (Overrides || OverrideScore[i])
                         RiskStatus = "High Risk";
+                    RiskOverRide = "Override";
+
+
                 }
                 riskmodel.CustomerCode = model.CustomerId;
                 riskmodel.CustomerName = model.CustomerName;
@@ -479,6 +483,7 @@ namespace AML.Web.Controllers
                 riskmodel.Address = null;
                 riskmodel.MainNationalityTxt = model.MainNationality;
                 riskmodel.FinalRiskScore = RiskStatus;
+                riskmodel.RiskOverRide = RiskOverRide;
                 riskmodel.RiskScoreSum = TotalScore;
                 riskmodel.RiskScoreCount = a;
                 riskmodel.ClientId = model.ClientId;
@@ -507,6 +512,7 @@ namespace AML.Web.Controllers
                 string OverrideRiskStatus = "Low Risk";
                 string RiskStatus = "Low";
                 string RiskAsPerScore = "";
+                string RiskOverRide = "";
                 RiskCorpCustomerModel riskmodel = new RiskCorpCustomerModel();
                 riskmodel.UniqueID = model.CustomerId;
                 riskmodel.RiskTypeCategoryDTO = new List<RiskTypeCategoryDTO>();
@@ -592,6 +598,7 @@ namespace AML.Web.Controllers
                 {
                     if (Overrides || OverrideScore[i])
                         RiskStatus = "High Risk";
+                    RiskOverRide = "Override";
                 }
                 riskmodel.UniqueID = model.CustomerId;
                 riskmodel.LegalNameOfEntity = model.CustomerName;
@@ -599,6 +606,7 @@ namespace AML.Web.Controllers
                 //  riskmodel.Address = null;
                 riskmodel.CountryOfIncorporationTxt = model.MainNationality;
                 riskmodel.RiskAssessmentRating = RiskStatus;
+                riskmodel.RiskOverRide = RiskOverRide;
                 riskmodel.RiskScoreSum = TotalScore;
                 riskmodel.RiskScoreCount = a;
                 riskmodel.ClientId = model.ClientId;
