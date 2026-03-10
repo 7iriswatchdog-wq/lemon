@@ -20,7 +20,7 @@ namespace AML.Web.Helper
 {
     public interface IExportDataService
     {
-        byte[] HtmlToPDF(string html, string customHeader);
+        byte[] HtmlToPDFforChecklistLogs(string html);
         string ListToCSV<T>(List<T> list, string separator);
         FileResult ExportData<T>(List<T> list, string html, int operationTypeID, string downloadFileName);
         FileResult ExportDataWithHeader<T>(List<T> list, string html, int operationTypeID, string downloadFileName, byte[] ms);
