@@ -12,10 +12,12 @@ namespace AML.Core.Service.ProliferationFinance
     public class ProliferationFinanceService : IProliferationFinanceService
     {
         private readonly IProliferationFinanceRepository _repository;
+        private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
 
-        public ProliferationFinanceService(IProliferationFinanceRepository repository)
+        public ProliferationFinanceService(IProliferationFinanceRepository repository, Microsoft.Extensions.Configuration.IConfiguration configuration)
         {
             _repository = repository;
+            _configuration = configuration;
         }
 
         public ServiceResponse<List<UAEControlListDTO>> SearchChemicals(ProliferationFinanceCaseDTO searchCriteria)
@@ -27,8 +29,9 @@ namespace AML.Core.Service.ProliferationFinance
         {
             try
             {
-                // Absolute path as per user request
-                string filePath = @"d:\Omkar\lemon_new\قرار مجلس الوزراء رقم (156) لسنة 2025 .pdf";
+                // Dynamic path from appsettings.json
+                string relativePath = _configuration["ProliferationFinance:ControlListPdfPath"] ?? @"wwwroot/Documents/UAE_Control_List.pdf";
+                string filePath = Path.Combine(Directory.GetCurrentDirectory(), relativePath);
                 string matchedParagraph = PdfHelper.SearchKeywordInPdf(filePath, keyword);
 
                 return new ServiceResponse<string>
