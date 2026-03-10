@@ -346,21 +346,25 @@
             data: { caseId: @Model.CaseId, status: decision },
             success: function(res) {
                 if (res.success) {
+                    toastr.success('Case status updated to ' + decision);
                     if (comment.trim()) {
                         $.ajax({
                             url: '/ProliferationFinance/UpdateRemarks',
                             type: 'POST',
                             data: { caseId: @Model.CaseId, remarks: comment },
                             complete: function() {
-                                location.reload();
+                                setTimeout(() => location.reload(), 1500);
                             }
                         });
                     } else {
-                        location.reload();
+                        setTimeout(() => location.reload(), 1500);
                     }
                 } else {
-                    console.error(res.message || 'Error saving decision.');
+                    toastr.error(res.message || 'Error saving decision.');
                 }
+            },
+            error: function() {
+                toastr.error('Error connecting to server.');
             }
         });
     }
@@ -377,11 +381,15 @@
             data: { caseId: @Model.CaseId, remarks: comment },
             success: function(res) {
                 if (res.success) {
+                    toastr.success('Comment saved successfully');
                     $('#caseComment').val(''); // Clear the input
-                    location.reload(); // Silent reload to show updated history
+                    setTimeout(() => location.reload(), 1500); // Silent reload to show updated history
                 } else {
-                    console.error(res.message || 'Error saving comment.');
+                    toastr.error(res.message || 'Error saving comment.');
                 }
+            },
+            error: function() {
+                toastr.error('Error connecting to server.');
             }
         });
     }
@@ -404,14 +412,15 @@
                 success: function(res) {
                     $('#loadingeffect').hide();
                     if (res.success) {
-                        location.reload();
+                        toastr.success('Document uploaded successfully');
+                        setTimeout(() => location.reload(), 1500);
                     } else {
-                        console.error('Upload failed: ' + res.message);
+                        toastr.error('Upload failed: ' + res.message);
                     }
                 },
                 error: function() {
                     $('#loadingeffect').hide();
-                    console.error('Error uploading document');
+                    toastr.error('Error uploading document');
                 }
             });
         }
@@ -439,12 +448,14 @@
                 success: function(res) {
                     $('#loadingeffect').hide();
                     if (!res.success) {
-                        console.error('Failed to save actions: ' + res.message);
+                        toastr.error('Failed to save actions: ' + res.message);
+                    } else {
+                        toastr.success('Search actions saved successfully');
                     }
                 },
                 error: function() {
                     $('#loadingeffect').hide();
-                    console.error('Error saving search actions');
+                    toastr.error('Error saving search actions');
                 }
             });
         }
