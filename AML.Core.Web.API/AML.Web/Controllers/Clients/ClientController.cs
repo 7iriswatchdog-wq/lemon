@@ -307,7 +307,7 @@ namespace AML.Web.Controllers.Client
                     {
                         return Json(new
                         {
-                            Success = true,
+                            Success = false,
                             Message = "Application Start Date must be today’s date.",
                             Data = result
                         });
@@ -332,12 +332,13 @@ namespace AML.Web.Controllers.Client
                         return Json(new
                         {
                             Success = false,
+
                             Message = responseMessage.message.ToString()
                         });
                     }
                     else
                     {
-
+                    
 
 
 
@@ -373,14 +374,25 @@ namespace AML.Web.Controllers.Client
                         }
 
 
-                        _toastNotification.AddSuccessToastMessage("Client Created successfully");
-
+                        //_toastNotification.AddSuccessToastMessage("Client Created successfully");
+                    if (_clientDto.ClientId != 0)
+                    {
                         return Json(new
                         {
                             Success = true,
                             Message = "Client updated successfully",
                             Data = result
                         });
+                    }
+                    else
+                    {
+                        return Json(new
+                        {
+                            Success = false,
+                            Message = "Client is not Created",
+                            Data = result
+                        });
+                    }
                     }
                 }
             return RedirectToAction("Index", "AdminManagement");

@@ -29,9 +29,15 @@ namespace AML.Core.Service.ProliferationFinance
         {
             try
             {
+<<<<<<< HEAD
+                // Absolute path as per user request
+                //string filePath = @"d:\Omkar\lemon_new\قرار مجلس الوزراء رقم (156) لسنة 2025 .pdf";
+                string filePath = Path.Combine(Directory.GetCurrentDirectory(),"Files","قرار مجلس الوزراء رقم (156) لسنة 2025 .pdf");
+=======
                 // Dynamic path from appsettings.json
                 string relativePath = _configuration["ProliferationFinance:ControlListPdfPath"] ?? @"wwwroot/Documents/UAE_Control_List.pdf";
                 string filePath = Path.Combine(Directory.GetCurrentDirectory(), relativePath);
+>>>>>>> 90ef8418bf515911d021da13825a04e5935f5046
                 string matchedParagraph = PdfHelper.SearchKeywordInPdf(filePath, keyword);
 
                 return new ServiceResponse<string>

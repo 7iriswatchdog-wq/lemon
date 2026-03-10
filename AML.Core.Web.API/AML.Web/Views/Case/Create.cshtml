@@ -344,7 +344,7 @@ hasSearched: false,
                     <div class="flex h-full gap-8 max-w-[1600px] mx-auto overflow-hidden">
 
                     <!-- Left: Method Selection -->
-                        <div class="w-full lg:w-1/4 flex flex-col gap-6 bg-white rounded-[32px] border border-slate-200 shadow-sm shrink-0 overflow-hidden">
+                        <div class="w-full lg:w-1/4 flex flex-col h-full bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden min-w-[340px]">
                             <div class="p-8 space-y-8 flex-1 overflow-y-auto scrollbar-thin">
                                 <div class="space-y-2">
                             <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Individual Case Creation</h1>
@@ -939,7 +939,7 @@ hasSearched: false,
                                                         Employer Name
                                                     </label>
                                                     <div class="relative">
-                                                        <input type="text" placeholder="Enter Employer Name" asp-for="Employer" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="cifnumber">
+                                                        <input type="text" placeholder="Enter Employer Name" asp-for="Employer" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="employer">
                                                     </div>
                                                 </div>
                                                 <div class="space-y-2.5">
@@ -1209,7 +1209,7 @@ hasSearched: false,
                                                                     <div class="contents">
                                                                         <div class="space-y-2">
                                                                             <label class="text-xs font-semibold text-slate-700">Employer Name</label>
-                                                                            <input type="text" x-model="form.employername" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                            <input type="text" x-model="form.employername" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" >
                                                                         </div>
                                                                         <div class="space-y-2">
                                                                             <label class="text-xs font-semibold text-slate-700">Golden Visa</label>
@@ -1949,7 +1949,7 @@ hasSearched: false,
                                                                    id="fullName"
                                                                    class="flex-1 h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium
                                                                             focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all
-                                                                            fullNameField" oninput="toggleDuplicateBtn(this)" />
+                                                                            fullNameField"  />
 
                                                             <button type="button"
                                                                     id="btnCheckDuplicate2"
@@ -1957,7 +1957,6 @@ hasSearched: false,
                                                                     title="Check Duplicate"
                                                                     class="flex items-center justify-center w-11 h-11 border-2 border-blue-600 text-blue-600 rounded-xl
                                                                        transition-all whitespace-nowrap
-                                                                       disabled:opacity-50 disabled:cursor-not-allowed
                                                                        hover:bg-blue-50 active:scale-95"
                                                                     onclick="checkDuplicatefunction(this)">
 
@@ -2127,7 +2126,7 @@ hasSearched: false,
                                                             Employer Name
                                                         </label>
                                                         <div class="relative">
-                                                            <input type="text" placeholder="Enter Employer Name" asp-for="Employer" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="cifnumber">
+                                                            <input type="text" placeholder="Enter Employer Name" asp-for="Employer" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="employer">
                                                         </div>
                                                     </div>
                                                     <div class="space-y-2.5">
@@ -3235,8 +3234,8 @@ hasSearched: false,
 
                                     if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
                                     if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
-                                    if (t.includes('auto')) return     'bg-amber-100 text-amber-800';
-                                    //if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
+                                    //if (t.includes('auto')) return     'bg-amber-100 text-amber-800';
+                                    if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
                                     if (t.includes('transfer')) return 'bg-green-100 text-green-800';
                                     if (t.includes('rejected')) return 'bg-red-100 text-red-800';
 
@@ -3746,7 +3745,7 @@ hasSearched: false,
                                 return;
                             }
 
-                            let mrzData = result.consolidated_document_data || {};
+                            let mrzData = result.extracted_json || {};
 
                             console.log("MRZ DATA:", mrzData);
 
@@ -3769,12 +3768,24 @@ hasSearched: false,
                             /* =========================
                                FIELD MAPPING (FIXED)
                                ========================= */
+                           
                             let nameInput = form.querySelector("#fullName");
-                            nameInput.value = mrzData.full_name || "";
-                            toggleDuplicateBtn(nameInput);
+
+                                let fullName = [
+                                    mrzData.firstname,
+                                    mrzData.middlename,
+                                    mrzData.lastname
+                                ].filter(Boolean).join(" ");
+
+                                nameInput.value = fullName;
+                            //toggleDuplicateBtn(nameInput);
 
                             //form.querySelector("#fullName").value = mrzData.full_name || "";
                             form.querySelector("#txtIdNumber").value = mrzData.document_number || "";
+
+                            form.querySelector("#employer").value = mrzData.employer_name || "";
+
+                            form.querySelector("#goldenVisa").value = mrzData.isGolden || "";
 
                             /* Gender */
                             let genderValue = (mrzData.gender || "").toUpperCase();

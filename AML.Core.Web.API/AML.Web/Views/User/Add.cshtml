@@ -102,7 +102,7 @@
                             </div>
                             <div>
                                 <label class="label-text">User Group <span class="text-rose-500">*</span></label>
-                                <select asp-for="UserGroupId" asp-items="Model.UserGroup" class="input-field">
+                                <select asp-for="UserGroupId" asp-items="Model.UserGroup" class="input-field" required>
                                     <option value="">-- Select Group --</option>
                                 </select>
                                 <span asp-validation-for="UserGroupId" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
@@ -122,18 +122,18 @@
                             }
                             <div>
                                 <label class="label-text">Employee Code <span class="text-rose-500">*</span></label>
-                                <input type="text" asp-for="EmpCode" class="input-field" placeholder="EMP001">
+                                <input type="text" asp-for="EmpCode" class="input-field" placeholder="EMP001" required>
                                 <span asp-validation-for="EmpCode" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
                             </div>
                             <div class="md:col-span-2 grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="label-text">First Name <span class="text-rose-500">*</span></label>
-                                    <input type="text" asp-for="FName" class="input-field" placeholder="John">
-                                    <span asp-validation-for="FName" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
+                                    <input type="text" asp-for="FName" class="input-field" placeholder="John" required>
+                                    <span asp-validation-for="FName" class="text-[10px] text-rose-500 mt-1 block font-medium" ></span>
                                 </div>
                                 <div>
                                     <label class="label-text">Last Name <span class="text-rose-500">*</span></label>
-                                    <input type="text" asp-for="LName" class="input-field" placeholder="Doe">
+                                    <input type="text" asp-for="LName" class="input-field" placeholder="Doe" required>
                                     <span asp-validation-for="LName" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
                                 </div>
                             </div>
@@ -151,7 +151,7 @@
                         <div class="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="label-text">Email Address <span class="text-rose-500">*</span></label>
-                                <input type="email" asp-for="UserDetail.Email" class="input-field" placeholder="john.doe@example.com">
+                                <input type="email" asp-for="UserDetail.Email" class="input-field" placeholder="john.doe@example.com" required>
                                 <span asp-validation-for="UserDetail.Email" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
                             </div>
                             @{
@@ -161,11 +161,11 @@
                                 <label class="label-text">Username <span class="text-rose-500">*</span></label>
                                 @if (isEdit)
                                 {
-                                    <input type="text" asp-for="UserName" class="@userNameClass" readonly placeholder="jdoe">
+                                    <input type="text" asp-for="UserName" class="@userNameClass" readonly placeholder="jdoe" required>
                                 }
                                 else
                                 {
-                                    <input type="text" asp-for="UserName" class="@userNameClass" placeholder="jdoe">
+                                    <input type="text" asp-for="UserName" class="@userNameClass" placeholder="jdoe" required>
                                 }
                                 <span asp-validation-for="UserName" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
                             </div>
@@ -173,12 +173,12 @@
                             {
                                 <div>
                                     <label class="label-text">Password <span class="text-rose-500">*</span></label>
-                                    <input type="password" asp-for="Password" class="input-field" placeholder="••••••••">
+                                    <input type="password" asp-for="Password" class="input-field" placeholder="••••••••" required>
                                     <span asp-validation-for="Password" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
                                 </div>
                                 <div>
                                     <label class="label-text">Confirm Password <span class="text-rose-500">*</span></label>
-                                    <input type="password" asp-for="RePassword" class="input-field" placeholder="••••••••">
+                                    <input type="password" asp-for="RePassword" class="input-field" placeholder="••••••••" required>
                                     <span asp-validation-for="RePassword" class="text-[10px] text-rose-500 mt-1 block font-medium"></span>
                                 </div>
                             }
@@ -220,7 +220,7 @@
                     </section>
 
                     <!-- Dynamic Sections -->
-                    <div id="divUserContact" class="hidden">
+                    @* <div id="divUserContact" class="hidden">
                         <div class="border-t border-slate-100 my-12"></div>
                         <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
                             <div class="col-span-1">
@@ -286,7 +286,7 @@
                                 </div>
                             </div>
                         </section>
-                    </div>
+                    </div> *@
 
             <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
                 <button type="button" onclick="handleCancel()" class="bg-white border border-slate-200 shadow-sm hover:bg-slate-50 text-slate-700 font-bold h-10 px-5 rounded-md flex items-center gap-2 transition-colors text-sm">
@@ -329,5 +329,46 @@
         $('#loader').removeClass('hidden').addClass('flex');
         window.location.href = '/AdminManagement/Details/@Model.ClientId';
     }
+
+    function fnSubmit() {
+
+    let isValid = true;
+
+    $('form [required]').each(function () {
+
+        let value = $(this).val();
+
+        if (!value || value.trim() === '') {
+
+            $(this).addClass('border-red-500');
+            $(this).focus();
+
+            isValid = false;
+            return false; // stop loop
+        }
+        else {
+            $(this).removeClass('border-red-500');
+        }
+
+    });
+
+    if (!isValid) {
+        toastr.error("Please fill all mandatory fields");
+        return;
+    }
+
+    // Extra password match validation (only in create mode)
+    let pwd = $('#Password').val();
+    let cpwd = $('#RePassword').val();
+
+    if ($('#Password').length && pwd !== cpwd) {
+        $('#RePassword').addClass('border-red-500').focus();
+        toastr.error("Passwords do not match");
+        return;
+    }
+
+    // If everything valid submit form
+    $('#userForm').submit();
+}
 </script>
 

@@ -6,6 +6,10 @@
     Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
     var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
 }
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 @model AML.ViewModel.ViewModels.UserGroup.UserGroupModel
 <style>
@@ -76,7 +80,9 @@
         }
     }
 </style>
-
+<div id="loader" class="fixed inset-0 bg-white bg-opacity-75 items-center justify-center z-50 hidden">
+    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+</div>
 <div class="max-w-screen h-full items-center container">
     @*<div class="sas-breadcrumbs aml-breadcrumbs mt-2">
             <ul class="mb-0 pl-0 d-flex">
@@ -124,7 +130,7 @@
 
                 <!-- /.card-header -->
                 <!-- form start -->
-                <form role="form" asp-controller="UserGroup" asp-action="Create" class="form-horizontal" enctype="multipart/form-data" method="post">
+                <form id="userGroupForm" role="form" asp-controller="UserGroup" asp-action="Create" class="form-horizontal" enctype="multipart/form-data" method="post">
                     <input type="hidden" asp-for="Id" />
                     <input type="hidden" asp-for="CreatedBy" />
                     <input type="hidden" asp-for="IsActive" />
@@ -134,28 +140,28 @@
 
                             <div class="form-group">
                                 <label for="txtCode" class="block text-sm font-medium text-gray-700 mb-1">Code <span class="text-red-500">*</span></label>
-                                <input type="text" asp-for="Code" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" id="txtCode" placeholder="Enter code">
+                                <input type="text" asp-for="Code" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" id="txtCode" placeholder="Enter code" required>
                                 <span asp-validation-for="Code" class="text-red-500 text-sm"></span>
                             </div>
 
 
                             <div class="form-group">
                                 <label for="txtName" class="block text-sm font-medium text-gray-700 mb-1">Name <span class="text-red-500">*</span></label>
-                                <input type="text" asp-for="Name" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" id="txtName" placeholder="Name">
+                                <input type="text" asp-for="Name" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" id="txtName" placeholder="Name" required>
                                 <span asp-validation-for="Name" class="text-red-500 text-sm"></span>
                             </div>
 
                             <div class="form-group">
                                 <label for="txtDescription" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                                <input type="text" asp-for="Description" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" id="txtDescription" placeholder="Description">
+                                <input type="text" asp-for="Description" class="form-control br-50 w-full px-3 py-2 border border-gray-300 rounded-md" id="txtDescription" placeholder="Description" required>
                             </div>
                         </div>
 
                         <!-- /.card-body -->
-                        <div id="loadingRiskCategory"
+                       @*  <div id="loadingRiskCategory"
                              class="fixed inset-0 bg-white bg-opacity-75 items-center justify-center z-50" style="display: none;">
                             <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
-                        </div>
+                        </div> *@
                         <div class="flex flex-col md:flex-row justify-center mt-10 gap-4">
                             <button type="button" class="sas-button px-6 py-2 bg-[#2563EB] text-white rounded-md hover:bg-blue-700" onclick="fnSubmit()">Submit</button>
                             <button type="button" class="px-6 py-2 border border-gray-300 rounded-md text-gray-700  hover:bg-gray-100 text-center transition duration-200" onclick="handleCancel()">Cancel</button>
@@ -166,30 +172,64 @@
         </div>
     </div>
     <script>
-            function fnSubmit() {
-                document.getElementById("loadingRiskCategory").style.display = "flex";
+        //     function fnSubmit() {
+        //         document.getElementById("loadingRiskCategory").style.display = "flex";
 
-                // Optionally disable button
-                const btn = document.querySelector('button[onclick="fnSubmit()"]');
-                btn.disabled = true;
-                btn.classList.add("opacity-50", "cursor-not-allowed");
+        //         // Optionally disable button
+        //         const btn = document.querySelector('button[onclick="fnSubmit()"]');
+        //         btn.disabled = true;
+        //         btn.classList.add("opacity-50", "cursor-not-allowed");
 
-                // Submit form manually
-                document.querySelector('form').submit();
-            }
+        //         // Submit form manually
+        //         document.querySelector('form').submit();
+        //     }
             function handleCancel() {
             // Show loader
-            document.getElementById("loadingRiskCategory").style.display = "flex";
+                     $('#loader').show();
 
             // Optional: disable button
-            const btns = document.querySelectorAll("button");
-            btns.forEach(btn => btn.disabled = true);
+            // const btns = document.querySelectorAll("button");
+            // btns.forEach(btn => btn.disabled = true);
 
             // Wait briefly to show loader, then navigate
             setTimeout(function () {
                 location.href = '/AdminManagement/Details/@Model.ClientId';
             }, 300); // Delay 300ms just to show animation
         }
+
+        function fnSubmit() {
+
+    let isValid = true;
+
+    $('#userGroupForm [required]').each(function () {
+
+        let value = $(this).val();
+
+        if (!value || value.trim() === '') {
+
+            $(this).addClass('border-red-500');
+            $(this).focus();
+
+            isValid = false;
+            return false; // stop loop
+        }
+        else {
+            $(this).removeClass('border-red-500');
+        }
+
+    });
+
+    if (!isValid) {
+        toastr.error("Please fill all mandatory fields");
+        return;
+    }
+
+    // show loader
+            $('#loader').show();
+
+    // submit form
+    $('#userGroupForm').submit();
+}
     </script>
 </div>
 
