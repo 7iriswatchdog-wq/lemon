@@ -74,7 +74,16 @@
                     <div class="px-1 py-1">
                         <div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Status</div>
                         <div class="mt-1">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-100 uppercase">@Model.Status</span>
+                            @{
+                                var statusStr = Model.Status ?? "Pending";
+                                var sLower = statusStr.ToLower();
+                                var statusClass = "bg-slate-100 text-slate-800 ring-slate-200";
+                                if (sLower.Contains("pending")) statusClass = "bg-yellow-100 text-yellow-800 ring-yellow-200";
+                                else if (sLower.Contains("approved") || sLower.Contains("true match")) statusClass = "bg-blue-100 text-blue-800 ring-blue-200";
+                                else if (sLower.Contains("transfer")) statusClass = "bg-green-100 text-green-800 ring-green-200";
+                                else if (sLower.Contains("rejected") || sLower.Contains("false match")) statusClass = "bg-red-100 text-red-800 ring-red-200";
+                            }
+                            <span class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase @statusClass ring-1 ring-inset">@Model.Status</span>
                         </div>
                     </div>
                 </div>
@@ -152,63 +161,78 @@
                                         </tr>
                                     }
                                 }
-                                else if (Model.CustomerType == "Goods")
+                                else if (Model.CustomerType == "Goods" || Model.CustomerType == "Chemical")
                                 {
-                                    <!-- 1. Database Match Row -->
-                                    <tr class="bg-white hover:bg-slate-50 transition-colors search-hit-row" data-index="0">
-                                        <td class="px-4 py-3 font-bold text-slate-900">
-                                            <div class="flex items-center gap-2">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                                @(!string.IsNullOrEmpty(Model.MatchedChemicalName) ? Model.MatchedChemicalName : (string.IsNullOrEmpty(Model.ChemicalName) ? "-" : Model.ChemicalName))
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-3 text-slate-600 uppercase">@(!string.IsNullOrEmpty(Model.HsCode) ? Model.HsCode : "-")</td>
-                                        <td class="px-4 py-3 text-slate-600 uppercase">@(!string.IsNullOrEmpty(Model.CasNumber) ? Model.CasNumber : "-")</td>
-                                        <td class="px-4 py-3 text-slate-600 uppercase">@(!string.IsNullOrEmpty(Model.Eccn) ? Model.Eccn : "-")</td>
-                                        <td class="px-4 py-3 text-slate-600 font-medium">@(!string.IsNullOrEmpty(Model.SynonymName) ? Model.SynonymName : "-")</td>
-                                        <td class="px-4 py-3">
-                                            @if (!string.IsNullOrEmpty(Model.SearchHitDetails))
-                                            {
-                                                <span class="text-slate-400 italic">See PDF rows below</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-slate-300 italic">No matches in scan</span>
-                                            }
-                                        </td>
-                                        <td class="px-4 py-3 text-center">
-                                            <a href="/ProliferationFinance/Details/@Model.CaseId" class="inline-flex items-center justify-center h-6 px-3 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95">
-                                                Details
-                                            </a>
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <textarea class="search-remarks-area h-7 w-full border border-slate-200 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all" placeholder="Enter matching remarks..."></textarea>
-                                        </td>
-                                    </tr>
+                                    var rowIndex = 0;
+                                    <!-- 1. Database Matches -->
+                                    if (Model.MatchedChemicals != null && Model.MatchedChemicals.Count > 0)
+                                    {
+                                        foreach (var match in Model.MatchedChemicals)
+                                        {
+                                            <tr class="bg-white hover:bg-slate-50 transition-colors search-hit-row" data-index="@rowIndex">
+                                                <td class="px-4 py-3 font-bold text-slate-900">
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                                        @(!string.IsNullOrEmpty(match.ChemicalName) ? match.ChemicalName : "-")
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3 text-slate-600 uppercase">@(!string.IsNullOrEmpty(match.HsCode) ? match.HsCode : "-")</td>
+                                                <td class="px-4 py-3 text-slate-600 uppercase">@(!string.IsNullOrEmpty(match.CasNumber) ? match.CasNumber : "-")</td>
+                                                <td class="px-4 py-3 text-slate-600 uppercase">@(!string.IsNullOrEmpty(match.Eccn) ? match.Eccn : "-")</td>
+                                                <td class="px-4 py-3 text-slate-600 font-medium">@(!string.IsNullOrEmpty(match.SynonymName) ? match.SynonymName : "-")</td>
+                                                @if (Model.CustomerType == "Goods")
+                                                {
+                                                    <td class="px-4 py-3">
+                                                        <span class="text-slate-300 italic">N/A</span>
+                                                    </td>
+                                                }
+                                                <td class="px-4 py-3 text-center">
+                                                    <a href="/ProliferationFinance/Details/@Model.CaseId?chemicalId=@match.Id" class="inline-flex items-center justify-center h-6 px-3 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95">
+                                                        Details
+                                                    </a>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <textarea class="search-remarks-area h-7 w-full border border-slate-200 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all" placeholder="Enter matching remarks..."></textarea>
+                                                </td>
+                                            </tr>
+                                            rowIndex++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr class="bg-white hover:bg-slate-50 transition-colors search-hit-row" data-index="0">
+                                            <td colspan="@(Model.CustomerType == "Goods" ? 6 : 5)" class="px-4 py-3 text-center text-slate-400 italic">No matches found in UAE Control List</td>
+                                            <td class="px-4 py-3 text-center text-slate-300">-</td>
+                                            <td class="px-4 py-3 text-slate-300">-</td>
+                                        </tr>
+                                    }
 
                                     <!-- 2. PDF Snippet Rows -->
                                     @if (!string.IsNullOrEmpty(Model.SearchHitDetails))
                                     {
-                                        var snippets = Model.SearchHitDetails.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
-                                        var snipIdx = 1;
+                                        var snippets = Model.SearchHitDetails.Split(new[] { "\n\n", "---" }, StringSplitOptions.RemoveEmptyEntries);
                                         foreach (var snip in snippets)
                                         {
-                                            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors search-hit-row" data-index="@snipIdx">
+                                            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors search-hit-row" data-index="@rowIndex">
                                                 <td colspan="5" class="px-4 py-2 border-l-2 border-blue-200">
                                                     <div class="flex items-start gap-3">
                                                         <i class="fa fa-file-pdf-o text-blue-400 mt-1"></i>
                                                         <div class="pdf-snippet text-[10px] text-slate-600 leading-relaxed italic whitespace-normal font-medium line-clamp-2" title="@snip">
-                                                            "@snip"
+                                                            "@snip.Trim()"
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td class="px-4 py-2 text-[9px] font-bold text-blue-600 uppercase">PDF Snippet</td>
-                                                <td class="px-4 py-2 text-center">-</td>
+                                                <td class="px-4 py-2 text-center">
+                                                    <a href="/ProliferationFinance/Details/@Model.CaseId" class="inline-flex items-center justify-center h-6 px-3 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95">
+                                                        Details
+                                                    </a>
+                                                </td>
                                                 <td class="px-4 py-2">
                                                     <textarea class="search-remarks-area h-7 w-full border border-slate-100 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all bg-white" placeholder="Snippet remarks..."></textarea>
                                                 </td>
                                             </tr>
-                                            snipIdx++;
+                                            rowIndex++;
                                         }
                                     }
                                 }
@@ -223,9 +247,16 @@
                                         <td class="px-4 py-3 text-slate-600 uppercase">@(string.IsNullOrEmpty(Model.Eccn) ? "-" : Model.Eccn)</td>
                                         <td class="px-4 py-3 text-slate-600 font-medium">@(string.IsNullOrEmpty(Model.SynonymName) ? "-" : Model.SynonymName)</td>
                                         <td class="px-4 py-3 text-center">
-                                            <a href="/ProliferationFinance/Details/@Model.CaseId" class="inline-flex items-center justify-center h-6 px-3 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95">
-                                                Details
-                                            </a>
+                                            @if (!string.IsNullOrEmpty(Model.MatchedChemicalName))
+                                            {
+                                                <a href="/ProliferationFinance/Details/@Model.CaseId" class="inline-flex items-center justify-center h-6 px-3 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95">
+                                                    Details
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-slate-300">-</span>
+                                            }
                                         </td>
                                         <td class="px-4 py-3">
                                             <textarea class="search-remarks-area h-7 w-full border border-slate-200 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all" placeholder="Enter matching remarks..."></textarea>
@@ -248,31 +279,12 @@
                         <h3 class="text-[13px] font-bold text-slate-800 tracking-tight">Case Comments</h3>
                     </div>
                     <div class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/20 custom-scrollbar" id="commentsContainer">
-                        @if (!string.IsNullOrEmpty(Model.StatusReason))
-                        {
-                            <div class="flex gap-4">
-                                <div class="shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">U</div>
-                                <div class="flex-1">
-                                    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                                        <p class="text-[11px] text-slate-700 leading-relaxed font-medium">@Model.StatusReason</p>
-                                    </div>
-                                    <div class="mt-2 flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">
-                                        <span>System User</span>
-                                        <span class="h-1 w-1 rounded-full bg-slate-200"></span>
-                                        <span>@(Model.UpdatedOn?.ToString("dd MMM yyyy HH:mm") ?? Model.CreatedOn?.ToString("dd MMM yyyy HH:mm"))</span>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <div id="noCommentsMsg" class="text-xs text-slate-500 italic">No comments yet</div>
-                        }
+                        <div class="text-xs text-slate-400 italic">Loading comments...</div>
                     </div>
                     <div class="p-5 border-t border-slate-100 bg-white">
                         <div class="flex gap-4">
-                            <textarea id="caseComment" class="flex-1 h-12 border border-slate-200 rounded-lg p-3 text-[11px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none resize-none placeholder:text-slate-400 font-medium" placeholder="Enter Your Comments"></textarea>
-                            <button onclick="saveComment()" class="h-12 px-8 bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 rounded-md transition-all">
+                            <textarea id="caseComment" oninput="toggleSaveButton()" class="flex-1 h-12 border border-slate-200 rounded-lg p-3 text-[11px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none resize-none placeholder:text-slate-400 font-medium" placeholder="Enter Your Comments"></textarea>
+                            <button id="btnSaveComment" onclick="saveComment()" disabled class="h-12 px-8 bg-white border border-slate-200 text-slate-400 font-bold rounded-md transition-all cursor-not-allowed opacity-50">
                                 Save
                             </button>
                         </div>
@@ -288,13 +300,6 @@
                                 </button>
                                 <button onclick="updateDecision('Hold')" class="h-9 px-6 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm uppercase tracking-widest mr-auto">
                                     <i data-lucide="pause-circle" class="h-3.5 w-3.5"></i> Hold
-                                </button>
-
-                                <button onclick="updateDecision('Approve')" class="h-9 px-8 rounded-md bg-blue-600 text-white text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm uppercase tracking-widest">
-                                    Approve
-                                </button>
-                                <button onclick="updateDecision('Reject')" class="h-9 px-8 rounded-md bg-red-600 text-white text-[10px] font-bold hover:bg-red-700 transition-all shadow-sm uppercase tracking-widest">
-                                    Reject
                                 </button>
                             </div>
                         </div>
@@ -315,44 +320,54 @@
 
 <script>
 
+    function toggleSaveButton() {
+        const comment = $('#caseComment').val().trim();
+        const $btn = $('#btnSaveComment');
+        if (comment.length > 0) {
+            $btn.prop('disabled', false)
+                .removeClass('text-slate-400 cursor-not-allowed opacity-50')
+                .addClass('text-slate-600 hover:bg-slate-50');
+        } else {
+            $btn.prop('disabled', true)
+                .addClass('text-slate-400 cursor-not-allowed opacity-50')
+                .removeClass('text-slate-600 hover:bg-slate-50');
+        }
+    }
+
     function updateDecision(decision) {
         const comment = $('#caseComment').val();
         if ((decision === 'True Match' || decision === 'Approve') && !comment.trim()) {
-            alert('Please provide a comment for this decision.');
             return;
         }
 
-        if (confirm(`Confirm decision: ${decision}?`)) {
-            $.ajax({
-                url: '/ProliferationFinance/UpdateStatus',
-                type: 'POST',
-                data: { caseId: @Model.CaseId, status: decision },
-                success: function(res) {
-                    if (res.success) {
-                        if (comment.trim()) {
-                            $.ajax({
-                                url: '/ProliferationFinance/UpdateRemarks',
-                                type: 'POST',
-                                data: { caseId: @Model.CaseId, remarks: comment },
-                                complete: function() {
-                                    location.reload();
-                                }
-                            });
-                        } else {
-                            location.reload();
-                        }
+        $.ajax({
+            url: '/ProliferationFinance/UpdateStatus',
+            type: 'POST',
+            data: { caseId: @Model.CaseId, status: decision },
+            success: function(res) {
+                if (res.success) {
+                    if (comment.trim()) {
+                        $.ajax({
+                            url: '/ProliferationFinance/UpdateRemarks',
+                            type: 'POST',
+                            data: { caseId: @Model.CaseId, remarks: comment },
+                            complete: function() {
+                                location.reload();
+                            }
+                        });
                     } else {
-                        alert(res.message || 'Error saving decision.');
+                        location.reload();
                     }
+                } else {
+                    console.error(res.message || 'Error saving decision.');
                 }
-            });
-        }
+            }
+        });
     }
 
     function saveComment() {
         const comment = $('#caseComment').val();
         if (!comment.trim()) {
-            alert('Please enter a comment.');
             return;
         }
 
@@ -362,10 +377,10 @@
             data: { caseId: @Model.CaseId, remarks: comment },
             success: function(res) {
                 if (res.success) {
-                    alert('Comment saved successfully.');
-                    location.reload();
+                    $('#caseComment').val(''); // Clear the input
+                    location.reload(); // Silent reload to show updated history
                 } else {
-                    alert(res.message || 'Error saving comment.');
+                    console.error(res.message || 'Error saving comment.');
                 }
             }
         });
@@ -389,15 +404,14 @@
                 success: function(res) {
                     $('#loadingeffect').hide();
                     if (res.success) {
-                        alert('Document uploaded successfully');
                         location.reload();
                     } else {
-                        alert('Upload failed: ' + res.message);
+                        console.error('Upload failed: ' + res.message);
                     }
                 },
                 error: function() {
                     $('#loadingeffect').hide();
-                    alert('Error uploading document');
+                    console.error('Error uploading document');
                 }
             });
         }
@@ -424,20 +438,58 @@
                 contentType: 'application/json',
                 success: function(res) {
                     $('#loadingeffect').hide();
-                    if (res.success) {
-                        alert('Search actions saved successfully');
-                    } else {
-                        alert('Failed to save actions: ' + res.message);
+                    if (!res.success) {
+                        console.error('Failed to save actions: ' + res.message);
                     }
                 },
                 error: function() {
                     $('#loadingeffect').hide();
-                    alert('Error saving search actions');
+                    console.error('Error saving search actions');
                 }
             });
         }
 
-        $(document).ready(function() {
-            lucide.createIcons();
+    function loadComments() {
+        const caseId = @Model.CaseId;
+        $.ajax({
+            url: '/ProliferationFinance/GetComments',
+            type: 'GET',
+            data: { caseId: caseId },
+            success: function(res) {
+                if (res.success && res.data) {
+                    let html = '';
+                    if (res.data.length === 0) {
+                        html = '<div id="noCommentsMsg" class="text-xs text-slate-500 italic text-center py-4">No comments found for this case.</div>';
+                    } else {
+                        res.data.forEach(comment => {
+                            const date = comment.createdOn || '-';
+                            const user = comment.createdByEmail || 'User';
+                            const initials = (user.charAt(0) || 'U').toUpperCase();
+                            
+                            html += `
+                            <div class="flex gap-4 mb-4">
+                                <div class="shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">${initials}</div>
+                                <div class="flex-1">
+                                    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                                        <p class="text-[11px] text-slate-700 leading-relaxed font-medium">${comment.comment}</p>
+                                    </div>
+                                    <div class="mt-2 flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                                        <span>${user}</span>
+                                        <span class="h-1 w-1 rounded-full bg-slate-200"></span>
+                                        <span>${date}</span>
+                                    </div>
+                                </div>
+                            </div>`;
+                        });
+                    }
+                    $('#commentsContainer').html(html);
+                }
+            }
         });
+    }
+
+    $(document).ready(function() {
+        lucide.createIcons();
+        loadComments();
+    });
     </script>

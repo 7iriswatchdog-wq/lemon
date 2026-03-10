@@ -63,6 +63,11 @@ namespace AML.Core.Service.ProliferationFinance
             return _repository.GetCaseById(id);
         }
 
+        public UAEControlListDTO GetChemicalById(int id)
+        {
+            return _repository.GetChemicalById(id);
+        }
+
         public ServiceResponse<bool> UpdateCaseStatus(int caseId, string status)
         {
             return _repository.UpdateCaseStatus(caseId, status);

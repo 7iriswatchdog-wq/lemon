@@ -21,5 +21,6 @@ namespace AML.ViewModel.ViewModels.ProliferationFinance
         public string Type { get; set; } // Corporate/Individual
         public string MatchedChemicalName { get; set; }
         public string SearchHitDetails { get; set; }
+        public System.Collections.Generic.List<AML.DTO.DTO.ProliferationFinance.UAEControlListDTO> MatchedChemicals { get; set; } = new System.Collections.Generic.List<AML.DTO.DTO.ProliferationFinance.UAEControlListDTO>();
     }
 }
