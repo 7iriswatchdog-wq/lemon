@@ -187,10 +187,10 @@
                             <label class="text-[11px] font-bold text-slate-500 uppercase ml-0.5">Description</label>
                             <input type="text" asp-for="Description" id="txtDescription" class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
                         </div>
-                        <div class="space-y-1.5">
+                        @* <div class="space-y-1.5">
                             <label class="text-[11px] font-bold text-slate-500 uppercase ml-0.5">C6 Username</label>
                             <input type="text" asp-for="C6Username" id="txtC6Username" class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
-                        </div>
+                        </div> *@
                         <div class="space-y-1.5">
                             <label class="text-[11px] font-bold text-slate-500 uppercase ml-0.5">C6 Base API Url</label>
                             <input type="text" asp-for="C6BaseUrl" id="txtC6BaseUrl" class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
@@ -227,28 +227,29 @@
 
             <!-- Client Rights Card -->
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-tight flex items-center gap-2">
-                        <i data-lucide="shield-check" class="h-4 w-4 text-blue-600"></i>
-                        Client Rights
-                    </h3>
-                    <button type="button" id="btnSaveClientRights" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 px-5 rounded-md shadow-sm transition-colors text-xs flex items-center gap-2">
-                        <i data-lucide="save" class="h-3.5 w-3.5"></i>
-                        Save Rights
-                    </button>
-                </div>
-                <div class="p-6 grow text-sm">
-                    <div id="clientRightsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        <!-- Rights will be injected here -->
-                    </div>
-                </div>
-            </div>
+    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-tight flex items-center gap-2">
+            <i data-lucide="shield-check" class="h-4 w-4 text-blue-600"></i>
+            Client Rights
+        </h3>
+        <button type="button" id="btnSaveClientRights"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 px-5 rounded-md shadow-sm transition-colors text-xs flex items-center gap-2">
+            <i data-lucide="save" class="h-3.5 w-3.5"></i>
+            Save Rights
+        </button>
+    </div>
+
+    <div class="p-6 grow text-sm">
+        <div id="clientRightsContainer"
+             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <!-- Rights will be injected here -->
+        </div>
+    </div>
+</div>
 
 
 
-                    </div>
-                </div>
-            </div>
+                  
 
             <!-- User Management Card -->
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -305,27 +306,45 @@
                         </table>
                     </div>
                     
-                    <div class="flex items-center justify-between pt-2 bg-slate-50/50 -mx-6 -mb-6 px-6 py-4 border-t border-slate-100 rounded-b-xl mt-4">
-                        <div class="text-[11px] text-slate-500">
-                            Showing <span id="userTotalVisible" class="font-bold text-slate-900">0</span> users
+                    <div class="px-6 py-4 bg-slate-50/50 border-t border-slate-200 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Show</label>
+                            <select id="pageSize" onchange="changePageSize()"
+                                    class="h-8 w-20 rounded-md border border-slate-200 bg-white pl-3 pr-8 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
                         </div>
-                        <div id="userPagination" class="flex gap-1"></div>
+                        <div class="h-4 w-px bg-slate-200"></div>
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            Showing <span id="showingStart" class="text-slate-900">0</span> - <span id="showingEnd" class="text-slate-900">0</span> 
+                            <span class="mx-1 text-slate-300">of</span> 
+                            <span id="totalRecords" class="text-slate-900">0</span>
+                        </div>
                     </div>
-                    
-                    <div class="flex items-center gap-2 text-xs pt-4 justify-start">
-                         <select id="userRowsPerPage" class="h-8 rounded-md border border-slate-200 bg-white px-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                        <label class="text-slate-500 font-medium">per page</label>
+
+                    <div class="flex items-center gap-2">
+                        <button id="prevBtn" onclick="previousPage()"
+                                class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                            <i data-lucide="chevron-left" class="h-3.5 w-3.5"></i>
+                            Previous
+                        </button>
+                        <button id="nextBtn" onclick="nextPage()"
+                                class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                            Next
+                            <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
+                        </button>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
+         </div>
+       </div>
+     </div>
+  </div>
+       
 
 <script>
     const clientId = @clientId;
@@ -374,12 +393,10 @@
                 contentType: false,
                 processData: false,
                 success: function() {
-<<<<<<< HEAD
-                    //toastr.success("Client updated successfully");
-=======
+
                     toastr.success('Client configuration updated successfully');
                     setTimeout(() => location.reload(), 1500);
->>>>>>> 962ee5bfba155fe96e8b167b2a550ddc701e514a
+
                 },
                 complete: function() {
                     $('#loader').addClass('hidden').removeClass('flex');
@@ -405,6 +422,7 @@
             success: function(resp) {
                 renderUserTable(resp.data);
                 renderUserPagination(resp.recordsFiltered);
+                updateShowingEntries(resp.recordsFiltered);
                 $('#userTotalVisible').text(resp.data ? resp.data.length : 0);
             },
             complete: function() { 
@@ -474,6 +492,23 @@
         }
     }
 
+        function updateShowingEntries(totalRecords) {
+
+        if (totalRecords === 0) {
+            $('#showingStart').text(0);
+            $('#showingEnd').text(0);
+            $('#totalRecords').text(0);
+            return;
+        }
+
+        let start = (userPage - 1) * userPageSize + 1;
+        let end = Math.min(userPage * userPageSize, totalRecords);
+
+        $('#showingStart').text(start);
+        $('#showingEnd').text(end);
+        $('#totalRecords').text(totalRecords);
+    }
+
     function goUserPage(p) { userPage = p; loadUsers(); }
 
     function BlockData(id, status) {
@@ -528,7 +563,7 @@
                 }
                 console.log(resp);
                 resp.forEach((m, idx) => {
-                    if (m.menu_Name === "Risk Assessmnet") {
+                    if (m.menu_Name === "Risk Assessmnet" || m.menu_Name === "User Management"  ) {
                     return;
                 }
                     const chkId = 'chkMenu_' + m.menu_Id;
