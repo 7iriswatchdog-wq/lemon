@@ -402,8 +402,8 @@ namespace AML.Core.Service.CustomerCase
         }
         public List<ClientMasterDTO> GetAllClients()
         {
-
-            return _CustomerCaseRepository.GetAllClients().Result;
+            var result = _CustomerCaseRepository.GetAllClients().Result;
+            return result ?? new List<ClientMasterDTO>();
         }
         public List<ClientMasterDTO> GetAllAdminClients()
         {

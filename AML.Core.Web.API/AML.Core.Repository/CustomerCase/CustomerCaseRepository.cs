@@ -1043,8 +1043,11 @@ namespace AML.Core.Repository.CustomerCase
                         }
                     });
 
+                    if (result.Tables.Count == 0)
+                        throw new Exception("No worksheets found in the Excel file.");
+
                     if (result.Tables.Count < sheetNo)
-                        throw new Exception($"Sheet {sheetNo} not found in Excel file.");
+                        throw new Exception($"Worksheet {sheetNo} not found. The file only contains {result.Tables.Count} worksheet(s).");
 
                     return result.Tables[sheetNo - 1];
                 }
@@ -1161,6 +1164,13 @@ namespace AML.Core.Repository.CustomerCase
                 List<IndividualExcel> excelData = new List<IndividualExcel>();
                 DataTable table = ReadExcelAsDataTable(fileName, sheetNo);
 
+                if (table == null)
+                {
+                    serviceResponse.Message = "Failed to load worksheet data.";
+                    serviceResponse.Status = StaticResource.FailStatusCode;
+                    return serviceResponse;
+                }
+
                 foreach (DataRow row in table.Rows)
                 {
                     if (row[0] != DBNull.Value)
@@ -1203,6 +1213,13 @@ namespace AML.Core.Repository.CustomerCase
             {
                 List<CorporateExcel> excelData = new List<CorporateExcel>();
                 DataTable table = ReadExcelAsDataTable(fileName, sheetNo);
+
+                if (table == null)
+                {
+                    serviceResponse.Message = "Failed to load worksheet data.";
+                    serviceResponse.Status = StaticResource.FailStatusCode;
+                    return serviceResponse;
+                }
 
                 foreach (DataRow row in table.Rows)
                 {

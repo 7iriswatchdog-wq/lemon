@@ -42,6 +42,7 @@ using System.Threading;
 using Microsoft.AspNetCore.Http;
 using AML.Core.ServiceContract.CustomerCase;
 using AML.Core.DataContract.Enum;
+using AML.DTO.DTO.Common;
 using DocumentFormat.OpenXml.Wordprocessing;
 using System.IO;
 using AML.ViewModel.ViewModels.TransactionMonitor;
@@ -135,7 +136,8 @@ namespace AML.Web.Controllers.User
                 ViewData["Error"] = true;
             }
             UserModel _UModel = new UserModel();
-            _UModel.Clients = new SelectList(_customerCaseService.GetAllClients(), "ClientId", "ClientName");
+            var clients = _customerCaseService.GetAllClients();
+            _UModel.Clients = new SelectList(clients, "ClientId", "ClientName");
             return View(_UModel);
         }
 

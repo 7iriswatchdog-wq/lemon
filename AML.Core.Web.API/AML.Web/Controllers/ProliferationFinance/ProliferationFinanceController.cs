@@ -414,7 +414,10 @@ namespace AML.Web.Controllers.ProliferationFinance
                     await file.CopyToAsync(stream);
                     using (var package = new ExcelPackage(stream))
                     {
-                        var worksheet = package.Workbook.Worksheets[0];
+                        if (package.Workbook.Worksheets.Count == 0)
+                            return Json(new { success = false, message = "The Excel file contains no worksheets." });
+
+                        var worksheet = package.Workbook.Worksheets[1]; // EPPlus is 1-indexed
                         if (worksheet.Dimension == null)
                              return Json(new { success = false, message = "Spreadsheet is empty" });
 
@@ -426,182 +429,129 @@ namespace AML.Web.Controllers.ProliferationFinance
                             try
                             {
                                 var customerId = worksheet.Cells[row, 1].Value?.ToString();
-                                var category = worksheet.Cells[row, 2].Value?.ToString();
+                                var companyName = worksheet.Cells[row, 2].Value?.ToString();
                                 
-                                if (string.IsNullOrEmpty(customerId) && string.IsNullOrEmpty(category)) continue; 
+                                // Chemical fields
+                                var hsCode = worksheet.Cells[row, 3].Value?.ToString();
+                                var casNumber = worksheet.Cells[row, 4].Value?.ToString();
+                                var eccn = worksheet.Cells[row, 5].Value?.ToString();
+                                var chemicalName = worksheet.Cells[row, 6].Value?.ToString();
+                                var synonymName = worksheet.Cells[row, 7].Value?.ToString();
+                                
+                                // Non-Chemical field
+                                var searchKeyword = worksheet.Cells[row, 8].Value?.ToString();
+                                var remarks = worksheet.Cells[row, 9].Value?.ToString();
 
-                                if (string.IsNullOrEmpty(customerId) || string.IsNullOrEmpty(category))
-                                {
-                                    summary.Failed++;
-                                    summary.Errors.Add(new BulkError { Row = row, Message = "Customer ID or Category is missing" });
-                                    continue;
-                                }
+                                if (string.IsNullOrEmpty(customerId)) continue;
 
-                                if (category.Equals("Chemical", StringComparison.OrdinalIgnoreCase))
+                                bool hasChemicalFields = !string.IsNullOrEmpty(hsCode) || !string.IsNullOrEmpty(casNumber) || 
+                                                       !string.IsNullOrEmpty(eccn) || !string.IsNullOrEmpty(chemicalName) || 
+                                                       !string.IsNullOrEmpty(synonymName);
+                                
+                                bool hasNonChemicalFields = !string.IsNullOrEmpty(searchKeyword) || !string.IsNullOrEmpty(chemicalName);
+
+                                if (hasChemicalFields || hasNonChemicalFields)
                                 {
-                                    var searchDto = new ProliferationFinanceCaseDTO
+                                    var caseDto = new ProliferationFinanceCaseDTO
                                     {
-                                        CustomerType = "Chemical",
+                                        CustomerType = "Goods", // Consolidated type
                                         CorporateId = customerId,
-                                        HsCode = worksheet.Cells[row, 3].Value?.ToString(),
-                                        CasNumber = worksheet.Cells[row, 4].Value?.ToString(),
-                                        Eccn = worksheet.Cells[row, 5].Value?.ToString(),
-                                        ChemicalName = worksheet.Cells[row, 6].Value?.ToString(),
-                                        SynonymName = worksheet.Cells[row, 7].Value?.ToString(),
+                                        CompanyName = companyName,
+                                        HsCode = hsCode,
+                                        CasNumber = casNumber,
+                                        Eccn = eccn,
+                                        ChemicalName = chemicalName,
+                                        SynonymName = synonymName,
                                         CreatedBy = userId,
                                         CreatedOn = DateTime.Now,
-                                        StatusReason = worksheet.Cells[row, 9].Value?.ToString()
+                                        Type = "Corporate"
                                     };
 
-                                    var searchResponse = _proliferationFinanceService.SearchChemicals(searchDto);
-                                    if (searchResponse.Status == 200 && searchResponse.Result != null && searchResponse.Result.Count > 0)
+                                    bool dbMatch = false;
+                                    bool pdfMatch = false;
+                                    List<string> matchSources = new List<string>();
+
+                                    // 1. Database Search
+                                    if (hasChemicalFields)
+                                    {
+                                        var dbResponse = _proliferationFinanceService.SearchChemicals(caseDto);
+                                        if (dbResponse.Status == 200 && dbResponse.Result != null && dbResponse.Result.Count > 0)
+                                        {
+                                            dbMatch = true;
+                                            matchSources.Add("UAE Control List");
+                                            var match = dbResponse.Result[0];
+                                            
+                                            // Fill all fields from the database record for full transparency
+                                            caseDto.MatchedChemicalName = match.ChemicalName;
+                                            caseDto.HsCode = match.HsCode;
+                                            caseDto.CasNumber = match.CasNumber;
+                                            caseDto.Eccn = match.Eccn;
+                                            caseDto.SynonymName = match.SynonymName;
+                                        }
+                                    }
+
+                                    // 2. Document Scan
+                                    if (hasNonChemicalFields)
+                                    {
+                                        string keyword = !string.IsNullOrEmpty(searchKeyword) ? searchKeyword : chemicalName;
+                                        var pdfResponse = _proliferationFinanceService.SearchNonChemical(keyword);
+                                        if (pdfResponse.Status == 200 && !string.IsNullOrEmpty(pdfResponse.Result))
+                                        {
+                                            pdfMatch = true;
+                                            caseDto.SearchHitDetails = pdfResponse.Result;
+                                            matchSources.Add("Document Scan");
+                                            if (string.IsNullOrEmpty(caseDto.ChemicalName)) caseDto.ChemicalName = keyword;
+                                        }
+                                    }
+
+                                    // 3. Conditional Case Creation (Only on match)
+                                    if (dbMatch || pdfMatch)
                                     {
                                         summary.Matches++;
-                                        searchDto.Score = "100";
-                                        // We no longer overwrite searchDto.ChemicalName, HsCode, etc. with bestMatch data.
-                                        // The user wants the original data from the spreadsheet to be saved.
+                                        caseDto.Score = "100";
+                                        caseDto.StatusReason = "Match found in: " + string.Join(" & ", matchSources);
+                                        if (!string.IsNullOrEmpty(remarks)) caseDto.StatusReason += " | Remarks: " + remarks;
 
-                                        var createResponse = _proliferationFinanceService.CreateCase(searchDto);
-                                        if (createResponse.Status == 200 && createResponse.Result > 0)
+                                        var createResponse = _proliferationFinanceService.CreateCase(caseDto);
+                                        if (createResponse.Status == 200)
                                         {
                                             summary.Success++;
                                             summary.Results.Add(new BulkRowResult
                                             {
                                                 Row = row,
                                                 CorporateId = customerId,
-                                                Category = category,
-                                                Score = searchDto.Score,
                                                 CaseId = createResponse.Result,
-                                                Message = "Match Found"
+                                                Message = "Case Created (Match Found)"
                                             });
                                         }
                                         else summary.Failed++;
                                     }
                                     else
                                     {
-                                        summary.Success++;
                                         summary.Results.Add(new BulkRowResult
                                         {
                                             Row = row,
                                             CorporateId = customerId,
-                                            Category = category,
-                                            Score = "0",
-                                            Message = "No Match"
+                                            Message = "No Match - No Case Created"
                                         });
                                     }
-                                }
-                                else if (category.Equals("Non-Chemical", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    var keyword = worksheet.Cells[row, 8].Value?.ToString();
-                                    if (string.IsNullOrEmpty(keyword))
-                                    {
-                                        summary.Failed++;
-                                        summary.Errors.Add(new BulkError { Row = row, Message = "Keyword is missing for Non-Chemical" });
-                                        continue;
-                                    }
-
-                                    var searchResponse = _proliferationFinanceService.SearchNonChemical(keyword);
-                                    if (searchResponse.Status == 200 && !string.IsNullOrEmpty(searchResponse.Result))
-                                    {
-                                        summary.Matches++;
-                                        var caseDto = new ProliferationFinanceCaseDTO
-                                        {
-                                            CustomerType = "Non-Chemical",
-                                            CorporateId = customerId,
-                                            ChemicalName = keyword, // Map keyword to ChemicalName
-                                            SearchHitDetails = searchResponse.Result, // Matched paragraph goes here
-                                            Score = "100",
-                                            CreatedBy = userId,
-                                            CreatedOn = DateTime.Now,
-                                            StatusReason = worksheet.Cells[row, 9].Value?.ToString()
-                                        };
-                                    var createResponse = _proliferationFinanceService.CreateCase(caseDto);
-                                    if (createResponse.Status == 200)
-                                    {
-                                        summary.Success++;
-                                        summary.Results.Add(new BulkRowResult
-                                        {
-                                            Row = row,
-                                            CorporateId = customerId,
-                                            Category = category,
-                                            Score = caseDto.Score,
-                                            CaseId = createResponse.Result,
-                                            Message = "Case created"
-                                        });
-                                    }
-                                    else summary.Failed++;
                                 }
                                 else
                                 {
-                                    summary.Success++;
-                                    summary.Results.Add(new BulkRowResult
-                                    {
-                                        Row = row,
-                                        CorporateId = customerId,
-                                        Category = category,
-                                        Score = "0",
-                                        Message = "No match found"
-                                    });
-                                }
-                            }
-                            else if (category.Equals("Non-Chemical", StringComparison.OrdinalIgnoreCase))
-                            {
-                                var keyword = worksheet.Cells[row, 8].Value?.ToString();
-                                if (string.IsNullOrEmpty(keyword))
-                                {
                                     summary.Failed++;
-                                    summary.Errors.Add(new BulkError { Row = row, Message = "Keyword is missing for Non-Chemical" });
-                                    continue;
+                                    summary.Errors.Add(new BulkError { Row = row, Message = "Missing searchable data (HS Code, Chemical Name, etc.)" });
                                 }
-
-                                var searchResponse = _proliferationFinanceService.SearchNonChemical(keyword);
-                                var caseDto = new ProliferationFinanceCaseDTO
-                                {
-                                    CustomerType = "Non-Chemical",
-                                    CorporateId = customerId,
-                                    SynonymName = keyword,
-                                    ChemicalName = searchResponse.Result,
-                                    Score = !string.IsNullOrEmpty(searchResponse.Result) ? "100" : "0",
-                                    StatusReason = !string.IsNullOrEmpty(searchResponse.Result) ? "Match found in document scan" : "No match found in document scan",
-                                    CreatedBy = userId,
-                                    CreatedOn = DateTime.Now,
-                                    Type = "Corporate"
-                                };
-
-                                var createResponse = _proliferationFinanceService.CreateCase(caseDto);
-                                if (createResponse.Status == 200)
-                                {
-                                    summary.Success++;
-                                    if (!string.IsNullOrEmpty(searchResponse.Result)) summary.Matches++;
-                                    
-                                    summary.Results.Add(new BulkRowResult
-                                    {
-                                        Row = row,
-                                        CorporateId = customerId,
-                                        Category = category,
-                                        Score = caseDto.Score,
-                                        CaseId = createResponse.Result,
-                                        Message = !string.IsNullOrEmpty(searchResponse.Result) ? "Match Found" : "No Match"
-                                    });
-                                }
-                                else summary.Failed++;
                             }
-                            else
+                            catch (Exception ex)
                             {
                                 summary.Failed++;
-                                summary.Errors.Add(new BulkError { Row = row, Message = "Invalid Category. Use 'Chemical' or 'Non-Chemical'" });
+                                summary.Errors.Add(new BulkError { Row = row, Message = ex.Message });
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            summary.Failed++;
-                            summary.Errors.Add(new BulkError { Row = row, Message = ex.Message });
                         }
                     }
                 }
+                return Json(new { success = true, summary = summary });
             }
-            return Json(new { success = true, summary = summary });
-        }
             catch (Exception ex)
             {
                 return Json(new { success = false, message = "Error processing file: " + ex.Message });
@@ -615,13 +565,13 @@ namespace AML.Web.Controllers.ProliferationFinance
             {
                 var xl = package.Workbook.Worksheets.Add("Bulk Upload Template");
                 xl.Cells[1, 1].Value = "Customer ID";
-                xl.Cells[1, 2].Value = "Category (Chemical/Non-Chemical)";
+                xl.Cells[1, 2].Value = "Company Name (Optional)";
                 xl.Cells[1, 3].Value = "HS Code";
                 xl.Cells[1, 4].Value = "CAS Number";
                 xl.Cells[1, 5].Value = "ECCN";
                 xl.Cells[1, 6].Value = "Chemical Name";
                 xl.Cells[1, 7].Value = "Synonym Name";
-                xl.Cells[1, 8].Value = "Search Keyword (Non-Chemical Only)";
+                xl.Cells[1, 8].Value = "Search Keyword (Non-Chemical)";
                 xl.Cells[1, 9].Value = "Remarks";
 
                 using (var range = xl.Cells[1, 1, 1, 9])
@@ -633,6 +583,7 @@ namespace AML.Web.Controllers.ProliferationFinance
 
                 xl.Column(1).Width = 15;
                 xl.Column(2).Width = 25;
+                xl.Column(3).Width = 15;
                 xl.Column(6).Width = 25;
                 xl.Column(8).Width = 35;
                 xl.Column(9).Width = 20;
@@ -670,8 +621,6 @@ namespace AML.Web.Controllers.ProliferationFinance
     {
         public int Row { get; set; }
         public string CorporateId { get; set; }
-        public string Category { get; set; }
-        public string Score { get; set; }
         public int CaseId { get; set; }
         public string Message { get; set; }
     }
