@@ -19,31 +19,33 @@
         </div>
     </div>
 
-    <!-- Filters Section (Mirroring Main Module) -->
+    <!-- Filters Section -->
     <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
         <div class="flex items-center justify-between mb-5">
             <h3 class="text-sm font-bold text-slate-800 tracking-tight">Case Filter</h3>
-            <button onclick="clearFilters()" class="text-slate-500 hover:text-slate-700 h-8 px-3 text-sm font-medium">
-                Reset
-            </button>
+            <div class="flex items-center gap-3">
+                <button onclick="resetFilters()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-6 rounded-md text-sm transition-all shadow-sm">
+                    Reset
+                </button>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
             <!-- Start Date -->
             <div class="space-y-2">
-                <label class="text-[12px] font-bold text-slate-500">Start Date</label>
+                <label class="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
                 <input type="date" id="startDate" class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all">
             </div>
 
             <!-- End Date -->
             <div class="space-y-2">
-                <label class="text-[12px] font-bold text-slate-500">End Date</label>
+                <label class="text-[12px] font-bold text-slate-500 uppercase tracking-wider">End Date</label>
                 <input type="date" id="endDate" class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all">
             </div>
 
             <!-- Customer Type -->
             <div class="space-y-2">
-                <label class="text-[12px] font-bold text-slate-500">Customer Type</label>
+                <label class="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Customer Type</label>
                 <select id="customerTypeFilter" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all appearance-none">
                     <option value="0">All</option>
                     <option value="Chemical">Chemical</option>
@@ -53,8 +55,8 @@
 
             <!-- Search Button -->
             <div class="flex items-center gap-2">
-                <button onclick="loadCases()" class="h-10 flex-1 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm">
-                    Apply Filter
+                <button onclick="loadCases()" class="h-10 flex-1 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm flex items-center justify-center gap-2">
+                    <i data-lucide="search" class="w-4 h-4"></i> Apply Filter
                 </button>
             </div>
         </div>
@@ -71,47 +73,57 @@
         </div>
 
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left whitespace-nowrap min-w-[1200px]">
-                        <thead class="text-[10px] text-slate-500 bg-white border-b border-slate-200">
-                            <tr>
-                                <th class="px-2 py-4 font-small h-12">ID</th>
-                                <th class="px-2 py-4 font-small h-12">Created on</th>
-                                <th class="px-2 py-4 font-small h-12">Updated on</th>
-                                <th class="px-2 py-4 font-small h-12">Chemical Name</th>
-                                <th class="px-2 py-4 font-small h-12">HS Code</th>
-                                <th class="px-2 py-4 font-small h-12">CAS Number</th>
-                                <th class="px-2 py-4 font-small h-12">ECCN</th>
-                                <th class="px-2 py-4 font-small h-12">Synonym</th>
-                                <th class="px-2 py-4 font-small h-12 text-center">Status</th>
-                                <th class="px-2 py-4 font-small h-12 text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="casesTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
-                            <!-- Rows will be injected here via AJAX -->
-                        </tbody>
-                    </table>
-                </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left whitespace-nowrap min-w-[1200px]">
+                    <thead class="text-[10px] text-slate-500 bg-white border-b border-slate-200">
+                        <tr>
+                            <th class="px-2 py-4 font-small h-12">ID</th>
+                            <th class="px-2 py-4 font-small h-12">Created on</th>
+                            <th class="px-2 py-4 font-small h-12">Updated on</th>
+                            <th class="px-2 py-4 font-small h-12">Chemical Name</th>
+                            <th class="px-2 py-4 font-small h-12">HS Code</th>
+                            <th class="px-2 py-4 font-small h-12">CAS Number</th>
+                            <th class="px-2 py-4 font-small h-12">ECCN</th>
+                            <th class="px-2 py-4 font-small h-12">Synonym</th>
+                            <th class="px-2 py-4 font-small h-12 text-center">Status</th>
+                            <th class="px-2 py-4 font-small h-12 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="casesTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
+                        <!-- Rows will be injected here via AJAX -->
+                    </tbody>
+                </table>
             </div>
 
-            <!-- Pagination Controls -->
-            <div id="paginationContainer" class="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-1">
-                <div class="text-xs text-slate-500 font-medium" id="paginationInfo">
-                    Showing <span class="font-bold text-slate-900" id="startRange">0</span> to <span class="font-bold text-slate-900" id="endRange">0</span> of <span class="font-bold text-slate-900" id="totalEntries">0</span> cases
+            <!-- Consolidated Pagination Footer (Aligned with Due Diligence) -->
+            <div class="flex items-center justify-between px-4 py-4 border-t border-slate-200 bg-white">
+                <div class="flex items-center gap-4 text-xs font-medium text-slate-500">
+                    <div class="flex items-center gap-2">
+                        <select id="pageSize" onchange="changePageSize()" class="h-8 w-20 rounded-md border border-slate-200 bg-white pl-3 pr-8 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all cursor-pointer">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span>Entries per page</span>
+                    </div>
+                    <div class="h-4 w-px bg-slate-200"></div>
+                    <div id="paginationInfo">
+                        Showing <span class="font-bold text-slate-900" id="startRange">0</span> to <span class="font-bold text-slate-900" id="endRange">0</span> of <span class="font-bold text-slate-900" id="totalEntries">0</span> cases
+                    </div>
                 </div>
+
                 <div class="flex items-center gap-2">
-                    <button onclick="changePage(-1)" id="prevBtn" class="flex items-center gap-1.5 px-3 h-9 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                    <button onclick="changePage(-1)" id="prevBtn" class="flex items-center gap-1.5 px-4 h-8 rounded-md border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
                         <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Previous
                     </button>
-                    <div id="pageNumbers" class="flex items-center gap-1">
-                        <!-- Page numbers injected here -->
-                    </div>
-                    <button onclick="changePage(1)" id="nextBtn" class="flex items-center gap-1.5 px-3 h-9 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                    <button onclick="changePage(1)" id="nextBtn" class="flex items-center gap-1.5 px-4 h-8 rounded-md border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
                         Next <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                     </button>
                 </div>
             </div>
-   </div>
+        </div>
+    </div>
 </div>
 
 <!-- View Details Modal -->
@@ -159,12 +171,26 @@
 
     let allCases = [];
     let currentPage = 1;
-    const pageSize = 10;
+    let pageSize = 10;
     let filteredCases = [];
 
     $(document).ready(function() {
         loadCases();
     });
+
+    function resetFilters() {
+        $('#startDate').val('');
+        $('#endDate').val('');
+        $('#customerTypeFilter').val('0');
+        $('#searchInput').val('');
+        loadCases();
+    }
+
+    function changePageSize() {
+        pageSize = parseInt($('#pageSize').val());
+        currentPage = 1;
+        renderTable();
+    }
 
     function loadCases() {
         const startDate = $('#startDate').val();
@@ -209,10 +235,10 @@
 
         let rows = '';
         if (pageData.length === 0) {
-            rows = `<tr><td colspan="10" class="h-24 text-center"><div class="text-slate-500">No results found.</div></td></tr>`;
+            rows = `<tr><td colspan="10" class="h-24 text-center"><div class="text-slate-500 font-medium">No results found.</div></td></tr>`;
         } else {
             pageData.forEach((item, idx) => {
-               const id           = item.id           || item.Id || 0;
+                const id           = item.id           || item.Id || 0;
                 const caseRefId    = item.caseRefId    || item.CaseRefId || (id ? 'PF-' + id : '-');
                 const createdDate  = item.createdOn    || item.CreatedOn;
                 const updatedDate  = item.updatedOn    || item.UpdatedOn;
@@ -226,8 +252,6 @@
                 const created = formatDateTime(createdDate);
                 const updated = formatDateTime(updatedDate);
 
-
-                // Status Badge logic similar to formatCaseStatus in Index.cshtml
                 let statusClass = 'bg-slate-100 text-slate-800';
                 const s = status.toLowerCase();
                 if (s.includes('pending')) statusClass = 'bg-yellow-100 text-yellow-800';
@@ -250,14 +274,18 @@
                             <div class="ml-2 text-slate-400 font-normal">${updated.time !== '-' ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}</div>
                         </div>
                     </td>
-                    <td class="px-2 py-4 text-slate-700 font-medium">${chemName}</td>
+                    <td class="px-2 py-4 text-slate-700 font-medium whitespace-normal max-w-[200px]">
+                        <div class="line-clamp-2" title="${chemName}">${chemName}</div>
+                    </td>
                     <td class="px-2 py-4 text-slate-500 font-medium whitespace-nowrap">${hsCode}</td>
                     <td class="px-2 py-4 text-slate-500 font-medium whitespace-nowrap">${casNum}</td>
                     <td class="px-2 py-4 text-slate-500 font-medium whitespace-nowrap">${eccn}</td>
-                    <td class="px-2 py-4 text-slate-500 font-medium">${synonym}</td>
+                    <td class="px-2 py-4 text-slate-500 font-medium whitespace-normal max-w-[200px]">
+                        <div class="line-clamp-2" title="${synonym}">${synonym}</div>
+                    </td>
                     <td class="px-2 py-4 text-center">
                         <div class="flex items-center justify-center">
-                            <span class="flex w-24 items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+                            <span class="flex w-24 items-center justify-center px-3 py-1.5 rounded-full text-[10px] font-bold uppercase ${statusClass} ring-1 ring-inset ${statusClass.replace('bg-', 'ring-').replace('100', '200')}">
                                 ${status}
                             </span>
                         </div>
@@ -266,7 +294,7 @@
                          <div class="flex items-center justify-center gap-2">
                             <a href="/ProliferationFinance/Process/${id}" class="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1">
                                 Process <span class="text-[10px]">→</span>
-                            </a>
+                             </a>
                         </div>
                     </td>
                 </tr>`;
@@ -284,24 +312,7 @@
         $('#prevBtn').prop('disabled', currentPage === 1);
         $('#nextBtn').prop('disabled', currentPage === totalPages || totalEntries === 0);
         
-        renderPageNumbers(totalPages);
         lucide.createIcons();
-    }
-
-    function renderPageNumbers(totalPages) {
-        let html = '';
-        const maxVisible = 5;
-        let start = Math.max(1, currentPage - 2);
-        let end = Math.min(totalPages, start + maxVisible - 1);
-        
-        if (end - start < maxVisible - 1) {
-            start = Math.max(1, end - maxVisible + 1);
-        }
-
-        for (let i = start; i <= end; i++) {
-            html += `<button onclick="goToPage(${i})" class="w-9 h-9 rounded-lg border ${i === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'} text-xs font-bold transition-all">${i}</button>`;
-        }
-        $('#pageNumbers').html(html);
     }
 
     function changePage(dir) {

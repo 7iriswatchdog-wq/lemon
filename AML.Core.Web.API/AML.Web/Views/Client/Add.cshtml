@@ -373,6 +373,43 @@
             }
             $('#frmDocument').submit(function (e) {
                 e.preventDefault();
+                
+                // Form Validation
+                let isValid = true;
+                const requiredFields = [
+                    { id: '#txtClientName', name: 'Client Name' },
+                    { id: '#txtPrefix', name: 'Prefix' },
+                    { id: '#txtDescription', name: 'Description' },
+                    { id: '#txtC6Username', name: 'C6 Username' },
+                    { id: '#txtC6BaseUrl', name: 'C6 Base API Url' },
+                    { id: '#txtC6Threshold', name: 'C6 Threshold' },
+                    { id: '#txtThreshold', name: 'Threshold' },
+                    { id: '#txtComplem', name: 'Compliance Officer Email' }
+                ];
+
+                requiredFields.forEach(field => {
+                    const val = $(field.id).val();
+                    if (!val || val.trim() === '') {
+                        $(field.id).addClass('border-red-500').focus();
+                        isValid = false;
+                        return false; 
+                    } else {
+                        $(field.id).removeClass('border-red-500');
+                    }
+                });
+
+                if (!isValid) {
+                    $('#loader').hide();
+                    return false;
+                }
+
+                // Check for file only on create mode
+                if ($('#hdnClientId').val() == 0 && $('#txtFile')[0].files.length === 0) {
+                    $('#txtFile').addClass('border-red-500').focus();
+                    $('#loader').hide();
+                    return false;
+                }
+
                 var formdata = new FormData();
                 formdata.append('ClientId', $('#hdnClientId').val());
                 formdata.append('ClientName', $('#txtClientName').val());
@@ -384,20 +421,37 @@
                 formdata.append('C6Threshold', $('#txtC6Threshold').val());
                 formdata.append('Threshold', $('#txtThreshold').val());
                 formdata.append('Complem', $('#txtComplem').val());
+<<<<<<< HEAD
                     formdata.append('ApplicationStartDate',$('#Appstartdt').val());
             formdata.append('ApplicationEndDate',$('#Appenddt').val());
             formdata.append('SearchCount',$('#searchcount').val());
+=======
+                
+>>>>>>> 962ee5bfba155fe96e8b167b2a550ddc701e514a
                 $.ajax({
                     url: '/client/create',
                     type: 'post',
                     data: formdata,
                     contentType: false,
                     processData: false,
+<<<<<<< HEAD
                     success: function () {
                         clearDocuemnt();
 
                                         window.location.href = "/AdminManagement";
                             toastr.success('Client Data Saved Successfully');
+=======
+                    success: function (res) {
+                        $('#loader').hide();
+                        toastr.success('Client created/updated successfully');
+                        // Redirect to Admin Management Index after short delay
+                        setTimeout(() => {
+                            window.location.href = "/AdminManagement";
+                        }, 1500);
+                    },
+                    error: function() {
+                        $('#loader').hide();
+>>>>>>> 962ee5bfba155fe96e8b167b2a550ddc701e514a
                     }
                 });
             });

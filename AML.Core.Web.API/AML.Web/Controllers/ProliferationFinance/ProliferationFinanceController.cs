@@ -159,19 +159,21 @@ namespace AML.Web.Controllers.ProliferationFinance
                     }
                 }
 
-                // 4. Update Case Metadata based on results
-                if (dbMatch || pdfMatch)
+                // 4. Validation: Prevent Case Creation if NO match found
+                if (!dbMatch && !pdfMatch)
                 {
-                    searchDto.Score = "100";
-                    searchDto.StatusReason = "Match found in: " + string.Join(" & ", matchSources);
-                }
-                else
-                {
-                    searchDto.Score = "0";
-                    searchDto.StatusReason = "No match found in UAE Control List or Document Scan";
+                    return Json(new { 
+                        success = false, 
+                        isNoMatch = true,
+                        message = "No matches found in UAE Control List or Document Scan. Case will not be created." 
+                    });
                 }
 
-                // 5. Direct Case Creation
+                // 5. Update Case Metadata based on results (Remove system-generated match comments)
+                searchDto.Score = "100";
+                searchDto.StatusReason = ""; // Kept empty as per user request
+
+                // 6. Direct Case Creation
                 var createResponse = _proliferationFinanceService.CreateCase(searchDto);
                 if (createResponse.Status == 200 && createResponse.Result > 0)
                 {
@@ -221,8 +223,25 @@ namespace AML.Web.Controllers.ProliferationFinance
                     SearchHitDetails = caseDetails.SearchHitDetails
                 };
 
-                // For Chemical cases, we might want to re-fetch potential hits from UAE Goods
-                // For Non-Chemical, the "ChemicalName" field already stores the matched paragraph(s)
+                // For Chemical/Goods cases, re-fetch ALL potential hits from UAE Control List
+                if (model.CustomerType == "Goods" || model.CustomerType == "Chemical")
+                {
+                    var searchDto = new AML.DTO.DTO.ProliferationFinance.ProliferationFinanceCaseDTO
+                    {
+                        ChemicalName = model.ChemicalName,
+                        HsCode = model.HsCode,
+                        CasNumber = model.CasNumber,
+                        Eccn = model.Eccn,
+                        SynonymName = model.SynonymName
+                    };
+
+                    var searchResponse = _proliferationFinanceService.SearchChemicals(searchDto);
+                    if (searchResponse.Status == 200 && searchResponse.Result != null)
+                    {
+                        model.MatchedChemicals = searchResponse.Result;
+                    }
+                }
+
                 return View(model);
             }
             catch (Exception)
@@ -250,7 +269,21 @@ namespace AML.Web.Controllers.ProliferationFinance
         {
             try
             {
+                var userId = int.Parse(_httpContextAccessor.HttpContext.Session.GetString("SessUserId") ?? "0");
+                
+                // 1. Update the main status reason for quick reference
                 var response = _proliferationFinanceService.UpdateCaseRemarks(caseId, remarks);
+                
+                // 2. Add to Case Comment history table
+                var commentDto = new CaseCommentDTO
+                {
+                    CaseId = caseId.ToString(),
+                    Comment = remarks,
+                    CreatedBy = userId,
+                    CreatedOn = DateTime.Now.ToString("dd/MM/yyyy")
+                };
+                _caseCommentService.Create(commentDto);
+                
                 return Json(new { success = response.Status == 200, message = response.Message });
             }
             catch (Exception ex)
@@ -321,7 +354,7 @@ namespace AML.Web.Controllers.ProliferationFinance
         }
 
         [HttpGet("/ProliferationFinance/Details/{id}")]
-        public IActionResult Details(int id)
+        public IActionResult Details(int id, int? chemicalId = null)
         {
             try
             {
@@ -347,6 +380,20 @@ namespace AML.Web.Controllers.ProliferationFinance
                     MatchedChemicalName = caseDetails.MatchedChemicalName,
                     SearchHitDetails = caseDetails.SearchHitDetails
                 };
+
+                // If a specific chemical was selected from search results, override the case default fields
+                if (chemicalId.HasValue && chemicalId.Value > 0)
+                {
+                    var chem = _proliferationFinanceService.GetChemicalById(chemicalId.Value);
+                    if (chem != null)
+                    {
+                        model.MatchedChemicalName = chem.ChemicalName;
+                        model.HsCode = chem.HsCode;
+                        model.CasNumber = chem.CasNumber;
+                        model.Eccn = chem.Eccn;
+                        model.SynonymName = chem.SynonymName;
+                    }
+                }
 
                 return View(model);
             }
@@ -537,8 +584,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                     {
                                         summary.Matches++;
                                         caseDto.Score = "100";
-                                        caseDto.StatusReason = "Match found in: " + string.Join(" & ", matchSources);
-                                        if (!string.IsNullOrEmpty(remarks)) caseDto.StatusReason += " | Remarks: " + remarks;
+                                        caseDto.StatusReason = !string.IsNullOrEmpty(remarks) ? remarks : ""; // Only keep user remarks
 
                                         var createResponse = _proliferationFinanceService.CreateCase(caseDto);
                                         if (createResponse.Status == 200)

@@ -247,8 +247,19 @@
                             <span class="info-value">@(Model.CreatedOn?.ToString("dd-MMM-yyyy") ?? "-")</span>
                         </div>
                         <div class="info-group">
-                            <span class="info-label text-blue-600">Search Term</span>
-                            <span class="info-value text-blue-700 italic font-bold">@Model.ChemicalName</span>
+                            <span class="info-label text-blue-600 font-bold">Search Term</span>
+                            <span class="info-value text-blue-700 italic font-bold">
+                                @{
+                                    var displayTerm = Model.ChemicalName;
+                                    if (string.IsNullOrEmpty(displayTerm))
+                                    {
+                                        displayTerm = !string.IsNullOrEmpty(Model.CasNumber) ? Model.CasNumber :
+                                                     !string.IsNullOrEmpty(Model.HsCode) ? Model.HsCode :
+                                                     !string.IsNullOrEmpty(Model.Eccn) ? Model.Eccn : "-";
+                                    }
+                                }
+                                @displayTerm
+                            </span>
                         </div>
                         <div class="info-group">
                             <span class="info-label">Current Status</span>
@@ -353,14 +364,18 @@
     }
 
     function highlightSnippets() {
-        const searchTerm = "@Model.ChemicalName";
-        if (!searchTerm || searchTerm.length < 2) return;
+        const searchTerm = "@Html.Raw(Model.ChemicalName?.Replace("\"", "\\\""))";
+        if (!searchTerm) return;
 
-        const regex = new RegExp(`(${searchTerm})`, 'gi');
+        // Escape special characters for regex
+        const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escapedTerm})`, 'gi');
+        
         $('.pdf-snippet').each(function() {
             const $this = $(this);
-            const html = $this.html();
-            const newHtml = html.replace(regex, '<mark class="bg-yellow-200 text-slate-900 rounded px-1">$1</mark>');
+            const text = $this.text();
+            // Wrap in quotes as per the original design if needed, or just highlight
+            const newHtml = text.replace(regex, '<mark class="bg-yellow-200 text-slate-900 rounded px-1">$1</mark>');
             $this.html(newHtml);
         });
     }

@@ -11,6 +11,7 @@ namespace AML.Core.RepositoryContract.ProliferationFinance
         ServiceResponse<int> CreateCase(ProliferationFinanceCaseDTO caseDto);
         ServiceResponse<List<ProliferationFinanceCaseDTO>> GetAllCases();
         ProliferationFinanceCaseDTO GetCaseById(int id);
+        UAEControlListDTO GetChemicalById(int id);
         ServiceResponse<bool> UpdateCaseStatus(int caseId, string status);
         ServiceResponse<bool> UpdateCaseRemarks(int caseId, string remarks);
         ServiceResponse<bool> UpdateSearchHits(int caseId, string hitDetails);

@@ -109,6 +109,22 @@ namespace AML.Core.Repository.ProliferationFinance
             }
         }
 
+        public UAEControlListDTO GetChemicalById(int id)
+        {
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_id", id);
+                // Using direct query as single record SP might not exist
+                string sql = "SELECT * FROM UAEControlList WHERE Id = @p_id";
+                return GetFirstOrDefault<UAEControlListDTO>(sql, parameters, commandType: CommandType.Text);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         public ServiceResponse<bool> UpdateCaseStatus(int caseId, string status)
         {
             ServiceResponse<bool> serviceResponse = new ServiceResponse<bool>();
