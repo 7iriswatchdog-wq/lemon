@@ -77,4 +77,21 @@ namespace AML.ViewModel.ViewModels.Common
         public int Created_By { get; set; }
         public int is_Active { get; set; }
     }
+
+    public class UserApiModel
+    {
+
+        public string userLimit { get; set; }
+
+        public string username { get; set; }
+        public string expiryDate { get; set; }
+
+        public string accountType { get; set; }
+
+        public List<string> EmailIds { get; set; }
+
+
+
+
+    }
 }

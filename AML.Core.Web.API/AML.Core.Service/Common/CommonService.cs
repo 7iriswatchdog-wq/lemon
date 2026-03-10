@@ -1634,7 +1634,7 @@ namespace AML.Core.Service.Common
 
         public async Task<TokenRS> CreateC6Token(string url, string baseURL)
         {
-            return await AMLUtility.CreateC6Token(url, baseURL, _c6Username);
+            return  AMLUtility.CreateC6Token(url, baseURL, _c6Username);
         }
 
         public ApiAuthResponse Authenticate(ApiAuthRequest model)

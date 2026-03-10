@@ -83,6 +83,8 @@ namespace AML.Core.Common.StaticResource
         public const string GETTERRORISLLIST = "uaelist/json";
         public const string GETFUZZYBACKLIST = "BlackList/BlackFuzzySearch";
         public const string GETPendingCasesScheduler = "Customer/PendingCases";
+        public const string UserCreation = "users/create";
+        public const string UserUpdation = "users/reset";
     }
     #endregion
 }

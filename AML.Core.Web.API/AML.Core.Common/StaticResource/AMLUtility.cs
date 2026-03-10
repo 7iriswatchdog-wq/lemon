@@ -763,7 +763,7 @@ namespace AML.Core.Common.StaticResource
             return result;
         }
 
-        public static async Task<TokenRS> CreateC6Token(string url, string baseURL, string username)
+        public static TokenRS CreateC6Token(string url, string baseURL, string username)
         {
             TokenRS res = new TokenRS();
             TokenRQ model = new TokenRQ();

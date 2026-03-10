@@ -921,7 +921,7 @@ namespace AML.Web.Controllers.Corporate
         public async Task<ActionResult> CorporateScreening(CorporateScreeningModel model)
         {
             checkThreshold = model.Threshold;
-            TokenRS token =  await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+            TokenRS token =   AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
             model.ClientId = _clientHandler.GetClientId();
             var CustomerType = "C";
             model.CodesTable = new SelectList(_mapper.Map<List<CodesTableModel>>(_customerCaseService.GetCodesByClientID(clientId)), "ccName", "ccName");
