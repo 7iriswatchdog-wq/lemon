@@ -4,6 +4,7 @@ using AML.Core.ServiceContract.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using NLog;
 using System;
 using System.Linq;
 using System.Net;
@@ -29,6 +30,8 @@ namespace AML.Web.Helper
         Task<dynamic> PostAsync(dynamic model, string url);
         //Task<dynamic> GetAsync(dynamic model, string url);
         Task<dynamic> GetAsync(TokenRS model, string url);
+
+        Task<dynamic> PostAsync(dynamic model, string url, string baseURL, string token);
     }
     public class HttpClientHandler : IHttpClientHandler
     {
@@ -36,6 +39,7 @@ namespace AML.Web.Helper
         private ICommonService commonService;
         private readonly IHttpContextAccessor httpContextAccessor;
         private string baseURL = string.Empty;
+        private readonly Logger log = LogManager.GetCurrentClassLogger();
         public HttpClientHandler(IConfiguration _configuration, ICommonService _commonService, IHttpContextAccessor _httpContextAccessor)
         {
             configuration = _configuration;
@@ -175,6 +179,57 @@ namespace AML.Web.Helper
                 if (response.IsSuccessStatusCode)
                 {
                     result = await response.Content.ReadAsStringAsync();
+                }
+            }
+            #endregion
+            return result;
+        }
+
+        public async Task<dynamic> PostAsync(dynamic model, string url, string baseUrl, string token)
+        {
+            log.Debug("AMLTracker {0}", url);
+            Console.WriteLine("AMLTracker {0}", url);
+            dynamic result = string.Empty;
+            HttpResponseMessage response;
+
+            #region POST Content Setter
+            string postContent = JsonConvert.SerializeObject(model);
+            var buffer = Encoding.UTF8.GetBytes(postContent);
+            var byteContent = new ByteArrayContent(buffer);
+            byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            #endregion
+            //model.CompanyID = token.user.id;
+            //string postContent1 = JsonConvert.SerializeObject(model);
+            //var buffer1 = Encoding.UTF8.GetBytes(postContent1);
+            //var byteContent1 = new ByteArrayContent(buffer1);
+            //byteContent1.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+
+            #region POST REQUEST
+            using (HttpClient client = new HttpClient())
+            {
+                //Add Token Headers            
+                try
+                {
+                    client.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
+                }
+                catch (Exception ex)
+                {
+                    var error = "error";
+                }
+
+                client.BaseAddress = new Uri(baseUrl);
+                Console.WriteLine(baseUrl + url);
+                response = client.PostAsync(baseUrl + url, byteContent).Result;
+                log.Debug("AMLTracker {0}", response.StatusCode);
+                Console.WriteLine("AMLTracker {0}", response.StatusCode);
+
+                result = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                {
+                    result = await response.Content.ReadAsStringAsync();
+                    log.Debug("AMLTracker {0}", result);
+                    Console.WriteLine("AMLTracker {0}", result);
                 }
             }
             #endregion

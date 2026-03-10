@@ -672,7 +672,7 @@ namespace AML.Web.Controllers.Case
             checkThreshold = model.Threshold;
             try
             {
-                TokenRS token = await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+                TokenRS token =  AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
                 if (token.status == 400)
                 {
                     _toastNotification.AddErrorToastMessage("User is not authorized for screening");
@@ -1600,7 +1600,7 @@ namespace AML.Web.Controllers.Case
                 //string url = pdfbaseURL;
                 string url = baseC6URL;
                 //TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, url, "kycdigi");
-                TokenRS token = await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+                TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
                 //     string accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1ZmQ4NzVjNWVmMmFmYjMxNGNhMWE1YjIiLCJpYXQiOjE2MTI2OTE4MTMsImV4cCI6MTYxMzI5NjYxM30.trsanUcNCINZTa0gkWD_5LfofoHG1aD2wX8tq3XsP8I";
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.user.token);
                 if (category == "INDIVIDUAL")
@@ -1628,7 +1628,7 @@ namespace AML.Web.Controllers.Case
                 string url = pdfbaseURL;
                 //string url = baseC6URL;
                 //TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, url, "kycdigi");
-                TokenRS token = await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+                TokenRS token =  AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
                 //     string accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1ZmQ4NzVjNWVmMmFmYjMxNGNhMWE1YjIiLCJpYXQiOjE2MTI2OTE4MTMsImV4cCI6MTYxMzI5NjYxM30.trsanUcNCINZTa0gkWD_5LfofoHG1aD2wX8tq3XsP8I";
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.user.token);
                 if (category == "INDIVIDUAL")
@@ -1990,7 +1990,7 @@ namespace AML.Web.Controllers.Case
             string url;
 
             //TokenRS token = AMLUtility.CreateC6Token("users/authenticate", baseC6URL, "kycdigi");
-            TokenRS token = await AMLUtility.CreateC6Token("users/authenticate", baseC6URL, _c6Username);
+            TokenRS token =  AMLUtility.CreateC6Token("users/authenticate", baseC6URL, _c6Username);
             using (HttpClient httpClient = new HttpClient())
             {
 

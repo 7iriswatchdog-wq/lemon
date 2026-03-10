@@ -283,7 +283,7 @@
 
                             <div class="form-group gap-2">
                                 <label>C6 Threshold <span class="text-red-500">*</span></label>
-                                <input type="text" asp-for="C6Threshold" id="txtC6Threshold" class="form-control br-50" placeholder="C6 Threshold">
+                                <input type="number" asp-for="C6Threshold" id="txtC6Threshold" value="70" class="form-control br-50" placeholder="C6 Threshold">
                                 <span asp-validation-for="C6Threshold" class="text-red-500"></span>
                             </div>
 
@@ -294,7 +294,7 @@
 
                             <div class="form-group gap-2">
                                 <label>Threshold <span class="text-red-500">*</span></label>
-                                <input type="text" asp-for="Threshold" id="txtThreshold" class="form-control br-50" placeholder="Threshold">
+                                <input type="number" asp-for="Threshold" id="txtThreshold" value="70" class="form-control br-50" placeholder="Threshold">
                                 <span asp-validation-for="Threshold" class="text-red-500"></span>
                             </div>
 
@@ -329,24 +329,24 @@
                         <div class="col-md-4 flex-item">
                             <div class="form-group gap-2">
                                 <label for="dtStartDate">Application Start Date<span class="text-red-500">*</span></label>
-                                <input type="date" id="dtStartDate"
+                                <input type="date" id="Appstartdt" asp-for="ApplicationStartDate"
                                        class="form-control br-50"
-                                       max="@DateTime.Now:yyyy-MM-dd" />
+                                       max="@(DateTime.Now.ToString("yyyy-MM-dd"))" />
                             </div>
 
                         </div>
                         <div class="col-md-4 flex-item">
                             <div class="form-group gap-2">
                                 <label for="dtEndDate">Application End Date<span class="text-red-500">*</span></label>
-                                <input type="date" id="dtEndDate"
+                                <input type="date" id="Appenddt" asp-for="ApplicationEndDate"
                                        class="form-control br-50"
-                                       max="@DateTime.Now:yyyy-MM-dd" />
+                                       min="@(DateTime.Now.ToString("yyyy-MM-dd"))" />
                             </div>
                         </div>
                         <div class="col-md-4 flex-item">
                             <div class="form-group gap-2">
                                 <label for="txtSearchCount">Search Count <span class="text-red-500">*</span></label>
-                                <input type="text" id="txtSearchCount" class="form-control br-50" placeholder="Threshold">
+                                <input type="text" id="searchcount" class="form-control br-50" placeholder="Threshold" asp-for="SearchCount">
 
                             </div>
                         </div>
@@ -384,6 +384,9 @@
                 formdata.append('C6Threshold', $('#txtC6Threshold').val());
                 formdata.append('Threshold', $('#txtThreshold').val());
                 formdata.append('Complem', $('#txtComplem').val());
+                    formdata.append('ApplicationStartDate',$('#Appstartdt').val());
+            formdata.append('ApplicationEndDate',$('#Appenddt').val());
+            formdata.append('SearchCount',$('#searchcount').val());
                 $.ajax({
                     url: '/client/create',
                     type: 'post',
@@ -393,7 +396,7 @@
                     success: function () {
                         clearDocuemnt();
 
-                                        window.location.href = "/Client";
+                                        window.location.href = "/AdminManagement";
                             toastr.success('Client Data Saved Successfully');
                     }
                 });

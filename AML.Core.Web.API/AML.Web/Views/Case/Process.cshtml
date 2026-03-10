@@ -3090,6 +3090,7 @@
         function saveRemarks(id,customerid,type) {
            $('#loadingeffect').show();
                var model = new Array();
+                           let riskUpdated = false;
                $("#APITable TBODY TR").each(function (index) {
                    var row = $(this);
                    var result = {};
@@ -3120,6 +3121,7 @@
                     const itemText = $("#RiskItemTxt_" + i).val();
 
                     if (selectedItemId && selectedItemId !== "0") {
+                                    riskUpdated = true;
                         result.riskAssessments.push({
                             RiskTypeId: parseInt(riskTypeId),
                             RiskTypeText: riskTypeText || "",
@@ -3148,8 +3150,14 @@
 
                    //     dataType: "json",
                    success: function (response) {
-                           
-                       insertUploadComment("Remarks has been update in the Search Api Result Section","Search API Result");
+
+                                   if (riskUpdated) {
+                                                   insertUploadComment("Remarks has been update in the Search Api Result Section","Search API Result");
+                                            insertUploadComment("Risk Parameters Has been Updated", "Risk Assessment");
+                                        } else {
+                                            insertUploadComment("Remarks has been update in the Search Api Result Section", "Search API Result");
+                                        }
+                       
                              $('#loadingeffect').hide();
                        toastr.success(response);
                                location.reload();

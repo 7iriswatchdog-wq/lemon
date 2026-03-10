@@ -48,6 +48,8 @@ namespace AML.DTO.DTO.Common
         public int UsageCount { get; set; }
         [Column("UserCount")]
         public int UserCount { get; set; }
+        [Column("Created_On")]
+        public DateTime? CreatedOn { get; set; }
     }
     public class ClientRightsDTO
     {

@@ -147,7 +147,7 @@ namespace AML.Web.Controllers.ClientCase
             List<string> selectedScreeningOptions = new List<string>();
             DocumentUploadModel _documentUploadModel = _mapper.Map <DocumentUploadModel>(_docUpload);
             _documentUploadModel.ClientId = _clientHandler.GetClientId();
-            TokenRS token = await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+            TokenRS token =  AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
             if (token.status == 400)
             {
                 _toastNotification.AddErrorToastMessage("User is not authorized for screening");
@@ -505,7 +505,7 @@ namespace AML.Web.Controllers.ClientCase
 
             CallC6Screening = _configuration["CallC6Screening"];
             List<string> selectedScreeningOptions = new List<string>();
-            TokenRS token = await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+            TokenRS token =  AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
 
             DocumentUploadModel _documentUploadModel = _mapper.Map<DocumentUploadModel>(_docUpload);
             _documentUploadModel.ClientId = _clientHandler.GetClientId();

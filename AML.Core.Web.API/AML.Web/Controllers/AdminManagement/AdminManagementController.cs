@@ -160,6 +160,10 @@ namespace AML.Web.Controllers.AdminManagement
             _clientModel.Complem = result.Complem;
             _clientModel.C6BaseUrl = result.C6BaseUrl;
             _clientModel.DocumentFileName = result.DocumentFileName;
+            _clientModel.SearchCount = result.SearchCount;
+            _clientModel.ApplicationStartDate = result.ApplicationStartDate;
+            _clientModel.ApplicationEndDate = result.ApplicationEndDate;
+            _clientModel.CreatedOn = result.CreatedOn;
 
             ViewBag.ClientId = id;
             
@@ -172,7 +176,7 @@ namespace AML.Web.Controllers.AdminManagement
             ViewBag.IdentityTypes = new SelectList(_mapper.Map<List<IdentityTypeModel>>(_identitytypeService.GetAll(id)), "Id", "Name");
             ViewBag.Countries = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(id)), "Id", "Name");
 
-            TokenRS token = await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, _clientModel.C6BaseUrl, _clientModel.C6Username);
+            TokenRS token =  AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, _clientModel.C6BaseUrl, _clientModel.C6Username);
             if (token.status == 400)
             {
                 ViewBag.userlimit = "NA";

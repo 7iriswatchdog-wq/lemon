@@ -128,7 +128,7 @@ namespace AML.Web.Controllers.Risk
         {
             //TODO: to bring all the hard-code values to static or enums
             RiskModelV2 model = new RiskModelV2();
-            TokenRS token = await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+            TokenRS token =  AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
             if (token.status == 400)
             {
                 //_toastNotification.AddErrorToastMessage("User is not authorized for using this module.");
@@ -235,7 +235,7 @@ namespace AML.Web.Controllers.Risk
         {
             //TODO: to bring all the hard-code values to static or enums
             RiskCorpCustomerModelV2 model = new RiskCorpCustomerModelV2();
-            TokenRS token = await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+            TokenRS token =  AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
             if (token.status == 400)
             {
                 //_toastNotification.AddErrorToastMessage("User is not authorized for using this module.");
@@ -314,7 +314,7 @@ namespace AML.Web.Controllers.Risk
         public async Task<ActionResult> RiskAssessmentForVendors()
         {
             RiskAssessmentVendorModelV2 model = new RiskAssessmentVendorModelV2();
-            TokenRS token = await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+            TokenRS token =  AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
             if (token.status == 400)
             {
                 //_toastNotification.AddErrorToastMessage("User is not authorized for using this module.");
@@ -390,7 +390,7 @@ namespace AML.Web.Controllers.Risk
         public async Task<ActionResult> RiskAssessmetnForBank()
         {
             RiskAssessmentBankModelV2 model = new RiskAssessmentBankModelV2();
-            TokenRS token = await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+            TokenRS token =  AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
             if (token.status == 400)
             {
                 //_toastNotification.AddErrorToastMessage("User is not authorized for using this module.");
@@ -471,7 +471,7 @@ namespace AML.Web.Controllers.Risk
         {
             RIskConfigurationMasterModelV2 model = new RIskConfigurationMasterModelV2();
 
-            TokenRS token = await AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+            TokenRS token =  AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
             if (token.status == 400)
             {
                 //_toastNotification.AddErrorToastMessage("User is not authorized for using this module.");

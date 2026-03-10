@@ -1,40 +1,42 @@
+using AML.Core.Common.StaticResource;
+using AML.Core.DataContract.Authentication;
+using AML.Core.DataContract.Enum;
+using AML.Core.RepositoryContract.CustomerCase;
+using AML.Core.ServiceContract.Branch;
+using AML.Core.ServiceContract.Country;
+using AML.Core.ServiceContract.CustomerCase;
+using AML.Core.ServiceContract.Department;
+using AML.Core.ServiceContract.Designation;
+using AML.Core.ServiceContract.IdentityType;
+using AML.Core.ServiceContract.User;
+using AML.Core.ServiceContract.UserGroup;
+using AML.Core.ServiceContract.VisaType;
+using AML.DTO.DTO.Common;
+using AML.DTO.DTO.User;
+using AML.ViewModel.ViewModels.Branch;
+using AML.ViewModel.ViewModels.Common;
+using AML.ViewModel.ViewModels.Country;
+using AML.ViewModel.ViewModels.DataTable;
+using AML.ViewModel.ViewModels.Department;
+using AML.ViewModel.ViewModels.Designation;
+using AML.ViewModel.ViewModels.IdentityType;
+using AML.ViewModel.ViewModels.User;
+using AML.ViewModel.ViewModels.UserGroup;
+using AML.ViewModel.ViewModels.VisaType;
+using AML.Web.CustomFilters;
+using AML.Web.Helper;
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using NToastNotify;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using AML.ViewModel.ViewModels.User;
-using AML.Core.ServiceContract.User;
-using AutoMapper;
-using Microsoft.Extensions.Configuration;
-using AML.Web.Helper;
-using AML.DTO.DTO.User;
-using AML.Core.ServiceContract.Department;
-using AML.ViewModel.ViewModels.Department;
-using AML.Core.ServiceContract.Designation;
-using AML.Core.ServiceContract.Branch;
-using AML.Core.ServiceContract.UserGroup;
-using AML.ViewModel.ViewModels.Designation;
-using AML.ViewModel.ViewModels.Branch;
-using AML.ViewModel.ViewModels.UserGroup;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using AML.ViewModel.ViewModels.VisaType;
-using AML.Core.ServiceContract.VisaType;
-using AML.Core.ServiceContract.IdentityType;
-using AML.Core.ServiceContract.Country;
-using AML.ViewModel.ViewModels.IdentityType;
-using AML.ViewModel.ViewModels.Country;
-using AML.ViewModel.ViewModels.DataTable;
-using NToastNotify;
-using AML.Web.CustomFilters;
-using Microsoft.AspNetCore.Authorization;
-using AML.ViewModel.ViewModels.Common;
-using AML.Core.RepositoryContract.CustomerCase;
-using AML.Core.ServiceContract.CustomerCase;
-using AML.DTO.DTO.Common;
-using Newtonsoft.Json;
-using AML.Core.DataContract.Enum;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace AML.Web.Controllers.Client
 {
@@ -55,6 +57,8 @@ namespace AML.Web.Controllers.Client
         private IHttpClientHandler _clientHandler;
         private ICustomerCaseService _customerCaseService;
         IFileUploader _fileUploader;
+        private string baseC6URL = string.Empty;
+        private string _c6Username;
         public ClientController(IUserService userService, IDepartmentService departmentService,
             IToastNotification toastNotification,
             IDesignationService designationService, IBranchService branchService,
@@ -75,6 +79,12 @@ namespace AML.Web.Controllers.Client
             _clientHandler = clientHandler;
             _customerCaseService = customerCaseService;
             _fileUploader = fileUploader;
+            var clientId = _clientHandler.GetClientId();
+            var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
+            _c6Username = clientDetails?.C6Username;
+            //checkThreshold = clientDetails.Threshold;
+            baseC6URL = clientDetails.C6BaseUrl;
+
         }
         [AllowAnonymous]
         public IActionResult Index(string isActive)
@@ -194,101 +204,193 @@ namespace AML.Web.Controllers.Client
             var errors = ModelState.Select(x => x.Value.Errors)
                            .Where(y => y.Count > 0)
                            .ToList();
-            if (ModelState.IsValid)
-            {
+            //if (ModelState.IsValid)
+            //{
+                ServiceResponse<int> result = null;
                 if (_ClientModel.ClientId > 0)
                 {
-                    _ClientModel.CreatedBy = _clientHandler.GetUserId();
-                    ClientMasterDTO _clientDto = new ClientMasterDTO();
-                    _clientDto.ClientId = _ClientModel.ClientId;
-                    _clientDto.ClientName = _ClientModel.ClientName;
-                    _clientDto.Prefix = _ClientModel.Prefix;
-                    _clientDto.C6Username = _ClientModel.C6Username;
-                    _clientDto.C6Threshold = _ClientModel.C6Threshold;
-                    _clientDto.Threshold = _ClientModel.Threshold;
-                    _clientDto.CreatedBy = _clientHandler.GetUserId();
-                    _clientDto.Description = _ClientModel.Description;
-                    _clientDto.CreatedBy = _clientHandler.GetUserId();
-                    _clientDto.Complem = _ClientModel.Complem;
-                    _clientDto.C6BaseUrl = _ClientModel.C6BaseUrl;
-                    _clientDto.type = 1;
-                    _clientDto.Document = _ClientModel.Document;
-                    _clientDto.DocumentDetails = _ClientModel.DocumentDetails;
-                    _clientDto.DocumentFileName = _ClientModel.DocumentFileName;
-                    _clientDto.DocumentFullPath = _ClientModel.DocumentFullPath;
-                    _clientDto.DocumentName = _ClientModel.DocumentName;
-                    _customerCaseService.UpdateClient(_clientDto);
-                    if (_clientDto.Document != null)
+                    var clientresult = _customerCaseService.GetClientDetailsByID(_ClientModel.ClientId);
+
+                    if (_ClientModel.SearchCount < clientresult.SearchCount)
                     {
-                        DocumentsModel _documentsModel = _fileUploader.UploadLogo(_clientDto.ClientId, ItemType.Logo, _clientHandler.GetBranchId(), _clientDto.Document);
-                        _clientDto.DocumentFileName = _documentsModel.DocName;
-                        _clientDto.DocumentFullPath = _documentsModel.DocFullPath;
-                       
+                        ClientMaster _clientModel = new ClientMaster();
+                        _clientModel.ClientId = clientresult.ClientId;
+                        _clientModel.ClientName = clientresult.ClientName;
+                        _clientModel.Prefix = clientresult.Prefix;
+                        _clientModel.C6Threshold = clientresult.C6Threshold;
+                        _clientModel.Threshold = clientresult.Threshold;
+                        _clientModel.C6Username = clientresult.C6Username;
+                        _clientModel.Description = clientresult.Description;
+                        _clientModel.Complem = clientresult.Complem;
+                        _clientModel.C6BaseUrl = clientresult.C6BaseUrl;
+                        _clientModel.DocumentFileName = clientresult.DocumentFileName;
+                        _clientModel.ApplicationEndDate = clientresult.ApplicationEndDate;
+                        _clientModel.ApplicationStartDate = clientresult.ApplicationStartDate;
+                        _clientModel.SearchCount = clientresult.SearchCount;
+
+                        return Json(new
+                        {
+                            Success = false,
+                            Message = "Client search count cannot be decreased.",
+                            Id = _clientModel.ClientId
+                        });
                     }
+                    else
+                    {
+                        TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+                        //Sending the parameters to update the middleware(code updated by sanjana)
+                        string data = _clientHandler.PostAsync(new UserApiModel
+                        {
+                            username = _ClientModel.C6Username,
+                            userLimit = _ClientModel.SearchCount.ToString(),
+                            expiryDate = _ClientModel.ApplicationEndDate.ToString(),
+                            accountType = "user",
+                            EmailIds = new List<string>()
 
-					var result = _customerCaseService.UploadLogo(_mapper.Map<ClientMasterDTO>(_clientDto));
-					
 
-					_toastNotification.AddSuccessToastMessage("Client updated successfully");
 
-					return Json(result);
-				}
+                        }, ScreeningService.UserUpdation, baseC6URL, token.user.token).Result;
+
+
+
+
+
+                        _ClientModel.CreatedBy = _clientHandler.GetUserId();
+                        ClientMasterDTO _clientDto = new ClientMasterDTO();
+                        _clientDto.ClientId = _ClientModel.ClientId;
+                        _clientDto.ClientName = _ClientModel.ClientName;
+                        _clientDto.Prefix = _ClientModel.Prefix;
+                        _clientDto.C6Username = _ClientModel.C6Username;
+                        _clientDto.C6Threshold = _ClientModel.C6Threshold;
+                        _clientDto.Threshold = _ClientModel.Threshold;
+                        _clientDto.CreatedBy = _clientHandler.GetUserId();
+                        _clientDto.Description = _ClientModel.Description;
+                        _clientDto.CreatedBy = _clientHandler.GetUserId();
+                        _clientDto.Complem = _ClientModel.Complem;
+                        _clientDto.C6BaseUrl = _ClientModel.C6BaseUrl;
+                        _clientDto.type = 1;
+                        _clientDto.Document = _ClientModel.Document;
+                        _clientDto.DocumentDetails = _ClientModel.DocumentDetails;
+                        _clientDto.DocumentFileName = _ClientModel.DocumentFileName;
+                        _clientDto.DocumentFullPath = _ClientModel.DocumentFullPath;
+                        _clientDto.DocumentName = _ClientModel.DocumentName;
+                        _clientDto.ApplicationStartDate = _ClientModel.ApplicationStartDate;
+                        _clientDto.ApplicationEndDate = (DateTime)_ClientModel.ApplicationEndDate;
+                        _clientDto.SearchCount = _ClientModel.SearchCount;
+                        _customerCaseService.UpdateClient(_clientDto);
+                        if (_clientDto.Document != null)
+                        {
+                            DocumentsModel _documentsModel = _fileUploader.UploadLogo(_clientDto.ClientId, ItemType.Logo, _clientHandler.GetBranchId(), _clientDto.Document);
+                            _clientDto.DocumentFileName = _documentsModel.DocName;
+                            _clientDto.DocumentFullPath = _documentsModel.DocFullPath;
+                            result = _customerCaseService.UploadLogo(_mapper.Map<ClientMasterDTO>(_clientDto));
+
+                        }
+
+
+
+
+
+                        _toastNotification.AddSuccessToastMessage("Client updated successfully");
+                        return Json(new
+                        {
+                            Success = true,
+                            Message = "Client updated successfully",
+                            Data = result
+                        });
+
+                    }
+                }
                 else
                 {
-                    //var client = _customerCaseService.CreateClient(_mapper.Map<ClientMasterDTO>(_ClientModel));
-                    ClientMasterDTO _clientDto = new ClientMasterDTO();
-                    _clientDto.ClientName = _ClientModel.ClientName;
-                    _clientDto.Prefix = _ClientModel.Prefix;
-                    _clientDto.C6Username = _ClientModel.C6Username;
-                    _clientDto.C6Threshold = _ClientModel.C6Threshold;
-                    _clientDto.Threshold = _ClientModel.Threshold;
-                    _clientDto.CreatedBy = _clientHandler.GetUserId();
-                    _clientDto.Description = _ClientModel.Description;
-                    _clientDto.CreatedBy = _clientHandler.GetUserId();
-                    _clientDto.Complem = _ClientModel.Complem;
-                    _clientDto.C6BaseUrl = _ClientModel.C6BaseUrl;
-                    _clientDto.type = 2;
-                    _clientDto.Document = _ClientModel.Document;
-                    _clientDto.DocumentDetails = _ClientModel.DocumentDetails;
-                    _clientDto.DocumentFileName = _ClientModel.DocumentFileName;
-                    _clientDto.DocumentFullPath = _ClientModel.DocumentFullPath;
-                    _clientDto.DocumentName = _ClientModel.DocumentName;
-                    var client = _customerCaseService.CreateClient(_clientDto);
-                    _clientDto.ClientId = client.Result;
-                    if (_clientDto.Document != null)
+                    if (_ClientModel.ApplicationStartDate?.Date != DateTime.Today)
                     {
-                        DocumentsModel _documentsModel = _fileUploader.UploadLogo(_clientDto.ClientId, ItemType.caseDocument, _clientHandler.GetBranchId(), _clientDto.Document);
-                        _clientDto.DocumentFileName = _documentsModel.DocName;
-                        _clientDto.DocumentFullPath = _documentsModel.DocFullPath;
+                        return Json(new
+                        {
+                            Success = true,
+                            Message = "Application Start Date must be today’s date.",
+                            Data = result
+                        });
                     }
 
-                    var result = _customerCaseService.UploadLogo(_mapper.Map<ClientMasterDTO>(_clientDto));
+                    TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+                    //Sending the parameters to save into middleware(code updated by Sanjana)
+                    string data = _clientHandler.PostAsync(new UserApiModel
+                    {
+                        userLimit = _ClientModel.SearchCount.ToString(),
+                        username = _ClientModel.C6Username,
+                        expiryDate = _ClientModel.ApplicationEndDate?.ToString("yyyy-MM-dd"),
+                        accountType = "user",
+                        EmailIds = new List<string>()
+                    }, ScreeningService.UserCreation, baseC6URL, token.user.token).Result;
 
-					_toastNotification.AddSuccessToastMessage("Client Created successfully");
+                    var responseMessage = JsonConvert.DeserializeObject<dynamic>(data);
 
-					return Json(result);
+                    if (responseMessage?.message != null && responseMessage.message.ToString() != "")
+                    {
+                        // Handle the error case
+                        return Json(new
+                        {
+                            Success = false,
+                            Message = responseMessage.message.ToString()
+                        });
+                    }
+                    else
+                    {
 
-                    
 
-                    //if (client.Result > 0)
-                    //{
-                    //    _toastNotification.AddSuccessToastMessage("Client added successfully");
-                    //}
-                    //else
-                    //{
-                    //    _toastNotification.AddErrorToastMessage("Client name already exist");
-                    //    return View(_ClientModel);
-                    //}
+
+
+                        //var client = _customerCaseService.CreateClient(_mapper.Map<ClientMasterDTO>(_ClientModel));
+                        ClientMasterDTO _clientDto = new ClientMasterDTO();
+                        _clientDto.ClientName = _ClientModel.ClientName;
+                        _clientDto.Prefix = _ClientModel.Prefix;
+                        _clientDto.C6Username = _ClientModel.C6Username;
+                        _clientDto.C6Threshold = _ClientModel.C6Threshold;
+                        _clientDto.Threshold = _ClientModel.Threshold;
+                        _clientDto.CreatedBy = _clientHandler.GetUserId();
+                        _clientDto.Description = _ClientModel.Description;
+                        _clientDto.CreatedBy = _clientHandler.GetUserId();
+                        _clientDto.Complem = _ClientModel.Complem;
+                        _clientDto.C6BaseUrl = _ClientModel.C6BaseUrl;
+                        _clientDto.type = 2;
+                        _clientDto.Document = _ClientModel.Document;
+                        _clientDto.DocumentDetails = _ClientModel.DocumentDetails;
+                        _clientDto.DocumentFileName = _ClientModel.DocumentFileName;
+                        _clientDto.DocumentFullPath = _ClientModel.DocumentFullPath;
+                        _clientDto.DocumentName = _ClientModel.DocumentName;
+                        _clientDto.ApplicationStartDate = _ClientModel.ApplicationStartDate;
+                        _clientDto.ApplicationEndDate = (DateTime)_ClientModel.ApplicationEndDate;
+                        _clientDto.SearchCount = _ClientModel.SearchCount;
+                        var client = _customerCaseService.CreateClient(_clientDto);
+                        _clientDto.ClientId = client.Result;
+                        if (_clientDto.Document != null)
+                        {
+                            DocumentsModel _documentsModel = _fileUploader.UploadLogo(_clientDto.ClientId, ItemType.caseDocument, _clientHandler.GetBranchId(), _clientDto.Document);
+                            _clientDto.DocumentFileName = _documentsModel.DocName;
+                            _clientDto.DocumentFullPath = _documentsModel.DocFullPath;
+                            result = _customerCaseService.UploadLogo(_mapper.Map<ClientMasterDTO>(_clientDto));
+                        }
+
+
+                        _toastNotification.AddSuccessToastMessage("Client Created successfully");
+
+                        return Json(new
+                        {
+                            Success = true,
+                            Message = "Client updated successfully",
+                            Data = result
+                        });
+                    }
                 }
-
-                //return RedirectToAction("Index", new { isActive = 0 });
-            }
-            else
-            {
-                _toastNotification.AddErrorToastMessage(JsonConvert.SerializeObject(errors));
-            }
-            return View(_ClientModel);
+            return RedirectToAction("Index", "AdminManagement");
         }
+            //else
+            //{
+            //    _toastNotification.AddErrorToastMessage(JsonConvert.SerializeObject(errors));
+            //}
+            
+        
         [HttpGet("client/GetClientRightsData/{id}")]
         public JsonResult GetClientRightsData(int id)
         {
