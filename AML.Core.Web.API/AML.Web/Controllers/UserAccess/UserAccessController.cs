@@ -104,8 +104,16 @@ namespace AML.Web.Controllers.User
         [HttpPost("auth/login")]
         public IActionResult Login(UserModel _UserModel)
         {
+            if (_UserModel == null || string.IsNullOrEmpty(_UserModel.UserName))
+            {
+                ViewData["Error"] = "Invalid login attempt.";
+                UserModel emptyModel = new UserModel();
+                var allClients = _customerCaseService.GetAllClients();
+                emptyModel.Clients = new SelectList(allClients, "ClientId", "ClientName");
+                return View(emptyModel);
+            }
             
-            var _UserAccess = (_authenticationService.VerifyUser(_UserModel.UserName, _UserModel.Password,_UserModel.ClientName));
+            var _UserAccess = (_authenticationService.VerifyUser(_UserModel.UserName, _UserModel.Password, _UserModel.ClientName ?? ""));
             if (_UserAccess.Result != null)
             {              
                 // calling C6 Auth
