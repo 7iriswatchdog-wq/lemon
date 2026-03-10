@@ -736,7 +736,7 @@ namespace AML.Core.Common.StaticResource
             string result = string.Empty;
             
             // New token generation
-            TokenRS token = await CreateC6Token(ScreeningService.C6AUTHENTICATION, baseURL, model.Username);
+            TokenRS token =  CreateC6Token(ScreeningService.C6AUTHENTICATION, baseURL, model.Username);
             model.CompanyID = token.user.id;
             string postContent1 = JsonConvert.SerializeObject(model);
             var buffer1 = Encoding.UTF8.GetBytes(postContent1);
