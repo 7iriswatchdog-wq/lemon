@@ -850,16 +850,13 @@
         `;
     }
     function getRiskScoreClass(riskScore) {
-        switch ((riskScore || '').toLowerCase()) {
-            case 'low risk':
-                return 'text-green-500';
-            case 'medium risk':
-                return 'text-yellow-400';
-            case 'high risk':
-                return 'text-red-500';
-            default:
-                return 'text-black';
-        }
+             const score = (riskScore || '').toLowerCase().trim();
+
+        if (score.includes('low')) return 'text-green-500';
+        if (score.includes('medium')) return 'text-yellow-400';
+        if (score.includes('high')) return 'text-red-500';
+
+            return 'text-black';
     }
 
       function formatDateTime(dateStr) {
@@ -1047,22 +1044,22 @@
                     }">
                         ${caseItem.matchScore}
                     </td>
-                           <td class="px-2 py-4">
-                                <span class="font-bold ${
-                                    getRiskScoreClass(caseItem.riskScore || caseItem.riskScore?.trim())
-                                }">
-                                ${
-                                    caseItem.riskScore
-                                        ? (
-                                            caseItem.riskScore.toLowerCase().includes("high") &&
-                                                caseItem.riskOverride?.toLowerCase() === "override"
-                                          )
-                                            ? "High(O)"
-                                            : caseItem.riskScore.replace(" Risk", "")
-                                        : ""
-                                }
-                                </span>
-                             </td>
+                               <td class="px-2 py-4">
+    <span class="font-bold ${
+        getRiskScoreClass(caseItem.riskScore)
+    }">
+        ${
+        caseItem.riskScore
+            ? (
+                caseItem.riskScore.toLowerCase().includes("high") &&
+                caseItem.riskOverride?.toLowerCase() === "override"
+            )
+                ? "High(O)"
+                : caseItem.riskScore.replace(" Risk", "").replace("High (O)", "High(O)")
+            : ""
+    }
+    </span>
+    </td>
                 <td class="px-2 py-4">${caseItem.createdUser}</td>
                 <td class="px-2 py-4">${formatCaseStatus(caseItem.status)}</td>
                 <td class="px-2 py-4 text-center">
