@@ -130,7 +130,7 @@
                                 <th class="px-6 py-4 font-bold h-12 sortable" onclick="sortTable(2, this)">Prefix</th>
                                 <th class="px-6 py-4 font-bold h-12">Users</th>
                                 <th class="px-6 py-4 font-bold h-12">Limit</th>
-                                <th class="px-6 py-4 font-bold h-12">Expiry</th>
+                                <th class="px-6 py-4 font-bold h-12">Expiry Date</th>
                                 <th class="px-6 py-4 font-bold h-12">Status</th>
                                 <th class="px-6 py-4 font-bold h-12">Blocked</th>
                                 <th class="px-6 py-4 font-bold h-12 text-center">Action</th>
@@ -232,9 +232,12 @@
                 csv.push(headers.join(','));
                 
                 resp.data.forEach(row => {
-                    const expDate = row.applicationEndDate ? new Date(row.applicationEndDate).toLocaleDateString() : '-';
+                    const expDate = row.applicationEndDate ? new Date(row.applicationEndDate).toLocaleDateString('en-GB') : '-';
                     const isExpired = row.applicationEndDate ? new Date(row.applicationEndDate) < new Date() : false;
-                    let stat = row.isActive === 1 && !isExpired ? 'Active' : 'Expired';
+                    
+                    let stat = 'Active';
+                    if (row.isActive === 0) stat = 'Blocked';
+                    else if (isExpired) stat = 'Expiry';
                     let r = [
                         row.clientId,
                         `"${(row.clientName || '').replace(/"/g, '""')}"`,
@@ -315,13 +318,17 @@
         }
 
         data.forEach(row => {
-            const expDate = row.applicationEndDate ? new Date(row.applicationEndDate).toLocaleDateString() : '-';
+            const expDate = row.applicationEndDate ? new Date(row.applicationEndDate).toLocaleDateString('en-GB') : '-';
             const isExpired = row.applicationEndDate ? new Date(row.applicationEndDate) < new Date() : false;
-            let statusText = row.isActive === 1 ? 'Active' : 'Expired';
-            if(isExpired && row.isActive === 1) statusText = 'Expired';
-            let statusBadge = (row.isActive === 1 && !isExpired) 
-                ? '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span>Active</span>'
-                : '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span>Expired</span>';
+            
+            let statusBadge = '';
+            if (row.isActive === 0) {
+                statusBadge = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span>Blocked</span>';
+            } else if (isExpired) {
+                statusBadge = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700"><span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5"></span>Expiry</span>';
+            } else {
+                statusBadge = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span>Active</span>';
+            }
             
             let blockedIcon = row.isActive === 0 
                 ? '<i data-lucide="lock" class="h-4 w-4 text-red-500" title="Blocked"></i>' 
