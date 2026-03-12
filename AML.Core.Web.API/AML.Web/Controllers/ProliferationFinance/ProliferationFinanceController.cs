@@ -244,8 +244,28 @@ namespace AML.Web.Controllers.ProliferationFinance
                     var searchResponse = _proliferationFinanceService.SearchChemicals(searchDto);
                     if (searchResponse.Status == 200 && searchResponse.Result != null)
                     {
-                        model.MatchedChemicals = searchResponse.Result;
+                        // Deduplicate chemical matches by composite key
+                        model.MatchedChemicals = searchResponse.Result
+                            .GroupBy(c => new { 
+                                Name = (c.ChemicalName ?? "").Trim().ToLower(), 
+                                Hs = (c.HsCode ?? "").Trim().ToLower(), 
+                                Cas = (c.CasNumber ?? "").Trim().ToLower(), 
+                                Ec = (c.Eccn ?? "").Trim().ToLower() 
+                            })
+                            .Select(g => g.First())
+                            .ToList();
                     }
+                }
+
+                // Deduplicate PDF snippets
+                if (!string.IsNullOrEmpty(model.SearchHitDetails))
+                {
+                    var snippets = model.SearchHitDetails.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
+                    var uniqueSnippets = snippets
+                        .Select(s => s.Trim())
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                    model.SearchHitDetails = string.Join("\n\n", uniqueSnippets);
                 }
 
                 // 1. Sync fresh results to MongoDB (Detection of new matches)
