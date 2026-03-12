@@ -29,5 +29,10 @@ namespace AML.Core.DataContract.Authentication
         public string individualCount { get; set; }
 
         public string corporateCount { get; set; }
+        public string hundredemail { get;set;}
+
+        public string beforeexpdemail { get;set;}
+        public string onexpemail { get; set; }
+        public string Eightemail { get; set; }
     }
 }

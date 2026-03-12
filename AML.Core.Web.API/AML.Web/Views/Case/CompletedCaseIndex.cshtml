@@ -643,9 +643,11 @@
             const t = text.toLowerCase().trim();
 
             if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
-            if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
-            //if (t.includes('auto')) return 'bg-blue-100 text-blue-800';
-            if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
+            if (t.includes('approved')) return 'bg-green-700 text-white';     // dark green
+            if (t.includes('auto')) return 'bg-green-100 text-green-800'; 
+            // if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
+            // //if (t.includes('auto')) return 'bg-blue-100 text-blue-800';
+            // if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
             if (t.includes('transfer')) return 'bg-green-100 text-green-800';
             if (t.includes('rejected')) return 'bg-red-100 text-red-800';
 
@@ -1207,52 +1209,65 @@
         loadCases(1);
     }
 
-        function clearFilters() {
+            function clearFilters() {
 
-    // Reset values
-    $('#startDate').val('');
-    $('#endDate').val('');
-    $('#customertype').val(0);
-    $('#searchInput').val('');
-    $('#user').val(0);
-    $('#caseStatus').val(10);
-    $('#screeningScore').val('');
-    $('#columnFilter').val('');
-    $('#riskScore').val('');
-    $('#caseStatusChange').val('');
+            const today = new Date();
+            const lastYear = new Date();
+            lastYear.setFullYear(today.getFullYear() - 1);
 
-    // Show filter icon again
-    document.getElementById("filterBtn").classList.remove("hidden");
+            function formatDate(date) {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            }
 
-    // Hide extra filters section
-    document.getElementById("extraFilters").classList.add("hidden");
+            // Reset values with defaults
+            $('#startDate').val(formatDate(lastYear));
+            $('#endDate').val(formatDate(today));
+        $('#customertype').val(0);
+        $('#searchInput').val('');
+        $('#user').val(0);
+        $('#caseStatus').val(10);
+        $('#screeningScore').val('');
+        $('#columnFilter').val('');
+        $('#riskScore').val('');
+        $('#caseStatusChange').val('');
 
-    // Hide all dynamic filter fields
-    $('#CaseStatusChangeReasonField').addClass('hidden');
-    $('#ScreeningScoreField').addClass('hidden');
-    $('#UserField').addClass('hidden');
-    $('#StatusField').addClass('hidden');
-    $('#RiskLevelField').addClass('hidden');
+        // Show filter icon again
+        document.getElementById("filterBtn").classList.remove("hidden");
 
-    checkFilterValues();
+        // Hide extra filters section
+        document.getElementById("extraFilters").classList.add("hidden");
 
-    // ⭐ Clear table data
-    filteredCases = [];
+        // Hide all dynamic filter fields
+        $('#CaseStatusChangeReasonField').addClass('hidden');
+        $('#ScreeningScoreField').addClass('hidden');
+        $('#UserField').addClass('hidden');
+        $('#StatusField').addClass('hidden');
+        $('#RiskLevelField').addClass('hidden');
 
-    const tbody = document.getElementById('casesTableBody');
-    tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="h-24 text-center">
-                    <div class="text-slate-500">No results found.</div>
-                </td>
-            </tr>`;
+        checkFilterValues();
 
-    // ⭐ Reset pagination
-     $('#totalCases').text('0');
-$('#showingStart').text('0');
-$('#showingEnd').text('0');
+        loadCases(1);
 
-}
+        // ⭐ Clear table data
+    //     filteredCases = [];
+
+    //     const tbody = document.getElementById('casesTableBody');
+    //     tbody.innerHTML = `
+    //             <tr>
+    //                 <td colspan="8" class="h-24 text-center">
+    //                     <div class="text-slate-500">No results found.</div>
+    //                 </td>
+    //             </tr>`;
+
+    //     // ⭐ Reset pagination
+    //     $('#totalCases').text('0');
+    // $('#showingStart').text('0');
+    // $('#showingEnd').text('0');
+
+    }
 
     // function clearFilters() {
 

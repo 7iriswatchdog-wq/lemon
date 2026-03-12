@@ -183,6 +183,10 @@ namespace AML.Web.Controllers.AdminManagement
                 ViewBag.totalcount = "NA";
                 ViewBag.individualCount = "NA";
                 ViewBag.corporateCount = "NA";
+                ViewBag.hundredemail = "--";
+                ViewBag.beforeexpdemail = "--";
+                ViewBag.onexpemail = "--";
+                ViewBag.Eightemail = "--";
 
                 _toastNotification.AddErrorToastMessage(token.message + ". Please contact the Watchdog Administrator for assistance.");
                 return View(_clientModel);
@@ -191,7 +195,25 @@ namespace AML.Web.Controllers.AdminManagement
             ViewBag.totalcount = Convert.ToInt32(token.user.individualCount) + Convert.ToInt32(token.user.corporateCount);
             ViewBag.individualCount = Convert.ToInt32(token.user.individualCount);
             ViewBag.corporateCount =  Convert.ToInt32(token.user.corporateCount);
+            ViewBag.hundredemail =
+     string.IsNullOrEmpty(token.user?.hundredemail) || token.user.hundredemail == "0"
+     ? "--"
+     : DateTime.Parse(token.user.hundredemail).ToString("dd/MM/yyyy HH:mm:ss");
 
+            ViewBag.beforeexpdemail =
+                string.IsNullOrEmpty(token.user?.beforeexpdemail) || token.user.beforeexpdemail == "0"
+                ? "--"
+                : DateTime.Parse(token.user.beforeexpdemail).ToString("dd/MM/yyyy HH:mm:ss");
+
+            ViewBag.onexpemail =
+                string.IsNullOrEmpty(token.user?.onexpemail) || token.user.onexpemail == "0"
+                ? "--"
+                : DateTime.Parse(token.user.onexpemail).ToString("dd/MM/yyyy HH:mm:ss");
+
+            ViewBag.Eightemail =
+                string.IsNullOrEmpty(token.user?.Eightemail) || token.user.Eightemail == "0"
+                ? "--"
+                : DateTime.Parse(token.user.Eightemail).ToString("dd/MM/yyyy HH:mm:ss");
             return View(_clientModel);
         }
 
