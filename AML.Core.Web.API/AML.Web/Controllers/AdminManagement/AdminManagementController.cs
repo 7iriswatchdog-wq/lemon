@@ -85,7 +85,7 @@ namespace AML.Web.Controllers.AdminManagement
         }
 
         [HttpPost("adminmanagement/custompagination")]
-        public JsonResult CustomPagination(DataTableModel model, int orderColumn = 0, string orderDirection = "desc", string clientStatus = null)
+        public JsonResult CustomPagination(DataTableModel model, int orderColumn = 0, string orderDirection = "desc", string subStatus = null, string isBlocked = null)
         {
             try
             {
@@ -103,10 +103,25 @@ namespace AML.Web.Controllers.AdminManagement
                         isActive = dto.isActive
                     }).ToList();
 
-                if (!string.IsNullOrEmpty(clientStatus))
+                // 1. Filter by Subscription Status (Active/Expired)
+                if (!string.IsNullOrEmpty(subStatus))
                 {
-                    int s = int.Parse(clientStatus);
-                    clients = clients.Where(c => c.isActive == s).ToList();
+                    var today = DateTime.Now.Date;
+                    if (subStatus == "active")
+                    {
+                        clients = clients.Where(c => !c.ApplicationEndDate.HasValue || c.ApplicationEndDate.Value.Date >= today).ToList();
+                    }
+                    else if (subStatus == "expired")
+                    {
+                        clients = clients.Where(c => c.ApplicationEndDate.HasValue && c.ApplicationEndDate.Value.Date < today).ToList();
+                    }
+                }
+
+                // 2. Filter by Blocked Status (Active/Blocked)
+                if (!string.IsNullOrEmpty(isBlocked))
+                {
+                    int s = int.Parse(isBlocked);
+                    clients = clients.Where(c => (s == 1 ? c.isActive == 1 : c.isActive == 0)).ToList();
                 }
 
                 if (!string.IsNullOrEmpty(model.search?.value))

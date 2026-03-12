@@ -62,6 +62,18 @@
         </div>
     </div>
 
+    <style>
+        .dt-loader { display: inline-block; position: relative; width: 80px; height: 20px; }
+        .dt-loader div { position: absolute; top: 8px; width: 13px; height: 13px; border-radius: 50%; background: #2563eb; animation-timing-function: cubic-bezier(0, 1, 1, 0); }
+        .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+        .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+        @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+        @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+    </style>
+
     <!-- Table Section -->
     <div class="space-y-4">
         <div class="flex flex-col sm:flex-row gap-4 items-center w-full">
@@ -72,7 +84,12 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden relative min-h-[400px]">
+            <!-- Table Loader Overlay -->
+            <div id="tableLoader" class="absolute inset-0 bg-white/80 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center gap-4 transition-all duration-300 hidden">
+                <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                <div class="text-sm font-bold text-slate-600 animate-pulse tracking-wide">Loading Case Data...</div>
+            </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left whitespace-nowrap min-w-[1200px]">
                     <thead class="text-[10px] text-slate-500 bg-white border-b border-slate-200">
@@ -80,7 +97,7 @@
                             <th class="px-2 py-4 font-small h-12">ID</th>
                             <th class="px-2 py-4 font-small h-12">Created on</th>
                             <th class="px-2 py-4 font-small h-12">Updated on</th>
-                            <th class="px-2 py-4 font-small h-12">Chemical Name</th>
+                            <th class="px-2 py-4 font-small h-12">Product Name</th>
                             <th class="px-2 py-4 font-small h-12">HS Code</th>
                             <th class="px-2 py-4 font-small h-12">CAS Number</th>
                             <th class="px-2 py-4 font-small h-12">ECCN</th>
@@ -155,6 +172,14 @@
 <script>
     lucide.createIcons();
 
+    function showLoader() {
+        $('#tableLoader').removeClass('hidden').addClass('flex');
+    }
+
+    function hideLoader() {
+        $('#tableLoader').addClass('hidden').removeClass('flex');
+    }
+
     function formatDateTime(dateStr) {
         if (!dateStr) return { date: '-', time: '-' };
         const d = new Date(dateStr);
@@ -197,6 +222,7 @@
         const endDate = $('#endDate').val();
         const customerType = $('#customerTypeFilter').val();
 
+        showLoader();
         $.ajax({
             url: '/ProliferationFinance/GetAllCases',
             type: 'GET',
@@ -206,6 +232,7 @@
                 customerType: customerType 
             },
             success: function(response) {
+                hideLoader();
                 if(response.success) {
                     allCases = response.data || [];
                     filteredCases = allCases;
@@ -216,6 +243,7 @@
                 }
             },
             error: function(err) {
+                hideLoader();
                 console.error("Error loading cases", err);
             }
         });
@@ -433,7 +461,7 @@
                         <p class="font-medium text-slate-900 mt-1">${eccn}</p>
                     </div>
                     <div>
-                        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wide">Chemical Name</span>
+                        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wide">Product Name</span>
                         <p class="font-medium text-slate-900 mt-1">${chemicalName}</p>
                     </div>
                     <div class="col-span-2">

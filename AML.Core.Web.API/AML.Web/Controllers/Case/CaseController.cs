@@ -3470,7 +3470,8 @@ namespace AML.Web.Controllers.Case
         [HttpGet]
         public IActionResult GetCountryNameByIso(string isoCode)
         {
-            var country = _countryService.GetCountryNameByCode(isoCode,1);
+            var clientId = _clientHandler.GetClientId();
+            var country = _countryService.GetCountryNameByCode(isoCode, clientId);
 
             return Json(country?.Name);
         }

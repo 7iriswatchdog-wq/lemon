@@ -12,11 +12,13 @@ namespace AML.Core.Service.ProliferationFinance
     public class ProliferationFinanceService : IProliferationFinanceService
     {
         private readonly IProliferationFinanceRepository _repository;
+        private readonly IProliferationFinanceMongoRepository _mongoRepository;
         private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
 
-        public ProliferationFinanceService(IProliferationFinanceRepository repository, Microsoft.Extensions.Configuration.IConfiguration configuration)
+        public ProliferationFinanceService(IProliferationFinanceRepository repository, IProliferationFinanceMongoRepository mongoRepository, Microsoft.Extensions.Configuration.IConfiguration configuration)
         {
             _repository = repository;
+            _mongoRepository = mongoRepository;
             _configuration = configuration;
         }
 
@@ -84,6 +86,70 @@ namespace AML.Core.Service.ProliferationFinance
         public ServiceResponse<bool> UpdateSearchHits(int caseId, string hitDetails)
         {
             return _repository.UpdateSearchHits(caseId, hitDetails);
+        }
+
+        public ServiceResponse<bool> SyncSearchResultsToMongo(int caseId, string productName, List<UAEControlListDTO> chemicalHits, string pdfHits)
+        {
+            try
+            {
+                var result = new PFSearchResultsMongoDTO.PF_SEARCHRESULT
+                {
+                    CaseId = caseId,
+                    ProductName = productName,
+                    Hits = new List<PFSearchResultsMongoDTO.PF_Hit>()
+                };
+
+                // Add chemical hits
+                if (chemicalHits != null)
+                {
+                    foreach (var h in chemicalHits)
+                    {
+                        result.Hits.Add(new PFSearchResultsMongoDTO.PF_Hit
+                        {
+                            SearchType = "Chemical",
+                            ChemicalId = h.Id,
+                            MatchedName = h.ChemicalName,
+                            HsCode = h.HsCode,
+                            CasNumber = h.CasNumber,
+                            Eccn = h.Eccn,
+                            FoundOn = DateTime.Now
+                        });
+                    }
+                }
+
+                // Add PDF hits
+                if (!string.IsNullOrEmpty(pdfHits))
+                {
+                    var paragraphs = pdfHits.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var p in paragraphs)
+                    {
+                        result.Hits.Add(new PFSearchResultsMongoDTO.PF_Hit
+                        {
+                            SearchType = "Non-Chemical",
+                            Snippet = p,
+                            FoundOn = DateTime.Now
+                        });
+                    }
+                }
+
+                var success = _mongoRepository.SaveSearchResults(result);
+                return new ServiceResponse<bool> { Status = success ? 200 : 500, Result = success };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<bool> { Status = 500, Message = ex.Message };
+            }
+        }
+
+        public ServiceResponse<bool> UpdateMongoHitDecision(int caseId, int hitIndex, string decision, string remarks)
+        {
+            var success = _mongoRepository.UpdateHitDecision(caseId, hitIndex, decision, remarks);
+            return new ServiceResponse<bool> { Status = success ? 200 : 500, Result = success };
+        }
+
+        public PFSearchResultsMongoDTO.PF_SEARCHRESULT GetMongoSearchResults(int caseId)
+        {
+            return _mongoRepository.GetSearchResultsByCaseId(caseId);
         }
     }
 }

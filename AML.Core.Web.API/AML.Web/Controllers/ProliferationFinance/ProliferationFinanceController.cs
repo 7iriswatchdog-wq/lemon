@@ -136,18 +136,13 @@ namespace AML.Web.Controllers.ProliferationFinance
                     {
                         dbMatch = true;
                         var match = searchResponse.Result[0];
-                        // Fill all fields from the database record for full transparency
-                        searchDto.MatchedChemicalName = match.ChemicalName;
-                        searchDto.HsCode = match.HsCode;
-                        searchDto.CasNumber = match.CasNumber;
-                        searchDto.Eccn = match.Eccn;
-                        searchDto.SynonymName = match.SynonymName;
+                        // Only set the flag and source; do NOT store the matched name in the case record to preserve user-input integrity
                         
                         matchSources.Add("UAE Control List");
                     }
                 }
 
-                // 3. PDF Scan (triggered ONLY by Chemical Name)
+                // 3. PDF Scan (triggered ONLY by Product Name)
                 if (hasChemicalName)
                 {
                     var pdfResponse = _proliferationFinanceService.SearchNonChemical(model.ChemicalName);
@@ -177,10 +172,21 @@ namespace AML.Web.Controllers.ProliferationFinance
                 var createResponse = _proliferationFinanceService.CreateCase(searchDto);
                 if (createResponse.Status == 200 && createResponse.Result > 0)
                 {
+                    int caseId = createResponse.Result;
+
+                    // 7. Sync Initial Search Results to MongoDB
+                    try
+                    {
+                        var chemMatches = _proliferationFinanceService.SearchChemicals(searchDto).Result;
+                        var pdfMatches = _proliferationFinanceService.SearchNonChemical(model.ChemicalName).Result;
+                        _proliferationFinanceService.SyncSearchResultsToMongo(caseId, model.ChemicalName, chemMatches, pdfMatches);
+                    }
+                    catch (Exception) { /* Log error but don't fail case creation */ }
+
                     return Json(new { 
                         success = true, 
-                        caseId = createResponse.Result, 
-                        caseRefId = "PF-" + createResponse.Result,
+                        caseId = caseId, 
+                        caseRefId = "PF-" + caseId,
                         score = searchDto.Score,
                         message = "Case created successfully." 
                     });
@@ -240,6 +246,16 @@ namespace AML.Web.Controllers.ProliferationFinance
                     {
                         model.MatchedChemicals = searchResponse.Result;
                     }
+                }
+
+                // 1. Sync fresh results to MongoDB (Detection of new matches)
+                _proliferationFinanceService.SyncSearchResultsToMongo(id, model.ChemicalName, model.MatchedChemicals, model.SearchHitDetails);
+
+                // 2. Load from MongoDB to get any previously saved decisions/remarks
+                var mongoData = _proliferationFinanceService.GetMongoSearchResults(id);
+                if (mongoData != null)
+                {
+                    model.MongoHits = mongoData.Hits;
                 }
 
                 return View(model);
@@ -331,21 +347,6 @@ namespace AML.Web.Controllers.ProliferationFinance
                 var result = _caseDocumentService.Create(documentDto);
                 
                 return Json(new { success = result.Status == 200, message = result.Message });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = ex.Message });
-            }
-        }
-
-        [HttpPost]
-        public IActionResult SaveSearchHits([FromBody] SearchHitsRequest request)
-        {
-            try
-            {
-                var jsonHits = Newtonsoft.Json.JsonConvert.SerializeObject(request.Hits);
-                var response = _proliferationFinanceService.UpdateSearchHits(request.CaseId, jsonHits);
-                return Json(new { success = response.Status == 200, message = response.Message });
             }
             catch (Exception ex)
             {
@@ -556,12 +557,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                             matchSources.Add("UAE Control List");
                                             var match = dbResponse.Result[0];
                                             
-                                            // Fill all fields from the database record for full transparency
-                                            caseDto.MatchedChemicalName = match.ChemicalName;
-                                            caseDto.HsCode = match.HsCode;
-                                            caseDto.CasNumber = match.CasNumber;
-                                            caseDto.Eccn = match.Eccn;
-                                            caseDto.SynonymName = match.SynonymName;
+                                            // Only set the source; do NOT store the matched name in the case record
                                         }
                                     }
 
@@ -666,6 +662,26 @@ namespace AML.Web.Controllers.ProliferationFinance
                 return File(fileContents, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ProliferationFinance_BulkUpload_Template.xlsx");
             }
         }
+
+        [HttpPost("/ProliferationFinance/SaveSearchHits")]
+        public IActionResult SaveSearchHits([FromBody] SearchHitsRequest request)
+        {
+            try
+            {
+                if (request == null || request.CaseId == 0) return Json(new { success = false, message = "Invalid request" });
+
+                foreach (var hit in request.Hits)
+                {
+                    _proliferationFinanceService.UpdateMongoHitDecision(request.CaseId, hit.Index, hit.Decision, hit.Remarks);
+                }
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
     }
 
     public class SearchHitsRequest
@@ -678,6 +694,7 @@ namespace AML.Web.Controllers.ProliferationFinance
     {
         public int Index { get; set; }
         public string SearchType { get; set; }
+        public string Decision { get; set; }
         public string Remarks { get; set; }
     }
 
