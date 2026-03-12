@@ -1322,6 +1322,7 @@ namespace AML.Web.Controllers.Case
                     "Reject",
                     "Senior Management",
                     "On Hold",
+                    "Whitelist"
                     //"SaveSearchResult"
                 };
                 foreach (var action in actionsToCheck)
@@ -1345,15 +1346,17 @@ namespace AML.Web.Controllers.Case
                 
 
            
-                var CommentCase = _userGroupRightService.CheckUserRightExixts("comment", "case", userId, GroupId, sessionId);
-                model.CommentCase = riskCreation.Result;
+                var CommentCase = _userGroupRightService.CheckUserRightExixts("case","comment", userId, GroupId, sessionId);
+                model.CommentCase = CommentCase.Result;
 
-                var DocumentCase = _userGroupRightService.CheckUserRightExixts("document", "case", userId, GroupId, sessionId);
-                model.DocumentsCase = riskCreation.Result;
+                var DocumentCase = _userGroupRightService.CheckUserRightExixts("case","document",  userId, GroupId, sessionId);
+                model.DocumentsCase = DocumentCase.Result;
 
-                var TransferCase = _userGroupRightService.CheckUserRightExixts("assign", "case", userId, GroupId, sessionId);
-                model.TransferCase = riskCreation.Result;
+                var TransferCase = _userGroupRightService.CheckUserRightExixts("case","assign", userId, GroupId, sessionId);
+                model.TransferCase = TransferCase.Result;
 
+                var savesearch = _userGroupRightService.CheckUserRightExixts("case", "saveRemark", userId, GroupId, sessionId);
+                model.SaveSearResult = savesearch.Result;
 
                 List<CaseDocumentDTO> caseDocumentbyId = _caseDocumentService.GetCaseDocumentByCaseId(CaseId);
                 model.CaseDocuments = _mapper.Map<List<CaseDocumentModel>>(caseDocumentbyId);

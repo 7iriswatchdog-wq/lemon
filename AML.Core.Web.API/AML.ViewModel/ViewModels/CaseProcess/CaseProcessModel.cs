@@ -72,6 +72,8 @@ namespace AML.ViewModel.ViewModels.CaseProcess
 
         public bool TransferCase { get; set; }
 
+        public bool SaveSearResult { get; set; }
+
         public Dictionary<string, string> ActionRights { get; set; }
 
         //public List<PassportDetails> passportDetails { get; set; }

@@ -1565,7 +1565,7 @@ namespace AML.Web.Controllers.Corporate
             string caseRefId = null;
             foreach (var sh in sortedShareholders)
             {
-                bool isCorporate = sh.Type == "Corporate_Corp" || sh.Type == "Corporate_Ind";
+                bool isCorporate = sh.Type == "Corporate_Corp" || sh.Type == "Individual_Corp";
 
                 CaseModel caseModel = new CaseModel
                 {
