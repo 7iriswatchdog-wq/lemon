@@ -37,10 +37,33 @@ namespace AML.Core.Repository.ProliferationFinance
                     // Merge logic: only add new hits if they don't exist, and update decisions/remarks if provided
                     foreach (var newHit in result.Hits)
                     {
-                        var match = existing.Hits.FirstOrDefault(h => 
-                            (h.ChemicalId.HasValue && h.ChemicalId == newHit.ChemicalId) || 
-                            (!string.IsNullOrEmpty(h.Snippet) && h.Snippet == newHit.Snippet)
-                        );
+                        PF_Hit match = null;
+
+                        if (newHit.SearchType == "Chemical")
+                        {
+                            // Match by ChemicalId OR by the combination of key fields
+                            match = existing.Hits.FirstOrDefault(h =>
+                                h.SearchType == "Chemical" &&
+                                (
+                                    (h.ChemicalId.HasValue && newHit.ChemicalId.HasValue && h.ChemicalId == newHit.ChemicalId) ||
+                                    (
+                                        string.Equals(h.MatchedName?.Trim(), newHit.MatchedName?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(h.HsCode?.Trim(), newHit.HsCode?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(h.CasNumber?.Trim(), newHit.CasNumber?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(h.Eccn?.Trim(), newHit.Eccn?.Trim(), StringComparison.OrdinalIgnoreCase)
+                                    )
+                                )
+                            );
+                        }
+                        else
+                        {
+                            // Non-Chemical: match by snippet content
+                            match = existing.Hits.FirstOrDefault(h =>
+                                h.SearchType == "Non-Chemical" &&
+                                !string.IsNullOrEmpty(h.Snippet) &&
+                                string.Equals(h.Snippet?.Trim(), newHit.Snippet?.Trim(), StringComparison.OrdinalIgnoreCase)
+                            );
+                        }
 
                         if (match == null)
                         {
@@ -71,7 +94,44 @@ namespace AML.Core.Repository.ProliferationFinance
             try
             {
                 var filter = Builders<PF_SEARCHRESULT>.Filter.Eq("CaseId", caseId);
-                return _collection.Find(filter).FirstOrDefault();
+                var result = _collection.Find(filter).FirstOrDefault();
+
+                if (result != null && result.Hits != null)
+                {
+                    // Deduplicate hits at read time
+                    var deduped = new List<PF_Hit>();
+                    foreach (var hit in result.Hits)
+                    {
+                        bool isDupe = false;
+                        if (hit.SearchType == "Chemical")
+                        {
+                            isDupe = deduped.Any(d =>
+                                d.SearchType == "Chemical" &&
+                                (
+                                    (d.ChemicalId.HasValue && hit.ChemicalId.HasValue && d.ChemicalId == hit.ChemicalId) ||
+                                    (
+                                        string.Equals(d.MatchedName?.Trim(), hit.MatchedName?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(d.HsCode?.Trim(), hit.HsCode?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(d.CasNumber?.Trim(), hit.CasNumber?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(d.Eccn?.Trim(), hit.Eccn?.Trim(), StringComparison.OrdinalIgnoreCase)
+                                    )
+                                )
+                            );
+                        }
+                        else
+                        {
+                            isDupe = deduped.Any(d =>
+                                d.SearchType == "Non-Chemical" &&
+                                string.Equals(d.Snippet?.Trim(), hit.Snippet?.Trim(), StringComparison.OrdinalIgnoreCase)
+                            );
+                        }
+
+                        if (!isDupe) deduped.Add(hit);
+                    }
+                    result.Hits = deduped;
+                }
+
+                return result;
             }
             catch (Exception ex)
             {
