@@ -177,7 +177,7 @@
             <div class="flex items-center gap-2 text-slate-500 text-xs mb-2">
                 <a href="/Case" class="hover:text-blue-600">Due Diligence</a>
                 <i data-lucide="chevron-right" class="h-3 w-3"></i>
-                <span class="text-slate-900 font-medium">View Case Details</span>
+                <span class="text-slate-900 font-medium">Case Manger</span>
             </div>
             <h1 class="text-lg font-black text-slate-900 tracking-tight  mb-2">Case Manager</h1>
 
@@ -500,7 +500,7 @@
 
                                                             <!-- Trigger Button -->
                                                             <button type="button"
-                                                                    id="search-trigger-@i"
+                                                                            id="search-trigger-@i" data-matchtype="@Model.DataList[i].matchtype"
                                                                     class="flex h-8 w-20 items-center justify-between rounded-md border border-slate-200 bg-white px-2 text-[10px]">
                                                                 <span id="search-text-@i">Select</span>
                                                                 <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24">
@@ -3152,10 +3152,10 @@
                    success: function (response) {
 
                                    if (riskUpdated) {
-                                                   insertUploadComment("Remarks has been update in the Search Api Result Section","Search API Result");
-                                            insertUploadComment("Risk Parameters Has been Updated", "Risk Assessment");
+                                            insertUploadComment("Remarks has been update in the Search Result","Search Result");
+                                            insertUploadComment("Risk Parameters Has been Updated", "Risk Assessment(By Search Results)");
                                         } else {
-                                            insertUploadComment("Remarks has been update in the Search Api Result Section", "Search API Result");
+                                            insertUploadComment("Remarks has been update in the Search Result ", "Search Result");
                                         }
                        
                              $('#loadingeffect').hide();
@@ -3424,219 +3424,279 @@
         //     updateUI();
         // }
         </script>
+        <script>
+                                    $(document).ready(function () {
 
-                <script>
-                $(document).ready(function () {
+                const kyc6Options = [
+                    "Domestic PEP","Foreign PEP","REL","RRE","INS",
+                    "DD","GRI","SOE","UAE Sanction","UN Sanction",
+                    "Other Sanctions","VHNWI","None"
+                ];
 
-            const searchTypeOptions = [
-                "Domestic PEP","Foreign PEP","REL","RRE","INS",
-                "DD","GRI","SOE","UAE Sanction","UN Sanction",
-                "Other Sanctions","VHNWI","None"
-            ];
+                const otherOptions = [
+                    "UAE Sanction","UN Sanctions","Other Sanctions","None"
+                ];
 
-            let activeSearchRowIndex = null;
-            @if(Model.DataList != null && Model.DataList.Any())
-                {
-                    @for (int i = 0; i < Model.DataList.Count; i++)
-                    {
-                        <text>initSearchTypeDropdown(@i);</text>
-                    }
-                }
+                let activeSearchRowIndex = null;
+                let activeMatchType = null;
+                let lockedKyc6Row = null;
 
-            function initSearchTypeDropdown(rowIndex) {
+                function initSearchTypeDropdown(rowIndex, matchType) {
 
-                const trigger = $(`#search-trigger-${rowIndex}`);
-                const text = $(`#search-text-${rowIndex}`);
-                const popover = $(`#search-popover-${rowIndex}`);
-                const allCheckbox = $(`#search-all-${rowIndex}`);
-                const optionsContainer = $(`#search-options-${rowIndex}`);
-                const hiddenContainer = $(`#search-hidden-${rowIndex}`);
-                const hiddenInput = $(`#searchTypesValue-${rowIndex}`);
+                    const trigger = $(`#search-trigger-${rowIndex}`);
+                    if (!trigger.length) return;
 
-                // Parse existing value (JSON)
-                let selected = [];
-                try {
+                    const text = $(`#search-text-${rowIndex}`);
+                    const popover = $(`#search-popover-${rowIndex}`);
+                    const allCheckbox = $(`#search-all-${rowIndex}`);
+                    const optionsContainer = $(`#search-options-${rowIndex}`);
+                    const hiddenContainer = $(`#search-hidden-${rowIndex}`);
+                    const hiddenInput = $(`#searchTypesValue-${rowIndex}`);
+
+                    const normalizedMatchType = (matchType || "").trim().toUpperCase();
+
+                    const searchTypeOptions =
+                        normalizedMatchType === "KYC6"
+                            ? kyc6Options
+                            : otherOptions;
+
+                    // ----------------------------
+                    // Parse selected values from hidden input
+                    let selected = [];
                     const val = hiddenInput.val();
-                    selected = val ? JSON.parse(val) : [];
-                } catch (e) {
-                    selected = [];
-                }
 
-                // Render checkboxes
-                optionsContainer.empty();
-                searchTypeOptions.forEach(opt => {
-                    const checked = selected.includes(opt) ? "checked" : "";
-                    const checkboxHtml = `
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" class="search-option" value="${opt}" ${checked}>
-                            <label class="text-xs">${opt}</label>
-                        </div>
-                    `;
-                    optionsContainer.append(checkboxHtml);
-                });
-
-                // Update button text and hidden inputs
-                            function updateUI() {
-
-                // Update button text
-                if (selected.length === 0) {
-                    text.text("Select");
-                } else if (selected.length === searchTypeOptions.length) {
-                    text.text("ALL");
-                } else {
-                    text.text(selected.length + " selected");
-                }
-
-                // Update hidden inputs for form
-                hiddenContainer.empty();
-                selected.forEach(val => {
-                    const input = `<input type="hidden" name="SearchTypes[${rowIndex}]" value="${val}">`;
-                    hiddenContainer.append(input);
-                });
-
-                // ✅ IMPORTANT: update Alpine hidden input
-                hiddenInput.val(selected.join(","));
-
-                // ✅ Trigger change so Alpine detects it
-                hiddenInput[0].dispatchEvent(new Event("change"));
-            }
-                // function updateUI() {
-                //     // Update text
-                //     if (selected.length === 0) {
-                //         text.text("Select");
-                //     } else if (selected.length === searchTypeOptions.length) {
-                //         text.text("ALL");
-                //     } else {
-                //         text.text(selected.length + " selected");
-                //     }
-
-                //     // Update hidden inputs for form
-                //     hiddenContainer.empty();
-                //     selected.forEach(val => {
-                //         const input = `<input type="hidden" name="SearchTypes[${rowIndex}]" value="${val}">`;
-                //         hiddenContainer.append(input);
-                //     });
-                // }
-
-                // Update row disable state
-                function updateRowDisableState() {
-                    $("[id^='search-trigger-']").each(function () {
-                        const idx = $(this).attr("id").split("-").pop();
-                        const disable = activeSearchRowIndex !== null && idx != activeSearchRowIndex;
-                        $(this).prop("disabled", disable)
-                               .toggleClass("opacity-50 cursor-not-allowed", disable);
-                    });
-                }
-
-                // Checkbox change
-                optionsContainer.find(".search-option").on("change", function () {
-                    const val = $(this).val();
-                    if ($(this).is(":checked")) {
-                        if (!selected.includes(val)) selected.push(val);
-                    } else {
-                        selected = selected.filter(x => x !== val);
+                    if (val && val.trim() !== "" && val !== "null" && val !== "[]") {
+                        try {
+                            if (val.trim().startsWith("[")) {
+                                selected = JSON.parse(val);
+                            } else {
+                                selected = val.split(",").map(x => x.trim());
+                            }
+                        } catch {
+                            selected = [];
+                        }
                     }
 
-                    // Row locking
-                    activeSearchRowIndex = selected.length ? rowIndex : null;
-
-                    // Sync ALL checkbox
-                    allCheckbox.prop("checked", selected.length === searchTypeOptions.length);
-
-                    updateRowDisableState();
-                    updateUI();
-                });
-
-                // ALL checkbox
-                allCheckbox.on("change", function () {
-                    if ($(this).is(":checked")) {
-                        selected = [...searchTypeOptions];
-                    } else {
-                        selected = [];
+                    // ----------------------------
+                    // LOCK ROWS ON PAGE LOAD
+                    if (selected.length > 0) {
+                        if (normalizedMatchType === "KYC6") {
+                            lockedKyc6Row = rowIndex;
+                        } else {
+                            activeSearchRowIndex = rowIndex;
+                            activeMatchType = normalizedMatchType;
+                        }
                     }
 
-                    optionsContainer.find(".search-option").each(function () {
-                        $(this).prop("checked", selected.includes($(this).val()));
+                    // Populate dropdown
+                    optionsContainer.empty();
+                    searchTypeOptions.forEach(opt => {
+                        const checked = selected.some(x => x.toLowerCase() === opt.toLowerCase()) ? "checked" : "";
+                        optionsContainer.append(`
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" class="search-option" value="${opt}" ${checked}>
+                                <label class="text-xs">${opt}</label>
+                            </div>
+                        `);
                     });
 
-                    activeSearchRowIndex = selected.length ? rowIndex : null;
+                    // ----------------------------
+                    function updateUI() {
+                        if (selected.length === 0)
+                            text.text("Select");
+                        else if (selected.length === searchTypeOptions.length)
+                            text.text("ALL");
+                        else
+                            text.text(selected.length + " selected");
 
-                    updateRowDisableState();
-                    updateUI();
-                });
-
-                // Dropdown toggle
-                trigger.on("click", function (e) {
-                    if ($(this).prop("disabled")) return;
-                    e.stopPropagation();
-                    popover.toggleClass("hidden");
-                });
-
-                // Close dropdown on outside click
-                $(document).on("click", function (e) {
-                    if (!popover.is(e.target) && popover.has(e.target).length === 0 &&
-                        !trigger.is(e.target)) {
-                        popover.addClass("hidden");
-                    }
-                });
-
-                // Initialize ALL checkbox
-                allCheckbox.prop("checked", selected.length === searchTypeOptions.length);
-                if (selected.length) activeSearchRowIndex = rowIndex;
-
-                updateRowDisableState();
-                updateUI();
-            }
-
-            // Pagination logic for API Table
-            const searchResultsBody = document.getElementById("searchResultsBody");
-            if (searchResultsBody) {
-                const rows = Array.from(searchResultsBody.querySelectorAll("tr"));
-                const rowsPerPage = 10;
-                if (rows.length > rowsPerPage) {
-                    const paginationControls = document.createElement("div");
-                    paginationControls.className = "flex justify-end gap-2 p-3 border-t border-slate-200 bg-slate-50";
-                    searchResultsBody.parentElement.parentElement.appendChild(paginationControls);
-
-                    let currentPage = 1;
-                    const totalPages = Math.ceil(rows.length / rowsPerPage);
-
-                    function showPage(page) {
-                        currentPage = page;
-                        rows.forEach((row, index) => {
-                            row.style.display = (index >= (page - 1) * rowsPerPage && index < page * rowsPerPage) ? '' : 'none';
+                        hiddenContainer.empty();
+                        selected.forEach(val => {
+                            hiddenContainer.append(
+                                `<input type="hidden" name="SearchTypes[${rowIndex}]" value="${val}">`
+                            );
                         });
-                        renderControls();
+                        hiddenInput.val(selected.join(","));
+
+                        // Trigger change for Alpine or other bindings
+                        hiddenInput[0].dispatchEvent(new Event("change"));
                     }
 
-                    function renderControls() {
-                        paginationControls.innerHTML = '';
-                        
-                        const prevBtn = document.createElement("button");
-                        prevBtn.innerText = "Prev";
-                        prevBtn.className = `px-3 py-1 text-xs border rounded transition-colors ${currentPage === 1 ? 'text-slate-400 bg-slate-100 cursor-not-allowed border-slate-200' : 'text-slate-700 bg-white hover:bg-slate-50 border-slate-300'}`;
-                        prevBtn.disabled = currentPage === 1;
-                        prevBtn.onclick = (e) => { e.preventDefault(); showPage(currentPage - 1); };
-                        paginationControls.appendChild(prevBtn);
-                        
-                        const pageInfo = document.createElement("span");
-                        pageInfo.innerText = `Page ${currentPage} of ${totalPages}`;
-                        pageInfo.className = "px-3 py-1 text-xs font-medium text-slate-600 flex items-center";
-                        paginationControls.appendChild(pageInfo);
+                    // ----------------------------
+                    function updateRowDisableState() {
+                        $("[id^='search-trigger-']").each(function () {
+                            const idx = $(this).attr("id").split("-").pop();
+                            const rowMatchType = ($(this).data("matchtype") || "").toString().trim().toUpperCase();
+                            let disable = false;
 
-                        const nextBtn = document.createElement("button");
-                        nextBtn.innerText = "Next";
-                        nextBtn.className = `px-3 py-1 text-xs border rounded transition-colors ${currentPage === totalPages ? 'text-slate-400 bg-slate-100 cursor-not-allowed border-slate-200' : 'text-slate-700 bg-white hover:bg-slate-50 border-slate-300'}`;
-                        nextBtn.disabled = currentPage === totalPages;
-                        nextBtn.onclick = (e) => { e.preventDefault(); showPage(currentPage + 1); };
-                        paginationControls.appendChild(nextBtn);
+                            // Lock KYC6 rows
+                            if (lockedKyc6Row !== null && rowMatchType === "KYC6" && idx != lockedKyc6Row) {
+                                disable = true;
+                            }
+
+                            // Lock Non-KYC6 rows
+                            if (activeSearchRowIndex !== null && activeMatchType !== "KYC6" && rowMatchType !== "KYC6" && idx != activeSearchRowIndex) {
+                                disable = true;
+                            }
+
+                            $(this)
+                                .prop("disabled", disable)
+                                .toggleClass("opacity-50 cursor-not-allowed", disable);
+                        });
                     }
 
-                    showPage(1);
+                    // ----------------------------
+                    // Checkbox change
+                    optionsContainer.find(".search-option").on("change", function () {
+                        const val = $(this).val();
+
+                        if ($(this).is(":checked")) {
+                            if (!selected.includes(val)) selected.push(val);
+                        } else {
+                            selected = selected.filter(x => x !== val);
+                        }
+
+                        // Update locks dynamically
+                        if (selected.length > 0) {
+                            if (normalizedMatchType === "KYC6") {
+                                lockedKyc6Row = rowIndex;
+                            } else {
+                                activeSearchRowIndex = rowIndex;
+                                activeMatchType = normalizedMatchType;
+                            }
+                        } else {
+                            if (normalizedMatchType === "KYC6") {
+                                lockedKyc6Row = null;
+                            } else {
+                                activeSearchRowIndex = null;
+                                activeMatchType = null;
+                            }
+                        }
+
+                        allCheckbox.prop(
+                            "checked",
+                            selected.length === searchTypeOptions.length
+                        );
+
+                        updateRowDisableState();
+                        updateUI();
+                    });
+
+                    // ALL checkbox
+                    allCheckbox.on("change", function () {
+                        if ($(this).is(":checked"))
+                            selected = [...searchTypeOptions];
+                        else
+                            selected = [];
+
+                        optionsContainer.find(".search-option").each(function () {
+                            $(this).prop("checked", selected.includes($(this).val()));
+                        });
+
+                        // Update locks dynamically
+                        if (selected.length > 0) {
+                            if (normalizedMatchType === "KYC6") {
+                                lockedKyc6Row = rowIndex;
+                            } else {
+                                activeSearchRowIndex = rowIndex;
+                                activeMatchType = normalizedMatchType;
+                            }
+                        } else {
+                            if (normalizedMatchType === "KYC6") {
+                                lockedKyc6Row = null;
+                            } else {
+                                activeSearchRowIndex = null;
+                                activeMatchType = null;
+                            }
+                        }
+
+                        updateRowDisableState();
+                        updateUI();
+                    });
+
+                    // Dropdown toggle
+                    trigger.on("click", function (e) {
+                        if ($(this).prop("disabled")) return;
+                        e.stopPropagation();
+                        popover.toggleClass("hidden");
+                    });
+
+                    // Close dropdown outside click
+                    $(document).on("click", function (e) {
+                        if (!popover.is(e.target) && popover.has(e.target).length === 0 && !trigger.is(e.target)) {
+                            popover.addClass("hidden");
+                        }
+                    });
+
+                    // Set initial UI
+                    allCheckbox.prop("checked", selected.length === searchTypeOptions.length);
+                    updateRowDisableState();
+                    updateUI();
                 }
-            }
 
-        });
+                // ----------------------------
+                // Razor initialization
+                @if (Model.DataList != null && Model.DataList.Any())
+                {
+                        for (int i = 0; i < Model.DataList.Count; i++)
+                        {
+                                var matchType = Model.DataList[i].matchtype ?? "";
+                                <text>initSearchTypeDropdown(@i, "@matchType");</text>
+                        }
+                }
+
+                // ----------------------------
+                // Pagination (optional)
+                const searchResultsBody = document.getElementById("searchResultsBody");
+
+                if (searchResultsBody) {
+                    const rows = Array.from(searchResultsBody.querySelectorAll("tr"));
+                    const rowsPerPage = 10;
+
+                    if (rows.length > rowsPerPage) {
+                        const paginationControls = document.createElement("div");
+                        paginationControls.className =
+                            "flex justify-end gap-2 p-3 border-t border-slate-200 bg-slate-50";
+                        searchResultsBody.parentElement.parentElement.appendChild(paginationControls);
+
+                        let currentPage = 1;
+                        const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+                        function showPage(page) {
+                            currentPage = page;
+                            rows.forEach((row, index) => {
+                                row.style.display =
+                                    (index >= (page - 1) * rowsPerPage &&
+                                     index < page * rowsPerPage) ? '' : 'none';
+                            });
+                            renderControls();
+                        }
+
+                        function renderControls() {
+                            paginationControls.innerHTML = '';
+                            const prevBtn = document.createElement("button");
+                            prevBtn.innerText = "Prev";
+                            prevBtn.disabled = currentPage === 1;
+                            prevBtn.onclick = (e) => { e.preventDefault(); showPage(currentPage - 1); };
+                            paginationControls.appendChild(prevBtn);
+
+                            const pageInfo = document.createElement("span");
+                            pageInfo.innerText = `Page ${currentPage} of ${totalPages}`;
+                            paginationControls.appendChild(pageInfo);
+
+                            const nextBtn = document.createElement("button");
+                            nextBtn.innerText = "Next";
+                            nextBtn.disabled = currentPage === totalPages;
+                            nextBtn.onclick = (e) => { e.preventDefault(); showPage(currentPage + 1); };
+                            paginationControls.appendChild(nextBtn);
+                        }
+
+                        showPage(1);
+                    }
+                }
+            });
+</script>
+                <script>
+
 
                     document.addEventListener("DOMContentLoaded", function () {
 
@@ -3672,7 +3732,7 @@
 
 
 
-                function searchActionTable() {
+  function searchActionTable() {
     return {
         rows: [
 
@@ -3698,26 +3758,38 @@
 
         ],
 
-        init() {
+                    init() {
 
-            document.querySelectorAll("#searchResultsBody textarea").forEach((el, index) => {
-                el.addEventListener("input", (e) => {
-                    this.rows[index].remarks = e.target.value;
-                });
-            });
+                document.querySelectorAll("#searchResultsBody textarea").forEach((el, index) => {
 
-            document.querySelectorAll("[id^='searchTypesValue-']").forEach((el, index) => {
+                    el.addEventListener("input", (e) => {
 
-                el.addEventListener("change", () => {
-                    this.rows[index].searchType = el.value;
-                });
+                        this.rows[index] = {
+                            ...this.rows[index],
+                            remarks: e.target.value
+                        };
 
-                el.addEventListener("input", () => {
-                    this.rows[index].searchType = el.value;
+                    });
+
                 });
 
-            });
-        },
+                document.querySelectorAll("[id^='searchTypesValue-']").forEach((el, index) => {
+
+                    const updateValue = () => {
+
+                        this.rows[index] = {
+                            ...this.rows[index],
+                            searchType: el.value
+                        };
+
+                    };
+
+                    el.addEventListener("change", updateValue);
+                    el.addEventListener("input", updateValue);
+
+                });
+
+            },
 
         get canSave() {
             return this.rows.some(r =>
@@ -3770,7 +3842,7 @@
         
     </script>
 
-   
+       
     
 </body>
 
