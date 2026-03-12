@@ -230,10 +230,7 @@ namespace AML.Web.Controllers.Case
                 {
                     riskLevel = "High Risk";
                 }
-            else if (riskLevel == "4")
-            {
-                riskLevel = "High Risk(O)";
-            }
+            
             if (caseStatusChange == "0")
             {
                 caseStatusChange = null;

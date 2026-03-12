@@ -205,7 +205,7 @@
                         <option value="">--Select--</option>
                         @* <option value="CaseStatusChangeReason">Case Status Change Reason</option> *@
                         <option value="ScreeningScore">Screening Score</option>
-                        <option value="RiskLevel">Risk Score</option>
+                        <option value="RiskLevel">Risk Rating</option>
                         <option value="User">User</option>
                         <option value="Status">Status</option>
                     </select>
@@ -257,7 +257,7 @@
                         <option value="1">Low</option>
                         <option value="2">Medium</option>
                         <option value="3">High</option>
-                        <option value="4">High(O)</option>
+                        @* <option value="3">High(O)</option> *@
                     </select>
                 </div>
 
@@ -481,7 +481,7 @@
                                 <th class="px-2 py-4 font-small h-12">Customer Name</th>
                                 <th class="px-2 py-4 font-small h-12">Datasets</th>
                                 <th class="px-2 py-4 font-small h-12">Screening Score</th>
-                                <th class="px-2 py-4 font-small h-12 text-center">Risk Score</th>
+                                <th class="px-2 py-4 font-small h-12 text-center">Risk Rating</th>
                                 <th class="px-2 py-4 font-small h-12">User</th>
                                 <th class="px-2 py-4 font-small h-12">Status</th>
                                 <th class="px-2 py-4 font-small h-12 text-center">Action</th>
@@ -776,9 +776,11 @@
             const t = text.toLowerCase().trim();
 
             if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
-            if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
-            //if (t.includes('auto')) return     'bg-amber-100 text-amber-800';
-            if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
+            if (t.includes('approved')) return 'bg-green-700 text-white';     // dark green
+            if (t.includes('auto')) return 'bg-green-100 text-green-800'; 
+            // if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
+            // //if (t.includes('auto')) return     'bg-amber-100 text-amber-800';
+            // if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
             if (t.includes('transfer')) return 'bg-green-100 text-green-800';
             if (t.includes('rejected')) return 'bg-red-100 text-red-800';
 
@@ -886,49 +888,43 @@
 
     /* ---------------------- Load Data From Backend ---------------------- */
 
-    function loadCases(page = 1) {
+
+        function loadCases(page = 1) {
 
         $('#loadingCaseDetails').removeClass('hidden');
 
-        
-
         let searchValue = $('#searchInput').val() || '';
-        
-
-    // If filters applied but no results → show message
-    
-
 
         $.ajax({
-            url: '/case/custompagination',
+                url: '/case/custompagination',
             type: 'POST',
             data: {
                 draw: draw,
                 start: (page - 1) * size,
                 length: size,
 
-                // ⭐ Search Value
                 searchValue: searchValue,
                 search: { value: searchValue },
 
-                // ⭐ Filters
                 startDate: $('#startDate').val(),
                 endDate: $('#endDate').val(),
                 cust_type: $('#customertype').val(),
-                createdBy:$('#user').val(),
-                matchScore:$('#screeningScore').val(),
-                caseStatus:$('#caseStatus').val(),
-                caseStatusChange:$('#caseStatusChange').val(),
-                riskLevel:$('#riskScore').val()
+                createdBy: $('#user').val(),
+                matchScore: $('#screeningScore').val(),
+                caseStatus: $('#caseStatus').val(),
+                caseStatusChange: $('#caseStatusChange').val(),
+                riskLevel: $('#riskScore').val()
             },
 
             success: function (res) {
 
                 console.log(res);
+
                 filteredCases = (res.data || []).map(r => ({
                     id: r.id,
                     customerId: r.customerId,
                     customerName: `${r.firstName || ''} ${r.middleName || ''} ${r.lastName || ''}`.trim(),
+
                     customerType: r.customerType === 'I'
                         ? 'Individual'
                         : r.customerType === 'C'
@@ -936,24 +932,45 @@
                             : r.customerType === 'S'
                                 ? 'Shareholder'
                                 : '',
+
                     cifNo: r.customerId,
                     caseChangeStatus: r.caseChangeStatus || '',
-                    matchScore:r.matchScore || '',
+                    matchScore: r.matchScore || '',
                     createdOn: r.createdOn,
-                    updatedOnDB:r.updatedOnDB,
-                    createdUser:r.createdUser,
+                    updatedOnDB: r.updatedOnDB,
+                    createdUser: r.createdUser,
                     status: r.caseStatus || '',
+
                     riskScore: r.customerType === 'I'
                         ? r.individual_final_risk_score || ''
                         : r.corporate_final_risk_score || '',
+
                     riskSum: r.customerType === 'I'
                         ? r.individual_final_risk_sum || ''
                         : r.corporate_final_risk_sum || '',
-                    riskOverride:r.customerType === 'I'
-                                ? r.individual_Risk_Override || ''
-                                    : r.corporate_Risk_Override || '',
-                    type:r.type || ''
+
+                    riskOverride: r.customerType === 'I'
+                        ? r.individual_Risk_Override || ''
+                        : r.corporate_Risk_Override || '',
+
+                    type: r.type || ''
                 }));
+
+
+                /* -----------------------------
+                   ⭐ FRONTEND FILTER FOR High(O)
+                ----------------------------- */
+
+                    // let selectedRisk = $('#riskScore option:selected').text().trim();
+                    // console.log(selectedRisk);
+
+                    // if (selectedRisk === "High(O)") {
+                    //     filteredCases = filteredCases.filter(x =>
+                    //         x.riskScore?.toLowerCase().includes("high") &&
+                    //         x.riskOverride?.toLowerCase() === "override"
+                    //     );
+                    // }
+
 
                 totalRecords = res.recordsFiltered || 0;
                 currentPage = page;
@@ -973,6 +990,93 @@
             }
         });
     }
+    // function loadCases(page = 1) {
+
+    //     $('#loadingCaseDetails').removeClass('hidden');
+
+        
+
+    //     let searchValue = $('#searchInput').val() || '';
+        
+
+    // // If filters applied but no results → show message
+    
+
+
+    //     $.ajax({
+    //         url: '/case/custompagination',
+    //         type: 'POST',
+    //         data: {
+    //             draw: draw,
+    //             start: (page - 1) * size,
+    //             length: size,
+
+    //             // ⭐ Search Value
+    //             searchValue: searchValue,
+    //             search: { value: searchValue },
+
+    //             // ⭐ Filters
+    //             startDate: $('#startDate').val(),
+    //             endDate: $('#endDate').val(),
+    //             cust_type: $('#customertype').val(),
+    //             createdBy:$('#user').val(),
+    //             matchScore:$('#screeningScore').val(),
+    //             caseStatus:$('#caseStatus').val(),
+    //             caseStatusChange:$('#caseStatusChange').val(),
+    //             riskLevel:$('#riskScore').val()
+    //         },
+
+    //         success: function (res) {
+
+    //             console.log(res);
+    //             filteredCases = (res.data || []).map(r => ({
+    //                 id: r.id,
+    //                 customerId: r.customerId,
+    //                 customerName: `${r.firstName || ''} ${r.middleName || ''} ${r.lastName || ''}`.trim(),
+    //                 customerType: r.customerType === 'I'
+    //                     ? 'Individual'
+    //                     : r.customerType === 'C'
+    //                         ? 'Corporate'
+    //                         : r.customerType === 'S'
+    //                             ? 'Shareholder'
+    //                             : '',
+    //                 cifNo: r.customerId,
+    //                 caseChangeStatus: r.caseChangeStatus || '',
+    //                 matchScore:r.matchScore || '',
+    //                 createdOn: r.createdOn,
+    //                 updatedOnDB:r.updatedOnDB,
+    //                 createdUser:r.createdUser,
+    //                 status: r.caseStatus || '',
+    //                 riskScore: r.customerType === 'I'
+    //                     ? r.individual_final_risk_score || ''
+    //                     : r.corporate_final_risk_score || '',
+    //                 riskSum: r.customerType === 'I'
+    //                     ? r.individual_final_risk_sum || ''
+    //                     : r.corporate_final_risk_sum || '',
+    //                 riskOverride:r.customerType === 'I'
+    //                             ? r.individual_Risk_Override || ''
+    //                                 : r.corporate_Risk_Override || '',
+    //                 type:r.type || ''
+    //             }));
+
+    //             totalRecords = res.recordsFiltered || 0;
+    //             currentPage = page;
+
+    //             renderTable();
+    //             updatePagination();
+
+    //             draw++;
+    //         },
+
+    //         complete: function () {
+    //             $('#loadingCaseDetails').addClass('hidden');
+    //         },
+
+    //         error: function () {
+    //             alert('Error loading data');
+    //         }
+    //     });
+    // }
 
     /* ---------------------- Render Table ---------------------- */
 
@@ -1145,9 +1249,20 @@
 
     function clearFilters() {
 
-    // Reset values
-    $('#startDate').val('');
-    $('#endDate').val('');
+        const today = new Date();
+        const lastYear = new Date();
+        lastYear.setFullYear(today.getFullYear() - 1);
+
+        function formatDate(date) {
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Reset values with defaults
+        $('#startDate').val(formatDate(lastYear));
+        $('#endDate').val(formatDate(today));
     $('#customertype').val(0);
     $('#searchInput').val('');
     $('#user').val(0);
@@ -1172,21 +1287,23 @@
 
     checkFilterValues();
 
+    loadCases(1);
+
     // ⭐ Clear table data
-    filteredCases = [];
+//     filteredCases = [];
 
-    const tbody = document.getElementById('casesTableBody');
-    tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="h-24 text-center">
-                    <div class="text-slate-500">No results found.</div>
-                </td>
-            </tr>`;
+//     const tbody = document.getElementById('casesTableBody');
+//     tbody.innerHTML = `
+//             <tr>
+//                 <td colspan="8" class="h-24 text-center">
+//                     <div class="text-slate-500">No results found.</div>
+//                 </td>
+//             </tr>`;
 
-    // ⭐ Reset pagination
-    $('#totalCases').text('0');
-$('#showingStart').text('0');
-$('#showingEnd').text('0');
+//     // ⭐ Reset pagination
+//     $('#totalCases').text('0');
+// $('#showingStart').text('0');
+// $('#showingEnd').text('0');
 
 }
 
