@@ -247,18 +247,9 @@
                             <span class="info-value">@(Model.CreatedOn?.ToString("dd-MMM-yyyy") ?? "-")</span>
                         </div>
                         <div class="info-group">
-                            <span class="info-label text-blue-600 font-bold">Search Term</span>
+                            <span class="info-label text-blue-600 font-bold">Product Name</span>
                             <span class="info-value text-blue-700 italic font-bold">
-                                @{
-                                    var displayTerm = Model.ChemicalName;
-                                    if (string.IsNullOrEmpty(displayTerm))
-                                    {
-                                        displayTerm = !string.IsNullOrEmpty(Model.CasNumber) ? Model.CasNumber :
-                                                     !string.IsNullOrEmpty(Model.HsCode) ? Model.HsCode :
-                                                     !string.IsNullOrEmpty(Model.Eccn) ? Model.Eccn : "-";
-                                    }
-                                }
-                                @displayTerm
+                                @Model.ChemicalName
                             </span>
                         </div>
                         <div class="info-group">
@@ -322,7 +313,7 @@
                     <h3 class="report-section-title">Matched Content Snippets</h3>
                     <div class="space-y-6">
                         @{
-                            var pdfSrc = Model.CustomerType == "Non-Chemical" ? Model.ChemicalName : Model.SearchHitDetails;
+                            var pdfSrc = Model.SearchHitDetails;
                         }
                         @if (!string.IsNullOrEmpty(pdfSrc))
                         {
@@ -331,11 +322,13 @@
                                 <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Source: UAE Proliferation Finance PDF</span>
                             </div>
                             
-                            var paragraphs = pdfSrc.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
-                            foreach (var para in paragraphs)
+                            var paragraphList = pdfSrc.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
+                            var totalCount = paragraphList.Length;
+                            for (int i = 0; i < totalCount; i++)
                             {
+                                var para = paragraphList[i];
                                 <div class="bg-slate-50 rounded-xl border border-slate-100 p-6">
-                                    <div class="info-label mb-3">Matched Paragraph</div>
+                                    <div class="info-label mb-3">Paragraph @(i + 1) of @totalCount</div>
                                     <div class="pdf-snippet italic text-slate-700 leading-relaxed text-sm bg-white p-6 rounded-lg border border-slate-200 shadow-inner">
                                         "@para"
                                     </div>

@@ -433,6 +433,7 @@ namespace AML.Web
             
             services.AddTransient<IProliferationFinanceService, ProliferationFinanceService>();
             services.AddScoped<IProliferationFinanceRepository, ProliferationFinanceRepository>();
+            services.AddScoped<IProliferationFinanceMongoRepository, ProliferationFinanceMongoRepository>();
 
             services.AddControllersWithViews();
 

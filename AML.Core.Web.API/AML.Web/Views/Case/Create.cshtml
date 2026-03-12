@@ -3806,15 +3806,22 @@ hasSearched: false,
                                     if (nationalityCode) {
                                         fetch(`/Case/GetCountryNameByIso?isoCode=${nationalityCode}`)
                                             .then(response => response.json())
-                                              .then(name => {
-                                                if (name) {
-                                                    let natSelect = form.querySelector("#nationality");
-                                                    if (natSelect) {
+                                            .then(name => {
+                                                let natSelect = form.querySelector("#nationality");
+                                                if (natSelect) {
+                                                    if (name) {
                                                         natSelect.value = name;
+                                                        console.log("Nationality set to:", name);
+                                                    } else {
+                                                        console.warn("Country not found in database for ISO:", nationalityCode);
+                                                        natSelect.value = ""; // Reset to "Select"
                                                     }
-                                                } else {
-                                                    console.warn("Country not found for ISO:", nationalityCode);
                                                 }
+                                            })
+                                            .catch(err => {
+                                                console.error("Error fetching country name:", err);
+                                                let natSelect = form.querySelector("#nationality");
+                                                if (natSelect) natSelect.value = "";
                                             });
                                     }
                             // let nationalityValue = (mrzData.nationality || "").trim();

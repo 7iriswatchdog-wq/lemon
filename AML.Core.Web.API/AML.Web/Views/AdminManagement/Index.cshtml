@@ -103,12 +103,19 @@
                                   focus-visible:ring-blue-500/20 focus-visible:border-blue-500
                                   shadow-sm transition-all placeholder:text-slate-500">
                 </div>
-                <!-- Filter Option -->
+                <!-- Filter Options -->
                 <div class="relative w-40">
-                    <select id="statusFilter" class="h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500">
+                    <select id="subStatusFilter" class="h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500">
                         <option value="">All Status</option>
-                        <option value="1">Active</option>
-                        <option value="0">Blocked/Expired</option>
+                        <option value="active">Active</option>
+                        <option value="expired">Expired</option>
+                    </select>
+                </div>
+                <div class="relative w-40">
+                    <select id="isBlockedFilter" class="h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500">
+                        <option value="">All Blocked</option>
+                        <option value="1">Unblocked</option>
+                        <option value="0">Blocked</option>
                     </select>
                 </div>
                 <!-- Export Option -->
@@ -198,7 +205,7 @@
             loadData();
         });
 
-        $('#statusFilter').on('change', function() {
+        $('#subStatusFilter, #isBlockedFilter').on('change', function() {
             currentPage = 1;
             loadData();
         });
@@ -206,7 +213,8 @@
 
     function resetFilters() {
         $('#searchInput').val('');
-        $('#statusFilter').val('');
+        $('#subStatusFilter').val('');
+        $('#isBlockedFilter').val('');
         currentPage = 1;
         loadData();
     }
@@ -224,7 +232,8 @@
                 orderColumn: orderColumn,
                 orderDirection: orderDirection,
                 search: { value: $('#searchInput').val() },
-                clientStatus: $('#statusFilter').val()
+                subStatus: $('#subStatusFilter').val(),
+                isBlocked: $('#isBlockedFilter').val()
             },
             success: function (resp) {
                 let csv = [];
@@ -233,11 +242,9 @@
                 
                 resp.data.forEach(row => {
                     const expDate = row.applicationEndDate ? new Date(row.applicationEndDate).toLocaleDateString('en-GB') : '-';
-                    const isExpired = row.applicationEndDate ? new Date(row.applicationEndDate) < new Date() : false;
+                    const isExpired = row.applicationEndDate ? new Date(row.applicationEndDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0) : false;
                     
-                    let stat = 'Active';
-                    if (row.isActive === 0) stat = 'Blocked';
-                    else if (isExpired) stat = 'Expiry';
+                    let stat = isExpired ? 'Expired' : 'Active';
                     let r = [
                         row.clientId,
                         `"${(row.clientName || '').replace(/"/g, '""')}"`,
@@ -290,7 +297,8 @@
                 orderColumn: orderColumn,
                 orderDirection: orderDirection,
                 search: { value: $('#searchInput').val() },
-                clientStatus: $('#statusFilter').val()
+                subStatus: $('#subStatusFilter').val(),
+                isBlocked: $('#isBlockedFilter').val()
             },
             success: function (resp) {
                 if (resp.error) {
@@ -319,13 +327,11 @@
 
         data.forEach(row => {
             const expDate = row.applicationEndDate ? new Date(row.applicationEndDate).toLocaleDateString('en-GB') : '-';
-            const isExpired = row.applicationEndDate ? new Date(row.applicationEndDate) < new Date() : false;
+            const isExpired = row.applicationEndDate ? new Date(row.applicationEndDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0) : false;
             
             let statusBadge = '';
-            if (row.isActive === 0) {
-                statusBadge = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span>Blocked</span>';
-            } else if (isExpired) {
-                statusBadge = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700"><span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5"></span>Expiry</span>';
+            if (isExpired) {
+                statusBadge = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700"><span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5"></span>Expired</span>';
             } else {
                 statusBadge = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span>Active</span>';
             }
