@@ -1,77 +1,110 @@
 @model AML.ViewModel.ViewModels.ProliferationFinance.ProliferationFinanceModel
-
 @{
-    ViewBag.Title = "Process Case";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Proliferation Finance - Process Case";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
 }
 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
 
-<div class="min-h-screen bg-[#f8fafc] p-4 lg:p-8" style="font-family: 'Inter', sans-serif;">
-    <div class="max-w-[1600px] mx-auto space-y-8">
-        <!-- Loader Overlay -->
-        <div id="processLoader" class="fixed inset-0 bg-white/80 backdrop-blur-md z-[9999] flex flex-col items-center justify-center gap-6 transition-all duration-300 hidden">
-            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
-            <div class="flex flex-col items-center gap-2">
-                <div class="text-xl font-bold text-slate-900 tracking-tight">Saving Decisions</div>
-                <div class="text-sm font-medium text-slate-500 animate-pulse">Updating search results in MongoDB...</div>
-            </div>
+<body class="bg-slate-50/30 min-h-screen text-slate-900">
+    <!-- Loader Overlay -->
+    <div id="processLoader" class="fixed inset-0 bg-white/80 backdrop-blur-md z-[9999] flex flex-col items-center justify-center gap-6 transition-all duration-300 hidden">
+        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        <div class="flex flex-col items-center gap-2">
+            <div class="text-xl font-bold text-slate-900 tracking-tight">Processing...</div>
+            <div class="text-sm font-medium text-slate-500 animate-pulse">Please wait while we save your data...</div>
         </div>
+    </div>
+    <div class="p-4 sm:p-6 min-h-screen flex flex-col">
         <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-200">
-            <div class="space-y-1">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-                        <i class="fa fa-cogs text-white text-xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Process Case</h1>
-                        <p class="text-slate-500 text-sm font-medium">Review and validate search results for matching items</p>
-                    </div>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <a href="/ProliferationFinance/CaseManager" class="inline-flex items-center h-10 px-4 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
-                    <i class="fa fa-arrow-left mr-2 opacity-50"></i>
-                    Back to List
-                </a>
-            </div>
-        </div>
+        <div class="shrink-0 pb-2">
+            <h1 class="text-lg font-black text-slate-900 tracking-tight mb-2">Case Manager</h1>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- Left Sidebar: Case Info -->
-            <div class="lg:col-span-4 space-y-6">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-5 border-b border-slate-100 bg-slate-50/50">
-                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Case Details</h2>
+            <!-- Case Details Summary -->
+            <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="h-4 w-1 bg-blue-600 rounded-full"></div>
+                    <h2 class="text-base font-bold text-slate-900 leading-none">Case Details</h2>
+                </div>
+
+                <div class="grid w-full gap-4" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
+                    <!-- ID -->
+                    <div class="px-1 py-1">
+                        <div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">ID</div>
+                        <div class="text-[12px] font-bold text-slate-800 mt-1">PF-@Model.CaseId</div>
                     </div>
-                    <div class="p-6 space-y-6">
-                        <div class="grid grid-cols-1 gap-6">
-                            <div class="space-y-1.5">
-                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Case Reference</label>
-                                <div class="bg-slate-50 rounded-lg px-4 py-2 text-slate-700 font-bold border border-slate-100">#@Model.CaseId</div>
-                            </div>
-                            <div class="space-y-1.5">
-                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Product Name</label>
-                                <div class="bg-blue-50/50 rounded-lg px-4 py-2 text-blue-900 font-bold border border-blue-100">@Model.ChemicalName</div>
-                            </div>
-                            <div class="space-y-1.5">
-                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Search Type</label>
-                                <div class="flex items-center gap-2">
-                                    <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider border border-slate-200">@Model.CustomerType</span>
-                                </div>
-                            </div>
+
+                    <!-- Created on -->
+                    <div class="px-1 py-1">
+                        <div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Created on</div>
+                        <div class="text-[12px] font-bold text-slate-800 mt-1">@Model.CreatedOn?.ToString("dd/MM/yyyy")</div>
+                    </div>
+
+                    <!-- Updated on -->
+                    <div class="px-1 py-1">
+                        <div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Updated on</div>
+                        <div class="text-[12px] font-bold text-slate-800 mt-1">@Model.UpdatedOn?.ToString("dd/MM/yyyy")</div>
+                    </div>
+
+                    <!-- Chemical Name -->
+                    <div class="px-1 py-1">
+                        <div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Chemical Name</div>
+                        <div class="text-[12px] font-bold text-slate-900 mt-1 truncate" title="@Model.ChemicalName">@(string.IsNullOrEmpty(Model.ChemicalName) ? "-" : Model.ChemicalName)</div>
+                    </div>
+
+                    <!-- HS Code -->
+                    <div class="px-1 py-1">
+                        <div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">HS Code</div>
+                        <div class="text-[12px] font-bold text-slate-800 mt-1 uppercase">@(string.IsNullOrEmpty(Model.HsCode) ? "-" : Model.HsCode)</div>
+                    </div>
+
+                    <!-- CAS Number -->
+                    <div class="px-1 py-1">
+                        <div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">CAS Number</div>
+                        <div class="text-[12px] font-bold text-slate-800 mt-1 uppercase">@(string.IsNullOrEmpty(Model.CasNumber) ? "-" : Model.CasNumber)</div>
+                    </div>
+
+                    <!-- ECCN -->
+                    <div class="px-1 py-1">
+                        <div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">ECCN</div>
+                        <div class="text-[12px] font-bold text-slate-800 mt-1 uppercase">@(string.IsNullOrEmpty(Model.Eccn) ? "-" : Model.Eccn)</div>
+                    </div>
+
+                    <!-- Synonym -->
+                    <div class="px-1 py-1">
+                        <div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Synonym</div>
+                        <div class="text-[12px] font-bold text-slate-800 mt-1 truncate" title="@Model.SynonymName">@(string.IsNullOrEmpty(Model.SynonymName) ? "-" : Model.SynonymName)</div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="px-1 py-1">
+                        <div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Status</div>
+                        <div class="mt-1">
+                            @{
+                                var statusStr = Model.Status ?? "Pending";
+                                var sLower = statusStr.ToLower();
+                                var statusClass = "bg-slate-100 text-slate-800 ring-slate-200";
+                                if (sLower.Contains("pending")) statusClass = "bg-yellow-100 text-yellow-800 ring-yellow-200";
+                                else if (sLower.Contains("approved") || sLower.Contains("true match")) statusClass = "bg-blue-100 text-blue-800 ring-blue-200";
+                                else if (sLower.Contains("transfer")) statusClass = "bg-green-100 text-green-800 ring-green-200";
+                                else if (sLower.Contains("rejected") || sLower.Contains("false match")) statusClass = "bg-red-100 text-red-800 ring-red-200";
+                            }
+                            <span class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase @statusClass ring-1 ring-inset">@Model.Status</span>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Main Content: Search Results -->
-            <div class="lg:col-span-8 space-y-6">
-                <!-- Data Table -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div class="flex-1 min-h-0 py-2 overflow-hidden flex w-full">
+            <!-- MAIN CONTENT COLUMN -->
+            <div id="mainColumn" class="flex-1 min-w-0 flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar">
+                
+                <!-- Search Results Card -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden shrink-0">
+                    <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
                         <h3 class="text-[13px] font-bold text-slate-800 tracking-tight">Search Results</h3>
                     </div>
 
@@ -95,126 +128,210 @@
                                             <th class="px-4 py-3 w-[300px]">Non-Chemical Match</th>
                                         }
                                     }
-                                    <th class="px-4 py-3 text-center">More</th>
-                                    <th class="px-4 py-3 text-center">Actions</th>
+                                    <th class="px-4 py-3 text-center">Action</th>
                                     <th class="px-4 py-3 min-w-[160px]">Search Remarks</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 text-[11px]">
-                                @if (Model.MongoHits != null && Model.MongoHits.Count > 0)
+                                @if (Model.CustomerType == "Non-Chemical")
                                 {
-                                    var rowIndex = 0;
-                                    foreach (var hit in Model.MongoHits)
+                                    var pdfContent = Model.ChemicalName;
+                                    var paragraphs = string.IsNullOrEmpty(pdfContent) ? new string[] { } : pdfContent.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
+                                    if (paragraphs.Length > 0)
                                     {
-                                        <tr class="bg-white hover:bg-slate-50 transition-colors search-hit-row" data-index="@rowIndex">
-                                            @if (hit.SearchType == "Non-Chemical")
-                                            {
-                                                <td class="px-4 py-3 align-top @(Model.CustomerType != "Non-Chemical" ? "border-l-2 border-blue-200" : "")" colspan="@(Model.CustomerType != "Non-Chemical" ? 5 : 1)">
-                                                    <div class="flex items-start gap-3">
-                                                        @if (Model.CustomerType != "Non-Chemical")
-                                                        {
-                                                            <i class="fa fa-file-pdf-o text-blue-400 mt-1"></i>
-                                                        }
-                                                        <div class="flex-1">
-                                                            <div class="mb-1 text-[9px] font-bold text-blue-500 uppercase tracking-wider">Snippet @(Model.MongoHits.Take(rowIndex + 1).Count(h => h.SearchType == "Non-Chemical")) of @(Model.MongoHits.Count(h => h.SearchType == "Non-Chemical"))</div>
-                                                            <div class="pdf-snippet text-[10px] text-slate-600 leading-relaxed italic whitespace-normal font-medium line-clamp-2" title="@hit.Snippet">
-                                                                "@hit.Snippet"
-                                                            </div>
-                                                        </div>
+                                        var index = 0;
+                                        foreach (var para in paragraphs)
+                                        {
+                                            <tr class="bg-white hover:bg-slate-50 transition-colors search-hit-row" data-index="@index">
+                                                <td class="px-4 py-3 align-top">
+                                                    <div class="max-w-[600px] line-clamp-2 whitespace-normal break-normal leading-relaxed text-slate-700 font-medium" title="@para">
+                                                        @para
                                                     </div>
                                                 </td>
-                                                @if (Model.CustomerType != "Non-Chemical")
-                                                {
-                                                    <td class="px-4 py-2 text-[9px] font-bold text-blue-600 uppercase">PDF Snippet</td>
-                                                }
-                                            }
-                                            else
-                                            {
-                                                <!-- Chemical Hit -->
+                                                <td class="px-4 py-3 text-center">
+                                                    <a href="/ProliferationFinance/Details/@Model.CaseId" class="inline-flex items-center justify-center h-6 px-3 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95">
+                                                        Details
+                                                    </a>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <textarea class="search-remarks-area h-7 w-full border border-slate-200 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all" placeholder="Enter matching remarks..."></textarea>
+                                                </td>
+                                            </tr>
+                                            index++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr class="bg-white hover:bg-slate-50 transition-colors search-hit-row" data-index="0">
+                                            <td class="px-4 py-3 align-top text-slate-400 italic">No matches found in scan</td>
+                                            <td class="px-4 py-3 text-center text-slate-300">-</td>
+                                            <td class="px-4 py-3 text-slate-300">-</td>
+                                        </tr>
+                                    }
+                                }
+                                else if (Model.CustomerType == "Goods" || Model.CustomerType == "Chemical")
+                                {
+                                    var rowIndex = 0;
+                                    <!-- 1. Database Matches -->
+                                    if (Model.MatchedChemicals != null && Model.MatchedChemicals.Count > 0)
+                                    {
+                                        foreach (var match in Model.MatchedChemicals)
+                                        {
+                                            <tr class="bg-white hover:bg-slate-50 transition-colors search-hit-row" data-index="@rowIndex">
                                                 <td class="px-4 py-3 font-bold text-slate-900">
                                                     <div class="flex items-center gap-2">
                                                         <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                                        @(!string.IsNullOrEmpty(hit.MatchedName) ? hit.MatchedName : "-")
+                                                        @(!string.IsNullOrEmpty(match.ChemicalName) ? match.ChemicalName : "-")
                                                     </div>
                                                 </td>
-                                                <td class="px-4 py-3 text-slate-600 uppercase">@(!string.IsNullOrEmpty(hit.HsCode) ? hit.HsCode : "-")</td>
-                                                <td class="px-4 py-3 text-slate-600 uppercase">@(!string.IsNullOrEmpty(hit.CasNumber) ? hit.CasNumber : "-")</td>
-                                                <td class="px-4 py-3 text-slate-600 uppercase">@(!string.IsNullOrEmpty(hit.Eccn) ? hit.Eccn : "-")</td>
+                                                <td class="px-4 py-3 text-slate-600 uppercase">@(!string.IsNullOrEmpty(match.HsCode) ? match.HsCode : "-")</td>
+                                                <td class="px-4 py-3 text-slate-600 uppercase">@(!string.IsNullOrEmpty(match.CasNumber) ? match.CasNumber : "-")</td>
+                                                <td class="px-4 py-3 text-slate-600 uppercase">@(!string.IsNullOrEmpty(match.Eccn) ? match.Eccn : "-")</td>
                                                 <td class="px-4 py-3 text-slate-600 font-medium">
-                                                    <div class="line-clamp-2 whitespace-normal break-normal leading-relaxed min-w-[200px] max-w-[300px]" title="@hit.MatchedName">
-                                                        @(!string.IsNullOrEmpty(hit.MatchedName) ? hit.MatchedName : "-")
+                                                    <div class="line-clamp-2 whitespace-normal break-normal leading-relaxed min-w-[200px] max-w-[300px]" title="@match.SynonymName">
+                                                        @(!string.IsNullOrEmpty(match.SynonymName) ? match.SynonymName : "-")
                                                     </div>
                                                 </td>
                                                 @if (Model.CustomerType == "Goods")
                                                 {
-                                                    <td class="px-4 py-3 text-slate-300 italic">N/A</td>
+                                                    <td class="px-4 py-3">
+                                                        <span class="text-slate-300 italic">N/A</span>
+                                                    </td>
                                                 }
-                                            }
-
-                                            <td class="px-4 py-3 text-center">
-                                                <a href="/ProliferationFinance/Details/@Model.CaseId@(hit.ChemicalId.HasValue ? "?chemicalId=" + hit.ChemicalId : "")" class="inline-flex items-center justify-center h-6 px-3 bg-slate-100 text-slate-600 rounded text-[10px] font-bold hover:bg-slate-200 transition-all border border-slate-200 active:scale-95">
-                                                    Details
-                                                </a>
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                <select class="search-decision-select h-7 w-full border border-slate-200 rounded-md px-2 text-[10px] font-bold text-slate-700 bg-white focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none">
-                                                    <!option value="" @(string.IsNullOrEmpty(hit.Decision) ? "selected" : "")>Select Action</!option>
-                                                    <!option value="True Match" @(hit.Decision == "True Match" ? "selected" : "")>True Match</!option>
-                                                    <!option value="False Match" @(hit.Decision == "False Match" ? "selected" : "")>False Match</!option>
-                                                </select>
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                <textarea class="search-remarks-area h-7 w-full border border-slate-200 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all" placeholder="Enter matching remarks...">@hit.Remarks</textarea>
-                                            </td>
+                                                <td class="px-4 py-3 text-center">
+                                                    <a href="/ProliferationFinance/Details/@Model.CaseId?chemicalId=@match.Id" class="inline-flex items-center justify-center h-6 px-3 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95">
+                                                        Details
+                                                    </a>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <textarea class="search-remarks-area h-7 w-full border border-slate-200 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all" placeholder="Enter matching remarks..."></textarea>
+                                                </td>
+                                            </tr>
+                                            rowIndex++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr class="bg-white hover:bg-slate-50 transition-colors search-hit-row" data-index="0">
+                                            <td colspan="@(Model.CustomerType == "Goods" ? 6 : 5)" class="px-4 py-3 text-center text-slate-400 italic">No matches found in UAE Control List</td>
+                                            <td class="px-4 py-3 text-center text-slate-300">-</td>
+                                            <td class="px-4 py-3 text-slate-300">-</td>
                                         </tr>
-                                        rowIndex++;
+                                    }
+
+                                    <!-- 2. PDF Snippet Rows -->
+                                    @if (!string.IsNullOrEmpty(Model.SearchHitDetails))
+                                    {
+                                        var snippets = Model.SearchHitDetails.Split(new[] { "\n\n", "---" }, StringSplitOptions.RemoveEmptyEntries);
+                                        foreach (var snip in snippets)
+                                        {
+                                            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors search-hit-row" data-index="@rowIndex">
+                                                <td colspan="5" class="px-4 py-2 border-l-2 border-blue-200">
+                                                    <div class="flex items-start gap-3">
+                                                        <i class="fa fa-file-pdf-o text-blue-400 mt-1"></i>
+                                                        <div class="pdf-snippet text-[10px] text-slate-600 leading-relaxed italic whitespace-normal font-medium line-clamp-2" title="@snip">
+                                                            "@snip.Trim()"
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-2 text-[9px] font-bold text-blue-600 uppercase">PDF Snippet</td>
+                                                <td class="px-4 py-2 text-center">
+                                                    <a href="/ProliferationFinance/Details/@Model.CaseId" class="inline-flex items-center justify-center h-6 px-3 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95">
+                                                        Details
+                                                    </a>
+                                                </td>
+                                                <td class="px-4 py-2">
+                                                    <textarea class="search-remarks-area h-7 w-full border border-slate-100 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all bg-white" placeholder="Snippet remarks..."></textarea>
+                                                </td>
+                                            </tr>
+                                            rowIndex++;
+                                        }
                                     }
                                 }
                                 else
                                 {
                                     <tr class="bg-white hover:bg-slate-50 transition-colors search-hit-row" data-index="0">
-                                        <td colspan="10" class="px-4 py-3 text-center text-slate-400 italic">No search results found to display.</td>
+                                        <td class="px-4 py-3 font-bold text-slate-900">
+                                            @(!string.IsNullOrEmpty(Model.MatchedChemicalName) ? Model.MatchedChemicalName : (string.IsNullOrEmpty(Model.ChemicalName) ? "-" : Model.ChemicalName))
+                                        </td>
+                                        <td class="px-4 py-3 text-slate-600 uppercase">@(string.IsNullOrEmpty(Model.HsCode) ? "-" : Model.HsCode)</td>
+                                        <td class="px-4 py-3 text-slate-600 uppercase">@(string.IsNullOrEmpty(Model.CasNumber) ? "-" : Model.CasNumber)</td>
+                                        <td class="px-4 py-3 text-slate-600 uppercase">@(string.IsNullOrEmpty(Model.Eccn) ? "-" : Model.Eccn)</td>
+                                        <td class="px-4 py-3 text-slate-600 font-medium">
+                                            <div class="line-clamp-2 whitespace-normal break-normal leading-relaxed min-w-[200px] max-w-[300px]" title="@Model.SynonymName">
+                                                @(string.IsNullOrEmpty(Model.SynonymName) ? "-" : Model.SynonymName)
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            @if (!string.IsNullOrEmpty(Model.MatchedChemicalName))
+                                            {
+                                                <a href="/ProliferationFinance/Details/@Model.CaseId" class="inline-flex items-center justify-center h-6 px-3 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95">
+                                                    Details
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-slate-300">-</span>
+                                            }
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <textarea class="search-remarks-area h-7 w-full border border-slate-200 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all" placeholder="Enter matching remarks..."></textarea>
+                                        </td>
                                     </tr>
                                 }
-                            </tbody>
-                        </table>
+                        </tbody>
+                    </table>
+                </div>
+                    <div class="px-5 py-3 border-t border-slate-100 bg-slate-50/30 flex justify-end">
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] h-8 px-6 rounded-md shadow-sm transition-all tracking-tight" onclick="saveRemarks()">
+                            Save Search Action
+                        </button>
                     </div>
+                </div>
 
-                    <!-- Actions -->
-                    <div class="p-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-                        <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            <i class="fa fa-info-circle text-blue-500"></i>
-                            Select "Match" in details to link with case
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <button onclick="saveAndProceed()" class="inline-flex items-center justify-center h-11 px-8 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 group">
-                                Save Search Action
-                                <i class="fa fa-chevron-right ml-2 transition-transform group-hover:translate-x-1"></i>
+                <!-- Case History & Comments Card (Aligned with Case/Process) -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col flex-1 min-h-[400px] mb-4">
+                    <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                        <h3 class="text-[13px] font-bold text-slate-800 tracking-tight">Case Comments</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/20 custom-scrollbar" id="commentsContainer">
+                        <div class="text-xs text-slate-400 italic">Loading comments...</div>
+                    </div>
+                    <div class="p-5 border-t border-slate-100 bg-white">
+                        <div class="flex gap-4">
+                            <textarea id="caseComment" oninput="toggleSaveButton()" class="flex-1 h-12 border border-slate-200 rounded-lg p-3 text-[11px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none resize-none placeholder:text-slate-400 font-medium" placeholder="Enter Your Comments"></textarea>
+                            <button id="btnSaveComment" onclick="saveComment()" disabled class="h-12 px-8 bg-white border border-slate-200 text-slate-400 font-bold rounded-md transition-all cursor-not-allowed opacity-50">
+                                Save
                             </button>
+                        </div>
+                        
+                        <!-- Main Decision Buttons Alignment -->
+                        <div class="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-100">
+                            <div class="flex items-center gap-3 w-full">
+                                <button onclick="updateDecision('True Match')" class="h-9 px-6 rounded-md bg-blue-600 text-white text-[10px] font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm uppercase tracking-widest">
+                                    <i data-lucide="check-circle" class="h-3.5 w-3.5"></i> True Match
+                                </button>
+                                <button onclick="updateDecision('False Match')" class="h-9 px-6 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm uppercase tracking-widest">
+                                    <i data-lucide="x-circle" class="h-3.5 w-3.5"></i> False Match
+                                </button>
+                                <button onclick="updateDecision('Hold')" class="h-9 px-6 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm uppercase tracking-widest mr-auto">
+                                    <i data-lucide="pause-circle" class="h-3.5 w-3.5"></i> Hold
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+    </div>
+</body>
 
 <style>
-    .lexend-font { font-family: 'Lexend', sans-serif; }
-    .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
-    
-    .loading-shimmer {
-        background: linear-gradient(90deg, #f1f5f9 25%, #f8fafc 50%, #f1f5f9 75%);
-        background-size: 200% 100%;
-        animation: shimmer 1.5s infinite;
-    }
-    @@keyframes shimmer {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-    }
 
     .dt-loader { display: inline-block; position: relative; width: 80px; height: 20px; }
     .dt-loader div { position: absolute; top: 8px; width: 13px; height: 13px; border-radius: 50%; background: #2563eb; animation-timing-function: cubic-bezier(0, 1, 1, 0); }
@@ -228,70 +345,185 @@
 </style>
 
 <script>
-    function saveAndProceed() {
-        const hits = [];
-        $('.search-hit-row').each(function() {
-            const decision = $(this).find('.search-decision-select').val();
-            const remark = $(this).find('.search-remarks-area').val();
-            
-            if (decision || (remark && remark.trim() !== '')) {
-                hits.push({
-                    index: $(this).data('index'),
-                    decision: decision,
-                    remarks: remark ? remark.trim() : "",
-                    searchType: "@Model.CustomerType"
-                });
-            }
-        });
 
-        if (hits.length === 0) {
-            window.location.href = '/ProliferationFinance/CaseManager';
-            return;
+    function toggleSaveButton() {
+        const comment = $('#caseComment').val().trim();
+        const $btn = $('#btnSaveComment');
+        if (comment.length > 0) {
+            $btn.prop('disabled', false)
+                .removeClass('text-slate-400 cursor-not-allowed opacity-50')
+                .addClass('text-slate-600 hover:bg-slate-50');
+        } else {
+            $btn.prop('disabled', true)
+                .addClass('text-slate-400 cursor-not-allowed opacity-50')
+                .removeClass('text-slate-600 hover:bg-slate-50');
         }
+    }
 
-        const requestData = {
-            caseId: @Model.CaseId,
-            hits: hits
-        };
+    function updateDecision(decision) {
+        const comment = $('#caseComment').val();
 
-        $('#processLoader').removeClass('hidden').addClass('flex');
-        
         $.ajax({
-            url: '/ProliferationFinance/SaveSearchHits',
+            url: '/ProliferationFinance/UpdateStatus',
             type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(requestData),
-            success: function(response) {
-                if (response.success) {
-                    window.location.href = '/ProliferationFinance/CaseManager';
+            data: { caseId: @Model.CaseId, status: decision },
+            success: function(res) {
+                if (res.success) {
+                    toastr.success('Case status updated to ' + decision);
+                    if (comment.trim()) {
+                        $.ajax({
+                            url: '/ProliferationFinance/UpdateRemarks',
+                            type: 'POST',
+                            data: { caseId: @Model.CaseId, remarks: comment },
+                            complete: function() {
+                                setTimeout(() => location.reload(), 1500);
+                            }
+                        });
+                    } else {
+                        setTimeout(() => location.reload(), 1500);
+                    }
                 } else {
-                    $('#processLoader').addClass('hidden').removeClass('flex');
-                    alert('Error saving decisions: ' + (response.message || 'Unknown error'));
+                    toastr.error(res.message || 'Error saving decision.');
                 }
             },
             error: function() {
-                $('#processLoader').addClass('hidden').removeClass('flex');
-                alert('Connection error while saving decisions.');
+                toastr.error('Error connecting to server.');
+            }
+        });
+    }
+
+    function saveComment() {
+        const comment = $('#caseComment').val();
+        if (!comment.trim()) {
+            return;
+        }
+
+        $.ajax({
+            url: '/ProliferationFinance/UpdateRemarks',
+            type: 'POST',
+            data: { caseId: @Model.CaseId, remarks: comment },
+            success: function(res) {
+                if (res.success) {
+                    toastr.success('Comment saved successfully');
+                    $('#caseComment').val(''); // Clear the input
+                    setTimeout(() => location.reload(), 1500); // Silent reload to show updated history
+                } else {
+                    toastr.error(res.message || 'Error saving comment.');
+                }
+            },
+            error: function() {
+                toastr.error('Error connecting to server.');
+            }
+        });
+    }
+
+        function uploadDocument(input) {
+            if (!input.files || !input.files[0]) return;
+            
+            const formData = new FormData();
+            formData.append('caseId', '@Model.CaseId');
+            formData.append('file', input.files[0]);
+
+            $('#loadingeffect').show();
+            
+            $.ajax({
+                url: '/ProliferationFinance/UploadDocument',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(res) {
+                    $('#loadingeffect').hide();
+                    if (res.success) {
+                        toastr.success('Document uploaded successfully');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        toastr.error('Upload failed: ' + res.message);
+                    }
+                },
+                error: function() {
+                    $('#loadingeffect').hide();
+                    toastr.error('Error uploading document');
+                }
+            });
+        }
+
+        function saveRemarks() {
+            const hits = [];
+            $('.search-hit-row').each(function() {
+                const row = $(this);
+                hits.push({
+                    index: row.data('index'),
+                    remarks: row.find('.search-remarks-area').val()
+                });
+            });
+
+            $('#loadingeffect').show();
+
+            $.ajax({
+                url: '/ProliferationFinance/SaveSearchHits',
+                type: 'POST',
+                data: JSON.stringify({
+                    caseId: @Model.CaseId,
+                    hits: hits
+                }),
+                contentType: 'application/json',
+                success: function(res) {
+                    $('#loadingeffect').hide();
+                    if (!res.success) {
+                        toastr.error('Failed to save actions: ' + res.message);
+                    } else {
+                        toastr.success('Search actions saved successfully');
+                    }
+                },
+                error: function() {
+                    $('#loadingeffect').hide();
+                    toastr.error('Error saving search actions');
+                }
+            });
+        }
+
+    function loadComments() {
+        const caseId = @Model.CaseId;
+        $.ajax({
+            url: '/ProliferationFinance/GetComments',
+            type: 'GET',
+            data: { caseId: caseId },
+            success: function(res) {
+                if (res.success && res.data) {
+                    let html = '';
+                    if (res.data.length === 0) {
+                        html = '<div id="noCommentsMsg" class="text-xs text-slate-500 italic text-center py-4">No comments found for this case.</div>';
+                    } else {
+                        res.data.forEach(comment => {
+                            const date = comment.createdOn || '-';
+                            const user = comment.createdByEmail || 'User';
+                            const initials = (user.charAt(0) || 'U').toUpperCase();
+                            
+                            html += `
+                            <div class="flex gap-4 mb-4">
+                                <div class="shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">${initials}</div>
+                                <div class="flex-1">
+                                    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                                        <p class="text-[11px] text-slate-700 leading-relaxed font-medium">${comment.comment}</p>
+                                    </div>
+                                    <div class="mt-2 flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                                        <span>${user}</span>
+                                        <span class="h-1 w-1 rounded-full bg-slate-200"></span>
+                                        <span>${date}</span>
+                                    </div>
+                                </div>
+                            </div>`;
+                        });
+                    }
+                    $('#commentsContainer').html(html);
+                }
             }
         });
     }
 
     $(document).ready(function() {
-        // Add subtle animation to rows on load
-        $('.search-hit-row').each(function(i) {
-            $(this).css({
-                'opacity': '0',
-                'transform': 'translateY(10px)',
-                'transition': 'all 0.4s ease-out ' + (i * 0.05) + 's'
-            });
-            
-            const row = $(this);
-            setTimeout(() => {
-                row.css({
-                    'opacity': '1',
-                    'transform': 'translateY(0)'
-                });
-            }, 50);
-        });
+        lucide.createIcons();
+        loadComments();
     });
-</script>
+    </script>
