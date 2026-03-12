@@ -194,14 +194,19 @@
       }
 
     // SIDEBAR CONFIG
-    function toggleDropdown() {
-      const dropdown = document.getElementById('name-screening-dropdown');
-      const dropdownArrow = document.getElementById('dropdown-arrow');
+    function toggleNameScreening() {
+      const dropdown = document.getElementById('name-screening-parent-dropdown');
+      const dropdownArrow = document.getElementById('dropdown-arrow-parent');
       dropdown.classList.toggle('hidden');
       dropdownArrow.classList.toggle('rotate-180');
-
-          helper("nameScreening")
-      
+      helper("nameScreeningParent")
+    }
+    function toggleCaseCreation() {
+      const dropdown = document.getElementById('case-creation-dropdown');
+      const dropdownArrow = document.getElementById('dropdown-arrow-case');
+      dropdown.classList.toggle('hidden');
+      dropdownArrow.classList.toggle('rotate-180');
+      helper("caseCreation")
     }
     function toggleDropdown2() {
       const dropdown = document.getElementById('ra-dropdown');
@@ -345,70 +350,97 @@
                   <img src="~/img/dashboardicon.svg" alt="FORGOTPASSWORDICON" style="filter: hue-rotate(90deg);"/><span id="dashboard"class="hidden md:block ml-1 mt-0.5">@localizer["Forget Password"]</span>
         </li>
         </a> *@
-         @if (allowedModules.Contains(1) || allowedModules.Contains(11))
-          {
-
-              var individualActive = Url.MakeActiveClass("Case", "Create");
-    var corporateActive = Url.MakeActiveClass("Corporate", "CorporateScreening");
+                @if (allowedModules.Contains(1) || allowedModules.Contains(3))
+                {
+                    var individualActive = Url.MakeActiveClass("Case", "Create");
+                    var corporateActive = Url.MakeActiveClass("Corporate", "CorporateScreening");
                     var duediligence = Url.MakeActiveClass("Case", "Index");
+                    var completedCase = Url.MakeActiveClass("Case", "CompletedCaseIndex");
+
+
+             
                     var duediligenceClass = duediligence == "active" ? "text-blue-600" : "text-slate-500";
-                    var completedCase = @Url.MakeActiveClass("Case", "CompletedCaseIndex");
+                    
                     var completedcasesClass = completedCase == "active" ? "text-blue-600" : "text-slate-500";
 
-                    var caseCreationActive = (individualActive == "active" || corporateActive == "active" || duediligence == "active" || completedCase == "active");
+                    
                     
 
-    var parentClass = caseCreationActive ? "text-blue-600" : "text-slate-500";
+    
                    
+
+                    var nameScreeningActive = (individualActive == "active" || corporateActive == "active" || duediligence == "active" || completedCase == "active");
+                    var parentClass = nameScreeningActive ? "text-blue-600" : "text-slate-500";
+
+
                     <li class="flex flex-col mb-1 bg-[#F8FAFC] rounded-xl overflow-hidden mt-2">
-                        <div class="inline-flex items-center px-4 py-3 cursor-pointer justify-between  @parentClass" onclick="toggleDropdown()">
+                        <div class="inline-flex items-center px-4 py-3 cursor-pointer justify-between @parentClass" onclick="toggleNameScreening()">
                             <div class="flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-plus"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15h6"/><path d="M12 18v-6"/></svg>
-                                <span id="nameScreening" class="ml-3 md:inline-flex items-center w-28 truncate text-ellipsis whitespace-normal font-semibold text-[15px] tracking-wide">Case Creation</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                                <span id="nameScreeningParentText" class="ml-3 md:inline-flex items-center w-28 truncate text-ellipsis whitespace-normal font-semibold text-[15px] tracking-wide">Name Screening</span>
                             </div>
-                            <svg id="dropdown-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down ml-1 transition-transform duration-200 text-slate-500">
+                            <svg id="dropdown-arrow-parent" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down ml-1 transition-transform duration-200 text-slate-500">
                                 <path d="m6 9 6 6 6-6"></path>
                             </svg>
                         </div>
-                        @if (allowedModules.Contains(1) )
-                        {
-                            <ul id="name-screening-dropdown" class="hidden pl-[3.25rem] pb-3 mb-1">
-                                <a class="dropdown-item menu_changes @individualActive" asp-controller="case" asp-action="create" tabindex="5">
-                                <li class="py-1 cursor-pointer">
-                                        <div class="flex items-center gap-4">
-                                        <div class="w-1 h-6 @(individualActive == "active" ? "bg-blue-600" : "bg-slate-200") rounded-full"></div><span class="@(individualActive == "active" ? "text-blue-600" : "text-slate-500") font-medium text-[15px]">Individual</span>
-                                        </div>
-                                </li>
-                                </a>
-                                <a class="dropdown-item menu_changes @corporateActive" asp-controller="Corporate" asp-action="CorporateScreening" tabindex="6">
-                                <li class="py-1 cursor-pointer mt-1">
-                                        <div class="flex items-center gap-4">
-                                        <div class="w-1 h-6 @(corporateActive == "active" ? "bg-blue-600" : "bg-slate-200") rounded-full"></div><span class="@(corporateActive == "active" ? "text-blue-600" : "text-slate-500") font-medium text-[15px]">Corporate</span>
-                                        </div>
-                                </li>
-                                </a>
-                                <a class="dropdown-item menu_changes @duediligence" asp-controller="Case" asp-action="Index" tabindex="5">
-                                <li class="py-1 cursor-pointer">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-1 h-6 @(duediligence == "active" ? "bg-blue-600" : "bg-slate-200") rounded-full"></div><span class="@duediligenceClass font-medium text-[15px]">Due Diligence</span>
-                                    </div>
-                                </li>
-                                </a>
-                                <a class="dropdown-item menu_changes @completedCase" asp-controller="Case" asp-action="CompletedCaseIndex" tabindex="5">
-                                <li class="py-1 cursor-pointer">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-1 h-6 @(completedCase == "active" ? "bg-blue-600" : "bg-slate-200") rounded-full"></div><span class="@completedcasesClass font-medium text-[15px]">Completed Cases</span>
-                                    </div>
-                                </li>
-                                </a>
-                                
-                                
-                            </ul>
-                        }
+
                         
                         
+                        
+
+                        
+                        <ul id="name-screening-parent-dropdown" class="hidden pl-4 pb-3 mb-1">
+                            <!-- Case Creation (Sub-menu) -->
+                            <li class="flex flex-col mb-1">
+                                <div class="inline-flex items-center px-4 py-2 cursor-pointer justify-between @((individualActive == "active" || corporateActive == "active") ? "text-blue-600" : "text-slate-500")" onclick="toggleCaseCreation()">
+                                    <div class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-plus"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15h6"/><path d="M12 18v-6"/></svg>
+                                        <span class="ml-2 font-medium text-[14px]">Case Creation</span>
+                                    </div>
+                                    <svg id="dropdown-arrow-case" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-200">
+                                        <path d="m6 9 6 6 6-6"></path>
+                                    </svg>
+                                </div>
+                                <ul id="case-creation-dropdown" class="hidden pl-8">
+                                    <a class="dropdown-item @individualActive" asp-controller="case" asp-action="create">
+                                        <li class="py-1 text-[13px] @(individualActive == "active" ? "text-blue-600 font-bold" : "text-slate-500")">Individual</li>
+                                    </a>
+                                    <a class="dropdown-item @corporateActive" asp-controller="Corporate" asp-action="CorporateScreening">
+                                        <li class="py-1 text-[13px] @(corporateActive == "active" ? "text-blue-600 font-bold" : "text-slate-500")">Corporate</li>
+                                    </a>
+                                </ul>
+                            </li>
+
+                            <!-- Due Diligence -->
+                            @if (allowedModules.Contains(3))
+                            {
+                                <a asp-controller="Case" asp-action="Index" class="dropdown-item @duediligence">
+                                    <li class="flex items-center gap-2 px-4 py-2 @(duediligence == "active" ? "text-blue-600 font-bold" : "text-slate-500")">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+                                            <circle cx="12" cy="13" r="2" />
+                                            <path d="M15 18a3 3 0 0 0-6 0" />
+                                        </svg>
+                                        <span class="text-[14px]">Due Diligence</span>
+                                    </li>
+                                </a>
+                            }
+
+                            <!-- Completed Cases -->
+                            @if (allowedModules.Contains(3))
+                            {
+                                <a asp-controller="Case" asp-action="CompletedCaseIndex" class="dropdown-item @completedCase">
+                                    <li class="flex items-center gap-2 px-4 py-2 @(completedCase == "active" ? "text-blue-600 font-bold" : "text-slate-500")">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                                        <span class="text-[14px]">Completed Cases</span>
+                                    </li>
+                                </a>
+                            }
+                        </ul>
+
                     </li>
                 }
+
                 @if (allowedModules.Contains(4))
                 {
                     var caseCreationProlifreationActive = @Url.MakeActiveClass("ProliferationFinance", "CaseCreation");
@@ -444,7 +476,57 @@
                     </li>
                 }
 
-                
+
+                @* The following blocks were removed as they are now nested under "Name Screening" *@@*
+                @if (allowedModules.Contains(3)) // Check if menu ID is allowed
+                {
+                    var duediligence = Url.MakeActiveClass("Case", "Index");
+                    var duediligenceClass = duediligence == "active" ? "text-blue-600" : "text-slate-500";
+                    <a asp-controller="Case" asp-action="Index"
+                    class="nav-link sas-nav menu_changes whitespace-normal @duediligence truncate block mt-2"
+                    id="dropdown05" aria-haspopup="true" aria-expanded="false" tabindex="13">
+
+                        <li class="flex flex-col hover:bg-[#F8FAFC] mb-1 rounded-md transition-colors @duediligenceClass hover:text-slate-800">
+                            <div class="inline-flex items-center gap-3 px-4 py-3 cursor-pointer"
+                            onclick="toggleDropdown12()">
+
+                                <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+                                    <circle cx="12" cy="13" r="2" />
+                                    <path d="M15 18a3 3 0 0 0-6 0" />
+                                </svg>
+
+                                <span class="font-medium text-[15px]">Due Diligence</span>
+
+                            </div>
+                        </li>
+                    </a>
+                }
+                @if (allowedModules.Contains(3)) // Check if menu ID is allowed
+                {
+                    var completedCase = @Url.MakeActiveClass("Case", "CompletedCaseIndex");
+                    var completedcasesClass = completedCase == "active" ? "text-blue-600" : "text-slate-500";
+                    <a asp-controller="Case"
+                           asp-action="CompletedCaseIndex"
+                       class="nav-link sas-nav menu_changes whitespace-normal truncate block @completedCase"
+                           id="dropdown05"
+                           aria-haspopup="true"
+                           aria-expanded="false"
+                           tabindex="13">
+                    <li class="flex flex-col hover:bg-[#F8FAFC] mb-1 rounded-md transition-colors @completedcasesClass hover:text-slate-800">
+                            <div class="inline-flex items-center gap-3 px-4 py-3 cursor-pointer"
+                                 onclick="toggleDropdown12()">
+
+                                <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                            
+                                    <span class="font-medium text-[15px]">Completed Cases</span>
+                           
+                            </div>
+                        </li>
+                        </a>
+                   
+                }*@
+
                
                 @if (allowedModules.Contains(8))
                 {
