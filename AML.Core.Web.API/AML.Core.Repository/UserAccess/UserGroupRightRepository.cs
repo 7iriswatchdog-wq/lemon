@@ -159,6 +159,32 @@ namespace AML.Core.Repository.UserAccess
             }
             return serviceResponse;
         }
+
+        public ServiceResponse<bool> CheckNameuserrightExists(string _controllerName, string _actionname, int _userId, int _userGroupID, string sessionId,string functionName)
+        {
+            ServiceResponse<bool> serviceResponse = new ServiceResponse<bool>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_user_group_id", _userGroupID);
+                parameters.Add("@p_user_id", _userId);
+                parameters.Add("@p_func_code", _actionname);
+                parameters.Add("@p_module_code", _controllerName);
+                parameters.Add("@p_session_id", sessionId);
+                parameters.Add("@p_functionname", functionName);
+                var response = GetFirstOrDefault<int>("get_name_usergroupaccessright", parameters, commandType: CommandType.StoredProcedure).ParseInt();
+                //serviceResponse.Result = (response >= 1) ? true : false;
+                serviceResponse.Result = (response >= 1);
+                serviceResponse.Message = "Added successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
     }
 
 

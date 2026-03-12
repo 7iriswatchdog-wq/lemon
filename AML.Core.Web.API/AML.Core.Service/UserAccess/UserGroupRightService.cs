@@ -54,5 +54,10 @@ namespace AML.Core.Service.UserAccess
             //return _userGroupRightRepository.CheckUserRightExixts(_controllerName, _actionname, _userId, _userGroupID);
             return _userGroupRightRepository.CheckUserRightExixts(_controllerName, _actionname, _userId, _userGroupID, sessionId);
         }
+        public ServiceResponse<bool> CheckNameuserrightExists(string _controllerName, string _actionname, int _userId, int _userGroupID, string sessionId,string functionname)
+        {
+            //return _userGroupRightRepository.CheckUserRightExixts(_controllerName, _actionname, _userId, _userGroupID);
+            return _userGroupRightRepository.CheckNameuserrightExists(_controllerName, _actionname, _userId, _userGroupID, sessionId, functionname);
+        }
     }
 }

@@ -64,6 +64,16 @@ namespace AML.ViewModel.ViewModels.CaseProcess
 
         public string RiskOverRide { get; set; }
 
+        public bool RiskCreation { get; set; }
+
+        public bool CommentCase { get; set; }
+
+        public bool DocumentsCase { get; set; }
+
+        public bool TransferCase { get; set; }
+
+        public Dictionary<string, string> ActionRights { get; set; }
+
         //public List<PassportDetails> passportDetails { get; set; }
     }
 }

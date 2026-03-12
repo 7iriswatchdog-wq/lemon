@@ -1105,10 +1105,23 @@ namespace AML.Core.Service.Common
             //_CustomerCaseDTO.CaseChangeStatus = firstDataset?.ToString();
             var firstMatch = apiResp.users.results.matches?.FirstOrDefault();
 
-            _CustomerCaseDTO.CaseChangeStatus =
-                firstMatch?.datasets != null && firstMatch.datasets.Any()
-                    ? string.Join(", ", firstMatch.datasets)
-                    : "--";
+            if(firstMatch?.datasets != null)
+            {
+                _CustomerCaseDTO.CaseChangeStatus = string.Join(", ",
+                    firstMatch.datasets.Select(d =>
+                        d.Contains("-") ? d.Split('-').First().Trim() : d.Trim()
+                    )
+                );
+            }
+            else
+            {
+                _CustomerCaseDTO.CaseChangeStatus = "--";
+            }
+
+            //_CustomerCaseDTO.CaseChangeStatus =
+            //    firstMatch?.datasets != null && firstMatch.datasets.Any()
+            //        ? string.Join(", ", firstMatch.datasets)
+            //        : "--";
             //}
 
             if (IsBlackListed.response != null &&  IsBlackListed.response.Count() != 0 || IsBlackListed.response2 != null && IsBlackListed.response2.Count() != 0 )
@@ -1274,8 +1287,26 @@ namespace AML.Core.Service.Common
                             matchrecords.MATCHIDNO = item.qrCode.ToString();
                             matchrecords.MATCHDOB = item.datesOfBirth != null ? item.datesOfBirth.FirstOrDefault() : "";
                             matchrecords.MATCHRESOURCESID = item.resourceId;
-                            matchrecords.MATCHDATASETS = item.datasets != null && item.datasets.Any() ? string.Join(", ", item.datasets) : "--";
-                            matchrecords.MATCHGENDER = item.gender != null ? item.gender : "";
+                    //matchrecords.MATCHDATASETS = item.datasets != null && item.datasets.Any() ? string.Join(", ", item.datasets) : "--";
+                    if (item.datasets != null && item.datasets.Any())
+                    {
+                        matchrecords.MATCHDATASETS = string.Join(", ",
+                            item.datasets.Select(d =>
+                                d.Contains("-") ? d.Split('-').First().Trim() : d.Trim()
+                            )
+                        );
+                    }
+                    else
+                    {
+                        matchrecords.MATCHDATASETS = "--";
+                    }
+                    //matchrecords.MATCHDATASETS = item.datasets != null && item.datasets.Any()
+                    // ? string.Join(", ", item.datasets
+                    //     .Select(d => d.StartsWith("PEP", StringComparison.OrdinalIgnoreCase) ? "PEP" :
+                    //                  d.StartsWith("SAN", StringComparison.OrdinalIgnoreCase) ? "SAN" : d)
+                    //     .Distinct())
+                    // : "--";
+                    matchrecords.MATCHGENDER = item.gender != null ? item.gender : "";
 
 
                     if (item.score < checkThreshold)
@@ -1335,8 +1366,20 @@ namespace AML.Core.Service.Common
                             matchrecords.MATCHIDNO = item.qrCode.ToString();
                             matchrecords.MATCHDOB = item.datesOfBirth != null ? item.datesOfBirth.FirstOrDefault() : "";
                             matchrecords.MATCHRESOURCESID = item.resourceId;
-                            matchrecords.MATCHDATASETS = item.datasets != null && item.datasets.Any() ? string.Join(", ", item.datasets) : "--";
-                            matchrecords.MATCHGENDER = item.gender != null ? item.gender : "";
+                        //matchrecords.MATCHDATASETS = item.datasets != null && item.datasets.Any() ? string.Join(", ", item.datasets) : "--";
+                        if (item.datasets != null && item.datasets.Any())
+                        {
+                            matchrecords.MATCHDATASETS = string.Join(", ",
+                                item.datasets.Select(d =>
+                                    d.Contains("-") ? d.Split('-').First().Trim() : d.Trim()
+                                )
+                            );
+                        }
+                        else
+                        {
+                            matchrecords.MATCHDATASETS = "--";
+                        }
+                        matchrecords.MATCHGENDER = item.gender != null ? item.gender : "";
 
 
                         // matchrecordsList.Add(matchrecords);

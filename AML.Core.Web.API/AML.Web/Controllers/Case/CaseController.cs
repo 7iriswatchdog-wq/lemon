@@ -5,6 +5,7 @@ using AML.Core.DataContract.Enum;
 using AML.Core.Repository;
 using AML.Core.RepositoryContract.FreeSource;
 using AML.Core.Service.CustomerScreening;
+using AML.Core.Service.UserAccess;
 using AML.Core.ServiceContract.CaseAssignment;
 using AML.Core.ServiceContract.CaseComment;
 using AML.Core.ServiceContract.CaseDocument;
@@ -19,6 +20,7 @@ using AML.Core.ServiceContract.Kyc;
 using AML.Core.ServiceContract.LovMaster;
 using AML.Core.ServiceContract.Risk;
 using AML.Core.ServiceContract.User;
+using AML.Core.ServiceContract.UserAccess;
 using AML.Core.ServiceContract.UserGroup;
 using AML.DTO.DTO.CaseAssignment;
 using AML.DTO.DTO.CaseComment;
@@ -122,12 +124,13 @@ namespace AML.Web.Controllers.Case
         private ILovMasterService _lovMasterService;
         private IRiskService _riskService;
         private IUserGroupService _UserGroupService;
+        IUserGroupRightService _userGroupRightService;
 
         private readonly Logger log = LogManager.GetCurrentClassLogger();
 
         public CaseController(IMapper mapper,
             IToastNotification toastNotification, ICountryService countryService, ICaseDocumentService caseDocumentService, ICustomerMasterService customerMasterService,
-            IHttpClientHandler clientHandler, ICustomerCategoryService customerCategoryService, ICaseCommentService caseCommentService, IUserGroupService UserGroupService,
+            IHttpClientHandler clientHandler, ICustomerCategoryService customerCategoryService, ICaseCommentService caseCommentService, IUserGroupService UserGroupService, IUserGroupRightService userGroupRightService,
             IConfiguration configuration, IIdentityTypeService idTypeService, IUserService userService, ICaseAssignmentService caseAssignmentService, ICommonService commonService, IKycService kycService, ILovMasterService lovMasterService, IRiskService RiskService,
             ICustomerCaseService CustomerCaseService, ICustomerScreeningService CustomerScreeningService, IFileUploader fileUploader, IExportDataService exportService, IViewRenderService viewRenderService, RiskAPIController riskAPIController, IFreeSourceRepository freeSourceRepository)
         {
@@ -165,6 +168,7 @@ namespace AML.Web.Controllers.Case
             _riskService = RiskService;
             _lovMasterService = lovMasterService;
             _UserGroupService = UserGroupService;
+            _userGroupRightService = userGroupRightService;
         }
 
         [HttpGet("/case")]
@@ -1249,11 +1253,13 @@ namespace AML.Web.Controllers.Case
             CaseProcessModel model = new CaseProcessModel();
             try
             {
+                var userId = _clientHandler.GetUserId();
                 var BranchId = _clientHandler.GetBranchId();
                 var GroupId = _clientHandler.GetGroupId();
                 var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
                
                 model.Case = new CaseModel();
+
                 
 
                 CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(CaseId);
@@ -1294,7 +1300,59 @@ namespace AML.Web.Controllers.Case
                 model.Case.CreatedOnText = createdDateText;
 
                 model.Case.DOB = dobText;
+                string RiskactionName;
+                string CreatecontrollerName;
+                if (model.Case.CustomerType == "I")
+                {
+                     RiskactionName = "risk";
+                     CreatecontrollerName = "Create";
+                }
+                else
+                {
+                     RiskactionName = "risk";
+                     CreatecontrollerName = "RiskAssessmentForCorpCustomer";
+                }
+                string sessionId = this.HttpContext.Session.GetString("SessID");
+                var riskCreation = _userGroupRightService.CheckUserRightExixts(RiskactionName, CreatecontrollerName, userId, GroupId, sessionId);
+                model.RiskCreation = riskCreation.Result;
+                var actionRights = new Dictionary<string, string>();
+                var actionsToCheck = new List<string>
+                {
+                    "Approve",
+                    "Reject",
+                    "Senior Management",
+                    "On Hold",
+                    //"SaveSearchResult"
+                };
+                foreach (var action in actionsToCheck)
+                {
+                    // Call the service to check if user has the right
+                    var serviceResponse = _userGroupRightService.CheckNameuserrightExists(
+                        "case",
+                        "close",// Controller
+                        userId,
+                        GroupId,
+                        sessionId ,
+                        action// Action to check
+                    );
+
+                    // If user has the right, store the actual action name, else "1"
+                    actionRights[action] = (serviceResponse?.Result ?? false).ToString().ToLower();
+                }
+
+                model.ActionRights = actionRights;
+
                 
+
+           
+                var CommentCase = _userGroupRightService.CheckUserRightExixts("comment", "case", userId, GroupId, sessionId);
+                model.CommentCase = riskCreation.Result;
+
+                var DocumentCase = _userGroupRightService.CheckUserRightExixts("document", "case", userId, GroupId, sessionId);
+                model.DocumentsCase = riskCreation.Result;
+
+                var TransferCase = _userGroupRightService.CheckUserRightExixts("assign", "case", userId, GroupId, sessionId);
+                model.TransferCase = riskCreation.Result;
 
 
                 List<CaseDocumentDTO> caseDocumentbyId = _caseDocumentService.GetCaseDocumentByCaseId(CaseId);

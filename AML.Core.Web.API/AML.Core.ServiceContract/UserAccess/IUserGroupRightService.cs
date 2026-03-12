@@ -17,6 +17,8 @@ namespace AML.Core.ServiceContract.UserAccess
         ServiceResponse<List<UserGroupRightDetailsDTO>> GetDetailsByUserGroupId(int ugrId);
         //ServiceResponse<bool> CheckUserRightExixts(string _controllerName, string _actionname, int _userId, int _userGroupID);
         ServiceResponse<bool> CheckUserRightExixts(string _controllerName, string _actionname, int _userId, int _userGroupID, string sessionId);
+
+        ServiceResponse<bool> CheckNameuserrightExists(string _controllerName, string _actionname, int _userId, int _userGroupID, string sessionId,string fucntionname);
         ServiceResponse<List<ClientMenuRightsModelDTO>> getClientMenuByClientId(int clientId);
     }
 }
