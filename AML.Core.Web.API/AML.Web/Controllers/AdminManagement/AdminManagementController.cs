@@ -23,10 +23,12 @@ using AML.ViewModel.ViewModels.VisaType;
 using AML.Web.CustomFilters;
 using AML.Web.Helper;
 using AutoMapper;
+using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using NToastNotify;
 using System;
 using System.Collections.Generic;
@@ -54,6 +56,12 @@ namespace AML.Web.Controllers.AdminManagement
         private readonly ICustomerCaseService _customerCaseService;
         private readonly IConfiguration _configuration;
         private readonly IFileUploader _fileUploader;
+        private string baseURL = string.Empty;
+        private string pdfbaseURL = string.Empty;
+        private string baseC6URL = string.Empty;
+        private string _c6Username;
+        private int checkThreshold = 0;
+
 
         public AdminManagementController(IUserService userService, IDepartmentService departmentService,
             IToastNotification toastNotification,
@@ -77,6 +85,11 @@ namespace AML.Web.Controllers.AdminManagement
             _customerCaseService = customerCaseService;
             _configuration = configuration;
             _fileUploader = fileUploader;
+            var clientId = _clientHandler.GetClientId();
+            var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
+            _c6Username = clientDetails?.C6Username;
+            checkThreshold = clientDetails?.Threshold ?? 0;
+            baseC6URL = clientDetails?.C6BaseUrl;
         }
 
         public IActionResult Index()
@@ -85,22 +98,48 @@ namespace AML.Web.Controllers.AdminManagement
         }
 
         [HttpPost("adminmanagement/custompagination")]
-        public JsonResult CustomPagination(DataTableModel model, int orderColumn = 0, string orderDirection = "desc", string subStatus = null, string isBlocked = null)
+        public async Task<JsonResult> CustomPagination(DataTableModel model, int orderColumn = 0, string orderDirection = "desc", string subStatus = null, string isBlocked = null)
         {
             try
             {
+                TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+                string url = baseC6URL + "users";
+
+
+                var apiUsers = await _clientHandler.GetAsync(token, url);
+
+                var users = JsonConvert.DeserializeObject<List<dynamic>>(apiUsers);
+
+                var userUsageDict = ((IEnumerable<dynamic>)users)
+     .GroupBy(x => ((string)x.username).ToLower())
+     .ToDictionary(
+         g => g.Key,
+         g => (int)g.First().individualUsageCount + (int)g.First().corporateUsageCount
+     );
                 var result = _customerCaseService.GetAllAdminClients();
-                var clients = result.Select(dto => new ClientMaster
+                var clients = result.Select(dto =>
                     {
-                        ClientId = dto.ClientId,
-                        ClientName = dto.ClientName,
-                        Prefix = dto.Prefix,
-                        ApplicationStartDate = dto.ApplicationStartDate,
-                        ApplicationEndDate = dto.ApplicationEndDate,
-                        SearchCount = dto.SearchCount,
-                        UsageCount = dto.UsageCount,
-                        UserCount = dto.UserCount,
-                        isActive = dto.isActive
+                        int usageCount = 0;
+
+                        if (!string.IsNullOrEmpty(dto.C6Username) &&
+    userUsageDict.TryGetValue(dto.C6Username.ToLower(), out int apiUsage))
+                        {
+                            usageCount = apiUsage;
+                        }
+
+                        return new ClientMaster
+                        {
+                            ClientId = dto.ClientId,
+                            ClientName = dto.ClientName,
+                            Prefix = dto.Prefix,
+                            C6Username=dto.C6Username,
+                            ApplicationStartDate = dto.ApplicationStartDate,
+                            ApplicationEndDate = dto.ApplicationEndDate,
+                            SearchCount = dto.SearchCount,
+                            TotalUsageCount = usageCount,   // API total usage
+                            UserCount = dto.UserCount,
+                            isActive = dto.isActive
+                        };
                     }).ToList();
 
                 // 1. Filter by Subscription Status (Active/Expired)
@@ -210,6 +249,7 @@ namespace AML.Web.Controllers.AdminManagement
             ViewBag.totalcount = Convert.ToInt32(token.user.individualCount) + Convert.ToInt32(token.user.corporateCount);
             ViewBag.individualCount = Convert.ToInt32(token.user.individualCount);
             ViewBag.corporateCount =  Convert.ToInt32(token.user.corporateCount);
+            ViewBag.contractExpiryDate = token.user.contractExpiryDate != null ? Convert.ToDateTime(token.user.contractExpiryDate).ToString("yyyy-MM-dd") : "";
             ViewBag.hundredemail =
      string.IsNullOrEmpty(token.user?.hundredemail) || token.user.hundredemail == "0"
      ? "--"

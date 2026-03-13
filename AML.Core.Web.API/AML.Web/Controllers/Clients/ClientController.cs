@@ -486,17 +486,19 @@ namespace AML.Web.Controllers.Client
             //return RedirectToAction("Index", new { isActive = 0 });
         }
 
-        [HttpDelete("client/delete/{id}")]
-        public ActionResult DeleteClient(int id)
+        
+        [HttpPost]
+        
+        public ActionResult DeleteClient(int Id, int Status)
         {
             try
             {
                 ClientMasterDTO _ClientModel = new ClientMasterDTO();
-                _ClientModel.ClientId = id;
-                _ClientModel.isActive = 0;
+                _ClientModel.ClientId = Id;
+                _ClientModel.isActive = Status;
                 _ClientModel.CreatedBy = _clientHandler.GetUserId();
                 var result = _customerCaseService.DeleteClient(_ClientModel);
-                _toastNotification.AddSuccessToastMessage("Client deleted successfully");
+                _toastNotification.AddSuccessToastMessage("Client Updated successfully");
 
                 //return RedirectToAction(nameof(Index));
                 return Json("Success");

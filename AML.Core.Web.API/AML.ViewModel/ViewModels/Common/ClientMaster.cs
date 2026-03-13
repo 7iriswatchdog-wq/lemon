@@ -49,6 +49,8 @@ namespace AML.ViewModel.ViewModels.Common
         public int UsageCount { get; set; }
         public int UserCount { get; set; }
         public DateTime? CreatedOn { get; set; }
+
+        public int TotalUsageCount { get; set; }
     }
     public class ClientRightsModel
     {

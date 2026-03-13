@@ -349,7 +349,7 @@ hasSearched: false,
                                 <div class="space-y-2">
                             <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Individual Case Creation</h1>
                             <p class="text-slate-500 text-sm  leading-relaxed">
-                                Create and Screen Individual Cases using bulk upload,OCR,Underscore Parties or Manual Entry
+                                Create and Screen Individual Cases
                             </p>
 
                                 
@@ -1119,9 +1119,10 @@ hasSearched: false,
                                                                 <template x-if="form.type === 'shareholder' || form.type === 'corporate_shareholder'">
                                                                     <div class="space-y-2">
                                                                         <label class="text-[13px] font-bold text-slate-700">Share Percentage</label>
-                                                                        <input type="text"
+                                                                        <input type="number"
                                                                                x-model="form.share"
-                                                                               placeholder="e.g. 25"
+                                                                               placeholder="e.g. 25" min="0" max="100"
+                                                                               @@input ="if(form.share > 100) form.share = 100; if(form.share < 0) form.share = 0"
                                                                                class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm outline-none">
                                                                     </div>
                                                                 </template>
@@ -3715,13 +3716,22 @@ hasSearched: false,
                    
                         async uploadFile(event) {
 
-                            let file = event.target.files[0];
-                            if (!file) return;
+                            // let file = event.target.files[0];
+                            // if (!file) return;
 
-                            this.fileName = file.name;
+                            // this.fileName = file.name;
 
-                            let formData = new FormData();
-                            formData.append("file", file);
+                            // let formData = new FormData();
+                            // formData.append("file", file);
+                                        let files = event.target.files;
+                if (!files || files.length === 0) return;
+
+                let formData = new FormData();
+
+                for (let i = 0; i < files.length; i++) {
+                    formData.append("files", files[i]); // same key for all
+                }
+
 
                             this.loading = true;
                                          $('#loadingeffect').show();
@@ -3737,16 +3747,16 @@ hasSearched: false,
 
                                          console.log(result);
 
-                            if (!result || !result.extracted_json) {
-                                $('#loadingeffect').hide();
-                                toastr.error("OCR Failed. Please fill the form manually");
-                                $('#manualForm').show();
-                                this.uploadVisible = false;
-                                $('#uploadInstruction').hide();
-                                return;
-                            }
+                                                  if (!result || (!result.extracted && !result.consolidated)) {
+                $('#loadingeffect').hide();
+                toastr.error("OCR Failed. Please fill the form manually");
+                $('#manualForm').show();
+                this.uploadVisible = false;
+                $('#uploadInstruction').hide();
+                return;
+            }
 
-                            let mrzData = result.extracted_json || {};
+                            let mrzData = result?.extracted ?? result?.consolidated ?? {};
 
                             console.log("MRZ DATA:", mrzData);
 
@@ -3782,12 +3792,24 @@ hasSearched: false,
                             //toggleDuplicateBtn(nameInput);
 
                             //form.querySelector("#fullName").value = mrzData.full_name || "";
-                            form.querySelector("#txtIdNumber").value = mrzData.document_number || "";
 
-                            form.querySelector("#employer").value = mrzData.employer_name || "";
+
+                                        form.querySelector("#employer").value = mrzData.employer_name || "";
 
                             form.querySelector("#goldenVisa").value = mrzData.isGolden || "";
 
+                                        let documentNumber = mrzData.document_number || "";
+
+                                form.querySelector("#txtIdNumber").value = documentNumber;
+
+                                /* Residence Status Logic */
+                                if (documentNumber.startsWith("784-")) {
+                                     form.querySelector("#ddlResidenceStatus").value = "Resident";
+                                }else{
+                                        form.querySelector("#ddlResidenceStatus").value = "Non resident";
+                                }
+
+                             form.querySelector("#employer").value = mrzData.isGolden || "";
                             /* Gender */
                             let genderValue = (mrzData.gender || "").toUpperCase();
 
@@ -3825,28 +3847,6 @@ hasSearched: false,
                                                 if (natSelect) natSelect.value = "";
                                             });
                                     }
-                            // let nationalityValue = (mrzData.nationality || "").trim();
-                            // let natSelect = form.querySelector("#nationality");
-                            // if (natSelect && nationalityValue) {
-                            //     // Try exact match first
-                            //     natSelect.value = nationalityValue;
-
-                            //     // If not selected, try case-insensitive match or code match
-                            //     if (!natSelect.value || natSelect.selectedIndex <= 0) {
-                            //         let found = false;
-                            //         for (let i = 0; i < natSelect.options.length; i++) {
-                            //             let opt = natSelect.options[i];
-                            //             if (opt.value.toUpperCase() === nationalityValue.toUpperCase() || 
-                            //                 opt.text.toUpperCase() === nationalityValue.toUpperCase()) {
-                            //                 natSelect.value = opt.value;
-                            //                 found = true;
-                            //                 break;
-                            //             }
-                            //         }
-                            //         if (!found) console.warn("Could not find matching nationality for:", nationalityValue);
-                            //     }
-                            // }
-
                             /* Dates */
                             setDateInput(form, "DOB", mrzData.dob);
                             setDateInput(form, "expirydate", mrzData.expiry_date);
@@ -3858,52 +3858,7 @@ hasSearched: false,
                             this.loading = false;
                             this.scrollToForm();
 
-                            //             console.log(result);
-
-                            //             if (!result.success) {
-                            //                 $('#loadingeffect').hide();
-                            //                 toastr.error("OCR Failed.Please Fill the form Manually");
-                            //                 $('#manualForm').show();
-                            //                 return;
-                            //             }
-
-                            //             let mrzData = result.fields || {};
-
-                            //             console.log("MRZ DATA:", mrzData);
-
-                            //             if (Object.keys(mrzData).length === 0) {
-                            //                     $('#loadingeffect').hide();
-                            //                 toastr.error("MRZ data not found.Please Fill the form Manually");
-                            //                 $('#manualForm').show();
-                            //                 return;
-                            //             }
-                            //                 $('#loadingeffect').hide();
-                            //             $('#manualForm').show();
-
-
-                            //             let form = document.getElementById("myOCRForm");
-
-                            //             form.querySelector("#fullName").value = mrzData.full_name || "";
-                            //             form.querySelector("#txtIdNumber").value = mrzData.document_number || "";
-                            //                        let genderValue = (mrzData.gender || "").toUpperCase();
-
-                            //             if (genderValue === "M") {
-                            //                 form.querySelector("#gender").value = "Male";
-                            //             }
-                            //             else if (genderValue === "F") {
-                            //                 form.querySelector("#gender").value = "Female";
-                            //             }
-                            //             else {
-                            //                 form.querySelector("#gender").value = "";
-                            //             }
-                            //             form.querySelector("#nationality").value =(mrzData.nationality || "").toUpperCase();
-                            //             setDateInput(form, "DOB", mrzData.dob);
-                            //             setDateInput(form, "expirydate", mrzData.expiry_date);
-
                             
-
-                            // this.loading = false;
-                            // this.scrollToForm();
 
 
                             }

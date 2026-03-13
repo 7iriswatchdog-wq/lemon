@@ -3489,32 +3489,72 @@ namespace AML.Web.Controllers.Case
 
         }
 
+        //[HttpPost]
+        //public async Task<IActionResult> UploadMRZ(List<IFormFile> file)
+        //{
+        //    try
+        //    {
+        //        if (file == null || file.Length == 0)
+        //            return Json(new { success = false, message = "No file uploaded" });
+
+        //        string base64String;
+
+        //        using (var ms = new MemoryStream())
+        //        {
+        //            await file.CopyToAsync(ms);
+        //            base64String = Convert.ToBase64String(ms.ToArray());
+        //        }
+
+        //        using (var client = new HttpClient())
+        //        {
+        //            using (var formData = new MultipartFormDataContent())
+        //            {
+        //                var streamContent = new StreamContent(file.OpenReadStream());
+        //                streamContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+
+        //                formData.Add(streamContent, "file", file.FileName);
+
+        //                string apiUrl = $"https://astrid-unpavilioned-pearlene.ngrok-free.dev/process_document";
+
+        //                var response = await client.PostAsync(apiUrl, formData);
+
+        //                var result = await response.Content.ReadAsStringAsync();
+
+        //                return Content(result, "application/json");
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Json(new { success = false, error = ex.Message });
+        //    }
+        //}
+
         [HttpPost]
-        public async Task<IActionResult> UploadMRZ(IFormFile file)
+        public async Task<IActionResult> UploadMRZ(List<IFormFile> files)
         {
             try
             {
-                if (file == null || file.Length == 0)
+                if (files == null || files.Count == 0)
                     return Json(new { success = false, message = "No file uploaded" });
 
-                string base64String;
-
-                using (var ms = new MemoryStream())
-                {
-                    await file.CopyToAsync(ms);
-                    base64String = Convert.ToBase64String(ms.ToArray());
-                }
-
-                using (var client = new HttpClient())
-                {
+                using (var client = new HttpClient()) {
+                    client.Timeout = TimeSpan.FromMinutes(20);
                     using (var formData = new MultipartFormDataContent())
                     {
-                        var streamContent = new StreamContent(file.OpenReadStream());
-                        streamContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+                        foreach (var file in files)
+                        {
+                            if (file.Length > 0)
+                            {
+                                var streamContent = new StreamContent(file.OpenReadStream());
+                                streamContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
 
-                        formData.Add(streamContent, "file", file.FileName);
+                                // "files" should match API parameter name
+                                formData.Add(streamContent, "files", file.FileName);
+                            }
+                        }
 
-                        string apiUrl = $"https://astrid-unpavilioned-pearlene.ngrok-free.dev/process_document";
+                        string apiUrl = "https://astrid-unpavilioned-pearlene.ngrok-free.dev/process_document";
 
                         var response = await client.PostAsync(apiUrl, formData);
 

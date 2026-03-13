@@ -137,6 +137,7 @@
                                 <th class="px-6 py-4 font-bold h-12 sortable" onclick="sortTable(2, this)">Prefix</th>
                                 <th class="px-6 py-4 font-bold h-12">Users</th>
                                 <th class="px-6 py-4 font-bold h-12">Limit</th>
+                                <th class="px-6 py-4 font-bold h-12">Usage</th>
                                 <th class="px-6 py-4 font-bold h-12">Expiry Date</th>
                                 <th class="px-6 py-4 font-bold h-12">Status</th>
                                 <th class="px-6 py-4 font-bold h-12">Blocked</th>
@@ -251,7 +252,7 @@
                         `"${(row.prefix || '').replace(/"/g, '""')}"`,
                         row.userCount || 0,
                         row.searchCount || 0,
-                        row.usageCount || 0,
+                        row.totalUsageCount || 0,
                         expDate,
                         stat
                     ];
@@ -302,9 +303,12 @@
             },
             success: function (resp) {
                 if (resp.error) {
-                    $('#clientsTableBody').empty().append('<tr><td colspan="4" class="h-24 text-center text-red-500">Error: ' + resp.error + '</td></tr>');
+                   // $('#clientsTableBody').empty().append('<tr><td colspan="4" class="h-24 text-center text-red-500">Error: ' + resp.error + '</td></tr>');
+                   $('#clientsTableBody').empty().append('<tr><td colspan="4" class="h-24 text-center text-red-500">Something went wrong</td></tr>');
+                   toastr.error('Error: ' + resp.error);
                     return;
                 }
+                console.log(resp.data);
                 renderTable(resp.data);
                 totalRecords = resp.recordsFiltered;
                 updatePagination();
@@ -313,7 +317,8 @@
                 $('#loader').addClass('hidden').removeClass('flex'); 
             },
             error: function (xhr) { 
-                $('#clientsTableBody').empty().append('<tr><td colspan="4" class="h-24 text-center text-red-500">HTTP Error: ' + xhr.status + ' ' + xhr.statusText + '</td></tr>');
+                $('#clientsTableBody').empty().append('<tr><td colspan="4" class="h-24 text-center text-red-500">Something went wrong</td></tr>');
+                toastr.error('HTTP Error: ' + xhr.status + ' ' + xhr.statusText);
             }
         });
     }
@@ -336,9 +341,14 @@
                 statusBadge = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span>Active</span>';
             }
             
-            let blockedIcon = row.isActive === 0 
-                ? '<i data-lucide="lock" class="h-4 w-4 text-red-500" title="Blocked"></i>' 
-                : '<i data-lucide="unlock" class="h-4 w-4 text-green-500" title="Active"></i>';
+            // let blockedIcon = row.isActive === 0 
+            //     ? `<i data-lucide="lock" class="h-4 w-4 text-red-500" title="Blocked" onclick=DeleteData(${row.clientId})></i>`
+            //     : `<i data-lucide="unlock" class="h-4 w-4 text-green-500" title="Active" onclick=DeleteData(${row.clientId})></i>`;
+                const blockIcon = row.isActive === 0
+                ? '<i data-lucide="lock" class="h-3.5 w-3.5 text-red-600"></i>'
+                : '<i data-lucide="unlock" class="h-3.5 w-3.5 text-green-600"></i>';
+            const blockColor = row.isBlocked ? 'hover:bg-red-50 hover:border-red-100' : 'hover:bg-green-50 hover:border-green-100';
+            const blockTitle = row.isBlocked ? 'Unblock User' : 'Block User';
 
             tbody.append(`
                 <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
@@ -351,11 +361,14 @@
                     <td class="px-6 py-4 text-slate-600">${row.prefix || '-'}</td>
                     <td class="px-6 py-4 text-slate-600 font-medium">${row.userCount || 0}</td>
                     <td class="px-6 py-4 text-slate-600 font-medium">${row.searchCount || 0}</td>
+                    <td class="px-6 py-4 text-slate-600 font-medium">${row.totalUsageCount || 0}</td>
                     <td class="px-6 py-4 text-slate-600">${expDate}</td>
                     <td class="px-6 py-4">${statusBadge}</td>
-                        <td class="px-6 py-4 cursor-pointer flex ml-4">
-        ${blockedIcon}
-    </td>
+                        <td class="px-6 py-4 cursor-pointer flex ml-4" >
+                        <button onclick="BlockData(${row.clientId}, ${row.isActive ? 0 : 1})" class="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 ${blockColor} transition-all shadow-sm" title="${blockTitle}">
+                                ${blockIcon}
+                                </button>
+                            </td>
 
                     <td class="px-6 py-4 text-center">
                         <div class="flex items-center justify-center gap-2">
@@ -402,4 +415,64 @@
         currentPage = 1;
         loadData();
     }
+    function DeleteData(id) {
+        if (confirm('Do you want to delete the client?')) {
+            $.ajax({
+                url: '/client/delete/' + id,
+                type: 'DELETE',
+                success: function (result) {
+                    //table.ajax.reload();
+                    CreateTable();
+                }
+            });
+        }
+    }
+    function confirmModal(title, message, onConfirm) {
+        $('#confirmModalTitle').text(title);
+        $('#confirmModalMessage').text(message);
+        $('#confirmModalOkBtn').off('click').on('click', function() {
+            onConfirm();
+            closeConfirmModal();
+        });
+        $('#confirmModal').removeClass('hidden').addClass('flex');
+    }
+
+    function closeConfirmModal() {
+        $('#confirmModal').addClass('hidden').removeClass('flex');
+    }
+     function BlockData(id,status) {
+        const title = status === 1 ? 'Unblock User' : 'Block User';
+        const msg = `Are you sure you want to ${status === 1 ? 'unblock' : 'block'} this user?`;
+
+        confirmModal(title, msg, function() {
+            $('#loader').removeClass('hidden').addClass('flex');
+            $.ajax({
+                url: `/client/DeleteClient?Id=${id}&Status=${status}`,
+                type: 'POST',
+                success: function () {
+                    toastr.success('Client status updated successfully');
+                    loadData();
+                },
+                complete: function() {
+                    $('#loader').addClass('hidden').removeClass('flex');
+                }
+            });
+        });
+    }
 </script>
+
+<!-- Custom Confirmation Modal -->
+<div id="confirmModal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/40">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4">
+        <h3 id="confirmModalTitle" class="text-lg font-bold text-slate-900">Confirm Action</h3>
+        <p id="confirmModalMessage" class="text-sm text-slate-600">Are you sure you want to proceed?</p>
+        <div class="flex justify-end gap-3 pt-4">
+            <button onclick="closeConfirmModal()" class="h-9 px-8 text-slate-600 rounded-md bg-slate-100 hover:bg-slate-200 font-semibold transition-colors">
+                Cancel
+            </button>
+            <button id="confirmModalOkBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 px-8 rounded-md transition-colors text-xs uppercase tracking-wider">
+                OK
+            </button>
+        </div>
+    </div>
+</div>

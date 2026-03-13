@@ -34,5 +34,7 @@ namespace AML.Core.DataContract.Authentication
         public string beforeexpdemail { get;set;}
         public string onexpemail { get; set; }
         public string Eightemail { get; set; }
+
+        public DateTime contractExpiryDate { get; set; }
     }
 }
