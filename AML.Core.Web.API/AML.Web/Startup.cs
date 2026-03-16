@@ -230,14 +230,20 @@ namespace AML.Web
 
             services.AddControllersWithViews();
             services.AddControllersWithViews()
+
         .AddRazorRuntimeCompilation();
             services.AddAutoMapper(typeof(Startup));
             ConfigureDependencyInjection(services);
 
+            services.AddHttpClient();
             services.AddCors();
             services.AddControllers();
             services.AddControllers().AddControllersAsServices();
 
+            services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = 52428800; // 50MB
+            });
             // configure strongly typed settings objects
             var appSettingsSection = Configuration.GetSection("JwtAppSettings");
             services.Configure<Helpers.JwtAppSettings>(appSettingsSection);

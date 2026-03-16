@@ -209,9 +209,28 @@ namespace AML.ViewModel.ViewModels.CustomerCase
 
         public string Residence { get; set; }
 
+        public string SOWSOFCountry { get; set; }
+
         public string Employer { get; set; }
 
+        public string EmployerIndustry { get; set; }
+
+        public string EmployerSector { get; set; }
+
         public string GoldenVisa { get; set; }
+
+        public string CounterParty { get; set; }
+
+        public string ProductType { get; set; }
+
+        public string ProductValue { get; set; }
+
+        public string TradeLicenseAuthority { get; set; }
+
+        public string TradeLicenseSector { get; set; }
+
+        public int Share { get; set; }
+        public string Designation { get; set; }
 
         public List<ShareholderModel> Shareholders { get; set; } = new List<ShareholderModel>();
     }

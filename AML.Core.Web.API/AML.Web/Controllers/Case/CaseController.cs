@@ -1,4 +1,5 @@
 using Amazon.Auth.AccessControlPolicy;
+using Amazon.Runtime;
 using AML.Core.Common.StaticResource;
 using AML.Core.DataContract.Authentication;
 using AML.Core.DataContract.Enum;
@@ -125,11 +126,12 @@ namespace AML.Web.Controllers.Case
         private IRiskService _riskService;
         private IUserGroupService _UserGroupService;
         IUserGroupRightService _userGroupRightService;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         private readonly Logger log = LogManager.GetCurrentClassLogger();
 
         public CaseController(IMapper mapper,
-            IToastNotification toastNotification, ICountryService countryService, ICaseDocumentService caseDocumentService, ICustomerMasterService customerMasterService,
+            IToastNotification toastNotification, ICountryService countryService, ICaseDocumentService caseDocumentService, ICustomerMasterService customerMasterService, IHttpClientFactory httpClientFactory,
             IHttpClientHandler clientHandler, ICustomerCategoryService customerCategoryService, ICaseCommentService caseCommentService, IUserGroupService UserGroupService, IUserGroupRightService userGroupRightService,
             IConfiguration configuration, IIdentityTypeService idTypeService, IUserService userService, ICaseAssignmentService caseAssignmentService, ICommonService commonService, IKycService kycService, ILovMasterService lovMasterService, IRiskService RiskService,
             ICustomerCaseService CustomerCaseService, ICustomerScreeningService CustomerScreeningService, IFileUploader fileUploader, IExportDataService exportService, IViewRenderService viewRenderService, RiskAPIController riskAPIController, IFreeSourceRepository freeSourceRepository)
@@ -169,6 +171,7 @@ namespace AML.Web.Controllers.Case
             _lovMasterService = lovMasterService;
             _UserGroupService = UserGroupService;
             _userGroupRightService = userGroupRightService;
+            _httpClientFactory = httpClientFactory;
         }
 
         [HttpGet("/case")]
@@ -1378,44 +1381,58 @@ namespace AML.Web.Controllers.Case
                 //                                           Text = s.FName + " " + s.LName.ToString()
                 //
                 //       };
-                RiskModel _riskmodel = new RiskModel();
-                int riskid = _riskService.GetRiskIdByCustomercode(model.Case.CustomerId, model.Case.CustomerType).Result;
 
-                if (riskid != 0)
+                
+                //RiskModel _riskmodel = new RiskModel();
+
+
+                //int riskid = _riskService.GetRiskIdByCustomercode(model.Case.CustomerId, model.Case.CustomerType).Result;
+
+                //if (riskid != 0)
+                //{
+                //    dynamic modelrisk = null;
+
+                //    if (model.Case.CustomerType == "I")
+                //    {
+                //        _riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("I", 1, 0, 0, clientId);
+
+                //        modelrisk = _mapper.Map<RiskModel>(_riskService.GetRiskDetailsOfIndividual(riskid).Result);
+
+                //        MapRiskValues(_riskmodel.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
+
+                //        model.RiskTypeCategoryDTO = _riskmodel.RiskTypeCategoryDTO;
+                //        model.FinalRiskScore = modelrisk.FinalRiskScore;
+                //        model.RiskScoreCount = modelrisk.RiskScoreCount;
+                //        model.RiskScoreSum = modelrisk.RiskScoreSum;
+                //        model.DateofAssessment = modelrisk.DateofAssessment;
+                //        model.MainNationalityTxt = modelrisk.MainNationalityTxt;
+                //        model.Address = modelrisk.Address;
+                //    }
+                //    else
+                //    {
+                //        _riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("C", 1, 0, 0, clientId);
+
+                //        modelrisk = _mapper.Map<RiskCorpCustomerModel>(_riskService.GetRiskDetailsOfCorporate(riskid).Result);
+
+                //        MapRiskValues(_riskmodel.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
+
+                //        model.RiskTypeCategoryDTO = _riskmodel.RiskTypeCategoryDTO;
+                //        model.FinalRiskScore = modelrisk.RiskAssessmentRating;
+                //        model.RiskScoreBeforeOverride = modelrisk.RiskAssessmentRatingWithoutOverride;
+                //        model.RiskScoreCount = modelrisk.RiskScoreCount;
+                //        model.RiskScoreSum = modelrisk.RiskScoreSum;
+                //        model.DateofAssessment = modelrisk.DateofAssessment;
+                //        model.MainNationalityTxt = modelrisk.CountryOfIncorporationTxt;
+                //    }
+                //}
+
+                model.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig(model.Case.CustomerType, 1, 0, 0, clientId);
+                for (var i = 0; i < model.RiskTypeCategoryDTO.Count; i++)
                 {
-                    dynamic modelrisk = null;
-
-                    if (model.Case.CustomerType == "I")
+                    for (var j = 0; j < model.RiskTypeCategoryDTO[i].RiskTypes.Count; j++)
                     {
-                        _riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("I", 1, 0, 0, clientId);
-
-                        modelrisk = _mapper.Map<RiskModel>(_riskService.GetRiskDetailsOfIndividual(riskid).Result);
-
-                        MapRiskValues(_riskmodel.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
-
-                        model.RiskTypeCategoryDTO = _riskmodel.RiskTypeCategoryDTO;
-                        model.FinalRiskScore = modelrisk.FinalRiskScore;
-                        model.RiskScoreCount = modelrisk.RiskScoreCount;
-                        model.RiskScoreSum = modelrisk.RiskScoreSum;
-                        model.DateofAssessment = modelrisk.DateofAssessment;
-                        model.MainNationalityTxt = modelrisk.MainNationalityTxt;
-                        model.Address = modelrisk.Address;
-                    }
-                    else
-                    {
-                        _riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("C", 1, 0, 0, clientId);
-
-                        modelrisk = _mapper.Map<RiskCorpCustomerModel>(_riskService.GetRiskDetailsOfCorporate(riskid).Result);
-
-                        MapRiskValues(_riskmodel.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
-
-                        model.RiskTypeCategoryDTO = _riskmodel.RiskTypeCategoryDTO;
-                        model.FinalRiskScore = modelrisk.RiskAssessmentRating;
-                        model.RiskScoreBeforeOverride = modelrisk.RiskAssessmentRatingWithoutOverride;
-                        model.RiskScoreCount = modelrisk.RiskScoreCount;
-                        model.RiskScoreSum = modelrisk.RiskScoreSum;
-                        model.DateofAssessment = modelrisk.DateofAssessment;
-                        model.MainNationalityTxt = modelrisk.CountryOfIncorporationTxt;
+                        var items = model.RiskTypeCategoryDTO[i].RiskTypes[j].RiskItems;
+                        model.RiskTypeCategoryDTO[i].RiskTypes[j].Items = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(_mapper.Map<List<RiskItemsDTO>>(items.ToList()), "Score", "RiskItem");
                     }
                 }
 
@@ -1457,6 +1474,117 @@ namespace AML.Web.Controllers.Case
                 return RedirectToAction("Index");
             }
             return View(model);
+        }
+
+        public IActionResult CreateMainparty(string customerCode, string custtype)
+        {
+            int Id = _customerCaseService.GetCaseId(customerCode);
+
+            CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(Id);
+            _CustomerCaseDTO.CustomerType = custtype;
+            _CustomerCaseDTO.ClientId = _clientHandler.GetClientId();
+            _CustomerCaseDTO.CreatedBy = _clientHandler.GetUserId();
+            _CustomerCaseDTO.CustomerId = "0";
+
+            int previousStatus = _CustomerCaseDTO.Status;
+
+            if (custtype == "I")
+            {
+                _CustomerCaseDTO.Type = "Individual";
+            }
+            else
+            {
+                _CustomerCaseDTO.Type = "Corporate";
+            }
+
+            var result = _clientHandler.PostAsync(new { caseid = Id.ToString() }, ScreeningService.GETBYCASEID).Result;
+
+            // Declare jsonList outside
+            List<DataListModel> jsonList = new List<DataListModel>();
+            bool hasMatchRecords = false;
+
+            if (!string.IsNullOrEmpty(result))
+            {
+                jsonList = JsonConvert.DeserializeObject<List<DataListModel>>(result);
+                hasMatchRecords = jsonList != null && jsonList.Any();
+            }
+
+             // default first time
+
+            if (previousStatus == 2)
+            {
+                int newStatus = hasMatchRecords ? 0 : 5;
+
+                _CustomerCaseDTO.Status = newStatus;
+            }
+            
+
+            // Assign status before creating case
+
+
+            var result1 = _customerCaseService.Create(_CustomerCaseDTO);
+
+            int newCaseId = _customerCaseService.GetCaseId(result1.Result.Split('Ø')[1]);
+
+            bool isCaseCreated = false;
+            string caseRefId = null;
+
+            if (result1 != null)
+            {
+                List<MatchRecordsDTO> matchrecordsList = jsonList
+                    .Select(x => new MatchRecordsDTO
+                    {
+                        MATCHUID = x.matchuid?.ToString(),
+                        MATCHTYPE = x.matchtype,
+                        MATCHCATEGORY = x.matchcategory,
+                        MATCHNAME = x.matchname?.ToUpper(),
+                        MATCHSCORE = Convert.ToInt32(x.matchscore),
+                        MATCHNATIONALITY = x.matchnationality ?? "",
+                        MATCHIDNO = x.matchidno?.ToString(),
+                        MATCHDOB = x.matchdob ?? "",
+                        MATCHRESOURCESID = x.matchresourcesid,
+
+                        MATCHDATASETS = !string.IsNullOrEmpty(x.matchdatasets)
+                            ? string.Join(", ",
+                                x.matchdatasets
+                                .Split(',')
+                                .Select(d => d.Contains("-")
+                                    ? d.Split('-')[0].Trim()
+                                    : d.Trim()))
+                            : "--",
+
+                        MATCHGENDER = x.matchgender ?? ""
+                    })
+                    .ToList();
+
+                CASELOG modelCaseLog = new CASELOG
+                {
+                    CASEID = newCaseId.ToString(),
+                    MATCHRECORDS = matchrecordsList
+                };
+
+                log.Debug("Add case log under threshold to MongoDB");
+
+                _freeSourceRepository.InsertCaseLog(modelCaseLog);
+
+                caseRefId = result1.Result.Split('Ø')[1];
+                isCaseCreated = true;
+            }
+
+            if (isCaseCreated && !string.IsNullOrEmpty(caseRefId))
+            {
+                TempData["CaseRefId"] = caseRefId;
+                TempData["IsCaseCreated"] = true;
+            }
+
+            if (_CustomerCaseDTO.Type == "Individual")
+            {
+                return Json(new { redirectUrl = Url.Action("Create") });
+            }
+            else
+            {
+                return Json(new { redirectUrl = Url.Action("CorporateScreening", "Corporate") });
+            }
         }
 
         [HttpGet("/case/Shareholder/{CaseId}")]
@@ -3531,6 +3659,44 @@ namespace AML.Web.Controllers.Case
         //}
 
         [HttpPost]
+        //public async Task<IActionResult> UploadMRZ(List<IFormFile> files)
+        //{
+        //    try
+        //    {
+        //        if (files == null || files.Count == 0)
+        //            return Json(new { success = false, message = "No file uploaded" });
+
+        //        using (var client = new HttpClient()) {
+        //            client.Timeout = TimeSpan.FromMinutes(20);
+        //            using (var formData = new MultipartFormDataContent())
+        //            {
+        //                foreach (var file in files)
+        //                {
+        //                    if (file.Length > 0)
+        //                    {
+        //                        var streamContent = new StreamContent(file.OpenReadStream());
+        //                        streamContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+
+        //                        // "files" should match API parameter name
+        //                        formData.Add(streamContent, "files", file.FileName);
+        //                    }
+        //                }
+
+        //                string apiUrl = "https://astrid-unpavilioned-pearlene.ngrok-free.dev/process_document";
+
+        //                var response = await client.PostAsync(apiUrl, formData);
+
+        //                var result = await response.Content.ReadAsStringAsync();
+
+        //                return Content(result, "application/json");
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Json(new { success = false, error = ex.Message });
+        //    }
+        //}
         public async Task<IActionResult> UploadMRZ(List<IFormFile> files)
         {
             try
@@ -3538,31 +3704,49 @@ namespace AML.Web.Controllers.Case
                 if (files == null || files.Count == 0)
                     return Json(new { success = false, message = "No file uploaded" });
 
-                using (var client = new HttpClient()) {
-                    client.Timeout = TimeSpan.FromMinutes(20);
-                    using (var formData = new MultipartFormDataContent())
+                var client = _httpClientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromMinutes(20);
+
+                using var formData = new MultipartFormDataContent();
+
+                foreach (var file in files)
+                {
+                    if (file.Length > 0)
                     {
-                        foreach (var file in files)
-                        {
-                            if (file.Length > 0)
-                            {
-                                var streamContent = new StreamContent(file.OpenReadStream());
-                                streamContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+                        var streamContent = new StreamContent(file.OpenReadStream());
+                        streamContent.Headers.ContentType =
+                            new MediaTypeHeaderValue(file.ContentType);
 
-                                // "files" should match API parameter name
-                                formData.Add(streamContent, "files", file.FileName);
-                            }
-                        }
-
-                        string apiUrl = "https://astrid-unpavilioned-pearlene.ngrok-free.dev/process_document";
-
-                        var response = await client.PostAsync(apiUrl, formData);
-
-                        var result = await response.Content.ReadAsStringAsync();
-
-                        return Content(result, "application/json");
+                        formData.Add(streamContent, "files", file.FileName);
                     }
                 }
+
+                string apiUrl =
+                "https://astrid-unpavilioned-pearlene.ngrok-free.dev/process_document";
+
+                var response = await client.PostAsync(apiUrl, formData);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "External API error",
+                        status = response.StatusCode
+                    });
+                }
+
+                var result = await response.Content.ReadAsStringAsync();
+
+                return Content(result, "application/json");
+            }
+            catch (TaskCanceledException)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "Request timed out while processing document"
+                });
             }
             catch (Exception ex)
             {

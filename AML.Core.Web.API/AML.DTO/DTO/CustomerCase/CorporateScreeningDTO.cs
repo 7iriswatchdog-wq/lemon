@@ -74,6 +74,16 @@ namespace AML.DTO.DTO.CustomerCase
 
         public string Residence { get; set; }
 
+        public string TradeLicenseAuthority { get; set; }
+
+        public string TradeLicenseSector { get; set; }
+
+        public string CounterParty { get; set; }
+
+        public string ProductType { get; set; }
+
+        public string ProductValue { get; set; }
+
     }
 
     public class CustomeDetailsDTO

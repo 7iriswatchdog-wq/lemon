@@ -1584,13 +1584,18 @@ namespace AML.Web.Controllers.Corporate
                     IdIssueDate = sh.IssueDate,
                     IdExpiryDate = sh.IdExpiry,
                     Nationality = sh.Nationality,
-                    //Share = sh.Share,
-                    //Designation = sh.Designation,
+                    Share = sh.Share,
+                    Designation = sh.Designation,
                     Tradelicense = sh.TradeLicence,
                     CIFNumber = sh.Cif,
                     Residence=sh.Residence,
                     Employer=sh.Employer,
-                    GoldenVisa=sh.GoldenVisa
+                    GoldenVisa=sh.GoldenVisa,
+                    EmployerIndustry=sh.EmployerIndustry,
+                    EmployerSector=sh.EmployerSector,
+                    SOWSOFCountry=sh.SOWSOFCountry,
+                    TradeLicenseAuthority=sh.TradeLicenseAuthority,
+                    TradeLicenseSector=sh.TradeLicenseSector,
                 };
 
                 // Determine ParentId from TempId (everything before last dot)

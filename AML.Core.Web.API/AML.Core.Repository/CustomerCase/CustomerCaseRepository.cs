@@ -789,6 +789,12 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_threshold", _CustomerCaseDTO.Threshold);
                 parameters.Add("@p_birthyear", _CustomerCaseDTO.BirthYear);
                 parameters.Add("@p_gender", _CustomerCaseDTO.Gender);
+                parameters.Add("@p_source", _CustomerCaseDTO.Source);
+                parameters.Add("@p_is_matched", _CustomerCaseDTO.IsMatched);
+                parameters.Add("@p_match_score", _CustomerCaseDTO.MatchScore);
+                parameters.Add("@p_source_unique_id", _CustomerCaseDTO.SourceUniqueId);
+                parameters.Add("@p_caseChangeStatus", _CustomerCaseDTO.CaseChangeStatus);
+                parameters.Add("@p_status", _CustomerCaseDTO.Status);
                 parameters.Add("@p_createdon", Convert.ToDateTime(_CustomerCaseDTO.CreatedOn));
                 var response = ExecuteScalar("ins_customercase_prefix", parameters, commandType: CommandType.StoredProcedure).ParseInt();
                 serviceResponse.Result = response;
@@ -1467,8 +1473,6 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_userid", userId);
                 parameters.Add("@p_customerType", customerType);
                 serviceResponse.Result = Get<ShareholderDTO>("get_all_shareholders", parameters, commandType: CommandType.StoredProcedure).ToList();
-                
-              
                 serviceResponse.Message = "Customer cases fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
             }

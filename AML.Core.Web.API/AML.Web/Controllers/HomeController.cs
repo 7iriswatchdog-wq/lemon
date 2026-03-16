@@ -84,10 +84,10 @@ namespace AML.Web.Controllers
 
 			var corporatecount = _reportService.GetRiskCount(2, clientId);
             ViewBag.corporateval = corporatecount[0].total_count;
-            var bankcount = _reportService.GetRiskCount(3, clientId);
-            ViewBag.bankval = bankcount[0].total_count;
-            var vendorcount = _reportService.GetRiskCount(4, clientId);
-            ViewBag.vendorval = vendorcount[0].total_count;
+            //var bankcount = _reportService.GetRiskCount(3, clientId);
+            //ViewBag.bankval = bankcount[0].total_count;
+            //var vendorcount = _reportService.GetRiskCount(4, clientId);
+            //ViewBag.vendorval = vendorcount[0].total_count;
 
             ViewBag.totalhighrisk = indvidualcount[0].high_risk_count + corporatecount[0].high_risk_count;
             ViewBag.totallowrisk= indvidualcount[0].low_risk_count + corporatecount[0].low_risk_count;

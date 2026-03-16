@@ -259,6 +259,16 @@ namespace AML.ViewModel.ViewModels.Corporate
         public DateTime? IdExpiryDate { get; set; }
 
         public string Residence { get; set; }
+
+        public string TradeLicenseAuthority { get; set; }
+
+        public string TradeLicenseSector { get; set; }
+
+        public string CounterParty { get; set; }
+
+        public string ProductType { get; set; }
+
+        public string ProductValue { get; set; }
     }
 
     public class ShareholderModel
@@ -301,6 +311,17 @@ namespace AML.ViewModel.ViewModels.Corporate
 
        
         public string DocumentFullPath { get; set; }
+
+        public string EmployerIndustry { get; set; }
+
+        public string EmployerSector { get; set; }
+
+        public string SOWSOFCountry { get; set; }
+
+      
+        public string TradeLicenseAuthority { get; set; }
+       
+        public string TradeLicenseSector { get; set; }
 
 
     }

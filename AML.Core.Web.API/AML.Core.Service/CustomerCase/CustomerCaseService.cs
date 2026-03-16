@@ -161,8 +161,18 @@ namespace AML.Core.Service.CustomerCase
                 IdExpiryDate=_CustomerCaseDT.IdExpiryDate,
                 Residence=_CustomerCaseDT.Residence,
                 Employer=_CustomerCaseDT.Employer,
-                GoldenVisa=_CustomerCaseDT.GoldenVisa
-
+                GoldenVisa=_CustomerCaseDT.GoldenVisa,
+                EmployerIndustry=_CustomerCaseDT.EmployerIndustry,
+                EmployerSector=_CustomerCaseDT.EmployerSector,
+                SOWSOFCountry=_CustomerCaseDT.SOWSOFCountry,
+                TradeLicenseAuthority=_CustomerCaseDT.TradeLicenseAuthority,
+                TradeLicenseSector=_CustomerCaseDT.TradeLicenseSector,
+                ProductType=_CustomerCaseDT.ProductType,
+                ProductValue=_CustomerCaseDT.ProductValue,
+                CounterParty=_CustomerCaseDT.CounterParty,
+                Share=_CustomerCaseDT.Share,
+                Designation=_CustomerCaseDT.Designation
+                
                 //EstablishmentDate=_CustomerCaseDT.EstablishmentDate,
                 //Address= _CustomerCaseDT.Address
             };
@@ -194,6 +204,8 @@ namespace AML.Core.Service.CustomerCase
 
             if (resu1 != null && resu1 != "0" && resu != null && resu != "0")
             {
+                
+                
                 _CustomerCaseRepository.Create(_CustomerCaseDT);
             }
 
@@ -958,7 +970,12 @@ namespace AML.Core.Service.CustomerCase
                 CIFNumber=model.CIFNumber,
                 ScreeningOptions=model.ScreeningOptions,
                 IdExpiryDate=model.IdExpiryDate,
-                Residence=model.Residence
+                Residence=model.Residence,
+                TradeLicenseAuthority=model.TradeLicenseAuthority,
+                TradeLicenseSector=model.TradeLicenseSector,
+                ProductType=model.ProductType,
+                ProductValue=model.ProductValue,
+                CounterParty=model.CounterParty
                 
             };
             //ServiceResponse<string> _corpCustomer = this.CreatePrefix(_CustomerCaseDT);

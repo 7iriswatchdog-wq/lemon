@@ -229,13 +229,36 @@ namespace AML.DTO.DTO.CustomerCase
         public DateTime? IdExpiryDate { get; set; }
         [Column("residence")]
         public string Residence { get; set; }
+
+        [Column("sowsofcountry")]
+        public string SOWSOFCountry { get; set; }
         [Column("employer")]
 
         public string Employer { get; set; }
 
+        [Column("employerindustry")]
+        public string EmployerIndustry { get; set; }
+        [Column("employersector")]
+        public string EmployerSector { get; set; }
+
         [Column("goldenvisa")]
 
         public string GoldenVisa { get; set; }
+        [Column("tradelicenseauthority")]
+        public string TradeLicenseAuthority { get; set; }
+        [Column("tradelicensesector")]
+        public string TradeLicenseSector { get; set; }
+        [Column("countryparty")]
+        public string CounterParty { get; set; }
+        [Column("producttype")]
+        public string ProductType { get; set; }
+        [Column("productvalue")]
+        public string ProductValue { get; set; }
+
+        [Column("share")]
+        public int Share { get; set; }
+        [Column("designation")]
+        public string Designation { get; set; }
     }
     public class CreatedAndUpdatedByNames
     {
@@ -470,11 +493,16 @@ namespace AML.DTO.DTO.CustomerCase
         [Column("residence")]
 
         public string Residence { get; set; }
+        [Column("sowsofcountry")]
+        public string SOWSOFCountry { get; set; }
 
         [Column("employer")]
 
         public string Employer { get; set; }
-
+        [Column("employerindustry")]
+        public string EmployerIndustry { get; set; }
+        [Column("employersector")]
+        public string EmployerSector { get; set; }
         [Column("goldenvisa")]
 
         public string GoldenVisa { get; set; }
@@ -523,6 +551,22 @@ namespace AML.DTO.DTO.CustomerCase
 
         [Column("customerCodeprefix")]
         public string customerCodeprefix { get; set; }
+
+        [Column("tradelicenseauthority")]
+        public string TradeLicenseAuthority { get; set; }
+        [Column("tradelicensesector")]
+        public string TradeLicenseSector { get; set; }
+        [Column("countryparty")]
+        public string CounterParty { get; set; }
+        [Column("producttype")]
+        public string ProductType { get; set; }
+        [Column("productvalue")]
+        public string ProductValue { get; set; }
+
+        [Column("share")]
+        public int Share { get; set; }
+        [Column("designation")]
+        public string Designation { get; set; }
 
     }
 
@@ -649,6 +693,19 @@ namespace AML.DTO.DTO.CustomerCase
 
         [Column("cust_type")]
         public string CustType { get; set; }
+
+        [Column("employerindustry")]
+        public string EmployerIndustry { get; set; }
+        [Column("employersector")]
+        public string EmployerSector { get; set; }
+
+        [Column("sowsofcountry")]
+        public string SOWSOFCountry { get; set; }
+
+        [Column("tradelicenseauthority")]
+        public string TradeLicenseAuthority { get; set; }
+        [Column("tradelicensesector")]
+        public string TradeLicenseSector { get; set; }
 
 
     }

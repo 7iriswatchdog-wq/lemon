@@ -67,6 +67,16 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_residence", _CustomerMasterDTO.Residence);
                 parameters.Add("@p_employer", _CustomerMasterDTO.Employer);
                 parameters.Add("@p_goldenvisa", _CustomerMasterDTO.GoldenVisa);
+                parameters.Add("@p_employerindustry", _CustomerMasterDTO.EmployerIndustry);
+                parameters.Add("@p_employersector", _CustomerMasterDTO.EmployerSector);
+                parameters.Add("@p_sowsofcountry", _CustomerMasterDTO.SOWSOFCountry);
+                parameters.Add("@p_counterparty", _CustomerMasterDTO.CounterParty);
+                parameters.Add("@p_productvalue", _CustomerMasterDTO.ProductValue);
+                parameters.Add("@p_producttype", _CustomerMasterDTO.ProductType);
+                parameters.Add("@p_tradelicenseauthority", _CustomerMasterDTO.TradeLicenseAuthority);
+                parameters.Add("@p_tradelicensesector", _CustomerMasterDTO.TradeLicenseSector);
+                parameters.Add("@p_share", _CustomerMasterDTO.Share);
+                parameters.Add("@p_desgination", _CustomerMasterDTO.Designation);
                 //parameters.Add("@p_address",_CustomerMasterDTO.Address);
                 //parameters.Add("@p_establishmentdate", _CustomerMasterDTO.EstablishmentDate);
                 var response = ExecuteScalar("ins_customer_master", parameters, commandType: CommandType.StoredProcedure).ParseString();
@@ -972,10 +982,15 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_employer", _shareholderDTO.Employer);
                 parameters.Add("@p_GoldenVisa", _shareholderDTO.GoldenVisa);
                 parameters.Add("@p_residence", _shareholderDTO.Residence);
+                parameters.Add("@p_employerindustry", _shareholderDTO.EmployerIndustry);
+                parameters.Add("@p_employersector", _shareholderDTO.EmployerSector);
+                parameters.Add("@p_sowsofcountry", _shareholderDTO.SOWSOFCountry);
                 //parameters.Add("@p_docfullpath", _shareholderDTO.DocFullPath);
-               parameters.Add("@p_docfilename", _shareholderDTO.DocumentFileName);
+                parameters.Add("@p_docfilename", _shareholderDTO.DocumentFileName);
                 parameters.Add("@p_custtype", _shareholderDTO.CustType);
                 parameters.Add("@p_docfullpath", _shareholderDTO.DocFullPath);
+                parameters.Add("@p_tradelicenseauthority", _shareholderDTO.TradeLicenseAuthority);
+                parameters.Add("@p_tradelicensesector", _shareholderDTO.TradeLicenseSector);
 
                 var response = ExecuteScalar("ins_shareholders_data", parameters, commandType: CommandType.StoredProcedure).ParseString();
                 serviceResponse.Result = response;
