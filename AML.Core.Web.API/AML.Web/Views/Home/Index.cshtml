@@ -1,6 +1,7 @@
-﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
 
 @using AML.ViewModel.ViewModels.Common;
+@using AML.ViewModel.ViewModels.Report;
 @using AML.Web.Helpers;
 @using static AML.Web.Helpers.NavigationIndicatorHelper;
 
@@ -8,1149 +9,600 @@
 @using Newtonsoft.Json;
 @inject IHttpContextAccessor HttpContextAccessor
 @{
-
     Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    ViewData["Title"] = "Dashboard";
     var culture = System.Threading.Thread.CurrentThread.CurrentUICulture.Name.ToLowerInvariant();
     var userModules = HttpContextAccessor.HttpContext.Session.GetString("SessModules");
-    var jsonModules = JsonConvert.DeserializeObject<List<ClientRightsModel>>(userModules);
-    var ristype = jsonModules;
+    var jsonModules = string.IsNullOrWhiteSpace(userModules)
+        ? new List<ClientRightsModel>()
+        : (JsonConvert.DeserializeObject<List<ClientRightsModel>>(userModules) ?? new List<ClientRightsModel>());
     var clientId = HttpContextAccessor.HttpContext.Session.GetString("SessClientId");
-    var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
-    
 
+    var pendingCases = ViewBag.PendingCases as List<CaseReportListModel> ?? new List<CaseReportListModel>();
+    var pendingTotal = (int)(ViewBag.PendingCasesTotal ?? 0);
+    var schedulerLogs = ViewBag.SchedulerLogs as List<AML.DTO.DTO.Report.DigiSchedulerLogsDTO> ?? new List<AML.DTO.DTO.Report.DigiSchedulerLogsDTO>();
+
+    var totalCustomers = (int)(ViewBag.totalcount ?? 0);
+    var individuals = (int)(ViewBag.individualcustomertype ?? 0);
+    var corporates = (int)(ViewBag.corporatecustomertype ?? 0);
+
+    var approved = (int)(ViewBag.Toatalapprovedcount ?? 0);
+    var rejected = (int)(ViewBag.rejectvalcount ?? 0);
+    var pending = (int)(ViewBag.pendingvalcount ?? 0);
+
+    var approvedPct = (double)(ViewBag.ApprovedPct ?? 0.0);
+    var rejectedPct = (double)(ViewBag.RejectedPct ?? 0.0);
+    var onHoldPct = (double)(ViewBag.OnHoldPct ?? 0.0);
+
+    var autoApproved = (int)(ViewBag.autoapproved ?? 0);
+    var manuallyApproved = (int)(ViewBag.ManuallyApproved ?? 0);
+    var potentialMatch = (int)(ViewBag.PotentialMatch ?? 0);
+
+    var highRisk = (int)(ViewBag.totalhighrisk ?? 0);
+    var mediumRisk = (int)(ViewBag.totalmediumrisk ?? 0);
+    var lowRisk = (int)(ViewBag.totallowrisk ?? 0);
+    var unclassified = (int)(ViewBag.Unclassifiedriskcount ?? 0);
+
+    var weeklyCases = (int)(ViewBag.WeeklyCaseCount ?? 0);
 }
 
 @model AML.DTO.DTO.CustomerCase.MainDashboard
 
+<div class="p-4 space-y-4 max-w-[1440px] mx-auto">
 
-<script src="~/plugins/jquery/jquery.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-<!--<script src="~/plugins/chart.js/chartdonut.js"></script>-->
-<!-- RIGHT SIDE -->
-<div class="max-w-screen h-full items-center">
-    <!-- RIGHT SIDE NAV -->
-    @* <nav class="border-b">
-        <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
-            <div>
-                <h2 class="text-2xl font-bold">Dashboard</h2>
+    <!-- ROW 1: Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+        <!-- Customer Count -->
+        <div class="dashboard-card bg-white rounded-xl border border-slate-200 p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-slate-600">Customer Count</h3>
+                <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
             </div>
-            <div class="md:block hidden">
-               <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            <div class="flex items-end gap-4">
+                <div class="flex-1">
+                    <div class="text-2xl font-bold text-slate-900">@totalCustomers</div>
+                    <div class="text-xs text-slate-400 mt-1">Total screened</div>
+                </div>
+                <div>
+                    <canvas id="customerDonut" width="80" height="80"></canvas>
+                </div>
+            </div>
+            <div class="flex gap-4 mt-3 pt-2 border-t border-slate-100">
+                <div class="flex items-center gap-1.5">
+                    <div class="w-2 h-2 rounded-full bg-blue-600"></div>
+                    <span class="text-xs text-slate-500">Individuals <strong class="text-slate-700">@individuals</strong></span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <div class="w-2 h-2 rounded-full bg-sky-400"></div>
+                    <span class="text-xs text-slate-500">Corporates <strong class="text-slate-700">@corporates</strong></span>
+                </div>
             </div>
         </div>
-    </nav> *@
-    <nav class="flex items-center px-4 h-[72.8px] border-b w-full">
-        <div class="flex items-center justify-between w-full">
-            <!-- Title -->
-            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
-                Dashboard
-            </h2>
 
-            <!-- Right-side content -->
-            <div class="text-sm md:text-base text-right">
-                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+        <!-- Onboarding Status (fix #7: correct percentages) -->
+        <div class="dashboard-card bg-white rounded-xl border border-slate-200 p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-semibold text-slate-600">Onboarding Status</h3>
+                <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                </div>
+            </div>
+            <div class="text-2xl font-bold text-slate-900 mb-2">@totalCustomers</div>
+            <!-- Stacked bar with correct percentages -->
+            <div class="w-full h-3 rounded-full bg-slate-100 overflow-hidden flex">
+                <div class="h-full bg-emerald-500 transition-all" style="width: @(approvedPct)%"></div>
+                <div class="h-full bg-red-400 transition-all" style="width: @(rejectedPct)%"></div>
+                <div class="h-full bg-violet-400 transition-all" style="width: @(onHoldPct)%"></div>
+            </div>
+            <div class="flex justify-between mt-2 text-xs">
+                <div>
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1"></span>
+                    <span class="text-slate-500">Approved @(approvedPct)%</span>
+                    <div class="font-bold text-slate-700 mt-0.5">@approved</div>
+                </div>
+                <div>
+                    <span class="inline-block w-2 h-2 rounded-full bg-red-400 mr-1"></span>
+                    <span class="text-slate-500">Rejected @(rejectedPct)%</span>
+                    <div class="font-bold text-slate-700 mt-0.5">@rejected</div>
+                </div>
+                <div>
+                    <span class="inline-block w-2 h-2 rounded-full bg-violet-400 mr-1"></span>
+                    <span class="text-slate-500">Pending @(onHoldPct)%</span>
+                    <div class="font-bold text-slate-700 mt-0.5">@pending</div>
+                </div>
             </div>
         </div>
-    </nav>
-    <div class="h-fill bg-gray-50 items-center ">
-        <div class="grid xl:grid-cols-2 grid-cols-1 items-center md:p-8 p-4 md:gap-6 gap-4  mx-auto">
-            <!-- CUSTOMER COUNT -->
-            <div class="bg-white p-6 rounded-lg shadow-sm h-full w-full border border-blue-100 overflow-x-auto">
-                <h2 class="text-lg font-semibold mb-4">Customer Count</h2>
-                <div class="flex items-center flex md:flex-row flex-col">
-                    <div class="relative md:w-[190px] md:h-[160px] w-[100px] h-[100px] pt-2 items-center justify-center md:ml-14 mb-2 md:mx-12 mx-8">
-                        <svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 110">
-                            <defs>
-                                <filter id="light-shadow" x="-20%" y="-20%" width="140%" height="140%">
-                                    <fegaussianblur in="SourceAlpha" stddeviation="2"></fegaussianblur>
-                                    <feoffset dx="1" dy="1" result="offsetblur"></feoffset>
-                                    <feflood flood-color="rgba(0, 0, 0, 0.1)"></feflood>
-                                    <fecomposite in2="offsetblur" operator="in"></fecomposite>
-                                    <femerge>
-                                        <femergenode></femergenode>
-                                        <femergenode in="SourceGraphic"></femergenode>
-                                    </femerge>
-                                </filter>
-                            </defs>
-                            <circle cx="50" cy="50" r="45" fill="none" stroke="#38BDF8" stroke-width="10"></circle>
-                            <circle cx="50" cy="50" r="45" fill="none" stroke="#38BDF8" stroke-width="10" stroke-dasharray="282.74" stroke-dashoffset="106.03"></circle>
-                            <circle cx="50" cy="50" r="45" fill="none" stroke="#2563EB" stroke-width="20" stroke-dasharray="282.74" stroke-dashoffset="176.71" filter="url(#light-shadow)"></circle>
-                        </svg>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center md:mr-4 mr-2">
-                            <span class="text-gray-500 text-xs md:mt-0 mt-1 mb-1">Total</span> <span id="hAllCases" class="md:text-2xl text-md font-bold">@ViewBag.totalcount</span>
-                            
-                        </div>
-                        <div class="absolute md:-right-4 -right-8 top-1/2 -translate-y-1/2 bg-white md:px-2 py-0 px-2 py-1 rounded-sm shadow-sm z-10">
-                            <span class="md:text-sm text-xs font-bold">@ViewBag.individualcustomertype</span>
-                        </div>
-                    </div>
-                    <div class="space-y-4 md:ml-12 md:mt-0 mt-2">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-3 h-3 rounded-full bg-[#2563EB]"></div><span class="text-gray-500 gap-3">Individuals:</span><span>@ViewBag.individualcustomertype</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <div class="w-3 h-3 rounded-full bg-[#38BDF8]"></div><span class="text-gray-500 gap-3">Corporates:</span><span>@ViewBag.corporatecustomertype</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- CUSTOMER ONBOARDING STATUS -->
-            <div class="bg-white p-6 rounded-lg shadow-sm h-full w-full border border-blue-100 overflow-x-auto">
-                <h2 class="text-lg font-semibold mb-4">Customer Onboarding Status</h2>
-                <div class="text-3xl font-bold mb-4">
-                    @ViewBag.totalcount
+        <!-- Name Screening Results -->
+        <div class="dashboard-card bg-white rounded-xl border border-slate-200 p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-semibold text-slate-600">Screening Results</h3>
+                <div class="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 </div>
-                <div class="h-10 bg-gray-200 rounded-md overflow-hidden">
-                    <div class="flex h-full">
-                        <div class="bg-orange-400 w-[15%]"></div>
-                        <div class="bg-blue-400 w-[35%]"></div>
-                        <div class="bg-purple-500 w-[50%]"></div>
-                    </div>
+            </div>
+            <div class="flex items-end gap-4">
+                <div class="flex-1">
+                    <canvas id="screeningDonut" width="100" height="100"></canvas>
                 </div>
-                <div class="grid grid-cols-3 gap-4 mt-4">
-                    <div>
-                        <div class="text-sm text-gray-500">
-                            Approved 15%
-                        </div>
-                        <div class="font-semibold">
-                            @ViewBag.Toatalapprovedcount
-                        </div>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-2 h-2 rounded-full bg-sky-400"></div>
+                        <span class="text-xs text-slate-500">Auto <strong>@autoApproved</strong></span>
                     </div>
-                    <div>
-                        <div class="text-sm text-gray-500">
-                            Rejected 35%
-                        </div>
-                        <div class="font-semibold">
-                            @ViewBag.rejectvalcount
-                        </div>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-2 h-2 rounded-full bg-blue-600"></div>
+                        <span class="text-xs text-slate-500">Manual <strong>@manuallyApproved</strong></span>
                     </div>
-                    <div>
-                        <div class="text-sm text-gray-500">
-                            On Hold 50%
-                        </div>
-                        <div class="font-semibold">
-                            @ViewBag.PotentialMatch
-                        </div>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-2 h-2 rounded-full bg-violet-500"></div>
+                        <span class="text-xs text-slate-500">Potential <strong>@potentialMatch</strong></span>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- NAME SCREENING RESULTS -->
-            <div class="bg-white p-6 rounded-lg shadow-sm h-full w-full border border-blue-100 mx-auto">
-                <h2 class="text-lg font-semibold mb-4">Name Screening Results</h2>
-                <div class="flex items-center justify-between grid lg:grid-cols-2 grid-cols-1 gap-4">
-                    <div class="relative w-40 h-40 mx-auto">
-                        <div class="donut-chart size-full md:mt-4">
-                            <div class="donut-hole"></div>
-                            <div class="percentage percent-20">
-                                20%
-                            </div>
-                            <div class="percentage percent-65">
-                                65%
-                            </div>
-                            <div class="percentage percent-15">
-                                15%
-                            </div>
-                        </div>
-                    </div>
-                    <div class="md:space-y-6 space-y-2 mt-8 mb-8 mx-auto overflow-hidden">
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-3 h-3 rounded-full bg-[#38BDF8]"></div><span class="text-gray-500 text-md">Auto Approved</span>
-                            </div><span class="text-slate-900 text-md font-medium">@ViewBag.autoapproved</span>
-                        </div>
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-3 h-3 rounded-full bg-[#2563EB]"></div><span class="text-gray-500 text-md">Manually Approved</span>
-                            </div><span class="text-slate-900 text-md font-medium">@ViewBag.ManuallyApproved</span>
-                        </div>
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-3 h-3 rounded-full bg-[#AD87FF]"></div><span class="text-gray-500 text-md">Potential Match</span>
-                            </div><span class="text-slate-900 text-md font-medium">@ViewBag.PotentialMatch</span>
-                        </div>
-                    </div>
+        <!-- Risk Type (fix #2: clickable, fix #16: color accessibility) -->
+        <div class="dashboard-card bg-white rounded-xl border border-slate-200 p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-semibold text-slate-600">Risk Distribution</h3>
+                <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
                 </div>
             </div>
-           @*  @foreach (var item in jsonModules)
+            <div class="grid grid-cols-2 gap-2">
+                <a href="/Case/Index" class="flex flex-col items-center p-3 rounded-lg bg-red-50 hover:bg-red-100 border border-red-100 transition-all group">
+                    <span class="text-xs font-medium text-red-700">High</span>
+                    <span class="text-2xl font-bold text-red-600 group-hover:scale-110 transition-transform">@highRisk</span>
+                </a>
+                <a href="/Case/Index" class="flex flex-col items-center p-3 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-100 transition-all group">
+                    <span class="text-xs font-medium text-amber-800">Medium</span>
+                    <span class="text-2xl font-bold text-amber-700 group-hover:scale-110 transition-transform">@mediumRisk</span>
+                </a>
+                <a href="/Case/Index" class="flex flex-col items-center p-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 transition-all group">
+                    <span class="text-xs font-medium text-emerald-700">Low</span>
+                    <span class="text-2xl font-bold text-emerald-600 group-hover:scale-110 transition-transform">@lowRisk</span>
+                </a>
+                <a href="/Case/Index" class="flex flex-col items-center p-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all group">
+                    <span class="text-xs font-medium text-slate-600">Unclassified</span>
+                    <span class="text-2xl font-bold text-slate-500 group-hover:scale-110 transition-transform">@unclassified</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 2: Decision Points + Task Queue -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        <!-- Decision Points -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></div>
+                    <h3 class="text-sm font-semibold text-slate-700">Decision Points</h3>
+                    <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-medium">@pendingTotal pending</span>
+                </div>
+                <a href="/Case/Index" class="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 transition-colors">
+                    View All
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
+            </div>
+            @if (pendingCases.Any())
             {
+                <div class="space-y-2">
+                    @foreach (var c in pendingCases)
+                    {
+                        <a href="/Case/Index" class="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 border border-slate-100 transition-all group">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-xs font-bold text-blue-600">@(c.CustomerType == "I" ? "I" : "C")</span>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium text-slate-800 truncate">@c.CustomerID · @c.CustomerName</p>
+                                    <p class="text-xs text-slate-400">Score: @c.MatchScore · @c.CreatedOn</p>
+                                </div>
+                            </div>
+                            <span class="px-2 py-1 rounded-md bg-amber-50 text-amber-700 text-xs font-medium flex-shrink-0 group-hover:bg-amber-100 transition-colors">Pending Review</span>
+                        </a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="flex flex-col items-center justify-center py-8 text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                    <p class="text-sm">All caught up! No pending decisions.</p>
+                </div>
+            }
+            <div class="flex gap-4 mt-3 pt-2 border-t border-slate-100 text-xs text-slate-500">
+                <span><strong class="text-slate-700">@pending</strong> Pending</span>
+                <span><strong class="text-slate-700">@approved</strong> Approved</span>
+                <span><strong class="text-slate-700">@rejected</strong> Rejected</span>
+            </div>
+        </div>
 
-                if (item.Menu_Id == 4)
-                {*@
-                    <!-- RISK TYPE -->
-                        <div class="bg-white p-6 rounded-lg shadow-sm h-full w-full border border-blue-100 overflow-hidden">
-                            <h2 class="text-lg font-semibold mb-4">Risk Type</h2>
-                        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                            <div class="bg-red-600 rounded-2xl p-6 text-white">
-                                <div class="flex justify-center mb-4">
-                                    <div class="w-16 h-16 rounded-full flex items-center justify-center border-2 border-white/30">
-                                        <div class="w-12 h-12 rounded-full flex items-center justify-center border-2 border-white/30">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentcolor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
-                                <h2 class="text-lg font-medium text-center mb-2">High</h2>
-                                <p class="text-4xl font-bold text-center overflow-hidden">@ViewBag.totalhighrisk</p>
+        <!-- Task Queue -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    <h3 class="text-sm font-semibold text-slate-700">Task Queue</h3>
+                </div>
+                <a href="/Case/Index" class="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 transition-colors">
+                    View All
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
+            </div>
+            @if (pendingCases.Any())
+            {
+                <div class="space-y-1">
+                    @foreach (var c in pendingCases)
+                    {
+                        <div class="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-slate-50 transition-colors">
+                            <div class="w-5 h-5 rounded-full border-2 border-slate-300 flex-shrink-0"></div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm text-slate-700 truncate">Review <strong>@c.CustomerID</strong> screening results</p>
                             </div>
-                            <div class="bg-yellow-400 rounded-2xl p-6 text-white">
-                                <div class="flex justify-center mb-4">
-                                    <div class="w-16 h-16 rounded-full flex items-center justify-center border-2 border-white/30">
-                                        <div class="w-12 h-12 rounded-full flex items-center justify-center border-2 border-white/30">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentcolor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
-                        <h2 class="text-lg font-medium text-center mb-2 overflow-hidden">Medium</h2>
-                                <p class="text-4xl font-bold text-center overflow-hidden">@ViewBag.totalmediumrisk</p>
-                            </div>
-                            <div class="bg-green-500 rounded-2xl p-6 text-white">
-                                <div class="flex justify-center mb-4">
-                                    <div class="w-16 h-16 rounded-full flex items-center justify-center border-2 border-white/30">
-                                        <div class="w-12 h-12 rounded-full flex items-center justify-center border-2 border-white/30">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentcolor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
-                                <h2 class="text-lg font-medium text-center mb-2 overflow-hidden">Low</h2>
-                                <p class="text-4xl font-bold text-center overflow-hidden">@ViewBag.totallowrisk</p>
-                            </div>
-                            <div class="bg-gray-50 rounded-2xl p-6 text-gray-500 border border-gray-200">
-                                <div class="flex justify-center mb-4">
-                                    <div class="w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-200">
-                                        <div class="w-12 h-12 rounded-full flex items-center justify-center border-2 border-gray-200">
-                                            <div class="w-4 h-4 rounded-full bg-gray-200"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <h2 class="text-lg font-medium text-center mb-2">Unclassified</h2>
-                                <p class="text-4xl font-bold text-center overflow-hidden">@ViewBag.Unclassifiedriskcount</p>
-                            </div>
+                            <span class="text-xs text-slate-400 flex-shrink-0">@c.CreatedOn</span>
                         </div>
-                    </div>
-                @*}
-            }*@
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="flex flex-col items-center justify-center py-8 text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    <p class="text-sm">Your task queue is clear.</p>
+                </div>
+            }
+        </div>
+    </div>
 
-            <!-- TIME STAMP -->
-            <div class=" hidden bg-white p-6 rounded-lg shadow-sm h-full w-full border border-blue-100 md:col-span-2 overflow-hidden">
-                <h2 class="text-lg font-semibold mb-4">Time Stamp</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white rounded-lg p-6 shadow-sm">
-                        <div class="flex items-start space-x-4">
-                            <div class="bg-amber-50 p-3 rounded-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-amber-500" fill="none" viewbox="0 0 24 24" stroke="currentcolor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="text-sm text-gray-500 font-medium mb-1">Last Screening</h3>
-                                <p class="text-gray-900 font-semibold">25-06-2024 12:15:20 AM</p>
-                            </div>
-                        </div>
+    <!-- ROW 3: Management Statistics + Calendar -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        <!-- Management Statistics -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                    <h3 class="text-sm font-semibold text-slate-700">Management Statistics</h3>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mb-4">
+                <div class="text-center p-3 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-100">
+                    <div class="text-xl font-bold text-blue-700">@weeklyCases</div>
+                    <div class="text-xs text-blue-600/70 mt-1">Cases This Week</div>
+                </div>
+                <div class="text-center p-3 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-100">
+                    @{
+                        var approvalRate = totalCustomers > 0 ? Math.Round((double)approved / totalCustomers * 100, 0) : 0;
+                    }
+                    <div class="text-xl font-bold text-emerald-700">@(approvalRate)%</div>
+                    <div class="text-xs text-emerald-600/70 mt-1">Approval Rate</div>
+                </div>
+                <div class="text-center p-3 rounded-xl bg-gradient-to-br from-violet-50 to-violet-100/50 border border-violet-100">
+                    @{
+                        var totalRisked = highRisk + mediumRisk + lowRisk;
+                        var highRiskPct = totalRisked > 0 ? Math.Round((double)highRisk / totalRisked * 100, 0) : 0;
+                    }
+                    <div class="text-xl font-bold text-violet-700">@(highRiskPct)%</div>
+                    <div class="text-xs text-violet-600/70 mt-1">High Risk Rate</div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                     </div>
-                    <div class="bg-white rounded-lg p-6 shadow-sm">
-                        <div class="flex items-start space-x-4">
-                            <div class="bg-blue-50 p-3 rounded-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-500" fill="none" viewbox="0 0 24 24" stroke="currentcolor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="text-sm text-gray-500 font-medium mb-1">Last Ongoing Screening</h3>
-                                <p class="text-gray-900 font-semibold">25-06-2024 12:15:20 AM</p>
-                            </div>
-                        </div>
+                    <div>
+                        <div class="text-lg font-bold text-slate-800">@individuals</div>
+                        <div class="text-xs text-slate-400">Individuals</div>
                     </div>
-                    <div class="bg-white rounded-lg p-6 shadow-sm">
-                        <div class="flex items-start space-x-4">
-                            <div class="bg-pink-50 p-3 rounded-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-pink-500" fill="none" viewbox="0 0 24 24" stroke="currentcolor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="text-sm text-gray-500 font-medium mb-1">Last Post-Implementation Test</h3>
-                                <p class="text-gray-900 font-semibold">25-06-2024 12:15:20 AM</p>
-                            </div>
-                        </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <div class="w-9 h-9 rounded-lg bg-sky-100 flex items-center justify-center flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
                     </div>
+                    <div>
+                        <div class="text-lg font-bold text-slate-800">@corporates</div>
+                        <div class="text-xs text-slate-400">Corporates</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar & Reminders -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                    <h3 class="text-sm font-semibold text-slate-700">Calendar & Reminders</h3>
+                </div>
+                <button onclick="openReminderModal()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                    Add Reminder
+                </button>
+            </div>
+            <div id="calendarWidget" class="mb-4"></div>
+            <div id="reminderList" class="space-y-2 max-h-[180px] overflow-y-auto">
+                <div class="text-center py-4 text-slate-400 text-sm">No reminders set. Click "Add Reminder" to create one.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 4: System Info + Platform Summary -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        <!-- System Updates -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="21 3 21 9 15 9"/></svg>
+                    <h3 class="text-sm font-semibold text-slate-700">System Updates</h3>
+                </div>
+                <a asp-controller="Report" asp-action="DigiSchedulerLogs" class="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 transition-colors">
+                    Scheduler
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+                </a>
+            </div>
+            @if (schedulerLogs.Any())
+            {
+                <div class="space-y-3">
+                    @foreach (var log in schedulerLogs.Take(4))
+                    {
+                        <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-slate-700 truncate">@log.Source</p>
+                                <p class="text-xs text-slate-400">@log.CreatedOn · @log.TotalRecords records · @log.TotalHits hits</p>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">Active</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="flex items-center gap-3 p-4 rounded-lg bg-slate-50">
+                    <div class="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0"></div>
+                    <div>
+                        <p class="text-sm text-slate-500">No scheduler data available</p>
+                        <p class="text-xs text-slate-400">Check the scheduler logs for details</p>
+                    </div>
+                </div>
+            }
+            <div class="mt-3 p-3 rounded-lg bg-blue-50/50 border border-blue-100">
+                <div class="flex items-center gap-2 mb-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span class="text-xs font-medium text-blue-700">Last System Refresh</span>
+                </div>
+                <p class="text-xs text-blue-600/70">@(schedulerLogs.Any() ? schedulerLogs.First().CreatedOn : "N/A")</p>
+            </div>
+        </div>
+
+        <!-- Platform Summary -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                    <h3 class="text-sm font-semibold text-slate-700">Platform Summary</h3>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="p-3 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white dashboard-card">
+                    <div class="text-xl font-bold">@totalCustomers</div>
+                    <div class="text-blue-200 text-xs mt-1">Total Customers</div>
+                </div>
+                <div class="p-3 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 text-white dashboard-card">
+                    <div class="text-xl font-bold">@approved</div>
+                    <div class="text-emerald-200 text-xs mt-1">Total Approved</div>
+                </div>
+                <div class="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white dashboard-card">
+                    <div class="text-xl font-bold">@pending</div>
+                    <div class="text-amber-200 text-xs mt-1">Pending Review</div>
+                </div>
+                <div class="p-3 rounded-xl bg-gradient-to-br from-red-500 to-red-600 text-white dashboard-card">
+                    <div class="text-xl font-bold">@highRisk</div>
+                    <div class="text-red-200 text-xs mt-1">High Risk Cases</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script type="text/javascript">
-    $(window).ready(function () {
-        var result = "@ViewBag.count";
+<!-- Reminder Modal -->
+<div id="reminderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 hidden" style="backdrop-filter: blur(4px);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 mx-4 transform transition-all">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-slate-800">Create Reminder</h3>
+            <button onclick="closeReminderModal()" class="p-1 rounded-lg hover:bg-slate-100 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                <input id="reminderTitle" type="text" placeholder="e.g. KYC Refresh for NAT468" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                <input id="reminderDate" type="date" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Priority</label>
+                <select id="reminderPriority" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <button onclick="saveReminder()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+                Save Reminder
+            </button>
+        </div>
+    </div>
+</div>
 
-        //        alert('Cases');
-
-        //    $.ajax({
-        //        url: '/Home/CaseReportCustompagination',
-        //        type: 'Post',
-        //        //contextType: "application/json; charset=utf-8",
-        //        //data: { type: type, code: code },
-        //        dataType: "json",
-        //        cache: false,
-        //        success: function (data) {
-        //            console.log(data);
-
-
-
-        //        }
-        //    });
-
-
-
-    });
-
-    
-
-
-    $(document).ready(function () {
-
-
-        $('#sanScreen').DataTable();
-        GetCount(10, $('#hAllCases'), $('#totalcustomer')); //All customerCases
-        GetCount(0, $('#hOpenCases'), $('#opencustomer'));
-        GetCount(2, $('#hApprovedCases'), $('#approvedcustomer'));
-        GetCount(3, $('#hRejectedCases'), $('#rejectedcustomer'));
-
-    });
-
-    function GetCount(status, that, e) {
-        $.ajax({
-            type: "POST",
-            url: "/Home/GetCustomerCaseCount/",
+<script>
+// ── Chart.js: Customer Count Donut ──
+(function() {
+    var ctx1 = document.getElementById('customerDonut');
+    if (ctx1) {
+        new Chart(ctx1, {
+            type: 'doughnut',
             data: {
-                caseStatus: status
+                labels: ['Individuals', 'Corporates'],
+                datasets: [{
+                    data: [@individuals, @corporates],
+                    backgroundColor: ['#2563eb', '#38bdf8'],
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
             },
-            success: function (result) {
-                that.text(result.data);
-                e.val(result.data);
-                
-                /* Case Details Chart */ 
-               /* var ctx = document.getElementById("dashboard-cases-chart").getContext('2d');
-                var myChart = new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: ["Customers", "Pending Cases", "Approved Cases", "Rejected Cases"],
-                        datasets: [{
-                            backgroundColor: [
-                                "#FCC02E",
-                                "#ff8a48",
-                                "#07C695",
-                                "#E91F63"
-                            ],
-                            data: [68,57,9,2]
-                        }]
+            options: {
+                cutout: '65%',
+                responsive: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleFont: { family: 'Geist' },
+                        bodyFont: { family: 'Geist' },
+                        cornerRadius: 8,
+                        padding: 10
                     }
-                });*/
-
-                /* Risk Chart */
-                /*var ctx = document.getElementById('risk-classified-chart').getContext('2d');
-                var myChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['High', 'Medium', 'Low', 'Unclassified'],
-                        datasets: [{
-                            label: 'Corporate',
-                            data: [12, 19, 3, 17],
-                            backgroundColor: "rgba(252,192,46,0.6)"
-                        }, {
-                            label: 'Individuals',
-                            data: [2, 29, 5, 10],
-                            backgroundColor: "rgba(233,31,99,0.6)"
-                        }]
-                    }
-                });*/
-            },
-            error: function (result) {
-                alert('error');
+                }
             }
         });
     }
-    /*const ctx = document.getElementById('myChart');
-    console.log(ctx);*/
 
-
-    var table;
-    var table1;
-    //$(document).ready(function () {
-
-    //    LoadTable();
-    //    //LoadTable1();
-    //    LoadTable2();
-
-    //});
-
-    //function LoadTable() {
-    //    $.ajax({
-    //        type: "GET",
-    //        url: "/home/custompagination",
-    //        data: {
-    //            Type: 'I'
-    //        },
-    //        success: function (data) {
-    //            console.log(data);
-    //            for (i = 0; i <= data.length; i++) {
-
-    //                var tr = "<tr>";
-    //                tr += "<td class='text-center'>" + data[i].customerId + "</td>"
-    //                tr += "<td class='text-center'>" + data[i].createdUser + "</td>";
-    //                tr += "<td class='text-center'>" + data[i].createdOn + "</td>";
-    //                tr += "<td class='text-center'>" + data[i].nationality + "</td>";
-
-    //                tr + "</tr>"; $('#bodyExampleSactionIndividual').append(tr);
-    //            }
-    //        },
-    //    });
-    //}
-    //function LoadTable2() {
-
-
-    //    $.ajax({
-    //        type: "GET",
-    //        url: "/home/custompagination",
-    //        data: {
-    //            Type: 'C'
-    //        },
-    //        success: function (data) {
-    //            console.log(data);
-    //            for (i = 0; i <= data.length; i++) {
-
-    //                var tr = "<tr>";
-    //                tr += "<td class='text-center'>" + data[i].customerId + "</td>"
-    //                tr += "<td class='text-center'>" + data[i].createdUser + "</td>";
-    //                tr += "<td class='text-center'>" + data[i].createdOn + "</td>";
-    //                tr += "<td class='text-center'>" + data[i].nationality + "</td>";
-
-    //                tr + "</tr>"; $('#bodyExampleSactionCorporate').append(tr);
-    //            }
-    //        },
-    //    });
-
-
-    //}
-
-        //function LoadTable1() {
-
-
-
-        //    $.ajax({
-        //        type: "GET",
-        //        url: "/home/CaseManagement",
-
-        //        success: function (data) {
-        //            console.log(data);
-        //            for (i = 0; i <= data.length; i++) {
-
-        //                var tr = "<tr>";
-        //                tr += "<td class='text-center'>" + data[i].customerId + "</td>"
-        //                tr += "<td class='text-center'>" + data[i].customerName + "</td>";
-        //                tr += "<td class='text-center'>" + data[i].tranType + "</td>";
-        //                tr += "<td class='text-center'>" + data[i].ruleViolated + "</td>";
-        //                tr += "<td class='text-center'>" + data[i].createdOn + "</td>";
-        //                tr += "<td class='text-center'>" + data[i].remitterNationality + "</td>";
-        //                tr + "</tr>";
-        //                $('#bodyExampleTransaction').append(tr);
-        //            }
-        //        },
-        //    });
-
-        //}
-
-
-    function Runscheduler()
-    {
-        document.getElementById("runscheduler").disabled = true;
-
-        var clientid=@clientId;
-
-
-        //alert(clientid);
-        
-        $.ajax({
-            type: "GET",
-            url: "/Home/ApprovedScreeningApi",
-            data: { clientid: clientid },
-            
+    // ── Chart.js: Screening Results Donut ──
+    var ctx2 = document.getElementById('screeningDonut');
+    if (ctx2) {
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Auto Approved', 'Manually Approved', 'Potential Match'],
+                datasets: [{
+                    data: [@autoApproved, @manuallyApproved, @potentialMatch],
+                    backgroundColor: ['#38bdf8', '#2563eb', '#8b5cf6'],
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                cutout: '60%',
+                responsive: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleFont: { family: 'Inter' },
+                        bodyFont: { family: 'Inter' },
+                        cornerRadius: 8,
+                        padding: 10
+                    }
+                }
+            }
         });
-
-        setTimeout(enbaleButton, 3600000);
     }
+})();
 
-    function enbaleButton()
-    {
+// ── Calendar Widget with Navigation ──
+(function() {
+    var container = document.getElementById('calendarWidget');
+    if (!container) return;
 
-        document.getElementById("runscheduler").disabled = false;
-    
-    }
-</script>
+    var realNow = new Date();
+    var realYear = realNow.getFullYear();
+    var realMonth = realNow.getMonth();
+    var realToday = realNow.getDate();
+    var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 
-@*<style>
-    .info-card {
-        background: #fff;
-        padding: 16px 20px !important;
-        overflow: hidden;
-        border-radius: 20px;
-        -webkit-box-shadow: 1px 1px 6px 0px rgb(0 0 0 / 16%);
-        -moz-box-shadow: 1px 1px 6px 0px rgba(0, 0, 0, 0.16);
-        box-shadow: 1px 1px 6px 0px rgb(0 0 0 / 16%);
-    }
+    var viewYear = realYear;
+    var viewMonth = realMonth;
 
-    progress[value] {
-        /*width: 250px;*/
-        height: 30px;
-    }
+    window.calPrev = function() { viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; } renderCal(); };
+    window.calNext = function() { viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; } renderCal(); };
 
-    progress {
-        /*background-image: linear-gradient(to right,#BB85F7, #EFEFF3);*/
-        /* background-color: #eee;*/
-        accent-color: #b700ff;
-    }
+    function renderCal() {
+        var firstDay = new Date(viewYear, viewMonth, 1).getDay();
+        var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+        var isCurrentMonth = (viewYear === realYear && viewMonth === realMonth);
 
-    .progress1 {
-        accent-color: rgb(186 112 19);
-    }
+        var html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">';
+        html += '<button onclick="calPrev()" style="border:none;background:none;cursor:pointer;padding:4px 8px;border-radius:6px;color:#64748b;font-size:16px;line-height:1;" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'none\'">‹</button>';
+        html += '<span class="text-sm font-semibold text-slate-800">' + monthNames[viewMonth] + ' ' + viewYear + '</span>';
+        html += '<button onclick="calNext()" style="border:none;background:none;cursor:pointer;padding:4px 8px;border-radius:6px;color:#64748b;font-size:16px;line-height:1;" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'none\'">›</button>';
+        html += '</div>';
 
-    .progress2 {
-        accent-color: #069a45;
-    }
+        html += '<div class="grid grid-cols-7 gap-1 text-center">';
+        dayNames.forEach(function(d) { html += '<div class="text-[10px] font-medium text-slate-400 py-1">' + d + '</div>'; });
 
-    .progress3 {
-        accent-color: #ff0036;
-    }
-</style>*@
-
-
-@*<div class="sas-breadcrumbs aml-breadcrumbs mt-2">
-    <ul class="mb-0 pl-0 d-flex">
-        <li><a href="#">Home</a></li>/
-        <li><a href="#">Dashboard</a></li>
-    </ul>
-</div>
-
-<div class="sas-card bg-blue br-20 d-flex mb-2">
-    <div class="page_header mr-auto">
-        <h4 class="mb-0">Dashboard</h4>
-    </div>
-    <div class="menu-icon">
-        <i class="lni lni-microsoft"></i>
-    </div>
-   @* <div class="">
-        <button class="sas-button submit_btn yellow-btn" type="submit" id="runscheduler" onclick="Runscheduler()">Run Scheduler</buttonclass>
-    </div>*@
-@*</div>*@
-
-
-
-@*<div class="se-pre-con1"></div>
-<div class="row">
-    <div class="col-4">
-        <div class="sas-card bg-blue review-box p-25">
-            <div class="container">
-                <div class="d-flex justify-content-between mb-3 bb-div">
-                    <h4 class="m-0"><b>Total Customers</b></h4>
-                    <h4 class="m-0" id="hAllCases"><b>50</b></h4>
-                </div>
-                <div class="d-flex justify-content-between mb-2 bb-div">
-                    <h5 class="m-0">Approved</h5>
-                    <h5 class="m-0" id="hApprovedCases">40</h5>
-                </div>
-                <div class="d-flex justify-content-between mb-2 bb-div">
-                    <h5 class="m-0">Rejected</h5>
-                    <h5 class="m-0" id="hRejectedCases">2</h5>
-                </div>
-                <div class="d-flex justify-content-between mb-2 bb-div">
-                    <h5 class="m-0">On Hold</h5>
-                    <h5 class="m-0" id="hOpenCases">8</h5>
-                </div>
-
-            </div>*@
-            <!--<div class="col-md-3">
-                <div class="sas-color-card icon-box sas-color-card-bg4 mb-2">
-                    <div class="overlay">
-                        <img src="/img/cardCorner.png" alt="">
-                    </div>
-                    <div class="contents">
-                        <div class="icon">
-                            <span class="icon-container">
-                                <i class="lni lni-atlassian"></i>
-                            </span>
-                        </div>
-                        <h6 class="icon-box-no" id="hAllCases" font-size="35px">0</h6>
-                        <h6 class="icon-box-title">Customers</h6>
-                        <div class="txt-center">
-                            <a class="white-btn btn" href="Report/CustomerListingLogs?type=1">View More</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="sas-color-card icon-box sas-color-card-bg3 mb-2">
-                    <div class="overlay">
-                        <img src="/img/cardCorner.png" alt="">
-                    </div>
-                    <div class="contents">
-                        <div class="icon">
-                            <span class="icon-container">
-                                <i class="lni lni-firefox-original"></i>
-                            </span>
-                        </div>
-                        <h6 class="icon-box-no" id="hOpenCases" font-size="35px">0</h6>
-                        <h6 class="icon-box-title">Pending Cases</h6>
-                        <div class="txt-center">
-                            <a class="white-btn btn" href="Report/CaseReport?type=1">View More</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="sas-color-card icon-box sas-color-card-bg2 mb-2">
-                    <div class="overlay">
-                        <img src="/img/cardCorner.png" alt="">
-                    </div>
-                    <div class="contents">
-                        <div class="icon">
-                            <span class="icon-container">
-                                <i class="lni lni-tumblr"></i>
-                            </span>
-                        </div>
-                        <h6 class="icon-box-no" id="hApprovedCases" font-size="35px">0</h6>
-                        <h6 class="icon-box-title">Approved Cases</h6>
-                        <div class="txt-center">
-                            <a class="white-btn btn" href="Report/CaseReport?type=2">View More</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="sas-color-card icon-box sas-color-card-bg1 mb-2">
-                    <div class="overlay">
-                        <img src="/img/cardCorner.png" alt="">
-                    </div>
-                    <div class="contents">
-                        <div class="icon">
-                            <span class="icon-container">
-                                <i class="lni lni-xbox"></i>
-                            </span>
-                        </div>
-                        <h6 class="icon-box-no" id="hRejectedCases" font-size="35px">0</h6>
-                        <h6 class="icon-box-title">Rejected Cases</h6>
-                        <div class="txt-center">
-                            <a class="white-btn btn" href="Report/CaseReport?type=3">View More</a>
-                        </div>
-                    </div>
-                </div>
-            </div>-->
-        @*</div>
-    </div>
-    <div class="col-md-4 w-100">
-        <div class="sas-card bg-blue range-box range">
-            <div class="container">
-                <div class="mb-3 bb-div">
-                    <h4 class="m-0"><b>Name Screening</b></h4>
-                </div>
-                <div class="d-flex justify-content-between mb-2 bb-div">
-                    <h5 class="m-0">Auto Approved</h5>
-                    <h5 class="m-0">@ViewBag.autoapproved</h5>
-                </div>
-                <div class="d-flex justify-content-between mb-2 bb-div">
-                    <h5 class="m-0">Manually Approved</h5>
-                    <h5 class="m-0">@ViewBag.ManuallyApproved</h5>
-                </div>
-                <div class="d-flex justify-content-between mb-2 bb-div">
-                    <h5 class="m-0">Potential Match</h5>
-                    <h5 class="m-0">@ViewBag.PotentialMatch</h5>
-                </div>
-            </div>*@
-            <!--<div class="range">
-                <div class="cust d-flex justify-content-center mt-3 mb-3">
-                    <h5>Risk</h5>
-                </div>
-                @*<br />*@
-                <div class="bar pl-2 pr-2">
-                    <form>
-                        <div class="form-group d-flex">
-                            <label class="pr-2 mr-2" for="formControlRange">Individual</label>
-                            <a href="#" title="@ViewBag.indvidualval">
-                                <progress max="200" value="@ViewBag.indvidualval"></progress>
-                            </a>
-                            @*<input type="range" class="form-control-range color-rangeslider" id="formControlRange">*@
-                        </div>
-
-
-                    </form>
-
-                    <form>
-                        <div class="form-group d-flex">
-                            <label class="pr-2" for="formControlRange">Corporate</label>
-                            <a href="#" title="@ViewBag.corporateval">
-                                <progress class="progress1" max="200" value="@ViewBag.corporateval"></progress>
-                            </a>
-                            @*<input type="range" class="form-control-range color-rangeslider" id="formControl">*@
-                        </div>
-                    </form>
-
-                    <form>
-                        <div class="form-group d-flex">
-                            <label class="pr-2" for="formControlRange" style="margin-right:36px">Bank</label>
-                            <a href="#" title="@ViewBag.bankval">
-                                <progress class="progress2" max="200" value="@ViewBag.bankval"></progress>
-                            </a>
-                            @*<input type="range" class="form-control-range color-rangeslider" id="formController">*@
-                        </div>
-                    </form>
-
-                    <form>
-                        <div class="form-group d-flex">
-                            <label class="pr-2" for="formControlRange" style="margin-right:20px">Vendor</label>
-                            <a href="#" title="@ViewBag.vendorval">
-                                <progress class="progress3" max="200" value="@ViewBag.vendorval"></progress>
-                            </a>
-                            @*<input type="range" class="form-control-range color-rangeslider" id="form">*@
-                        </div>
-                    </form>
-                    <br />
-                </div>
-            </div>-->
-      @*  </div>
-    </div>*@
-   @* @if ((userModules.IndexOf('4')))
-    {*@
-    @*@foreach (var item in jsonModules)
-    {
-
-        if (item.Menu_Id == 4)
-        {
-
-
-            <div class="col-md-4 w-100">
-                <div class="sas-card bg-blue range-box range">
-                <div class="container">
-                    <div class="mb-3 bb-div">
-                        <h4 class="m-0"><b>Risk Type</b></h4>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2 bb-div">
-                        <h5 class="m-0">High</h5>
-                                <h5 class="m-0">@ViewBag.totalhighrisk</h5>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2 bb-div">
-                        <h5 class="m-0">Medium</h5>
-                        <h5 class="m-0">@ViewBag.totalmediumrisk</h5>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2 bb-div">
-                        <h5 class="m-0">Low</h5>
-                        <h5 class="m-0">@ViewBag.totallowrisk</h5>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2 bb-div">
-                        <h5 class="m-0">Unclassified</h5>
-                        <h5 class="m-0">@ViewBag.Unclassifiedriskcount</h5>
-                    </div>
-                </div>
-            </div>
-        </div>
+        for (var i = 0; i < firstDay; i++) { html += '<div></div>'; }
+        for (var d = 1; d <= daysInMonth; d++) {
+            var isToday = isCurrentMonth && d === realToday;
+            var cls = isToday
+                ? 'w-7 h-7 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center mx-auto cursor-pointer'
+                : 'w-7 h-7 rounded-full hover:bg-slate-100 text-xs text-slate-600 flex items-center justify-center mx-auto cursor-pointer transition-colors';
+            html += '<div class="' + cls + '">' + d + '</div>';
         }
-      }*@
-        @*}*@
-    
-    @*<div class="col-md-6">
-        <div class="row">
-            @* <div class="col-md-4 w-100">
-                <div class="sas-card bg-blue review-box p-25">
-                    <div class="star d-flex justify-content-center mb-3 mt-2">
-                        <img src="img/star.png">
-                    </div>
-                    <br />
-                    <div class="card1 br-50 d-flex justify-content-center mb-3 mt-2 mr-4">
-                        <span>Last Screening Performed</span>
-                    </div>
-                    <br />
-                    <div class="date d-flex justify-content-center">
-                        <h4>@ViewBag.date</h4>
-                    </div>
-                    <hr />
-                    <div class="row mb-2 justify-content-center">
-                        <div>
-                            <div class="card1 br-50 d-flex justify-content-center">
-                                <div class="case">
-                                    <span>Last Week Pending Cases</span>
-                                </div>
-                            </div>
-                            <div class="num d-flex justify-content-center mt-3">
-                                <h6>@ViewBag.count</h6>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                        <div class="card3 br-50 d-flex justify-content-center ml-2">
-                        <div class="alert">
-                        <span>Alerts Pending</span>
-                        </div>
-                        </div>
-                        <div class="num d-flex justify-content-center mt-3">
-                        <h6>06</h6>
-                        </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div classs="col-md-4">
-            <div class="sas-card">
-            <div class="star_image  d-flex justify-content-center">
-            <img src="~/img/star.png" />
-            </div>
-            <div class="content_2">
-            <div class="info-card bg-color-1 d-flex justify-content-center">
-            <a> Last Screening Performed </a>
-            </div>
-            </div>
-            <div class="content_3  d-flex justify-content-center ">
-            <p>08/04/2023</p>
-            </div>
-            <span class="mb-2"> <hr /> </span>
-            <div class="content_4">
-            <div class="row">
-            <div class="col-md-6">
-            <div class="info-card bg-color-1  d-flex justify-content-center">
-            <a> Last Screening Performed </a>
-            </div>
-            <div class="num_content  d-flex justify-content-center">
-            <p>08/04/2023</p>
-            </div>
-            </div>
-            <div class="col-md-6">
-            <div class="info-card bg-color-1  d-flex justify-content-center">
-            <a> Last Screening Performed </a>
-            </div>
-            <div class="num_content  d-flex justify-content-center">
-            <p>08/04/2023</p>
-            </div>
-
-            </div>
-            </div>
-            </div>
-
-            </div>
-            </div>*@
-            
-            <!--<div class="col-md-6 w-100">
-                <div class="sas-card bg-blue donut">
-                    <div class="d-flex justify-content-center">
-                        <h4>Customer Cases</h4>
-                    </div>
-                    <div class="dougnut mt-4 mb-2">
-                        <canvas id="myChart" style="width:100%;max-width:400px;margin:auto;"></canvas>
-                    </div>
-
-                </div>
-            </div>-->
-    @*</div>
-
-    </div>*@
-</div>
-@*<div class="block2">
-    <div class="row mt-2 mb-2">
-        <div class="col-md-6">
-            <div class="sas-card bg-blue overflow-auto">
-                <h6 class=" d-flex justify-content-center text-center">Last 10 Individual Screening Details</h6>
-                <div style="width: 100%;height: 550px;">
-                    <div class="table-responsive">
-                        <table id="exampleSaction" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>CUSTOMER ID</th>
-                                    <th>CUSTOMER NAME</th>
-                                    <th>DATE OF CREATION</th>
-                                    <th>NATIONALITY</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bodyExampleSactionIndividual"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="sas-card bg-blue overflow-auto">
-                <h6 class=" d-flex justify-content-center text-center text-center">Last 10 Corporate Screening Details</h6>
-                <div style="width: 100%;height: 550px;">
-                    <div class="table-responsive">
-                        <table id="exampleTransaction" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>CUSTOMER ID</th>
-                                    <th>CUSTOMER NAME</th>
-                                    <th>DATE OF CREATION</th>
-                                    <th>NATIONALITY</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bodyExampleSactionCorporate"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-          <div class="col-md-6">
-        <div class="sas-card">
-        <h6 class=" d-flex justify-content-center text-center text-center">Last 10 Transaction Monitoring Details</h6>
-        <div style="width: 100%; height: 550px;">
-        <div class="">
-        <table id="exampleTransaction" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
-
-        <thead>
-        <tr>
-        <th>CUSTOMER ID</th>
-        <th>CUSTOMER NAME</th>
-        <th>Transaction TYPE</th>
-        <th>RULES VIOLATED</th>
-        <th>DATE OF CREATION</th>
-        <th>NATIONALITY</th>
-        </tr>
-        </thead>
-        <tbody id="bodyExampleTransaction"></tbody>
-
-        </table>
-        </div>
-        </div>
-        </div>
-
-        </div>
-    </div>
-        </div>*@
-
-@*<div class="row @Url.DisplayNavLink(1,userModules)">
-    <div class="col-lg-12 col-12">
-        <div class="card">
-            @*<div id="piechart" style="text-align: -webkit-center;"></div>*@
-            @*<input type="hidden" id="totalcustomer" value="0" />
-            <input type="hidden" class="getval" id="opencustomer" value="0" />
-            <input type="hidden" class="getval" id="approvedcustomer" value="0" />
-            <input type="hidden" class="getval" id="rejectedcustomer" value="0" />
-        </div>
-
-    </div>
-</div>*@
-
-@*<script type="text/javascript">
-    $(window).ready(function () {
-        var result = "@ViewBag.count";*@
-
-       @* //        alert('Cases');
-
-        //    $.ajax({
-        //        url: '/Home/CaseReportCustompagination',
-        //        type: 'Post',
-        //        //contextType: "application/json; charset=utf-8",
-        //        //data: { type: type, code: code },
-        //        dataType: "json",
-        //        cache: false,
-        //        success: function (data) {
-        //            console.log(data);
-
-
-
-        //        }
-        //    });
-
-
-
-    });
-
-    
-
-
-    $(document).ready(function () {
-
-
-        $('#sanScreen').DataTable();
-        GetCount(10, $('#hAllCases'), $('#totalcustomer')); //All customerCases
-        GetCount(0, $('#hOpenCases'), $('#opencustomer'));
-        GetCount(2, $('#hApprovedCases'), $('#approvedcustomer'));
-        GetCount(3, $('#hRejectedCases'), $('#rejectedcustomer'));
-
-    });
-
-    function GetCount(status, that, e) {
-        $.ajax({
-            type: "POST",
-            url: "/Home/GetCustomerCaseCount/",
-            data: {
-                caseStatus: status
-            },
-            success: function (result) {
-                that.text(result.data);
-                e.val(result.data);
-                
-                /* Case Details Chart */ 
-               /* var ctx = document.getElementById("dashboard-cases-chart").getContext('2d');
-                var myChart = new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: ["Customers", "Pending Cases", "Approved Cases", "Rejected Cases"],
-                        datasets: [{
-                            backgroundColor: [
-                                "#FCC02E",
-                                "#ff8a48",
-                                "#07C695",
-                                "#E91F63"
-                            ],
-                            data: [68,57,9,2]
-                        }]
-                    }
-                });*/
-
-                /* Risk Chart */
-                /*var ctx = document.getElementById('risk-classified-chart').getContext('2d');
-                var myChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['High', 'Medium', 'Low', 'Unclassified'],
-                        datasets: [{
-                            label: 'Corporate',
-                            data: [12, 19, 3, 17],
-                            backgroundColor: "rgba(252,192,46,0.6)"
-                        }, {
-                            label: 'Individuals',
-                            data: [2, 29, 5, 10],
-                            backgroundColor: "rgba(233,31,99,0.6)"
-                        }]
-                    }
-                });*/
-            },
-            error: function (result) {
-                alert('error');
-            }
-        });
+        html += '</div>';
+        container.innerHTML = html;
     }
-    /*const ctx = document.getElementById('myChart');
-    console.log(ctx);*/
+    renderCal();
+})();
 
-
-    var table;
-    var table1;
-    //$(document).ready(function () {
-
-    //    LoadTable();
-    //    //LoadTable1();
-    //    LoadTable2();
-
-    //});
-
-    //function LoadTable() {
-    //    $.ajax({
-    //        type: "GET",
-    //        url: "/home/custompagination",
-    //        data: {
-    //            Type: 'I'
-    //        },
-    //        success: function (data) {
-    //            console.log(data);
-    //            for (i = 0; i <= data.length; i++) {
-
-    //                var tr = "<tr>";
-    //                tr += "<td class='text-center'>" + data[i].customerId + "</td>"
-    //                tr += "<td class='text-center'>" + data[i].createdUser + "</td>";
-    //                tr += "<td class='text-center'>" + data[i].createdOn + "</td>";
-    //                tr += "<td class='text-center'>" + data[i].nationality + "</td>";
-
-    //                tr + "</tr>"; $('#bodyExampleSactionIndividual').append(tr);
-    //            }
-    //        },
-    //    });
-    //}
-    //function LoadTable2() {
-
-
-    //    $.ajax({
-    //        type: "GET",
-    //        url: "/home/custompagination",
-    //        data: {
-    //            Type: 'C'
-    //        },
-    //        success: function (data) {
-    //            console.log(data);
-    //            for (i = 0; i <= data.length; i++) {
-
-    //                var tr = "<tr>";
-    //                tr += "<td class='text-center'>" + data[i].customerId + "</td>"
-    //                tr += "<td class='text-center'>" + data[i].createdUser + "</td>";
-    //                tr += "<td class='text-center'>" + data[i].createdOn + "</td>";
-    //                tr += "<td class='text-center'>" + data[i].nationality + "</td>";
-
-    //                tr + "</tr>"; $('#bodyExampleSactionCorporate').append(tr);
-    //            }
-    //        },
-    //    });
-
-
-    //}
-
-        //function LoadTable1() {
-
-
-
-        //    $.ajax({
-        //        type: "GET",
-        //        url: "/home/CaseManagement",
-
-        //        success: function (data) {
-        //            console.log(data);
-        //            for (i = 0; i <= data.length; i++) {
-
-        //                var tr = "<tr>";
-        //                tr += "<td class='text-center'>" + data[i].customerId + "</td>"
-        //                tr += "<td class='text-center'>" + data[i].customerName + "</td>";
-        //                tr += "<td class='text-center'>" + data[i].tranType + "</td>";
-        //                tr += "<td class='text-center'>" + data[i].ruleViolated + "</td>";
-        //                tr += "<td class='text-center'>" + data[i].createdOn + "</td>";
-        //                tr += "<td class='text-center'>" + data[i].remitterNationality + "</td>";
-        //                tr + "</tr>";
-        //                $('#bodyExampleTransaction').append(tr);
-        //            }
-        //        },
-        //    });
-
-        //}
-
-
-    function Runscheduler()
-    {
-        document.getElementById("runscheduler").disabled = true;
-
-        var clientid=@clientId;
-
-
-        //alert(clientid);
-        
-        $.ajax({
-            type: "GET",
-            url: "/Home/ApprovedScreeningApi",
-            data: { clientid: clientid },
-            
-        });
-
-        setTimeout(enbaleButton, 3600000);
+// ── Reminder System (localStorage) ──
+function getReminders() {
+    try { return JSON.parse(localStorage.getItem('lemon_reminders') || '[]'); } catch(e) { return []; }
+}
+function renderReminders() {
+    var list = document.getElementById('reminderList');
+    var reminders = getReminders();
+    if (!reminders.length) {
+        list.innerHTML = '<div class="text-center py-4 text-slate-400 text-sm">No reminders set. Click "Add Reminder" to create one.</div>';
+        return;
     }
-
-    function enbaleButton()
-    {
-
-        document.getElementById("runscheduler").disabled = false;
-    
-    }
-</script>*@
-
-
-
-
-
+    var priorityColors = { high: 'bg-red-100 text-red-700', medium: 'bg-amber-100 text-amber-700', low: 'bg-emerald-100 text-emerald-700' };
+    list.innerHTML = reminders.sort(function(a,b) { return new Date(a.date) - new Date(b.date); }).map(function(r, i) {
+        return '<div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">' +
+            '<button onclick="deleteReminder(' + i + ')" class="w-5 h-5 rounded-full border-2 border-slate-300 hover:border-red-400 hover:bg-red-50 flex-shrink-0 transition-colors"></button>' +
+            '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-slate-700 truncate">' + r.title + '</p></div>' +
+            '<span class="px-2 py-0.5 rounded-full text-xs font-medium ' + (priorityColors[r.priority] || priorityColors.medium) + '">' + r.priority + '</span>' +
+            '<span class="text-xs text-slate-400 flex-shrink-0">' + r.date + '</span>' +
+        '</div>';
+    }).join('');
+}
+function openReminderModal() {
+    document.getElementById('reminderModal').classList.remove('hidden');
+    document.getElementById('reminderDate').valueAsDate = new Date();
+}
+function closeReminderModal() {
+    document.getElementById('reminderModal').classList.add('hidden');
+}
+function saveReminder() {
+    var title = document.getElementById('reminderTitle').value.trim();
+    var date = document.getElementById('reminderDate').value;
+    var priority = document.getElementById('reminderPriority').value;
+    if (!title || !date) return;
+    var reminders = getReminders();
+    reminders.push({ title: title, date: date, priority: priority });
+    localStorage.setItem('lemon_reminders', JSON.stringify(reminders));
+    renderReminders();
+    closeReminderModal();
+    document.getElementById('reminderTitle').value = '';
+}
+function deleteReminder(index) {
+    var reminders = getReminders();
+    reminders.splice(index, 1);
+    localStorage.setItem('lemon_reminders', JSON.stringify(reminders));
+    renderReminders();
+}
+renderReminders();
+</script>

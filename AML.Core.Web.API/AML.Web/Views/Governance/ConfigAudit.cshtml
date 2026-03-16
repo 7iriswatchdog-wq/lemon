@@ -1,0 +1,52 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{ ViewData["Title"] = "Config Audit — Searchin Governance"; Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml"; var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl"); }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>[x-cloak]{display:none!important}.si-page{min-height:100vh;background:#f8fafc}.si-page-inner{padding:24px;max-width:1440px;margin:0 auto}.si-header{display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 24px;background:#fff;border-bottom:1px solid #e2e8f0}.si-header-title{font-size:18px;font-weight:700;color:#0f172a}.si-header-breadcrumb{font-size:12px;color:#94a3b8;margin-top:2px}.si-header-breadcrumb a{color:#6366f1;text-decoration:none}.si-gov-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff}.si-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}.si-kpi{background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0;transition:all .2s;position:relative;overflow:hidden}.si-kpi:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}.si-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-color,#6366f1)}.si-kpi-value{font-size:28px;font-weight:800;color:#0f172a;margin-bottom:4px;line-height:1}.si-kpi-label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em}.si-kpi-icon{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--kpi-bg,#eef2ff);color:var(--kpi-color,#6366f1);font-size:16px}.si-table-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;margin-bottom:24px}.si-table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #f1f5f9}.si-table-title{font-size:15px;font-weight:700;color:#0f172a}.si-table-tools{display:flex;align-items:center;gap:10px}.si-search-box{position:relative}.si-search-box input{width:260px;padding:8px 12px 8px 36px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fafbfc}.si-search-box i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:14px}.si-table{width:100%;border-collapse:collapse}.si-table thead th{padding:12px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;background:#f8fafc;border-bottom:1px solid #e2e8f0;white-space:nowrap}.si-table tbody td{padding:11px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;white-space:nowrap}.si-table tbody tr:hover{background:#f8fafc}.si-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}.si-badge-create{background:#d1fae5;color:#065f46}.si-badge-update{background:#e0e7ff;color:#3730a3}.si-badge-delete{background:#fee2e2;color:#991b1b}.si-badge-rollback{background:#fef3c7;color:#92400e}
+.si-diff{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;font-size:11px}
+.si-diff-old{background:#fee2e2;color:#991b1b;padding:4px 8px;border-radius:6px;font-family:monospace}
+.si-diff-new{background:#d1fae5;color:#065f46;padding:4px 8px;border-radius:6px;font-family:monospace}
+@@media(max-width:768px){.si-kpi-row{grid-template-columns:repeat(2,1fr)}}</style>
+<div class="si-page" x-data="configAudit()" x-init="init()" x-cloak>
+    <div class="si-header"><div><div class="si-header-title">Configuration Audit Trail</div><div class="si-header-breadcrumb"><a href="/">Home</a> / <a href="/Governance">Governance</a> / Config Audit</div></div><div style="display:flex;align-items:center;gap:12px"><span class="si-gov-badge"><i class="fa-solid fa-gavel"></i> Governance</span><img src="@Clientlogo" alt="Logo" style="height:32px"/></div></div>
+    <div class="si-page-inner">
+        <div class="si-kpi-row">
+            <div class="si-kpi" style="--kpi-color:#6366f1;--kpi-bg:#eef2ff"><div class="si-kpi-icon"><i class="fa-solid fa-gear"></i></div><div class="si-kpi-value">142</div><div class="si-kpi-label">Total Changes</div></div>
+            <div class="si-kpi" style="--kpi-color:#22c55e;--kpi-bg:#d1fae5"><div class="si-kpi-icon"><i class="fa-solid fa-plus"></i></div><div class="si-kpi-value">34</div><div class="si-kpi-label">New Configs</div></div>
+            <div class="si-kpi" style="--kpi-color:#f59e0b;--kpi-bg:#fef3c7"><div class="si-kpi-icon"><i class="fa-solid fa-pen"></i></div><div class="si-kpi-value">96</div><div class="si-kpi-label">Modifications</div></div>
+            <div class="si-kpi" style="--kpi-color:#ef4444;--kpi-bg:#fee2e2"><div class="si-kpi-icon"><i class="fa-solid fa-rotate-left"></i></div><div class="si-kpi-value">12</div><div class="si-kpi-label">Rollbacks</div></div>
+        </div>
+        <div class="si-table-card">
+            <div class="si-table-header"><div class="si-table-title">Configuration Change Log</div><div class="si-table-tools"><div class="si-search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Search..." x-model="searchQ" @@input.debounce.300ms="filter()"/></div></div></div>
+            <div style="overflow-x:auto">
+                <table class="si-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Module</th><th>Setting</th><th>Old Value</th><th>New Value</th><th>IP Address</th></tr></thead>
+                <tbody><template x-for="row in filteredLogs" :key="row.id"><tr>
+                    <td x-text="row.timestamp" style="font-size:12px;font-weight:600"></td>
+                    <td x-text="row.user" style="font-weight:600;color:#6366f1"></td>
+                    <td><span class="si-badge" :class="row.action==='Create'?'si-badge-create':row.action==='Update'?'si-badge-update':row.action==='Delete'?'si-badge-delete':'si-badge-rollback'" x-text="row.action"></span></td>
+                    <td x-text="row.module" style="font-size:12px"></td>
+                    <td x-text="row.setting" style="font-weight:600;font-size:12px"></td>
+                    <td><code style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px" x-text="row.old_value||'—'"></code></td>
+                    <td><code style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:4px;font-size:11px" x-text="row.new_value||'—'"></code></td>
+                    <td x-text="row.ip" style="font-size:11px;color:#94a3b8"></td>
+                </tr></template></tbody></table>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+<script>
+function configAudit(){return{searchQ:'',
+logs:[
+{id:1,timestamp:'14 Mar 2026 16:42',user:'Admin',action:'Update',module:'Risk Scoring',setting:'High Risk Threshold',old_value:'70',new_value:'75',ip:'192.168.1.10'},
+{id:2,timestamp:'14 Mar 2026 14:20',user:'Admin',action:'Update',module:'Screening',setting:'Match Percentage',old_value:'80%',new_value:'85%',ip:'192.168.1.10'},
+{id:3,timestamp:'13 Mar 2026 11:05',user:'SuperAdmin',action:'Create',module:'Watchlist',setting:'New Internal List',old_value:'—',new_value:'HR-Sanctions-2026',ip:'10.0.0.1'},
+{id:4,timestamp:'13 Mar 2026 09:30',user:'Admin',action:'Update',module:'Notifications',setting:'STR Alert Email',old_value:'old@co.ae',new_value:'compliance@co.ae',ip:'192.168.1.10'},
+{id:5,timestamp:'12 Mar 2026 17:15',user:'SuperAdmin',action:'Rollback',module:'Risk Scoring',setting:'Country Risk Matrix',old_value:'v2.1',new_value:'v2.0',ip:'10.0.0.1'},
+{id:6,timestamp:'12 Mar 2026 10:00',user:'Admin',action:'Delete',module:'Watchlist',setting:'Deprecated List',old_value:'OLD-List-2024',new_value:'—',ip:'192.168.1.10'},
+{id:7,timestamp:'11 Mar 2026 15:45',user:'Admin',action:'Update',module:'SLA',setting:'Case Review Deadline',old_value:'24h',new_value:'12h',ip:'192.168.1.10'},
+{id:8,timestamp:'11 Mar 2026 09:20',user:'SuperAdmin',action:'Create',module:'Users',setting:'New Role',old_value:'—',new_value:'Compliance Officer',ip:'10.0.0.1'}],
+filteredLogs:[],
+init(){this.filteredLogs=[...this.logs]},
+filter(){if(!this.searchQ){this.filteredLogs=[...this.logs];return}const q=this.searchQ.toLowerCase();this.filteredLogs=this.logs.filter(l=>(l.user||'').toLowerCase().includes(q)||(l.module||'').toLowerCase().includes(q)||(l.setting||'').toLowerCase().includes(q))}}}
+</script>

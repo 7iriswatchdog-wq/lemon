@@ -1,0 +1,51 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{ ViewData["Title"] = "Client Onboarding — Command Center"; Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml"; var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl"); }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>[x-cloak]{display:none!important}.si-page{min-height:100vh;background:#f8fafc}.si-page-inner{padding:24px;max-width:1440px;margin:0 auto}.si-header{display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 24px;background:#fff;border-bottom:1px solid #e2e8f0}.si-header-title{font-size:18px;font-weight:700;color:#0f172a}.si-header-breadcrumb{font-size:12px;color:#94a3b8;margin-top:2px}.si-header-breadcrumb a{color:#6366f1;text-decoration:none}.si-super-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#312e81,#4f46e5);color:#fff}.si-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}.si-kpi{background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0;transition:all .2s;position:relative;overflow:hidden}.si-kpi:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}.si-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-color,#6366f1)}.si-kpi-value{font-size:28px;font-weight:800;color:#0f172a;margin-bottom:4px;line-height:1}.si-kpi-label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em}.si-kpi-icon{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--kpi-bg,#eef2ff);color:var(--kpi-color,#6366f1);font-size:16px}.si-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}.si-chart-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:20px}.si-chart-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:16px}.si-table-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden}.si-table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #f1f5f9}.si-table-title{font-size:15px;font-weight:700;color:#0f172a}.si-table{width:100%;border-collapse:collapse}.si-table thead th{padding:12px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;background:#f8fafc;border-bottom:1px solid #e2e8f0;cursor:pointer;white-space:nowrap}.si-table tbody td{padding:11px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;white-space:nowrap}.si-table tbody tr:hover{background:#f8fafc}.si-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}.si-badge-active{background:#d1fae5;color:#065f46}.si-badge-pending{background:#fef3c7;color:#92400e}.si-badge-suspended{background:#fee2e2;color:#991b1b}.si-loader{display:flex;align-items:center;justify-content:center;padding:60px}.si-spinner{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:si-spin .6s linear infinite}@@keyframes si-spin{to{transform:rotate(360deg)}}@@media(max-width:768px){.si-kpi-row,.si-chart-grid{grid-template-columns:1fr}}</style>
+<div class="si-page" x-data="clientOnboarding()" x-init="init()" x-cloak>
+    <div class="si-header"><div><div class="si-header-title">Client Onboarding</div><div class="si-header-breadcrumb"><a href="/">Home</a> / <a href="/CommandCenter">Command Center</a> / Client Onboarding</div></div><div style="display:flex;align-items:center;gap:12px"><span class="si-super-badge"><i class="fa-solid fa-shield-halved"></i> Super Admin</span><img src="@Clientlogo" alt="Logo" style="height:32px"/></div></div>
+    <div class="si-page-inner">
+        <div class="si-kpi-row">
+            <div class="si-kpi" style="--kpi-color:#6366f1;--kpi-bg:#eef2ff"><div class="si-kpi-icon"><i class="fa-solid fa-user-plus"></i></div><div class="si-kpi-value" x-text="summary.total||'0'"></div><div class="si-kpi-label">Total Clients</div></div>
+            <div class="si-kpi" style="--kpi-color:#22c55e;--kpi-bg:#d1fae5"><div class="si-kpi-icon"><i class="fa-solid fa-circle-check"></i></div><div class="si-kpi-value" x-text="summary.active||'0'"></div><div class="si-kpi-label">Active</div></div>
+            <div class="si-kpi" style="--kpi-color:#f59e0b;--kpi-bg:#fef3c7"><div class="si-kpi-icon"><i class="fa-solid fa-clock"></i></div><div class="si-kpi-value" x-text="summary.pending||'0'"></div><div class="si-kpi-label">Pending Setup</div></div>
+            <div class="si-kpi" style="--kpi-color:#ef4444;--kpi-bg:#fee2e2"><div class="si-kpi-icon"><i class="fa-solid fa-ban"></i></div><div class="si-kpi-value" x-text="summary.suspended||'0'"></div><div class="si-kpi-label">Suspended</div></div>
+        </div>
+        <div class="si-chart-grid">
+            <div class="si-chart-card"><div class="si-chart-title">Onboarding Timeline</div><div style="height:280px"><canvas id="timelineChart"></canvas></div></div>
+            <div class="si-chart-card"><div class="si-chart-title">Client Status Breakdown</div><div style="height:280px"><canvas id="statusChart"></canvas></div></div>
+        </div>
+        <div class="si-table-card">
+            <div class="si-table-header"><div class="si-table-title">Client Accounts</div></div>
+            <div class="si-loader" x-show="loading"><div class="si-spinner"></div></div>
+            <div x-show="!loading" style="overflow-x:auto">
+                <table class="si-table"><thead><tr><th>Client Name</th><th>Company Code</th><th>Industry</th><th>Users</th><th>Cases</th><th>Subscription</th><th>Status</th><th>Onboarded</th></tr></thead>
+                <tbody><template x-for="row in rows" :key="row.id"><tr>
+                    <td x-text="row.name" style="font-weight:600;color:#6366f1"></td><td x-text="row.code||'—'"></td><td x-text="row.industry||'—'" style="font-size:12px"></td>
+                    <td x-text="row.users||'0'" style="font-weight:600"></td><td x-text="row.cases||'0'" style="font-weight:600"></td>
+                    <td x-text="row.subscription||'—'" style="font-size:12px"></td>
+                    <td><span class="si-badge" :class="row.status==='Active'?'si-badge-active':row.status==='Pending'?'si-badge-pending':'si-badge-suspended'" x-text="row.status"></span></td>
+                    <td x-text="formatDate(row.onboarded)" style="font-size:12px"></td>
+                </tr></template>
+                <tr x-show="rows.length===0&&!loading"><td colspan="8" style="text-align:center;padding:40px;color:#94a3b8">No client data.</td></tr></tbody></table>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+<script>
+function clientOnboarding(){return{loading:false,rows:[],summary:{},tlChart:null,stChart:null,
+init(){this.loadData()},
+async loadData(){this.loading=true;try{let data=[];try{const r=await fetch('/SuperAdmin/GetAllClients');if(r.ok){const d=await r.json();data=d.data||d||[]}}catch(e){}
+this.rows=data.map(c=>({id:c.id||c.clientId,name:c.clientName||c.companyName||'',code:c.companyCode||'',industry:c.industry||c.sector||'',users:parseInt(c.userCount||c.users||0),cases:parseInt(c.caseCount||c.cases||0),subscription:c.subscriptionPlan||c.subscription||'Standard',status:c.isActive===false?'Suspended':(c.status||'Active'),onboarded:c.createdOn||c.onboardedDate||''}));
+this.summary={total:this.rows.length,active:this.rows.filter(r=>r.status==='Active').length,pending:this.rows.filter(r=>r.status==='Pending').length,suspended:this.rows.filter(r=>r.status==='Suspended').length};
+this.renderCharts()}catch(e){console.error(e)}finally{this.loading=false}},
+renderCharts(){if(this.tlChart)this.tlChart.destroy();const c1=document.getElementById('timelineChart');
+if(c1){const mm={};this.rows.forEach(r=>{const m=(r.onboarded||'').substring(0,7);if(m)mm[m]=(mm[m]||0)+1});const sorted=Object.entries(mm).sort((a,b)=>a[0].localeCompare(b[0])).slice(-12);
+this.tlChart=new Chart(c1.getContext('2d'),{type:'line',data:{labels:sorted.map(s=>s[0]),datasets:[{label:'Clients',data:sorted.map(s=>s[1]),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,0.1)',fill:true,tension:.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#f1f5f9'}},x:{grid:{display:false}}}}})}
+if(this.stChart)this.stChart.destroy();const c2=document.getElementById('statusChart');
+if(c2){this.stChart=new Chart(c2.getContext('2d'),{type:'doughnut',data:{labels:['Active','Pending','Suspended'],datasets:[{data:[this.summary.active,this.summary.pending,this.summary.suspended],backgroundColor:['#22c55e','#f59e0b','#ef4444'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:12,weight:'600'},usePointStyle:true}}}}})}},
+formatDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}catch{return d}}}}
+</script>

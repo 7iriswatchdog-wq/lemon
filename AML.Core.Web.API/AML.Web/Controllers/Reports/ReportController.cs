@@ -1060,7 +1060,7 @@ public IActionResult CustomerList(DataTableModel model,
                 ErrorLogDTO error = new ErrorLogDTO();
                 error.created_on = DateTime.Now;
                 error.createdBy = _clientHandler.GetUserId();
-                error.description = ex.InnerException.Message;
+                error.description = ex.InnerException?.Message ?? ex.Message;
                 error.module = "Sending_email";
                 error.comments = "Sending email Error";
                 error.status_code = 404;

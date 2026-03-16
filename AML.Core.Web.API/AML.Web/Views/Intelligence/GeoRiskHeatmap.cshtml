@@ -1,0 +1,72 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{ ViewData["Title"] = "Geo Risk Heatmap — Searchin Intelligence"; Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml"; var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl"); }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>[x-cloak]{display:none!important}.si-page{min-height:100vh;background:#f8fafc}.si-page-inner{padding:24px;max-width:1440px;margin:0 auto}.si-header{display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 24px;background:#fff;border-bottom:1px solid #e2e8f0}.si-header-title{font-size:18px;font-weight:700;color:#0f172a}.si-header-breadcrumb{font-size:12px;color:#94a3b8;margin-top:2px}.si-header-breadcrumb a{color:#6366f1;text-decoration:none}.si-intel-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff}.si-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}.si-kpi{background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0;transition:all .2s;position:relative;overflow:hidden}.si-kpi:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}.si-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-color,#6366f1)}.si-kpi-value{font-size:28px;font-weight:800;color:#0f172a;margin-bottom:4px;line-height:1}.si-kpi-label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em}.si-kpi-icon{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--kpi-bg,#eef2ff);color:var(--kpi-color,#6366f1);font-size:16px}
+.si-map-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:20px;margin-bottom:24px}
+.si-map-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.si-map-container{width:100%;height:420px;background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:12px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
+.si-heat-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;padding:20px;width:100%}
+.si-heat-cell{aspect-ratio:1;border-radius:4px;cursor:pointer;transition:all .2s;position:relative}
+.si-heat-cell:hover{transform:scale(1.2);z-index:1;box-shadow:0 0 12px rgba(255,255,255,.2)}
+.si-heat-cell .tooltip{display:none;position:absolute;bottom:calc(100%+8px);left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:6px 10px;border-radius:6px;font-size:11px;white-space:nowrap;z-index:10}
+.si-heat-cell:hover .tooltip{display:block}
+.si-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}.si-chart-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:20px}.si-chart-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:16px}
+.si-country-list{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:24px}
+.si-country-item{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.si-country-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.si-country-name{font-size:13px;font-weight:600;color:#0f172a;display:flex;align-items:center;gap:8px}
+.si-country-stats{display:flex;gap:16px;font-size:12px;color:#64748b}
+.si-country-stats strong{font-weight:700;color:#0f172a}
+.si-risk-dot{width:10px;height:10px;border-radius:50%}
+@@media(max-width:768px){.si-kpi-row,.si-chart-grid,.si-country-list{grid-template-columns:1fr}}</style>
+<div class="si-page" x-data="geoRisk()" x-init="init()" x-cloak>
+    <div class="si-header"><div><div class="si-header-title">Geo Risk Heatmap</div><div class="si-header-breadcrumb"><a href="/">Home</a> / <a href="/Intelligence">Intelligence</a> / Geo Risk Heatmap</div></div><div style="display:flex;align-items:center;gap:12px"><span class="si-intel-badge"><i class="fa-solid fa-brain"></i> AI Analytics</span><img src="@Clientlogo" alt="Logo" style="height:32px"/></div></div>
+    <div class="si-page-inner">
+        <div class="si-kpi-row">
+            <div class="si-kpi" style="--kpi-color:#ef4444;--kpi-bg:#fee2e2"><div class="si-kpi-icon"><i class="fa-solid fa-globe"></i></div><div class="si-kpi-value" x-text="summary.high_risk_countries"></div><div class="si-kpi-label">High Risk Countries</div></div>
+            <div class="si-kpi" style="--kpi-color:#f59e0b;--kpi-bg:#fef3c7"><div class="si-kpi-icon"><i class="fa-solid fa-earth-americas"></i></div><div class="si-kpi-value" x-text="summary.total_countries"></div><div class="si-kpi-label">Countries Active</div></div>
+            <div class="si-kpi" style="--kpi-color:#6366f1;--kpi-bg:#eef2ff"><div class="si-kpi-icon"><i class="fa-solid fa-arrow-right-arrow-left"></i></div><div class="si-kpi-value" x-text="fmt(summary.cross_border)"></div><div class="si-kpi-label">Cross-Border Txns</div></div>
+            <div class="si-kpi" style="--kpi-color:#7c3aed;--kpi-bg:#ede9fe"><div class="si-kpi-icon"><i class="fa-solid fa-shield-halved"></i></div><div class="si-kpi-value" x-text="summary.sanctioned_hits"></div><div class="si-kpi-label">Sanctioned Hits</div></div>
+        </div>
+        <div class="si-map-card">
+            <div class="si-map-title"><i class="fa-solid fa-map" style="color:#7c3aed"></i> Geographic Risk Intensity</div>
+            <div class="si-map-container">
+                <div class="si-heat-grid">
+                    <template x-for="cell in heatData" :key="cell.id">
+                        <div class="si-heat-cell" :style="'background:'+cell.color"><div class="tooltip" x-text="cell.country+': '+cell.score+' risk score'"></div></div>
+                    </template>
+                </div>
+            </div>
+        </div>
+        <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:12px">Top Risk Countries</div>
+        <div class="si-country-list">
+            <template x-for="c in topCountries" :key="c.name">
+                <div class="si-country-item">
+                    <div class="si-country-name"><div class="si-risk-dot" :style="'background:'+(c.risk==='High'?'#ef4444':c.risk==='Medium'?'#f59e0b':'#22c55e')"></div> <span x-text="c.name"></span></div>
+                    <div class="si-country-stats"><span>Cases: <strong x-text="c.cases"></strong></span><span>Score: <strong x-text="c.score" :style="c.score>=70?'color:#ef4444':''"></strong></span><span>Txns: <strong x-text="fmt(c.txns)"></strong></span></div>
+                </div>
+            </template>
+        </div>
+        <div class="si-chart-grid">
+            <div class="si-chart-card"><div class="si-chart-title">Risk by Region</div><div style="height:280px"><canvas id="regionChart"></canvas></div></div>
+            <div class="si-chart-card"><div class="si-chart-title">Transaction Flow by Country Risk Level</div><div style="height:280px"><canvas id="flowChart"></canvas></div></div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+<script>
+function geoRisk(){return{summary:{high_risk_countries:14,total_countries:82,cross_border:4280,sanctioned_hits:23},
+topCountries:[{name:'Iran',risk:'High',cases:45,score:95,txns:12},{name:'North Korea',risk:'High',cases:3,score:98,txns:0},{name:'Syria',risk:'High',cases:8,score:92,txns:5},{name:'Russia',risk:'High',cases:67,score:85,txns:234},{name:'Myanmar',risk:'High',cases:12,score:82,txns:18},{name:'Afghanistan',risk:'High',cases:15,score:88,txns:7},{name:'Iraq',risk:'Medium',cases:34,score:65,txns:89},{name:'Lebanon',risk:'Medium',cases:28,score:62,txns:156},{name:'Pakistan',risk:'Medium',cases:112,score:55,txns:890},{name:'UAE',risk:'Low',cases:450,score:25,txns:12400}],
+heatData:[],
+init(){this.generateHeatData();this.renderCharts()},
+generateHeatData(){const countries=['Iran','Syria','NK','Russia','Iraq','Lebanon','Pakistan','India','UAE','China','UK','US','Turkey','Egypt','KSA','Jordan','Oman','Bahrain','Kuwait','Qatar','Afghanistan','Myanmar','Nigeria','Kenya','Brazil','Mexico','Germany','France','Japan','Korea','Thailand','Indonesia','Malaysia','Singapore','Australia','Canada','South Africa','Morocco','Tunisia','Libya','Yemen','Sudan','Somalia','Venezuela','Colombia','Philippines','Vietnam','Bangladesh','Sri Lanka','Nepal','Armenia','Georgia','Ukraine','Belarus','Moldova','Hungary','Serbia','Albania','Kosovo','Bosnia','Croatia','Slovenia','Czech','Poland','Romania','Bulgaria','Greece','Italy','Spain','Portugal','Sweden'];
+this.heatData=countries.map((c,i)=>{const s=Math.floor(Math.random()*100);let color;if(s>=80)color='rgba(239,68,68,0.8)';else if(s>=60)color='rgba(249,115,22,0.6)';else if(s>=40)color='rgba(251,191,36,0.4)';else if(s>=20)color='rgba(34,197,94,0.3)';else color='rgba(99,102,241,0.15)';
+return{id:i,country:c,score:s,color}})},
+renderCharts(){const c1=document.getElementById('regionChart');
+if(c1){new Chart(c1.getContext('2d'),{type:'bar',data:{labels:['Middle East','Central Asia','Africa','Europe','Americas','Asia-Pacific'],datasets:[{label:'Risk Score',data:[72,68,55,32,28,35],backgroundColor:['#ef4444','#f97316','#f59e0b','#6366f1','#22c55e','#06b6d4'],borderRadius:8,barPercentage:.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,grid:{color:'#f1f5f9'}},x:{grid:{display:false}}}}})}
+const c2=document.getElementById('flowChart');
+if(c2){new Chart(c2.getContext('2d'),{type:'doughnut',data:{labels:['High Risk','Medium Risk','Low Risk','Minimal Risk'],datasets:[{data:[15,25,35,25],backgroundColor:['#ef4444','#f59e0b','#22c55e','#6366f1'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:12,weight:'600'},usePointStyle:true,padding:12}}}}})}},
+fmt(n){return(n||0).toLocaleString()}}}
+</script>

@@ -1,0 +1,132 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Client Case Summary — Command Center";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+    var isSuperAdmin = HttpContextAccessor.HttpContext.Session.GetString("is_superAdmin");
+}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    [x-cloak]{display:none!important}
+    .si-page{min-height:100vh;background:#f8fafc}.si-page-inner{padding:24px;max-width:1440px;margin:0 auto}
+    .si-header{display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 24px;background:#fff;border-bottom:1px solid #e2e8f0}
+    .si-header-title{font-size:18px;font-weight:700;color:#0f172a}.si-header-breadcrumb{font-size:12px;color:#94a3b8;margin-top:2px}.si-header-breadcrumb a{color:#6366f1;text-decoration:none}
+    .si-super-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#312e81,#4f46e5);color:#fff}
+    .si-kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px}
+    .si-kpi{background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0;transition:all .2s;position:relative;overflow:hidden}
+    .si-kpi:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+    .si-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-color,#6366f1)}
+    .si-kpi-value{font-size:28px;font-weight:800;color:#0f172a;margin-bottom:4px;line-height:1}
+    .si-kpi-label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em}
+    .si-kpi-icon{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--kpi-bg,#eef2ff);color:var(--kpi-color,#6366f1);font-size:16px}
+    .si-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+    .si-chart-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:20px}.si-chart-card.full{grid-column:span 2}
+    .si-chart-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:16px}
+    .si-table-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden}
+    .si-table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #f1f5f9}
+    .si-table-title{font-size:15px;font-weight:700;color:#0f172a}
+    .si-table-tools{display:flex;align-items:center;gap:10px}
+    .si-search-box{position:relative}.si-search-box input{width:260px;padding:8px 12px 8px 36px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fafbfc}
+    .si-search-box i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:14px}
+    .si-export-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer}.si-export-btn:hover{border-color:#6366f1;color:#6366f1}
+    .si-table{width:100%;border-collapse:collapse}
+    .si-table thead th{padding:12px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;background:#f8fafc;border-bottom:1px solid #e2e8f0;cursor:pointer;white-space:nowrap}
+    .si-table tbody td{padding:11px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;white-space:nowrap}
+    .si-table tbody tr:hover{background:#f8fafc}
+    .si-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .si-badge-active{background:#d1fae5;color:#065f46}.si-badge-inactive{background:#f1f5f9;color:#64748b}
+    .si-pagination{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-top:1px solid #f1f5f9}
+    .si-pagination-info{font-size:12px;color:#94a3b8}.si-pagination-btns{display:flex;gap:4px}
+    .si-page-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:12px;font-weight:600;border:1px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer}
+    .si-page-btn.active{background:#6366f1;color:#fff;border-color:#6366f1}
+    .si-loader{display:flex;align-items:center;justify-content:center;padding:60px}
+    .si-spinner{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:si-spin .6s linear infinite}
+    @@keyframes si-spin{to{transform:rotate(360deg)}}
+    .si-access-denied{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;color:#94a3b8;text-align:center}
+    .si-access-denied i{font-size:64px;margin-bottom:16px;color:#ef4444}
+    .si-access-denied h2{font-size:20px;font-weight:700;color:#0f172a;margin-bottom:8px}
+    @@media(max-width:1200px){.si-kpi-row{grid-template-columns:repeat(3,1fr)}}
+    @@media(max-width:768px){.si-kpi-row,.si-chart-grid{grid-template-columns:1fr}.si-chart-card.full{grid-column:span 1}}
+</style>
+<div class="si-page" x-data="clientCaseSummary()" x-init="init()" x-cloak>
+    <div class="si-header">
+        <div><div class="si-header-title">Client Case Summary</div><div class="si-header-breadcrumb"><a href="/">Home</a> / <a href="/CommandCenter">Command Center</a> / Client Case Summary</div></div>
+        <div style="display:flex;align-items:center;gap:12px"><span class="si-super-badge"><i class="fa-solid fa-shield-halved"></i> Super Admin</span><img src="@Clientlogo" alt="Logo" style="height:32px"/></div>
+    </div>
+    <div class="si-page-inner">
+        <div class="si-kpi-row">
+            <div class="si-kpi" style="--kpi-color:#6366f1;--kpi-bg:#eef2ff"><div class="si-kpi-icon"><i class="fa-solid fa-building"></i></div><div class="si-kpi-value" x-text="summary.total_clients||'0'"></div><div class="si-kpi-label">Total Clients</div></div>
+            <div class="si-kpi" style="--kpi-color:#22c55e;--kpi-bg:#d1fae5"><div class="si-kpi-icon"><i class="fa-solid fa-layer-group"></i></div><div class="si-kpi-value" x-text="fmt(summary.total_cases)"></div><div class="si-kpi-label">Total Cases</div></div>
+            <div class="si-kpi" style="--kpi-color:#f59e0b;--kpi-bg:#fef3c7"><div class="si-kpi-icon"><i class="fa-solid fa-clock"></i></div><div class="si-kpi-value" x-text="fmt(summary.pending)"></div><div class="si-kpi-label">Pending</div></div>
+            <div class="si-kpi" style="--kpi-color:#ef4444;--kpi-bg:#fee2e2"><div class="si-kpi-icon"><i class="fa-solid fa-flag"></i></div><div class="si-kpi-value" x-text="fmt(summary.flagged)"></div><div class="si-kpi-label">Flagged</div></div>
+            <div class="si-kpi" style="--kpi-color:#8b5cf6;--kpi-bg:#ede9fe"><div class="si-kpi-icon"><i class="fa-solid fa-chart-line"></i></div><div class="si-kpi-value" x-text="summary.avg_score||'0'"></div><div class="si-kpi-label">Avg Risk Score</div></div>
+        </div>
+        <div class="si-chart-grid">
+            <div class="si-chart-card"><div class="si-chart-title">Cases by Client</div><div style="height:300px"><canvas id="clientChart"></canvas></div></div>
+            <div class="si-chart-card"><div class="si-chart-title">Status Distribution Across Clients</div><div style="height:300px"><canvas id="statusChart"></canvas></div></div>
+        </div>
+        <div class="si-table-card">
+            <div class="si-table-header">
+                <div class="si-table-title">Client Overview <span style="font-size:12px;font-weight:500;color:#94a3b8;margin-left:8px" x-text="'('+clients.length+')'"></span></div>
+                <div class="si-table-tools">
+                    <div class="si-search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Search clients..." x-model="searchQuery" @@input.debounce.300ms="paginate()"/></div>
+                    <button class="si-export-btn" @@click="exportData()"><i class="fa-solid fa-file-pdf"></i> Export</button>
+                </div>
+            </div>
+            <div class="si-loader" x-show="loading"><div class="si-spinner"></div></div>
+            <div x-show="!loading" style="overflow-x:auto">
+                <table class="si-table">
+                    <thead><tr><th @@click="sort('client_name')">Client</th><th @@click="sort('total_cases')">Total Cases</th><th @@click="sort('pending')">Pending</th><th @@click="sort('approved')">Approved</th><th @@click="sort('rejected')">Rejected</th><th @@click="sort('flagged')">Flagged</th><th @@click="sort('avg_score')">Avg Score</th><th>Status</th><th @@click="sort('last_activity')">Last Activity</th></tr></thead>
+                    <tbody>
+                        <template x-for="row in displayRows" :key="row.client_id||row.client_name">
+                            <tr>
+                                <td x-text="row.client_name" style="font-weight:600;color:#6366f1"></td>
+                                <td x-text="fmt(row.total_cases)" style="font-weight:700"></td>
+                                <td x-text="row.pending||'0'" style="color:#f59e0b;font-weight:600"></td>
+                                <td x-text="row.approved||'0'" style="color:#22c55e;font-weight:600"></td>
+                                <td x-text="row.rejected||'0'" style="color:#ef4444;font-weight:600"></td>
+                                <td x-text="row.flagged||'0'" style="font-weight:600"></td>
+                                <td x-text="row.avg_score||'0'"></td>
+                                <td><span class="si-badge" :class="row.is_active?'si-badge-active':'si-badge-inactive'" x-text="row.is_active?'Active':'Inactive'"></span></td>
+                                <td x-text="formatDate(row.last_activity)" style="font-size:12px"></td>
+                            </tr>
+                        </template>
+                        <tr x-show="displayRows.length===0&&!loading"><td colspan="9" style="text-align:center;padding:40px;color:#94a3b8"><i class="fa-solid fa-inbox" style="font-size:32px;display:block;margin-bottom:8px"></i>No client data found.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="si-pagination" x-show="displayRows.length>0">
+                <div class="si-pagination-info">Showing <span x-text="((currentPage-1)*pageSize)+1"></span> to <span x-text="Math.min(currentPage*pageSize,totalRecords)"></span> of <span x-text="totalRecords"></span></div>
+                <div style="display:flex;align-items:center;gap:12px"><select x-model="pageSize" @@change="currentPage=1;paginate()" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px"><option value="10">10</option><option value="25">25</option><option value="50">50</option></select>
+                <div class="si-pagination-btns"><button class="si-page-btn" :disabled="currentPage<=1" @@click="currentPage--;paginate()"><i class="fa-solid fa-chevron-left"></i></button><template x-for="p in paginationPages" :key="p"><button class="si-page-btn" :class="{'active':p===currentPage}" @@click="currentPage=p;paginate()" x-text="p"></button></template><button class="si-page-btn" :disabled="currentPage>=totalPages" @@click="currentPage++;paginate()"><i class="fa-solid fa-chevron-right"></i></button></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+<script>
+function clientCaseSummary(){return{loading:false,clients:[],filteredClients:[],displayRows:[],summary:{},totalRecords:0,currentPage:1,pageSize:10,searchQuery:'',sortCol:'total_cases',sortDir:'desc',clientChart:null,statusChart:null,
+get totalPages(){return Math.ceil(this.totalRecords/this.pageSize)||1},
+get paginationPages(){let p=[],s=Math.max(1,this.currentPage-2),e=Math.min(this.totalPages,s+4);s=Math.max(1,e-4);for(let i=s;i<=e;i++)p.push(i);return p},
+init(){this.loadData()},
+async loadData(){this.loading=true;try{
+let data=[];try{const r=await fetch('/Admin/GetClientSummary');if(r.ok){const d=await r.json();data=d.data||d||[]}}catch(e){}
+if(data.length===0){try{const r=await fetch('/SuperAdmin/GetAllClients');if(r.ok){const d=await r.json();data=d.data||d||[]}}catch(e){}}
+this.clients=data.map(c=>({client_id:c.clientId||c.client_id||c.id,client_name:c.clientName||c.client_name||c.companyName||'',total_cases:parseInt(c.totalCases||c.total_cases||0),pending:parseInt(c.pendingCases||c.pending||0),approved:parseInt(c.approvedCases||c.approved||0),rejected:parseInt(c.rejectedCases||c.rejected||0),flagged:parseInt(c.flaggedCases||c.flagged||0),avg_score:parseInt(c.avgScore||c.avg_score||0),is_active:c.isActive!==false,last_activity:c.lastActivity||c.last_activity||c.updatedOn||''}));
+this.filteredClients=[...this.clients];this.computeSummary();this.paginate();this.renderCharts()}catch(e){console.error(e);this.clients=[]}finally{this.loading=false}},
+paginate(){let rows=[...this.filteredClients];if(this.searchQuery){const q=this.searchQuery.toLowerCase();rows=rows.filter(r=>(r.client_name||'').toLowerCase().includes(q))}
+this.totalRecords=rows.length;const s=(this.currentPage-1)*this.pageSize;this.displayRows=rows.slice(s,s+parseInt(this.pageSize))},
+computeSummary(){const d=this.clients;this.summary={total_clients:d.length,total_cases:d.reduce((s,r)=>s+r.total_cases,0),pending:d.reduce((s,r)=>s+r.pending,0),flagged:d.reduce((s,r)=>s+r.flagged,0),avg_score:d.length?Math.round(d.reduce((s,r)=>s+r.avg_score,0)/d.length):0}},
+renderCharts(){if(this.clientChart)this.clientChart.destroy();const c1=document.getElementById('clientChart');
+if(c1){const top=this.clients.sort((a,b)=>b.total_cases-a.total_cases).slice(0,10);
+this.clientChart=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:top.map(c=>c.client_name.substring(0,20)),datasets:[{label:'Cases',data:top.map(c=>c.total_cases),backgroundColor:'#6366f1',borderRadius:8,barPercentage:.5}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'#f1f5f9'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}})}
+if(this.statusChart)this.statusChart.destroy();const c2=document.getElementById('statusChart');
+if(c2){const p=this.clients.reduce((s,r)=>s+r.pending,0);const a=this.clients.reduce((s,r)=>s+r.approved,0);const rj=this.clients.reduce((s,r)=>s+r.rejected,0);const f=this.clients.reduce((s,r)=>s+r.flagged,0);
+this.statusChart=new Chart(c2.getContext('2d'),{type:'doughnut',data:{labels:['Pending','Approved','Rejected','Flagged'],datasets:[{data:[p,a,rj,f],backgroundColor:['#f59e0b','#22c55e','#ef4444','#8b5cf6'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:12,weight:'600'},usePointStyle:true,padding:12}}}}})}},
+sort(col){if(this.sortCol===col)this.sortDir=this.sortDir==='asc'?'desc':'asc';else{this.sortCol=col;this.sortDir='asc'}
+this.filteredClients.sort((a,b)=>{let va=a[col]??'',vb=b[col]??'';if(typeof va==='number')return this.sortDir==='asc'?va-vb:vb-va;return this.sortDir==='asc'?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va))});this.paginate()},
+formatDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}catch{return d}},
+fmt(n){return(n||0).toLocaleString()},exportData(){window.location.href='/Admin/ExportClientSummary'}}}
+</script>

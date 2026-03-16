@@ -47,6 +47,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using System.IO;
 using AML.ViewModel.ViewModels.TransactionMonitor;
 using static AML.Core.Service.Common.CommonService;
+using Newtonsoft.Json;
 
 namespace AML.Web.Controllers.User
 {
@@ -132,9 +133,25 @@ namespace AML.Web.Controllers.User
                 _clientHandler.SetStringSession(StaticResource.sessClientId, _UserDetailModel.ClientId.ToString());
                 _clientHandler.SetStringSession(StaticResource.SessEmail, _UserDetailModel.Email.ToString());
                 var clientData = _customerCaseService.GetClientDetailsByID(_clientHandler.GetClientId());
-                _clientHandler.SetStringSession(StaticResource.SessCompanyName, clientData.ClientName);
-                _clientHandler.SetStringSession(StaticResource.SessDescription, clientData.Description);
-                _clientHandler.SetStringSession(StaticResource.SessLogoUrl, "/img/"+clientData.DocumentFileName);
+                _clientHandler.SetStringSession(StaticResource.SessCompanyName, clientData?.ClientName ?? string.Empty);
+                _clientHandler.SetStringSession(StaticResource.SessDescription, clientData?.Description ?? string.Empty);
+                _clientHandler.SetStringSession(StaticResource.SessLogoUrl, string.IsNullOrWhiteSpace(clientData?.DocumentFileName) ? string.Empty : "/img/" + clientData.DocumentFileName);
+
+                try
+                {
+                    var rightsResponse = _userGroupRightService.getClientMenuByClientId(_UserDetailModel.ClientId);
+                    var userMenus = rightsResponse?.Result?
+                        .Select(x => new ClientRightsModel { Menu_Id = x.Menu_Id })
+                        .GroupBy(x => x.Menu_Id)
+                        .Select(g => g.First())
+                        .ToList() ?? new List<ClientRightsModel>();
+
+                    _clientHandler.SetStringSession("SessModules", JsonConvert.SerializeObject(userMenus));
+                }
+                catch
+                {
+                    _clientHandler.SetStringSession("SessModules", "[]");
+                }
 
 
                 return RedirectToAction("Index", "Home");

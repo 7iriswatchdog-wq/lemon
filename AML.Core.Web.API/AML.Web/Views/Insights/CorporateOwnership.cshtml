@@ -1,0 +1,160 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Corporate Ownership & UBO — Searchin Insights";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+    [x-cloak]{display:none!important}
+    .si-page{min-height:100vh;background:#f8fafc}.si-page-inner{padding:24px;max-width:1440px;margin:0 auto}
+    .si-header{display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 24px;background:#fff;border-bottom:1px solid #e2e8f0}
+    .si-header-title{font-size:18px;font-weight:700;color:#0f172a}.si-header-breadcrumb{font-size:12px;color:#94a3b8;margin-top:2px}.si-header-breadcrumb a{color:#6366f1;text-decoration:none}
+    .si-corp-layout{display:grid;grid-template-columns:360px 1fr;gap:20px;min-height:600px}
+    .si-corp-list{background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;display:flex;flex-direction:column}
+    .si-corp-list-header{padding:16px 20px;border-bottom:1px solid #f1f5f9}
+    .si-corp-list-header h3{font-size:14px;font-weight:700;color:#0f172a;margin:0 0 10px 0}
+    .si-corp-search{width:100%;padding:8px 12px 8px 36px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fafbfc;position:relative}
+    .si-corp-search:focus{outline:none;border-color:#6366f1}
+    .si-corp-search-wrap{position:relative}.si-corp-search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px}
+    .si-corp-items{flex:1;overflow-y:auto;padding:8px}
+    .si-corp-item{padding:12px 16px;border-radius:10px;cursor:pointer;transition:all .15s;margin-bottom:4px;border:1px solid transparent}
+    .si-corp-item:hover{background:#f8fafc;border-color:#e2e8f0}.si-corp-item.active{background:#eef2ff;border-color:#6366f1}
+    .si-corp-item-name{font-size:13px;font-weight:600;color:#0f172a}.si-corp-item-meta{font-size:11px;color:#94a3b8;margin-top:2px}
+    .si-corp-item-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:700;background:#eef2ff;color:#6366f1;margin-top:4px}
+    .si-corp-detail{background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden}
+    .si-corp-detail-header{padding:20px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between}
+    .si-corp-detail-title{font-size:16px;font-weight:700;color:#0f172a}
+    .si-corp-meta-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px 24px;border-bottom:1px solid #f1f5f9;background:#fafbfc}
+    .si-corp-meta-item label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;display:block;margin-bottom:2px}
+    .si-corp-meta-item span{font-size:13px;font-weight:600;color:#334155}
+    .si-tree-container{padding:20px 24px}
+    .si-tree-title{font-size:13px;font-weight:700;color:#334155;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+    .si-tree-node{position:relative;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:8px;margin-left:24px;background:#fff;transition:all .15s}
+    .si-tree-node:hover{border-color:#6366f1;box-shadow:0 2px 8px rgba(99,102,241,.1)}
+    .si-tree-node::before{content:'';position:absolute;left:-16px;top:50%;width:16px;height:0;border-top:1.5px solid #e2e8f0}
+    .si-tree-node.root{margin-left:0}.si-tree-node.root::before{display:none}
+    .si-tree-node-header{display:flex;align-items:center;justify-content:space-between}
+    .si-tree-node-name{font-size:13px;font-weight:600;color:#0f172a;display:flex;align-items:center;gap:8px}
+    .si-tree-node-type{font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px}
+    .type-individual{background:#eef2ff;color:#6366f1}.type-corporate{background:#d1fae5;color:#065f46}
+    .si-tree-node-share{font-size:12px;font-weight:700;color:#6366f1}
+    .si-tree-node-details{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;font-size:11px;color:#64748b}
+    .si-tree-node-details span{display:flex;align-items:center;gap:4px}
+    .si-tree-node-flag{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700}
+    .flag-pep{background:#fef3c7;color:#92400e}.flag-sanction{background:#fee2e2;color:#991b1b}.flag-clean{background:#d1fae5;color:#065f46}
+    .si-empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:400px;color:#94a3b8;text-align:center}
+    .si-empty-state i{font-size:48px;margin-bottom:12px;color:#cbd5e1}
+    .si-empty-state p{font-size:13px;max-width:300px}
+    .si-loader{display:flex;align-items:center;justify-content:center;padding:60px}
+    .si-spinner{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:si-spin .6s linear infinite}
+    @@keyframes si-spin{to{transform:rotate(360deg)}}
+    @@media(max-width:1024px){.si-corp-layout{grid-template-columns:1fr}}
+    .si-export-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer}
+    .si-export-btn:hover{border-color:#6366f1;color:#6366f1}
+</style>
+<div class="si-page" x-data="corporateOwnership()" x-init="init()" x-cloak>
+    <div class="si-header">
+        <div><div class="si-header-title">Corporate Ownership & UBO</div><div class="si-header-breadcrumb"><a href="/">Home</a> / <a href="/Insights">Insights</a> / Corporate Ownership</div></div>
+        <div style="display:flex;align-items:center;gap:10px">
+            <button class="si-export-btn" @@click="exportData('pdf')"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+            <img src="@Clientlogo" alt="Logo" style="height:32px" />
+        </div>
+    </div>
+    <div class="si-page-inner">
+        <div class="si-corp-layout">
+            <!-- Left: Corporate List -->
+            <div class="si-corp-list">
+                <div class="si-corp-list-header">
+                    <h3>Corporates <span style="font-size:11px;color:#94a3b8;font-weight:500" x-text="'('+corporates.length+')'"></span></h3>
+                    <div class="si-corp-search-wrap">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" class="si-corp-search" placeholder="Search corporates..." x-model="corpSearch" />
+                    </div>
+                </div>
+                <div class="si-loader" x-show="loading"><div class="si-spinner"></div></div>
+                <div class="si-corp-items" x-show="!loading">
+                    <template x-for="corp in filteredCorporates" :key="corp.id">
+                        <div class="si-corp-item" :class="{'active':selectedCorp&&selectedCorp.id===corp.id}" @@click="selectCorp(corp)">
+                            <div class="si-corp-item-name" x-text="corp.name"></div>
+                            <div class="si-corp-item-meta" x-text="(corp.nationality||'—')+' • '+(corp.business_type||'N/A')"></div>
+                            <div class="si-corp-item-badge"><i class="fa-solid fa-users" style="font-size:9px"></i> <span x-text="corp.shareholder_count+' shareholders'"></span></div>
+                        </div>
+                    </template>
+                    <div x-show="filteredCorporates.length===0" style="text-align:center;padding:40px;color:#94a3b8;font-size:13px">No corporates found.</div>
+                </div>
+            </div>
+            <!-- Right: Detail / Tree View -->
+            <div class="si-corp-detail">
+                <template x-if="!selectedCorp">
+                    <div class="si-empty-state">
+                        <i class="fa-solid fa-sitemap"></i>
+                        <p>Select a corporate from the list to view its ownership structure and UBO hierarchy.</p>
+                    </div>
+                </template>
+                <template x-if="selectedCorp">
+                    <div>
+                        <div class="si-corp-detail-header">
+                            <div class="si-corp-detail-title" x-text="selectedCorp.name"></div>
+                            <div style="display:flex;gap:8px">
+                                <span style="font-size:11px;font-weight:600;color:#6366f1;background:#eef2ff;padding:4px 10px;border-radius:6px" x-text="'Ref: '+selectedCorp.cust_ref_id"></span>
+                            </div>
+                        </div>
+                        <div class="si-corp-meta-grid">
+                            <div class="si-corp-meta-item"><label>Nationality</label><span x-text="selectedCorp.nationality||'—'"></span></div>
+                            <div class="si-corp-meta-item"><label>Business Type</label><span x-text="selectedCorp.business_type||'—'"></span></div>
+                            <div class="si-corp-meta-item"><label>Trade License</label><span x-text="selectedCorp.trade_license||'—'"></span></div>
+                            <div class="si-corp-meta-item"><label>Shareholders</label><span x-text="shareholders.length+' total'"></span></div>
+                        </div>
+                        <div class="si-tree-container">
+                            <div class="si-tree-title"><i class="fa-solid fa-sitemap" style="color:#6366f1"></i> Ownership Structure</div>
+                            <!-- Root node -->
+                            <div class="si-tree-node root">
+                                <div class="si-tree-node-header">
+                                    <div class="si-tree-node-name"><i class="fa-solid fa-building" style="color:#06b6d4"></i> <span x-text="selectedCorp.name"></span> <span class="si-tree-node-type type-corporate">CORPORATE</span></div>
+                                    <div class="si-tree-node-share">100%</div>
+                                </div>
+                            </div>
+                            <!-- Shareholder nodes -->
+                            <div class="si-loader" x-show="loadingShareholders"><div class="si-spinner"></div></div>
+                            <template x-for="sh in shareholders" :key="sh.link_id||sh.shareholder_id">
+                                <div class="si-tree-node">
+                                    <div class="si-tree-node-header">
+                                        <div class="si-tree-node-name">
+                                            <i :class="sh.shareholder_type==='C'?'fa-solid fa-building':'fa-solid fa-user'" :style="sh.shareholder_type==='C'?'color:#06b6d4':'color:#6366f1'"></i>
+                                            <span x-text="sh.shareholder_name"></span>
+                                            <span class="si-tree-node-type" :class="sh.shareholder_type==='C'?'type-corporate':'type-individual'" x-text="sh.shareholder_type==='C'?'CORPORATE':'INDIVIDUAL'"></span>
+                                        </div>
+                                        <div class="si-tree-node-share" x-text="(sh.share_percentage||0)+'%'"></div>
+                                    </div>
+                                    <div class="si-tree-node-details">
+                                        <span><i class="fa-solid fa-globe" style="font-size:10px"></i> <span x-text="sh.nationality||'—'"></span></span>
+                                        <span><i class="fa-solid fa-chart-simple" style="font-size:10px"></i> Score: <span x-text="(sh.match_score||0)+'%'"></span></span>
+                                        <span>
+                                            <template x-if="sh.sanction_flags>0"><span class="si-tree-node-flag flag-sanction"><i class="fa-solid fa-ban"></i> Sanctions</span></template>
+                                            <template x-if="sh.pep_flags>0"><span class="si-tree-node-flag flag-pep"><i class="fa-solid fa-flag"></i> PEP</span></template>
+                                            <template x-if="!sh.sanction_flags&&!sh.pep_flags"><span class="si-tree-node-flag flag-clean"><i class="fa-solid fa-check"></i> Clear</span></template>
+                                        </span>
+                                    </div>
+                                </div>
+                            </template>
+                            <div x-show="!loadingShareholders&&shareholders.length===0&&selectedCorp" style="text-align:center;padding:30px;color:#94a3b8;font-size:13px"><i class="fa-solid fa-folder-open" style="font-size:24px;display:block;margin-bottom:8px"></i>No shareholders on record.</div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+<script>
+function corporateOwnership(){return{loading:false,loadingShareholders:false,corporates:[],shareholders:[],selectedCorp:null,corpSearch:'',
+get filteredCorporates(){if(!this.corpSearch)return this.corporates;const q=this.corpSearch.toLowerCase();return this.corporates.filter(c=>(c.name||'').toLowerCase().includes(q))},
+init(){this.loadCorporates()},
+async loadCorporates(){this.loading=true;try{const fd=new URLSearchParams();fd.append('draw',1);fd.append('start',0);fd.append('length',10000);fd.append('startDate','2000-01-01');fd.append('endDate',new Date().toISOString().split('T')[0]);fd.append('match','1');fd.append('columns[0][data]','customerType');fd.append('order[0][column]',0);fd.append('order[0][dir]','desc');
+const r=await fetch('/Report/CustomerListing',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fd});const d=await r.json();
+const allRows=d.allRows||d.data||[];this.corporates=allRows.filter(r=>(r.customerType||'').toUpperCase()==='CORPORATE'||(r.cust_type||'')==='C').map(r=>({id:r.id||r.customerID,cust_ref_id:r.customerID||'',name:r.customerName||r.CustomerName||'',nationality:r.nationality||r.Nationality||'',business_type:r.businessType||r.bussiness_type||'',trade_license:r.tradeLicense||r.tradelicense||'',shareholder_count:parseInt(r.shareholderCount||0),created_on:r.createdOn||r.CreatedOn||''}))}catch(e){console.error(e);this.corporates=[]}finally{this.loading=false}},
+async selectCorp(corp){this.selectedCorp=corp;this.loadingShareholders=true;this.shareholders=[];try{const r=await fetch('/Corporate/GetShareholders?corporateId='+encodeURIComponent(corp.cust_ref_id));if(r.ok){const d=await r.json();this.shareholders=(d.data||d||[]).map(s=>({link_id:s.id||s.link_id,shareholder_id:s.shareholderId||s.shareholder_id,shareholder_name:s.shareholderName||s.shareholder_name||(s.fname+' '+(s.lname||'')),shareholder_type:s.shareholderType||s.shareholder_type||s.cust_type||'I',nationality:s.nationality||'',share_percentage:parseFloat(s.sharePercentage||s.share_percentage||0),match_score:parseInt(s.matchScore||s.match_score||0),is_matched:s.is_matched||false,pep_flags:parseInt(s.pepFlags||s.pep_flags||0),sanction_flags:parseInt(s.sanctionFlags||s.sanction_flags||0),screening_status:s.screeningStatus||s.screening_status||''}))}else{this.shareholders=[]}}catch(e){console.error(e);this.shareholders=[]}finally{this.loadingShareholders=false}},
+exportData(f){window.location.href='/Report/ExportCustomerList?startDate=2000-01-01&endDate='+new Date().toISOString().split('T')[0]+'&match=1&isPDF=true'}}}
+</script>

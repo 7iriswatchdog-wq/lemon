@@ -1,4 +1,4 @@
-﻿using AML.Core.Common.StaticResource;
+using AML.Core.Common.StaticResource;
 using AML.Core.ServiceContract.Branch;
 using AML.DTO.DTO.Branch;
 using AML.DTO.DTO.CustomerCase;
@@ -94,7 +94,7 @@ namespace AML.Core.Service.CustomerCase
             var resu = _res.Result;
             var resu1 = "";
             string CustId = "";
-            if (_res.Result.ToString() != "0")
+            if (_res.Result != null && _res.Result.ToString() != "0")
             {
                 resu = _res.Result.Split('Ø')[0];
                 resu1 = _res.Result.Split('Ø')[1];
@@ -111,7 +111,7 @@ namespace AML.Core.Service.CustomerCase
                 _CustomerCaseDT.CustomerId = CustId;
                 _CustomerCaseDT.Id = resu.ParseInt();
                 //  _CustomerCaseDT.CustomerId = CustId.ParseString();
-                _CustomerCaseDT.CustomerMasterId = Regex.Replace(CustId, "[^0-9]", "").ParseInt();
+                _CustomerCaseDT.CustomerMasterId = Regex.Replace(CustId ?? "", "[^0-9]", "").ParseInt();
                 _CustomerCaseRepository.Create(_CustomerCaseDT);
             }
             _res.Result = resu1;
@@ -171,7 +171,7 @@ namespace AML.Core.Service.CustomerCase
             string resu;
             string resu1;
 
-            if (_res.Result.ToString() != "0")
+            if (_res.Result != null && _res.Result.ToString() != "0")
             {
                 resu = _res.Result.Split('Ø')[0];
                 resu1 = _res.Result.Split('Ø')[1];
@@ -271,7 +271,7 @@ namespace AML.Core.Service.CustomerCase
             string resu;
             string resu1;
 
-            if (_res.Result.ToString() != "0" || _res.Result ==null)
+            if (_res.Result != null && (_res.Result.ToString() != "0" || _res.Result == null))
             {
                 resu = _res.Result.Split('Ø')[0];
                 resu1 = _res.Result.Split('Ø')[1];

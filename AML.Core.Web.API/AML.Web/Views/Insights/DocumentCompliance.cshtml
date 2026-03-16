@@ -1,0 +1,164 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Document Compliance — Searchin Insights";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    [x-cloak]{display:none!important}
+    .si-page{min-height:100vh;background:#f8fafc}.si-page-inner{padding:24px;max-width:1440px;margin:0 auto}
+    .si-header{display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 24px;background:#fff;border-bottom:1px solid #e2e8f0}
+    .si-header-title{font-size:18px;font-weight:700;color:#0f172a}.si-header-breadcrumb{font-size:12px;color:#94a3b8;margin-top:2px}.si-header-breadcrumb a{color:#6366f1;text-decoration:none}
+    .si-alert-banner{display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:12px;margin-bottom:20px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fbbf24;color:#92400e}
+    .si-alert-banner i{font-size:20px}.si-alert-banner-text{font-size:13px;font-weight:600}
+    .si-kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px}
+    .si-kpi{background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0;transition:all .2s;position:relative;overflow:hidden}
+    .si-kpi:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+    .si-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-color,#6366f1)}
+    .si-kpi-value{font-size:28px;font-weight:800;color:#0f172a;margin-bottom:4px;line-height:1}
+    .si-kpi-label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em}
+    .si-kpi-icon{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--kpi-bg,#eef2ff);color:var(--kpi-color,#6366f1);font-size:16px}
+    .si-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+    .si-chart-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:20px}.si-chart-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:16px}
+    .si-filter-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;margin-bottom:24px;overflow:hidden}
+    .si-filter-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;cursor:pointer;border-bottom:1px solid #f1f5f9}.si-filter-header:hover{background:#fafbfc}
+    .si-filter-title{font-size:13px;font-weight:700;color:#334155;display:flex;align-items:center;gap:8px}
+    .si-filter-body{padding:20px 24px}.si-filter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 20px}
+    .si-filter-group label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:6px}
+    .si-filter-group input,.si-filter-group select{width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;color:#334155;background:#fafbfc}
+    .si-filter-group input:focus,.si-filter-group select:focus{outline:none;border-color:#6366f1}
+    .si-filter-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+    .si-btn-primary{padding:9px 24px;border-radius:10px;font-size:13px;font-weight:600;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;cursor:pointer}
+    .si-btn-secondary{padding:9px 24px;border-radius:10px;font-size:13px;font-weight:600;background:#fff;color:#64748b;border:1.5px solid #e2e8f0;cursor:pointer}
+    .si-table-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden}
+    .si-table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #f1f5f9}
+    .si-table-title{font-size:15px;font-weight:700;color:#0f172a}
+    .si-table-tools{display:flex;align-items:center;gap:10px}
+    .si-search-box{position:relative}.si-search-box input{width:260px;padding:8px 12px 8px 36px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fafbfc}
+    .si-search-box i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:14px}
+    .si-export-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer}.si-export-btn:hover{border-color:#6366f1;color:#6366f1}
+    .si-table{width:100%;border-collapse:collapse}
+    .si-table thead th{padding:12px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;background:#f8fafc;border-bottom:1px solid #e2e8f0;cursor:pointer;white-space:nowrap}
+    .si-table tbody td{padding:11px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;white-space:nowrap}
+    .si-table tbody tr:hover{background:#f8fafc}
+    .si-table tbody tr.row-expired{background:#fef2f2}.si-table tbody tr.row-expired:hover{background:#fee2e2}
+    .si-table tbody tr.row-expiring{background:#fffbeb}.si-table tbody tr.row-expiring:hover{background:#fef3c7}
+    .si-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .si-badge-expired{background:#fee2e2;color:#991b1b}.si-badge-expiring{background:#fef3c7;color:#92400e}.si-badge-valid{background:#d1fae5;color:#065f46}.si-badge-missing{background:#f1f5f9;color:#64748b}
+    .si-pagination{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-top:1px solid #f1f5f9}
+    .si-pagination-info{font-size:12px;color:#94a3b8}.si-pagination-btns{display:flex;gap:4px}
+    .si-page-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:12px;font-weight:600;border:1px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer}
+    .si-page-btn.active{background:#6366f1;color:#fff;border-color:#6366f1}
+    .si-loader{display:flex;align-items:center;justify-content:center;padding:60px}
+    .si-spinner{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:si-spin .6s linear infinite}
+    @@keyframes si-spin{to{transform:rotate(360deg)}}
+    @@media(max-width:1200px){.si-kpi-row{grid-template-columns:repeat(3,1fr)}}
+    @@media(max-width:768px){.si-kpi-row,.si-chart-grid{grid-template-columns:1fr}.si-filter-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+<div class="si-page" x-data="docCompliance()" x-init="init()" x-cloak>
+    <div class="si-header"><div><div class="si-header-title">Document Compliance</div><div class="si-header-breadcrumb"><a href="/">Home</a> / <a href="/Insights">Insights</a> / Document Compliance</div></div><div><img src="@Clientlogo" alt="Logo" style="height:32px"/></div></div>
+    <div class="si-page-inner">
+        <div class="si-alert-banner" x-show="summary.expired>0">
+            <i class="fa-solid fa-clock"></i>
+            <div class="si-alert-banner-text"><span x-text="summary.expired"></span> customer(s) have expired KYC documents. <span x-text="summary.expiring_soon"></span> expire within 3 months.</div>
+        </div>
+        <div class="si-kpi-row">
+            <div class="si-kpi" style="--kpi-color:#6366f1;--kpi-bg:#eef2ff"><div class="si-kpi-icon"><i class="fa-solid fa-file-lines"></i></div><div class="si-kpi-value" x-text="summary.total||'0'"></div><div class="si-kpi-label">Total Profiles</div></div>
+            <div class="si-kpi" style="--kpi-color:#22c55e;--kpi-bg:#d1fae5"><div class="si-kpi-icon"><i class="fa-solid fa-circle-check"></i></div><div class="si-kpi-value" x-text="summary.valid||'0'"></div><div class="si-kpi-label">Valid Documents</div></div>
+            <div class="si-kpi" style="--kpi-color:#ef4444;--kpi-bg:#fee2e2"><div class="si-kpi-icon"><i class="fa-solid fa-circle-xmark"></i></div><div class="si-kpi-value" x-text="summary.expired||'0'"></div><div class="si-kpi-label">Expired</div></div>
+            <div class="si-kpi" style="--kpi-color:#f59e0b;--kpi-bg:#fef3c7"><div class="si-kpi-icon"><i class="fa-solid fa-clock"></i></div><div class="si-kpi-value" x-text="summary.expiring_soon||'0'"></div><div class="si-kpi-label">Expiring ≤3 Months</div></div>
+            <div class="si-kpi" style="--kpi-color:#94a3b8;--kpi-bg:#f1f5f9"><div class="si-kpi-icon"><i class="fa-solid fa-file-circle-question"></i></div><div class="si-kpi-value" x-text="summary.missing||'0'"></div><div class="si-kpi-label">Missing / None</div></div>
+        </div>
+        <div class="si-chart-grid">
+            <div class="si-chart-card"><div class="si-chart-title">Document Status Breakdown</div><div style="height:280px"><canvas id="docStatusChart"></canvas></div></div>
+            <div class="si-chart-card"><div class="si-chart-title">ID Types in Use</div><div style="height:280px"><canvas id="docTypeChart"></canvas></div></div>
+        </div>
+        <div class="si-filter-card">
+            <div class="si-filter-header" @@click="filterOpen=!filterOpen"><div class="si-filter-title"><i class="fa-solid fa-sliders" style="color:#6366f1"></i> Filters</div><i class="fa-solid" :class="filterOpen?'fa-chevron-up':'fa-chevron-down'" style="color:#94a3b8;font-size:12px"></i></div>
+            <div class="si-filter-body" x-show="filterOpen" x-transition>
+                <div class="si-filter-grid">
+                    <div class="si-filter-group"><label>Document Status</label><select x-model="filters.docStatus"><option value="">All</option><option value="Expired">Expired</option><option value="Expiring">Expiring Soon</option><option value="Valid">Valid</option><option value="Missing">Missing</option></select></div>
+                    <div class="si-filter-group"><label>Customer Type</label><select x-model="filters.custType"><option value="">All</option><option value="I">Individual</option><option value="C">Corporate</option></select></div>
+                    <div class="si-filter-group"><label>ID Type</label><select x-model="filters.idType"><option value="">All Types</option><option value="Passport">Passport</option><option value="Emirates ID">Emirates ID</option><option value="National ID">National ID</option><option value="Trade License">Trade License</option></select></div>
+                    <div class="si-filter-group"><label>Nationality</label><input type="text" x-model="filters.nationality" placeholder="Nationality..."/></div>
+                </div>
+                <div class="si-filter-actions"><button class="si-btn-secondary" @@click="resetFilters()">Reset</button><button class="si-btn-primary" @@click="loadData()">Apply</button></div>
+            </div>
+        </div>
+        <div class="si-table-card">
+            <div class="si-table-header">
+                <div class="si-table-title">Customer Documents <span style="font-size:12px;font-weight:500;color:#94a3b8;margin-left:8px" x-text="'('+totalRecords+')'"></span></div>
+                <div class="si-table-tools">
+                    <div class="si-search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Search..." x-model="searchQuery" @@input.debounce.300ms="paginate()"/></div>
+                    <button class="si-export-btn" @@click="exportData('pdf')"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+                    <button class="si-export-btn" @@click="exportData('xlsx')"><i class="fa-solid fa-file-excel"></i> Excel</button>
+                </div>
+            </div>
+            <div class="si-loader" x-show="loading"><div class="si-spinner"></div></div>
+            <div x-show="!loading" style="overflow-x:auto">
+                <table class="si-table">
+                    <thead><tr><th @@click="sort('customer_name')">Customer</th><th>Type</th><th>Nationality</th><th>ID Type</th><th>ID Number</th><th @@click="sort('issue_date')">Issued</th><th @@click="sort('expiry_date')">Expiry</th><th>Days Left</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        <template x-for="row in displayRows" :key="row.id||row.customer_name">
+                            <tr :class="row.doc_status==='Expired'?'row-expired':row.doc_status==='Expiring'?'row-expiring':''">
+                                <td x-text="row.customer_name||'—'" style="font-weight:600"></td>
+                                <td x-text="row.cust_type=='I'?'Individual':'Corporate'"></td>
+                                <td x-text="row.nationality||'—'"></td>
+                                <td x-text="row.id_type||'—'" style="font-size:12px"></td>
+                                <td x-text="row.id_number||'—'" style="font-size:12px"></td>
+                                <td x-text="formatDate(row.issue_date)" style="font-size:12px"></td>
+                                <td x-text="formatDate(row.expiry_date)" style="font-size:12px;font-weight:600" :style="row.doc_status==='Expired'?'color:#ef4444':row.doc_status==='Expiring'?'color:#f59e0b':''"></td>
+                                <td><span style="font-weight:700;font-size:13px" :style="row.days_left<0?'color:#ef4444':row.days_left<90?'color:#f59e0b':'color:#22c55e'" x-text="row.days_left!==null?(row.days_left<0?Math.abs(row.days_left)+' overdue':row.days_left+' days'):'—'"></span></td>
+                                <td><span class="si-badge" :class="{'si-badge-expired':row.doc_status==='Expired','si-badge-expiring':row.doc_status==='Expiring','si-badge-valid':row.doc_status==='Valid','si-badge-missing':row.doc_status==='Missing'}" x-text="row.doc_status"></span></td>
+                                <td><a :href="'/Report/ViewIndividualCaseDetailNew?id='+encodeURIComponent(row.case_id)+'&type=1'" style="color:#6366f1;font-size:12px;font-weight:600;text-decoration:none"><i class="fa-solid fa-eye"></i> View</a></td>
+                            </tr>
+                        </template>
+                        <tr x-show="displayRows.length===0&&!loading"><td colspan="10" style="text-align:center;padding:40px;color:#94a3b8"><i class="fa-solid fa-inbox" style="font-size:32px;display:block;margin-bottom:8px"></i>No document records found.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="si-pagination" x-show="displayRows.length>0">
+                <div class="si-pagination-info">Showing <span x-text="((currentPage-1)*pageSize)+1"></span> to <span x-text="Math.min(currentPage*pageSize,totalRecords)"></span> of <span x-text="totalRecords"></span></div>
+                <div style="display:flex;align-items:center;gap:12px"><select x-model="pageSize" @@change="currentPage=1;paginate()" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select>
+                <div class="si-pagination-btns"><button class="si-page-btn" :disabled="currentPage<=1" @@click="currentPage--;paginate()"><i class="fa-solid fa-chevron-left"></i></button><template x-for="p in paginationPages" :key="p"><button class="si-page-btn" :class="{'active':p===currentPage}" @@click="currentPage=p;paginate()" x-text="p"></button></template><button class="si-page-btn" :disabled="currentPage>=totalPages" @@click="currentPage++;paginate()"><i class="fa-solid fa-chevron-right"></i></button></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+<script>
+function docCompliance(){return{loading:false,filterOpen:true,allRows:[],filteredRows:[],displayRows:[],summary:{},totalRecords:0,currentPage:1,pageSize:25,searchQuery:'',sortCol:'expiry_date',sortDir:'asc',statusChart:null,typeChart:null,
+filters:{docStatus:'',custType:'',idType:'',nationality:''},
+get totalPages(){return Math.ceil(this.totalRecords/this.pageSize)||1},
+get paginationPages(){let p=[],s=Math.max(1,this.currentPage-2),e=Math.min(this.totalPages,s+4);s=Math.max(1,e-4);for(let i=s;i<=e;i++)p.push(i);return p},
+init(){this.loadData()},
+async loadData(){this.loading=true;try{
+const fd=new URLSearchParams();fd.append('draw',1);fd.append('start',0);fd.append('length',10000);fd.append('startDate','2000-01-01');fd.append('endDate',new Date().toISOString().split('T')[0]);fd.append('match','1');fd.append('idstatus','0');fd.append('columns[0][data]','customerType');fd.append('order[0][column]',0);fd.append('order[0][dir]','desc');
+const r=await fetch('/Report/CustomerListing',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fd});const d=await r.json();
+const now=new Date();const threeMonths=new Date();threeMonths.setMonth(threeMonths.getMonth()+3);
+this.allRows=(d.allRows||d.data||[]).map(r=>{const expiry=r.idExpiryDate||r.expiryDate||r.id_expiry_date||null;let daysLeft=null;let docStatus='Valid';
+if(expiry){try{const ed=new Date(expiry);daysLeft=Math.floor((ed-now)/(1000*60*60*24));if(daysLeft<0)docStatus='Expired';else if(daysLeft<=90)docStatus='Expiring';else docStatus='Valid'}catch{docStatus='Valid'}}else{docStatus='Missing';daysLeft=null}
+return{id:r.id||r.customerID,case_id:r.customerID||'',customer_name:r.customerName||r.CustomerName||'',cust_type:r.customerType==='INDIVIDUAL'?'I':r.customerType==='CORPORATE'?'C':(r.cust_type||''),nationality:r.nationality||r.Nationality||'',id_type:r.idType||r.id_type||r.documentType||'',id_number:r.idNumber||r.id_number||'',issue_date:r.idIssueDate||r.issueDate||'',expiry_date:expiry||'',days_left:daysLeft,doc_status:docStatus}});
+this.applyFilters();this.renderCharts()}catch(e){console.error(e);this.allRows=[]}finally{this.loading=false}},
+applyFilters(){let rows=[...this.allRows];if(this.filters.docStatus)rows=rows.filter(r=>r.doc_status===this.filters.docStatus);
+if(this.filters.custType)rows=rows.filter(r=>r.cust_type===this.filters.custType);
+if(this.filters.idType)rows=rows.filter(r=>(r.id_type||'').includes(this.filters.idType));
+if(this.filters.nationality)rows=rows.filter(r=>(r.nationality||'').toLowerCase().includes(this.filters.nationality.toLowerCase()));
+this.filteredRows=rows;this.computeSummary();this.currentPage=1;this.paginate()},
+paginate(){let rows=[...this.filteredRows];if(this.searchQuery){const q=this.searchQuery.toLowerCase();rows=rows.filter(r=>(r.customer_name||'').toLowerCase().includes(q)||(r.id_number||'').includes(q)||(r.nationality||'').toLowerCase().includes(q))}
+this.totalRecords=rows.length;const s=(this.currentPage-1)*this.pageSize;this.displayRows=rows.slice(s,s+parseInt(this.pageSize))},
+computeSummary(){const d=this.filteredRows;this.summary={total:d.length,valid:d.filter(r=>r.doc_status==='Valid').length,expired:d.filter(r=>r.doc_status==='Expired').length,expiring_soon:d.filter(r=>r.doc_status==='Expiring').length,missing:d.filter(r=>r.doc_status==='Missing').length}},
+renderCharts(){if(this.statusChart)this.statusChart.destroy();const c1=document.getElementById('docStatusChart');
+if(c1){this.statusChart=new Chart(c1.getContext('2d'),{type:'doughnut',data:{labels:['Valid','Expired','Expiring Soon','Missing'],datasets:[{data:[this.summary.valid||0,this.summary.expired||0,this.summary.expiring_soon||0,this.summary.missing||0],backgroundColor:['#22c55e','#ef4444','#f59e0b','#94a3b8'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:12,weight:'600'},usePointStyle:true,padding:12}}}}})}
+if(this.typeChart)this.typeChart.destroy();const c2=document.getElementById('docTypeChart');
+if(c2){const tm={};this.filteredRows.forEach(r=>{if(r.id_type)tm[r.id_type]=(tm[r.id_type]||0)+1});const sorted=Object.entries(tm).sort((a,b)=>b[1]-a[1]).slice(0,8);
+this.typeChart=new Chart(c2.getContext('2d'),{type:'bar',data:{labels:sorted.map(s=>s[0]),datasets:[{label:'Count',data:sorted.map(s=>s[1]),backgroundColor:'#6366f1',borderRadius:6,barPercentage:.5}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'#f1f5f9'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}})}},
+sort(col){if(this.sortCol===col)this.sortDir=this.sortDir==='asc'?'desc':'asc';else{this.sortCol=col;this.sortDir='asc'}
+this.filteredRows.sort((a,b)=>{let va=a[col]??'',vb=b[col]??'';if(typeof va==='number'&&typeof vb==='number')return this.sortDir==='asc'?va-vb:vb-va;return this.sortDir==='asc'?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va))});this.paginate()},
+resetFilters(){this.filters.docStatus='';this.filters.custType='';this.filters.idType='';this.filters.nationality='';this.searchQuery='';this.loadData()},
+formatDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}catch{return d}},
+exportData(f){window.location.href='/Report/ExportCustomerList?startDate=2000-01-01&endDate='+new Date().toISOString().split('T')[0]+'&match=1&isPDF='+(f==='pdf')}}}
+</script>

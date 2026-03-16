@@ -69,7 +69,8 @@ namespace AML.Web.Controllers
         {
             int userId = Convert.ToInt32(HttpContext.Session.GetString("SessUserId"));
             int clientId = Convert.ToInt32(HttpContext.Session.GetString("SessClientId"));
-            var result = _userGroupRightService.getClientMenuByClientId(clientId).Result;
+            var result = _userGroupRightService.getClientMenuByClientId(clientId).Result
+                ?? new List<AML.DTO.DTO.Common.ClientMenuRightsModelDTO>();
             //var clientId = Convert.ToInt32(HttpContext.Session.GetString("SessClientId"));
             //for progress bar
             var IndividualScreeningCount = _reportService.GetCustomerTypeCount("I", clientId);
@@ -78,20 +79,24 @@ namespace AML.Web.Controllers
             var CorporateScreeningCount = _reportService.GetCustomerTypeCount("C", clientId);
             ViewBag.corporatecustomertype = CorporateScreeningCount;
           
-            var indvidualcount = _reportService.GetRiskCount(1, clientId);
-            ViewBag.indvidualval = indvidualcount[0].total_count;
+            var indvidualcount = _reportService.GetRiskCount(1, clientId) ?? new List<RiskDashboardDTO>();
+            var individualRisk = indvidualcount.FirstOrDefault() ?? new RiskDashboardDTO();
+            ViewBag.indvidualval = individualRisk.total_count;
           
 
-			var corporatecount = _reportService.GetRiskCount(2, clientId);
-            ViewBag.corporateval = corporatecount[0].total_count;
-            var bankcount = _reportService.GetRiskCount(3, clientId);
-            ViewBag.bankval = bankcount[0].total_count;
-            var vendorcount = _reportService.GetRiskCount(4, clientId);
-            ViewBag.vendorval = vendorcount[0].total_count;
+			var corporatecount = _reportService.GetRiskCount(2, clientId) ?? new List<RiskDashboardDTO>();
+            var corporateRisk = corporatecount.FirstOrDefault() ?? new RiskDashboardDTO();
+            ViewBag.corporateval = corporateRisk.total_count;
+            var bankcount = _reportService.GetRiskCount(3, clientId) ?? new List<RiskDashboardDTO>();
+            var bankRisk = bankcount.FirstOrDefault() ?? new RiskDashboardDTO();
+            ViewBag.bankval = bankRisk.total_count;
+            var vendorcount = _reportService.GetRiskCount(4, clientId) ?? new List<RiskDashboardDTO>();
+            var vendorRisk = vendorcount.FirstOrDefault() ?? new RiskDashboardDTO();
+            ViewBag.vendorval = vendorRisk.total_count;
 
-            ViewBag.totalhighrisk = indvidualcount[0].high_risk_count + corporatecount[0].high_risk_count;
-            ViewBag.totallowrisk= indvidualcount[0].low_risk_count + corporatecount[0].low_risk_count;
-            ViewBag.totalmediumrisk = indvidualcount[0].medium_risk_count + corporatecount[0].medium_risk_count;
+            ViewBag.totalhighrisk = individualRisk.high_risk_count + corporateRisk.high_risk_count;
+            ViewBag.totallowrisk= individualRisk.low_risk_count + corporateRisk.low_risk_count;
+            ViewBag.totalmediumrisk = individualRisk.medium_risk_count + corporateRisk.medium_risk_count;
             //for chartdata
 
             var Apprcount = _reportService.GetCustomerCaseCount(2, clientId);
@@ -110,45 +115,64 @@ namespace AML.Web.Controllers
 
             ViewBag.Toatalapprovedcount = autoapproved + approvedcount;
 
-
-
             var totalcount=_reportService.GetCustomerCaseCount(10, clientId);
-
             ViewBag.totalcount = totalcount;
 
-            var totalriskcount = indvidualcount[0].total_count + corporatecount[0].total_count;
-
-
+            var totalriskcount = individualRisk.total_count + corporateRisk.total_count;
             ViewBag.Unclassifiedriskcount = totalcount - totalriskcount;
 
+            // ── Correct Onboarding Percentages (Phase 3 fix) ──
+            if (totalcount > 0)
+            {
+                ViewBag.ApprovedPct = Math.Round((double)(Apprcount + autoapproved) / totalcount * 100, 1);
+                ViewBag.RejectedPct = Math.Round((double)Rejectedcount / totalcount * 100, 1);
+                ViewBag.OnHoldPct = Math.Round((double)Pendingcount / totalcount * 100, 1);
+            }
+            else
+            {
+                ViewBag.ApprovedPct = 0.0;
+                ViewBag.RejectedPct = 0.0;
+                ViewBag.OnHoldPct = 0.0;
+            }
 
+            // ── Pending cases for Decision Points widget ──
+            var pendingCaseDtos = _reportService.GetCasePreviousWeekReportList(new CaseReportRequestDTO()
+            {
+                StartDate = System.DateTime.Now.AddDays(-30).ToString(),
+                EndDate = System.DateTime.Now.ToString(),
+                Status = "0",
+                ClientId = _clientHandler.GetClientId()
+            }) ?? new List<CaseReportListDTO>();
+            List<CaseReportListModel> pendingCases = _mapper.Map<List<CaseReportListModel>>(pendingCaseDtos) ?? new List<CaseReportListModel>();
+            ViewBag.PendingCases = pendingCases.Take(5).ToList();
+            ViewBag.PendingCasesTotal = pendingCases.Count;
 
+            // ── Weekly cases for management stats ──
+            var weeklyCaseDtos = _reportService.GetCasePreviousWeekReportList(new CaseReportRequestDTO()
+            {
+                StartDate = System.DateTime.Now.AddDays(-7).ToString(),
+                EndDate = System.DateTime.Now.ToString(),
+                Status = "10",
+                ClientId = _clientHandler.GetClientId()
+            }) ?? new List<CaseReportListDTO>();
+            List<CaseReportListModel> weeklyCases = _mapper.Map<List<CaseReportListModel>>(weeklyCaseDtos) ?? new List<CaseReportListModel>();
+            ViewBag.WeeklyCaseCount = weeklyCases.Count;
 
-
+            // ── Scheduler logs for System Info widget ──
+            try
+            {
+                var schedulerLogs = _reportService.GetDigiSchedulerList(clientId) ?? new List<DigiSchedulerLogsDTO>();
+                ViewBag.SchedulerLogs = schedulerLogs;
+            }
+            catch
+            {
+                ViewBag.SchedulerLogs = new List<DigiSchedulerLogsDTO>();
+            }
 
             var userMenus = result.Select(x => new ClientRightsModel()
             {
                 Menu_Id = x.Menu_Id
             }).ToList();
-            //test 
-            List<CaseReportListModel> abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCasePreviousWeekReportList(new CaseReportRequestDTO()
-            {
-
-                StartDate = System.DateTime.Now.AddDays(-7).ToString(),
-                EndDate = System.DateTime.Now.ToString(),
-                Status = "0",
-                ClientId = _clientHandler.GetClientId()
-
-
-            })) ;
-            //test
-            
-            //List<CaseReportListModel> date = _mapper.Map<List<CaseReportListModel>>(_reportService.GetLatestDate(clientId));
-
-            //DateTime ldate = Convert.ToDateTime(date[0].CreatedOn);
-
-            //ViewBag.date = ldate.ToShortDateString(); ;                 
-            //ViewBag.count = abc.Count();
 
             var jsonModules = JsonConvert.SerializeObject(userMenus);
             HttpContext.Session.SetString("SessModules", jsonModules);

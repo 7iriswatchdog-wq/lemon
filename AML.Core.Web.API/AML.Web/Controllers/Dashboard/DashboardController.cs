@@ -13,7 +13,7 @@ namespace AML.Web.Controllers.Dashboard
     {
         public IActionResult Index()
         {
-            return View();
+            return RedirectToAction("Index", "Home");
         }
     }
 }

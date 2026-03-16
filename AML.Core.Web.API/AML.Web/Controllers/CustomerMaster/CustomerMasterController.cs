@@ -147,8 +147,8 @@ namespace AML.Web.Controllers.CustomerMaster
             }
             catch (Exception ex)
             {
-                log.Info("An error occured while processing your request");
-                _toastNotification.AddErrorToastMessage("An error occured while processing your request");
+                log.Info("An error occurred while processing your request");
+                _toastNotification.AddErrorToastMessage("An error occurred while processing your request");
                 return RedirectToAction("Index");
             }
 

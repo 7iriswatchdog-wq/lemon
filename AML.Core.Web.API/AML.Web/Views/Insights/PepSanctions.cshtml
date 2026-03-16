@@ -1,0 +1,433 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "PEP & Sanctions Hits — Searchin Insights";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+    [x-cloak] { display: none !important; }
+    .si-page { min-height: 100vh; background: #f8fafc; }
+    .si-page-inner { padding: 24px; max-width: 1440px; margin: 0 auto; }
+    .si-header { display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 24px; background: white; border-bottom: 1px solid #e2e8f0; }
+    .si-header-title { font-size: 18px; font-weight: 700; color: #0f172a; }
+    .si-header-breadcrumb { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .si-header-breadcrumb a { color: #6366f1; text-decoration: none; }
+
+    /* Alert Banner */
+    .si-alert-banner {
+        display: flex; align-items: center; gap: 12px;
+        padding: 14px 20px; border-radius: 12px; margin-bottom: 20px;
+        background: linear-gradient(135deg, #fef2f2, #fff1f2);
+        border: 1px solid #fecaca; color: #991b1b;
+    }
+    .si-alert-banner i { font-size: 20px; }
+    .si-alert-banner-text { font-size: 13px; font-weight: 600; }
+
+    /* KPI Tiles 2x4 */
+    .si-pep-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    .si-pep-tile {
+        background: white; border-radius: 14px; padding: 16px 18px;
+        border: 1px solid #e2e8f0; position: relative;
+        overflow: hidden; transition: all 0.2s; cursor: default;
+    }
+    .si-pep-tile:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .si-pep-tile::before {
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+        background: var(--tile-color, #6366f1);
+    }
+    .si-pep-tile .tile-value { font-size: 24px; font-weight: 800; color: #0f172a; }
+    .si-pep-tile .tile-label { font-size: 11px; font-weight: 600; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .si-pep-tile .tile-icon {
+        position: absolute; top: 14px; right: 14px;
+        width: 32px; height: 32px; border-radius: 8px;
+        background: var(--tile-bg, #eef2ff); color: var(--tile-color, #6366f1);
+        display: flex; align-items: center; justify-content: center; font-size: 14px;
+    }
+
+    /* Filter */
+    .si-filter-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; overflow: hidden; }
+    .si-filter-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+    .si-filter-header:hover { background: #fafbfc; }
+    .si-filter-title { font-size: 13px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 8px; }
+    .si-filter-body { padding: 20px 24px; }
+    .si-filter-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 20px; }
+    .si-filter-group label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 6px; }
+    .si-filter-group input, .si-filter-group select { width: 100%; padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 13px; color: #334155; background: #fafbfc; }
+    .si-filter-group input:focus, .si-filter-group select:focus { outline: none; border-color: #6366f1; }
+    .si-filter-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+    .si-btn-primary { padding: 9px 24px; border-radius: 10px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none; cursor: pointer; }
+    .si-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
+    .si-btn-secondary { padding: 9px 24px; border-radius: 10px; font-size: 13px; font-weight: 600; background: white; color: #64748b; border: 1.5px solid #e2e8f0; cursor: pointer; }
+
+    /* Table */
+    .si-table-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; }
+    .si-table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f1f5f9; }
+    .si-table-title { font-size: 15px; font-weight: 700; color: #0f172a; }
+    .si-table-tools { display: flex; align-items: center; gap: 10px; }
+    .si-search-box { position: relative; }
+    .si-search-box input { width: 260px; padding: 8px 12px 8px 36px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 13px; background: #fafbfc; }
+    .si-search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; }
+    .si-export-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; border: 1.5px solid #e2e8f0; background: white; color: #64748b; cursor: pointer; }
+    .si-export-btn:hover { border-color: #6366f1; color: #6366f1; }
+    .si-table { width: 100%; border-collapse: collapse; }
+    .si-table thead th { padding: 12px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; background: #f8fafc; border-bottom: 1px solid #e2e8f0; cursor: pointer; white-space: nowrap; }
+    .si-table thead th:hover { background: #f1f5f9; }
+    .si-table tbody td { padding: 11px 14px; font-size: 13px; color: #334155; border-bottom: 1px solid #f1f5f9; white-space: nowrap; }
+    .si-table tbody tr:hover { background: #f8fafc; }
+
+    /* Row severity colors */
+    .si-table tbody tr.row-sanctions { background: #fef2f2; }
+    .si-table tbody tr.row-sanctions:hover { background: #fee2e2; }
+    .si-table tbody tr.row-pep { background: #fffbeb; }
+    .si-table tbody tr.row-pep:hover { background: #fef3c7; }
+    .si-table tbody tr.row-adverse { background: #fefce8; }
+    .si-table tbody tr.row-adverse:hover { background: #fef9c3; }
+
+    .si-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+    .si-badge-red { background: #fee2e2; color: #991b1b; }
+    .si-badge-amber { background: #fef3c7; color: #92400e; }
+    .si-badge-green { background: #d1fae5; color: #065f46; }
+    .si-flag-count { font-weight: 800; font-size: 13px; }
+    .si-flag-count.positive { color: #dc2626; }
+    .si-flag-count.zero { color: #94a3b8; }
+
+    .si-pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-top: 1px solid #f1f5f9; }
+    .si-pagination-info { font-size: 12px; color: #94a3b8; }
+    .si-pagination-btns { display: flex; gap: 4px; }
+    .si-page-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid #e2e8f0; background: white; color: #64748b; cursor: pointer; }
+    .si-page-btn.active { background: #6366f1; color: white; border-color: #6366f1; }
+
+    .si-loader { display: flex; align-items: center; justify-content: center; padding: 60px; }
+    .si-spinner { width: 36px; height: 36px; border: 3px solid #e2e8f0; border-top-color: #6366f1; border-radius: 50%; animation: si-spin 0.6s linear infinite; }
+    @@keyframes si-spin { to { transform: rotate(360deg); } }
+
+    @@media (max-width: 1200px) { .si-pep-grid { grid-template-columns: repeat(2, 1fr); } }
+    @@media (max-width: 768px) { .si-pep-grid { grid-template-columns: 1fr; } .si-filter-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+
+<div class="si-page" x-data="pepSanctions()" x-init="init()" x-cloak>
+    <div class="si-header">
+        <div>
+            <div class="si-header-title">PEP & Sanctions Hits</div>
+            <div class="si-header-breadcrumb"><a href="/">Home</a> / <a href="/Insights">Insights</a> / PEP & Sanctions Hits</div>
+        </div>
+        <div><img src="@Clientlogo" alt="Logo" style="height:32px;" /></div>
+    </div>
+
+    <div class="si-page-inner">
+        <!-- Alert Banner (shown when sanctions hits exist) -->
+        <div class="si-alert-banner" x-show="summary.sanctions > 0">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div class="si-alert-banner-text">
+                <span x-text="summary.sanctions"></span> active sanctions hit(s) require immediate review. This is a regulatory-sensitive report.
+            </div>
+        </div>
+
+        <!-- 8 KPI Tiles (2x4) -->
+        <div class="si-pep-grid">
+            <div class="si-pep-tile" style="--tile-color:#dc2626; --tile-bg:#fee2e2;">
+                <div class="tile-icon"><i class="fa-solid fa-flag"></i></div>
+                <div class="tile-value" x-text="summary.true_domestic_pep || '0'"></div>
+                <div class="tile-label">True Domestic PEP</div>
+            </div>
+            <div class="si-pep-tile" style="--tile-color:#ea580c; --tile-bg:#ffedd5;">
+                <div class="tile-icon"><i class="fa-solid fa-flag"></i></div>
+                <div class="tile-value" x-text="summary.true_foreign_pep || '0'"></div>
+                <div class="tile-label">True Foreign PEP</div>
+            </div>
+            <div class="si-pep-tile" style="--tile-color:#7c3aed; --tile-bg:#ede9fe;">
+                <div class="tile-icon"><i class="fa-solid fa-newspaper"></i></div>
+                <div class="tile-value" x-text="summary.true_adverse || '0'"></div>
+                <div class="tile-label">True Adverse Media</div>
+            </div>
+            <div class="si-pep-tile" style="--tile-color:#991b1b; --tile-bg:#fecaca;">
+                <div class="tile-icon"><i class="fa-solid fa-ban"></i></div>
+                <div class="tile-value" x-text="summary.sanctions || '0'"></div>
+                <div class="tile-label">UAE/UN Sanctions</div>
+            </div>
+            <div class="si-pep-tile" style="--tile-color:#f59e0b; --tile-bg:#fef3c7;">
+                <div class="tile-icon"><i class="fa-regular fa-flag"></i></div>
+                <div class="tile-value" x-text="summary.partial_domestic_pep || '0'"></div>
+                <div class="tile-label">Partial Domestic PEP</div>
+            </div>
+            <div class="si-pep-tile" style="--tile-color:#d97706; --tile-bg:#fef3c7;">
+                <div class="tile-icon"><i class="fa-regular fa-flag"></i></div>
+                <div class="tile-value" x-text="summary.partial_foreign_pep || '0'"></div>
+                <div class="tile-label">Partial Foreign PEP</div>
+            </div>
+            <div class="si-pep-tile" style="--tile-color:#a855f7; --tile-bg:#f3e8ff;">
+                <div class="tile-icon"><i class="fa-regular fa-newspaper"></i></div>
+                <div class="tile-value" x-text="summary.partial_adverse || '0'"></div>
+                <div class="tile-label">Partial Adverse Media</div>
+            </div>
+            <div class="si-pep-tile" style="--tile-color:#b91c1c; --tile-bg:#fecaca;">
+                <div class="tile-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="tile-value" x-text="summary.other_sanctions || '0'"></div>
+                <div class="tile-label">Other Sanctions</div>
+            </div>
+        </div>
+
+        <!-- Filter -->
+        <div class="si-filter-card">
+            <div class="si-filter-header" @@click="filterOpen = !filterOpen">
+                <div class="si-filter-title"><i class="fa-solid fa-sliders" style="color:#6366f1;"></i> Filters</div>
+                <i class="fa-solid" :class="filterOpen ? 'fa-chevron-up' : 'fa-chevron-down'" style="color:#94a3b8;font-size:12px;"></i>
+            </div>
+            <div class="si-filter-body" x-show="filterOpen" x-transition>
+                <div class="si-filter-grid">
+                    <div class="si-filter-group"><label>Start Date</label><input type="date" x-model="filters.dateFrom" /></div>
+                    <div class="si-filter-group"><label>End Date</label><input type="date" x-model="filters.dateTo" /></div>
+                    <div class="si-filter-group">
+                        <label>Flag Type</label>
+                        <select x-model="filters.flagType">
+                            <option value="">All Types</option>
+                            <option value="sanctions">Sanctions Only</option>
+                            <option value="pep">PEP Only</option>
+                            <option value="adverse">Adverse Media Only</option>
+                        </select>
+                    </div>
+                    <div class="si-filter-group">
+                        <label>Status</label>
+                        <select x-model="filters.status">
+                            <option value="">All</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="si-filter-actions">
+                    <button class="si-btn-secondary" @@click="resetFilters()">Reset</button>
+                    <button class="si-btn-primary" @@click="loadData()">Apply Filters</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="si-table-card">
+            <div class="si-table-header">
+                <div class="si-table-title">Flagged Cases <span style="font-size:12px;font-weight:500;color:#94a3b8;margin-left:8px;" x-text="'(' + totalRecords + ' records)'"></span></div>
+                <div class="si-table-tools">
+                    <div class="si-search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" placeholder="Search..." x-model="searchQuery" @@input.debounce.300ms="paginate()" />
+                    </div>
+                    <button class="si-export-btn" @@click="exportData('pdf')"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+                    <button class="si-export-btn" @@click="exportData('xlsx')"><i class="fa-solid fa-file-excel"></i> Excel</button>
+                </div>
+            </div>
+
+            <div class="si-loader" x-show="loading"><div class="si-spinner"></div></div>
+            <div x-show="!loading" style="overflow-x:auto;">
+                <table class="si-table">
+                    <thead>
+                        <tr>
+                            <th @@click="sort('case_id')">Case ID</th>
+                            <th @@click="sort('customer_name')">Customer</th>
+                            <th>Type</th>
+                            <th>Nationality</th>
+                            <th>Score</th>
+                            <th>Domestic PEP</th>
+                            <th>Foreign PEP</th>
+                            <th>Sanctions</th>
+                            <th>Adverse Media</th>
+                            <th @@click="sort('case_status')">Status</th>
+                            <th @@click="sort('created_on')">Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="row in displayRows" :key="row.case_id">
+                            <tr :class="rowClass(row)">
+                                <td x-text="row.case_id" style="font-weight:600;color:#6366f1;"></td>
+                                <td x-text="row.customer_name" style="font-weight:600;"></td>
+                                <td x-text="row.cust_type == 'I' ? 'Individual' : row.cust_type == 'C' ? 'Corporate' : '—'"></td>
+                                <td x-text="row.nationality || '—'"></td>
+                                <td>
+                                    <span x-text="row.match_score + '%'" style="font-weight:600;" :style="row.match_score >= 80 ? 'color:#ef4444' : 'color:#334155'"></span>
+                                </td>
+                                <td>
+                                    <span class="si-flag-count" :class="(row.true_domestic_pep + row.partial_domestic_pep) > 0 ? 'positive' : 'zero'"
+                                          x-text="row.true_domestic_pep + '/' + row.partial_domestic_pep"></span>
+                                </td>
+                                <td>
+                                    <span class="si-flag-count" :class="(row.true_foreign_pep + row.partial_foreign_pep) > 0 ? 'positive' : 'zero'"
+                                          x-text="row.true_foreign_pep + '/' + row.partial_foreign_pep"></span>
+                                </td>
+                                <td>
+                                    <span class="si-flag-count" :class="(row.true_uae_un_sanction + row.true_other_sanction) > 0 ? 'positive' : 'zero'"
+                                          x-text="row.true_uae_un_sanction + '/' + row.true_other_sanction"></span>
+                                </td>
+                                <td>
+                                    <span class="si-flag-count" :class="(row.true_adverse + row.partial_adverse) > 0 ? 'positive' : 'zero'"
+                                          x-text="row.true_adverse + '/' + row.partial_adverse"></span>
+                                </td>
+                                <td>
+                                    <span class="si-badge" :class="row.case_status.includes('Rejected') ? 'si-badge-red' : row.case_status.includes('Approved') ? 'si-badge-green' : 'si-badge-amber'"
+                                          x-text="row.case_status"></span>
+                                </td>
+                                <td x-text="formatDate(row.created_on)" style="font-size:12px;"></td>
+                                <td>
+                                    <a :href="'/Report/ViewIndividualCaseDetailNew?id=' + encodeURIComponent(row.case_id) + '&type=1'"
+                                       style="color:#6366f1;font-size:12px;font-weight:600;text-decoration:none;">
+                                        <i class="fa-solid fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                        </template>
+                        <tr x-show="displayRows.length === 0 && !loading">
+                            <td colspan="12" style="text-align:center;padding:40px;color:#94a3b8;">
+                                <i class="fa-solid fa-shield-check" style="font-size:32px;margin-bottom:8px;display:block;color:#22c55e;"></i>
+                                No PEP or sanctions flags detected in the selected period.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="si-pagination" x-show="displayRows.length > 0">
+                <div class="si-pagination-info">
+                    Showing <span x-text="((currentPage - 1) * pageSize) + 1"></span> to <span x-text="Math.min(currentPage * pageSize, totalRecords)"></span> of <span x-text="totalRecords"></span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <select x-model="pageSize" @@change="currentPage = 1; paginate()" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;">
+                        <option value="25">25 / page</option><option value="50">50 / page</option><option value="100">100 / page</option>
+                    </select>
+                    <div class="si-pagination-btns">
+                        <button class="si-page-btn" :disabled="currentPage <= 1" @@click="currentPage--; paginate()"><i class="fa-solid fa-chevron-left"></i></button>
+                        <template x-for="p in paginationPages" :key="p">
+                            <button class="si-page-btn" :class="{'active': p === currentPage}" @@click="currentPage = p; paginate()" x-text="p"></button>
+                        </template>
+                        <button class="si-page-btn" :disabled="currentPage >= totalPages" @@click="currentPage++; paginate()"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+<script>
+function pepSanctions() {
+    return {
+        loading: false, filterOpen: true, allRows: [], filteredRows: [], displayRows: [],
+        summary: {}, totalRecords: 0, currentPage: 1, pageSize: 25,
+        searchQuery: '', sortCol: 'created_on', sortDir: 'desc',
+        filters: {
+            dateFrom: new Date(new Date().setDate(new Date().getDate() - 90)).toISOString().split('T')[0],
+            dateTo: new Date().toISOString().split('T')[0],
+            flagType: '', status: ''
+        },
+        get totalPages() { return Math.ceil(this.totalRecords / this.pageSize) || 1; },
+        get paginationPages() {
+            let pages = [], start = Math.max(1, this.currentPage - 2), end = Math.min(this.totalPages, start + 4);
+            start = Math.max(1, end - 4);
+            for (let i = start; i <= end; i++) pages.push(i);
+            return pages;
+        },
+        init() { this.loadData(); },
+        async loadData() {
+            this.loading = true;
+            try {
+                // Use existing CaseReport endpoint with PEP/sanctions filter
+                const formData = new URLSearchParams();
+                formData.append('draw', 1); formData.append('start', 0); formData.append('length', 10000);
+                formData.append('startDate', this.filters.dateFrom); formData.append('endDate', this.filters.dateTo);
+                formData.append('match', '1');
+                formData.append('columns[0][data]', 'customerType');
+                formData.append('order[0][column]', 0); formData.append('order[0][dir]', 'desc');
+                const response = await fetch('/Report/CustomerListing', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData });
+                const data = await response.json();
+                // Map all rows and extract PEP/sanctions data
+                const rawRows = (data.allRows || data.data || []).map(r => ({
+                    case_id: r.customerID || r.case_id,
+                    customer_name: r.customerName || r.CustomerName || '',
+                    cust_type: r.customerType === 'INDIVIDUAL' ? 'I' : r.customerType === 'CORPORATE' ? 'C' : (r.cust_type || ''),
+                    nationality: r.nationality || r.Nationality || '',
+                    match_score: parseInt(r.matchScore || r.match_score || 0),
+                    case_status: r.match || r.case_status || '',
+                    created_on: r.createdOn || r.CreatedOn || '',
+                    true_domestic_pep: parseInt(r.trueDomesticPep || r.true_dometic_pep || 0),
+                    true_foreign_pep: parseInt(r.trueForeignPep || r.true_foreign_pep || 0),
+                    true_adverse: parseInt(r.trueAdverseMedia || r.true_adversemedia || 0),
+                    partial_domestic_pep: parseInt(r.partialDomesticPep || r.partial_domestic_pep || 0),
+                    partial_foreign_pep: parseInt(r.partialForeignPep || r.partial_foreign_pep || 0),
+                    partial_adverse: parseInt(r.partialAdverseMedia || r.partial_adversemedia || 0),
+                    true_uae_un_sanction: parseInt(r.trueUaeUnSanction || r.true_uae_un_sanction || 0),
+                    true_other_sanction: parseInt(r.trueOtherSanction || r.true_other_sanction || 0)
+                }));
+                // Filter only rows that have at least one flag
+                this.allRows = rawRows.filter(r =>
+                    r.true_domestic_pep + r.true_foreign_pep + r.true_adverse + r.partial_domestic_pep +
+                    r.partial_foreign_pep + r.partial_adverse + r.true_uae_un_sanction + r.true_other_sanction > 0 ||
+                    (r.case_status || '').toLowerCase().includes('pep') ||
+                    (r.case_status || '').toLowerCase().includes('sanction') ||
+                    (r.case_status || '').toLowerCase().includes('adverse')
+                );
+                this.applyFilters();
+            } catch (err) { console.error(err); this.allRows = []; this.filteredRows = []; this.displayRows = []; }
+            finally { this.loading = false; }
+        },
+        applyFilters() {
+            let rows = [...this.allRows];
+            if (this.filters.flagType === 'sanctions') rows = rows.filter(r => r.true_uae_un_sanction + r.true_other_sanction > 0);
+            if (this.filters.flagType === 'pep') rows = rows.filter(r => r.true_domestic_pep + r.true_foreign_pep + r.partial_domestic_pep + r.partial_foreign_pep > 0);
+            if (this.filters.flagType === 'adverse') rows = rows.filter(r => r.true_adverse + r.partial_adverse > 0);
+            if (this.filters.status) rows = rows.filter(r => (r.case_status || '').includes(this.filters.status));
+            this.filteredRows = rows;
+            this.computeSummary(); this.currentPage = 1; this.paginate();
+        },
+        paginate() {
+            let rows = [...this.filteredRows];
+            if (this.searchQuery) {
+                const q = this.searchQuery.toLowerCase();
+                rows = rows.filter(r => (r.customer_name || '').toLowerCase().includes(q) || (r.case_id || '').toString().includes(q) || (r.nationality || '').toLowerCase().includes(q));
+            }
+            this.totalRecords = rows.length;
+            const start = (this.currentPage - 1) * this.pageSize;
+            this.displayRows = rows.slice(start, start + parseInt(this.pageSize));
+        },
+        computeSummary() {
+            const d = this.filteredRows;
+            this.summary = {
+                true_domestic_pep: d.reduce((s, r) => s + r.true_domestic_pep, 0),
+                true_foreign_pep: d.reduce((s, r) => s + r.true_foreign_pep, 0),
+                true_adverse: d.reduce((s, r) => s + r.true_adverse, 0),
+                partial_domestic_pep: d.reduce((s, r) => s + r.partial_domestic_pep, 0),
+                partial_foreign_pep: d.reduce((s, r) => s + r.partial_foreign_pep, 0),
+                partial_adverse: d.reduce((s, r) => s + r.partial_adverse, 0),
+                sanctions: d.reduce((s, r) => s + r.true_uae_un_sanction, 0),
+                other_sanctions: d.reduce((s, r) => s + r.true_other_sanction, 0)
+            };
+        },
+        rowClass(row) {
+            if (row.true_uae_un_sanction + row.true_other_sanction > 0) return 'row-sanctions';
+            if (row.true_domestic_pep + row.true_foreign_pep > 0) return 'row-pep';
+            if (row.true_adverse > 0) return 'row-adverse';
+            return '';
+        },
+        sort(col) {
+            if (this.sortCol === col) this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+            else { this.sortCol = col; this.sortDir = 'asc'; }
+            this.filteredRows.sort((a, b) => {
+                let va = a[col] ?? '', vb = b[col] ?? '';
+                if (typeof va === 'number') return this.sortDir === 'asc' ? va - vb : vb - va;
+                return this.sortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+            });
+            this.paginate();
+        },
+        resetFilters() {
+            this.filters.dateFrom = new Date(new Date().setDate(new Date().getDate() - 90)).toISOString().split('T')[0];
+            this.filters.dateTo = new Date().toISOString().split('T')[0];
+            this.filters.flagType = ''; this.filters.status = ''; this.searchQuery = ''; this.loadData();
+        },
+        formatDate(d) { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); } catch { return d; } },
+        exportData(format) { window.location.href = `/Report/ExportCustomerList?startDate=${this.filters.dateFrom}&endDate=${this.filters.dateTo}&match=1&isPDF=${format === 'pdf'}`; }
+    };
+}
+</script>

@@ -786,7 +786,7 @@ namespace AML.Core.Common.StaticResource
 
                     if (result != null && !string.IsNullOrEmpty(result.Result))
                     {
-                        res = JsonConvert.DeserializeObject<TokenRS>(result.Result);
+                        res = JsonConvert.DeserializeObject<TokenRS>(result.Result) ?? new TokenRS();
                     }
                 }
                 else
@@ -794,7 +794,7 @@ namespace AML.Core.Common.StaticResource
                     result = response.Content.ReadAsStringAsync();
 
 
-                    res = JsonConvert.DeserializeObject<TokenRS>(result.Result);
+                    res = JsonConvert.DeserializeObject<TokenRS>(result.Result) ?? new TokenRS();
                     res.status = 400;
                 }
             }

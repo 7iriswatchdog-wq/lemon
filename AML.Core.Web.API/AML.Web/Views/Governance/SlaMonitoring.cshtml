@@ -1,0 +1,70 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{ ViewData["Title"] = "SLA Monitoring — Searchin Governance"; Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml"; var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl"); }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>[x-cloak]{display:none!important}.si-page{min-height:100vh;background:#f8fafc}.si-page-inner{padding:24px;max-width:1440px;margin:0 auto}.si-header{display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 24px;background:#fff;border-bottom:1px solid #e2e8f0}.si-header-title{font-size:18px;font-weight:700;color:#0f172a}.si-header-breadcrumb{font-size:12px;color:#94a3b8;margin-top:2px}.si-header-breadcrumb a{color:#6366f1;text-decoration:none}.si-gov-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff}
+.si-sla-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.si-sla-card{background:#fff;border-radius:16px;padding:24px;border:1px solid #e2e8f0;text-align:center;transition:all .2s;position:relative;overflow:hidden}
+.si-sla-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.si-sla-ring{width:100px;height:100px;margin:0 auto 12px;position:relative}
+.si-sla-ring canvas{width:100%!important;height:100%!important}
+.si-sla-ring-value{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;font-weight:800;color:#0f172a}
+.si-sla-label{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em}
+.si-sla-target{font-size:11px;color:#94a3b8;margin-top:4px}
+.si-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}.si-chart-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:20px}.si-chart-card.full{grid-column:span 2}.si-chart-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:16px}
+.si-table-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden}.si-table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #f1f5f9}.si-table-title{font-size:15px;font-weight:700;color:#0f172a}.si-table{width:100%;border-collapse:collapse}.si-table thead th{padding:12px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;background:#f8fafc;border-bottom:1px solid #e2e8f0;white-space:nowrap}.si-table tbody td{padding:11px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;white-space:nowrap}.si-table tbody tr:hover{background:#f8fafc}
+.si-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}.si-badge-met{background:#d1fae5;color:#065f46}.si-badge-breach{background:#fee2e2;color:#991b1b}.si-badge-warning{background:#fef3c7;color:#92400e}
+@@media(max-width:1200px){.si-sla-grid{grid-template-columns:repeat(2,1fr)}}@@media(max-width:768px){.si-sla-grid,.si-chart-grid{grid-template-columns:1fr}.si-chart-card.full{grid-column:span 1}}</style>
+<div class="si-page" x-data="slaMonitoring()" x-init="init()" x-cloak>
+    <div class="si-header"><div><div class="si-header-title">SLA Monitoring</div><div class="si-header-breadcrumb"><a href="/">Home</a> / <a href="/Governance">Governance</a> / SLA Monitoring</div></div><div style="display:flex;align-items:center;gap:12px"><span class="si-gov-badge"><i class="fa-solid fa-gavel"></i> Governance</span><img src="@Clientlogo" alt="Logo" style="height:32px"/></div></div>
+    <div class="si-page-inner">
+        <div class="si-sla-grid">
+            <template x-for="sla in slaMetrics" :key="sla.label">
+                <div class="si-sla-card">
+                    <div class="si-sla-ring"><canvas :id="'ring_'+sla.id"></canvas><div class="si-sla-ring-value" x-text="sla.value+'%'" :style="'color:'+(sla.value>=sla.target?'#22c55e':'#ef4444')"></div></div>
+                    <div class="si-sla-label" x-text="sla.label"></div>
+                    <div class="si-sla-target" x-text="'Target: '+sla.target+'%'"></div>
+                </div>
+            </template>
+        </div>
+        <div class="si-chart-grid">
+            <div class="si-chart-card full"><div class="si-chart-title">SLA Compliance Trend (Last 6 Months)</div><div style="height:300px"><canvas id="slaTimeline"></canvas></div></div>
+            <div class="si-chart-card"><div class="si-chart-title">Breach Categories</div><div style="height:280px"><canvas id="breachChart"></canvas></div></div>
+            <div class="si-chart-card"><div class="si-chart-title">Response Time Distribution</div><div style="height:280px"><canvas id="responseChart"></canvas></div></div>
+        </div>
+        <div class="si-table-card">
+            <div class="si-table-header"><div class="si-table-title">SLA Breach Log</div></div>
+            <div style="overflow-x:auto">
+                <table class="si-table"><thead><tr><th>Case ID</th><th>SLA Type</th><th>Target</th><th>Actual</th><th>Breach</th><th>Assignee</th><th>Date</th><th>Status</th></tr></thead>
+                <tbody><template x-for="row in breaches" :key="row.case_id"><tr>
+                    <td x-text="row.case_id" style="font-weight:600;color:#6366f1"></td><td x-text="row.sla_type"></td>
+                    <td x-text="row.target+'h'" style="font-weight:600"></td><td x-text="row.actual+'h'" style="font-weight:700" :style="row.actual>row.target?'color:#ef4444':'color:#22c55e'"></td>
+                    <td x-text="(row.actual-row.target)+'h'" style="color:#ef4444;font-weight:700"></td>
+                    <td x-text="row.assignee" style="font-size:12px"></td><td x-text="row.date" style="font-size:12px"></td>
+                    <td><span class="si-badge" :class="row.resolved?'si-badge-met':'si-badge-breach'" x-text="row.resolved?'Resolved':'Open'"></span></td>
+                </tr></template></tbody></table>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+<script>
+function slaMonitoring(){return{
+slaMetrics:[{id:'screen',label:'Screening Turnaround',value:96,target:95},{id:'review',label:'Case Review',value:88,target:90},{id:'escalation',label:'Escalation Response',value:94,target:92},{id:'str_filing',label:'STR Filing',value:91,target:95}],
+breaches:[
+{case_id:'CSE-4521',sla_type:'Case Review',target:24,actual:32,assignee:'John Doe',date:'14 Mar 2026',resolved:false},
+{case_id:'CSE-4498',sla_type:'STR Filing',target:48,actual:62,assignee:'Sarah Chen',date:'13 Mar 2026',resolved:false},
+{case_id:'CSE-4455',sla_type:'Screening',target:4,actual:6,assignee:'Ahmed K.',date:'12 Mar 2026',resolved:true},
+{case_id:'CSE-4420',sla_type:'Escalation',target:2,actual:5,assignee:'Maria L.',date:'11 Mar 2026',resolved:true}],
+init(){this.$nextTick(()=>{this.renderRings();this.renderCharts()})},
+renderRings(){this.slaMetrics.forEach(sla=>{const c=document.getElementById('ring_'+sla.id);if(!c)return;
+new Chart(c.getContext('2d'),{type:'doughnut',data:{labels:['Met','Remaining'],datasets:[{data:[sla.value,100-sla.value],backgroundColor:[sla.value>=sla.target?'#22c55e':'#ef4444','#f1f5f9'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:true,cutout:'75%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{animateRotate:true}}})})},
+renderCharts(){const c1=document.getElementById('slaTimeline');
+if(c1){new Chart(c1.getContext('2d'),{type:'line',data:{labels:['Oct','Nov','Dec','Jan','Feb','Mar'],datasets:[{label:'Screening',data:[95,96,94,97,95,96],borderColor:'#6366f1',tension:.3,pointRadius:4},{label:'Case Review',data:[92,90,88,85,87,88],borderColor:'#ef4444',tension:.3,pointRadius:4},{label:'Escalation',data:[94,93,95,92,93,94],borderColor:'#22c55e',tension:.3,pointRadius:4},{label:'STR Filing',data:[96,94,93,90,92,91],borderColor:'#f59e0b',tension:.3,pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11,weight:'600'},usePointStyle:true}}},scales:{y:{min:80,max:100,grid:{color:'#f1f5f9'}},x:{grid:{display:false}}}}})}
+const c2=document.getElementById('breachChart');
+if(c2){new Chart(c2.getContext('2d'),{type:'doughnut',data:{labels:['Case Review','STR Filing','Screening','Escalation'],datasets:[{data:[8,5,3,2],backgroundColor:['#ef4444','#f59e0b','#6366f1','#22c55e'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'right',labels:{font:{size:11,weight:'600'},usePointStyle:true}}}}})}
+const c3=document.getElementById('responseChart');
+if(c3){new Chart(c3.getContext('2d'),{type:'bar',data:{labels:['<1h','1-4h','4-12h','12-24h','24-48h','48h+'],datasets:[{label:'Cases',data:[120,250,180,80,30,10],backgroundColor:['#22c55e','#86efac','#fbbf24','#f97316','#ef4444','#991b1b'],borderRadius:6,barPercentage:.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#f1f5f9'}},x:{grid:{display:false}}}}})}
+}}}
+</script>

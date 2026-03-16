@@ -636,7 +636,7 @@ namespace AML.Web.Controllers.Case
                 ErrorLogDTO error = new ErrorLogDTO();
                 error.created_on = DateTime.Now;
                 error.createdBy = _clientHandler.GetUserId();
-                error.description = ex.InnerException.Message;
+                error.description = ex.InnerException?.Message ?? ex.Message;
                 error.module = "Sending_email";
                 error.comments = "Sending email Error";
                 error.status_code = 404;
@@ -695,29 +695,37 @@ namespace AML.Web.Controllers.Case
                         CustomerCaseDTO _ccDTO = _mapper.Map<CustomerCaseDTO>(model);
                         bool IsSanction = false;
                                     int count = 0;
-                                    for (int i = 0; i < model.CodeNames.Count; i++)
+                                    if (model.CodeNames != null && model.IsChecked != null)
                                     {
-                                        if (model.IsChecked[i] == true)
+                                        for (int i = 0; i < model.CodeNames.Count; i++)
                                         {
-                                            count++;
-                                            selectedScreeningOptions.Add(model.CodeNames[i]);
-                                            if (model.CodeNames[i] == "Sanction")
+                                            if (i < model.IsChecked.Count && model.IsChecked[i] == true)
                                             {
-                                                log.Debug("Only sanction was true");
-                                                IsSanction = true;
+                                                count++;
+                                                selectedScreeningOptions.Add(model.CodeNames[i]);
+                                                if (model.CodeNames[i] == "Sanction")
+                                                {
+                                                    log.Debug("Only sanction was true");
+                                                    IsSanction = true;
+                                                }
                                             }
                                         }
                                     }
 
-                                    for (int i = 0; i < model.CodeNames.Count; i++)
+                                    if (model.CodeNames != null && model.IsChecked != null)
                                     {
-                                        if (model.CodeNames[i] == "PEP" && model.IsChecked[i] == true) { _ccDTO.IsPep = true; continue; }
-                                        if (model.CodeNames[i] == "Sanction" && model.IsChecked[i] == true) { _ccDTO.IsSan = true; continue; }
-                                        if (model.CodeNames[i] == "Reputational Risk Exposure" && model.IsChecked[i] == true) { _ccDTO.IsRre = true; continue; }
-                                        if (model.CodeNames[i] == "Insolvency (UK & Ireland)" && model.IsChecked[i] == true) { _ccDTO.IsIns = true; continue; }
-                                        if (model.CodeNames[i] == "Disqualified Director (UK Only)" && model.IsChecked[i] == true) { _ccDTO.IsDd = true; continue; }
-                                        if (model.CodeNames[i] == "Profile of Interest" && model.IsChecked[i] == true) { _ccDTO.IsPoi = true; continue; }
-                                        if (model.CodeNames[i] == "Regulatory Enforcement List" && model.IsChecked[i] == true) { _ccDTO.IsRel = true; continue; }
+                                        for (int i = 0; i < model.CodeNames.Count; i++)
+                                        {
+                                            if (i >= model.IsChecked.Count || model.IsChecked[i] == false) continue;
+
+                                            if (model.CodeNames[i] == "PEP") { _ccDTO.IsPep = true; continue; }
+                                            if (model.CodeNames[i] == "Sanction") { _ccDTO.IsSan = true; continue; }
+                                            if (model.CodeNames[i] == "Reputational Risk Exposure") { _ccDTO.IsRre = true; continue; }
+                                            if (model.CodeNames[i] == "Insolvency (UK & Ireland)") { _ccDTO.IsIns = true; continue; }
+                                            if (model.CodeNames[i] == "Disqualified Director (UK Only)") { _ccDTO.IsDd = true; continue; }
+                                            if (model.CodeNames[i] == "Profile of Interest") { _ccDTO.IsPoi = true; continue; }
+                                            if (model.CodeNames[i] == "Regulatory Enforcement List") { _ccDTO.IsRel = true; continue; }
+                                        }
                                     }
 
                         //var customerCodeprefix = _mapper.Map<ClientMasterDTO>(_customerCaseService.GetCustomerCodeprefixByclient(model.ClientId));
@@ -725,7 +733,11 @@ namespace AML.Web.Controllers.Case
                         //var result = _customerCaseService.CreatePrefix(_ccDTO);
                         _ccDTO.ScreeningOptions = string.Join(",", selectedScreeningOptions);
                         var result = _customerCaseService.Create(_ccDTO);
-                            _ccDTO.CustomerId = result.Result.Split('Ø')[1];
+                            if (result != null && result.Result != null)
+                            {
+                                var resParts = result.Result.Split('Ø');
+                                _ccDTO.CustomerId = resParts.Length > 1 ? resParts[1] : result.Result;
+                            }
 
                             Console.WriteLine(result.Result);
 
@@ -1086,7 +1098,7 @@ namespace AML.Web.Controllers.Case
                             ErrorLogDTO error = new ErrorLogDTO();
                             error.created_on = DateTime.Now;
                             error.createdBy = _clientHandler.GetUserId();
-                            error.description = ex.InnerException.Message;
+                            error.description = ex.InnerException?.Message ?? ex.Message;
                             error.module = "Screening_I";
                             error.comments = "API call while screening";
                             error.status_code = 404;
@@ -1112,7 +1124,7 @@ namespace AML.Web.Controllers.Case
                 ErrorLogDTO error = new ErrorLogDTO();
                 error.created_on = DateTime.Now;
                 error.createdBy = _clientHandler.GetUserId();
-                error.description = ex.InnerException.Message;
+                error.description = ex.InnerException?.Message ?? ex.Message;
                 error.module = "Screening_I";
                 error.comments = "API call Error while creating token";
                 error.status_code = 404;
@@ -1443,7 +1455,7 @@ namespace AML.Web.Controllers.Case
                 ErrorLogDTO error = new ErrorLogDTO();
                 error.created_on = DateTime.Now;
                 error.createdBy = _clientHandler.GetUserId();
-                error.description = ex.InnerException.Message;
+                error.description = ex.InnerException?.Message ?? ex.Message;
                 error.module = "CaseManagement_Process";
                 error.comments = "API call Error while Getting data from manogo db";
                 error.status_code = 404;
@@ -1596,7 +1608,7 @@ namespace AML.Web.Controllers.Case
                 ErrorLogDTO error = new ErrorLogDTO();
                 error.created_on = DateTime.Now;
                 error.createdBy = _clientHandler.GetUserId();
-                error.description = ex.InnerException.Message;
+                error.description = ex.InnerException?.Message ?? ex.Message;
                 error.module = "CaseManagement_Process";
                 error.comments = "API call Error while Getting data from manogo db";
                 error.status_code = 404;

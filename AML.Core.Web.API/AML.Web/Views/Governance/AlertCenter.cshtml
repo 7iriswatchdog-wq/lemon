@@ -1,0 +1,81 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{ ViewData["Title"] = "Alert Center — Searchin Governance"; Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml"; var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl"); }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>[x-cloak]{display:none!important}.si-page{min-height:100vh;background:#f8fafc}.si-page-inner{padding:24px;max-width:1440px;margin:0 auto}.si-header{display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 24px;background:#fff;border-bottom:1px solid #e2e8f0}.si-header-title{font-size:18px;font-weight:700;color:#0f172a}.si-header-breadcrumb{font-size:12px;color:#94a3b8;margin-top:2px}.si-header-breadcrumb a{color:#6366f1;text-decoration:none}.si-gov-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff}.si-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}.si-kpi{background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0;transition:all .2s;position:relative;overflow:hidden}.si-kpi:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}.si-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-color,#6366f1)}.si-kpi-value{font-size:28px;font-weight:800;color:#0f172a;margin-bottom:4px;line-height:1}.si-kpi-label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em}.si-kpi-icon{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--kpi-bg,#eef2ff);color:var(--kpi-color,#6366f1);font-size:16px}
+.si-alert-tabs{display:flex;gap:8px;margin-bottom:20px;background:#fff;border-radius:12px;padding:6px;border:1px solid #e2e8f0}
+.si-alert-tab{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+.si-alert-tab.active{background:#6366f1;color:#fff}
+.si-alert-tab:hover:not(.active){background:#f1f5f9}
+.si-alert-tab .count{background:rgba(255,255,255,.2);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700}
+.si-alert-tab.active .count{background:rgba(255,255,255,.3)}
+.si-alert-tab:not(.active) .count{background:#f1f5f9;color:#64748b}
+.si-alert-feed{display:flex;flex-direction:column;gap:10px}
+.si-alert-item{background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:18px 20px;display:flex;gap:16px;transition:all .15s;cursor:default}
+.si-alert-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.si-alert-item.unread{border-left:4px solid var(--alert-color,#6366f1)}
+.si-alert-icon-wrap{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+.si-alert-content{flex:1;min-width:0}
+.si-alert-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px}
+.si-alert-desc{font-size:12px;color:#64748b;line-height:1.5;margin-bottom:6px}
+.si-alert-meta{display:flex;align-items:center;gap:16px;font-size:11px;color:#94a3b8}
+.si-alert-meta i{font-size:10px}
+.si-alert-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;align-items:flex-end}
+.si-alert-priority{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700}
+.p-critical{background:#fee2e2;color:#991b1b}.p-high{background:#fef3c7;color:#92400e}.p-medium{background:#e0e7ff;color:#3730a3}.p-low{background:#d1fae5;color:#065f46}
+.si-alert-time{font-size:11px;color:#94a3b8;font-weight:500}
+@@media(max-width:768px){.si-kpi-row{grid-template-columns:repeat(2,1fr)}.si-alert-tabs{overflow-x:auto}}</style>
+<div class="si-page" x-data="alertCenter()" x-init="init()" x-cloak>
+    <div class="si-header"><div><div class="si-header-title">Alert Center</div><div class="si-header-breadcrumb"><a href="/">Home</a> / <a href="/Governance">Governance</a> / Alert Center</div></div><div style="display:flex;align-items:center;gap:12px"><span class="si-gov-badge"><i class="fa-solid fa-gavel"></i> Governance</span><img src="@Clientlogo" alt="Logo" style="height:32px"/></div></div>
+    <div class="si-page-inner">
+        <div class="si-kpi-row">
+            <div class="si-kpi" style="--kpi-color:#6366f1;--kpi-bg:#eef2ff"><div class="si-kpi-icon"><i class="fa-solid fa-bell"></i></div><div class="si-kpi-value" x-text="allAlerts.length"></div><div class="si-kpi-label">Total Alerts</div></div>
+            <div class="si-kpi" style="--kpi-color:#ef4444;--kpi-bg:#fee2e2"><div class="si-kpi-icon"><i class="fa-solid fa-circle-exclamation"></i></div><div class="si-kpi-value" x-text="allAlerts.filter(a=>a.priority==='Critical').length"></div><div class="si-kpi-label">Critical</div></div>
+            <div class="si-kpi" style="--kpi-color:#f59e0b;--kpi-bg:#fef3c7"><div class="si-kpi-icon"><i class="fa-solid fa-eye"></i></div><div class="si-kpi-value" x-text="allAlerts.filter(a=>!a.read).length"></div><div class="si-kpi-label">Unread</div></div>
+            <div class="si-kpi" style="--kpi-color:#22c55e;--kpi-bg:#d1fae5"><div class="si-kpi-icon"><i class="fa-solid fa-check-double"></i></div><div class="si-kpi-value" x-text="allAlerts.filter(a=>a.resolved).length"></div><div class="si-kpi-label">Resolved</div></div>
+        </div>
+        <div class="si-alert-tabs">
+            <div class="si-alert-tab" :class="{'active':tab==='all'}" @@click="tab='all'">All <span class="count" x-text="allAlerts.length"></span></div>
+            <div class="si-alert-tab" :class="{'active':tab==='critical'}" @@click="tab='critical'"><i class="fa-solid fa-circle-exclamation"></i> Critical <span class="count" x-text="allAlerts.filter(a=>a.priority==='Critical').length"></span></div>
+            <div class="si-alert-tab" :class="{'active':tab==='regulatory'}" @@click="tab='regulatory'"><i class="fa-solid fa-gavel"></i> Regulatory <span class="count" x-text="allAlerts.filter(a=>a.type==='regulatory').length"></span></div>
+            <div class="si-alert-tab" :class="{'active':tab==='system'}" @@click="tab='system'"><i class="fa-solid fa-server"></i> System <span class="count" x-text="allAlerts.filter(a=>a.type==='system').length"></span></div>
+            <div class="si-alert-tab" :class="{'active':tab==='unread'}" @@click="tab='unread'"><i class="fa-solid fa-eye-slash"></i> Unread <span class="count" x-text="allAlerts.filter(a=>!a.read).length"></span></div>
+        </div>
+        <div class="si-alert-feed">
+            <template x-for="alert in filteredAlerts" :key="alert.id">
+                <div class="si-alert-item" :class="{'unread':!alert.read}" :style="'--alert-color:'+alert.color">
+                    <div class="si-alert-icon-wrap" :style="'background:'+alert.bg+';color:'+alert.color"><i :class="alert.icon"></i></div>
+                    <div class="si-alert-content">
+                        <div class="si-alert-title" x-text="alert.title"></div>
+                        <div class="si-alert-desc" x-text="alert.description"></div>
+                        <div class="si-alert-meta">
+                            <span><i class="fa-solid fa-tag"></i> <span x-text="alert.typeLabel"></span></span>
+                            <span><i class="fa-solid fa-building"></i> <span x-text="alert.source||'System'"></span></span>
+                            <span x-show="alert.case_id"><i class="fa-solid fa-folder"></i> <span x-text="alert.case_id"></span></span>
+                        </div>
+                    </div>
+                    <div class="si-alert-actions">
+                        <div class="si-alert-priority" :class="'p-'+alert.priority.toLowerCase()" x-text="alert.priority"></div>
+                        <div class="si-alert-time" x-text="alert.time"></div>
+                    </div>
+                </div>
+            </template>
+            <div x-show="filteredAlerts.length===0" style="text-align:center;padding:60px;color:#94a3b8;font-size:13px"><i class="fa-solid fa-bell-slash" style="font-size:32px;display:block;margin-bottom:8px"></i>No alerts in this category.</div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+<script>
+function alertCenter(){return{tab:'all',
+allAlerts:[
+{id:1,title:'Sanctions List Update Available',description:'OFAC SDN list has been updated. 47 new entries detected. Immediate re-screening recommended for all active cases.',type:'regulatory',typeLabel:'Regulatory',priority:'Critical',icon:'fa-solid fa-triangle-exclamation',color:'#ef4444',bg:'#fee2e2',source:'OFAC',case_id:'',read:false,resolved:false,time:'2 hours ago'},
+{id:2,title:'STR Filing Deadline Approaching',description:'3 STR cases are approaching the 15-day filing deadline. Cases: CSE-4521, CSE-4498, CSE-4455.',type:'regulatory',typeLabel:'Regulatory',priority:'Critical',icon:'fa-solid fa-clock',color:'#ef4444',bg:'#fee2e2',source:'Compliance',case_id:'CSE-4521',read:false,resolved:false,time:'4 hours ago'},
+{id:3,title:'High Risk Customer Onboarded',description:'New customer Ahmed Al-Rashid flagged as high-risk during screening. PEP and sanctions matches found.',type:'regulatory',typeLabel:'Regulatory',priority:'High',icon:'fa-solid fa-user-shield',color:'#f59e0b',bg:'#fef3c7',source:'Screening Engine',case_id:'CSE-4580',read:false,resolved:false,time:'6 hours ago'},
+{id:4,title:'Database Backup Completed',description:'Automated daily backup completed successfully. 2.4 GB compressed. Stored to secondary site.',type:'system',typeLabel:'System',priority:'Low',icon:'fa-solid fa-database',color:'#22c55e',bg:'#d1fae5',source:'System',case_id:'',read:true,resolved:true,time:'8 hours ago'},
+{id:5,title:'Batch Screening Completed',description:'Batch screening job #2845 completed. 500 records processed, 12 matches found.',type:'system',typeLabel:'System',priority:'Medium',icon:'fa-solid fa-list-check',color:'#6366f1',bg:'#eef2ff',source:'Batch Processor',case_id:'',read:true,resolved:true,time:'12 hours ago'},
+{id:6,title:'User Access Anomaly Detected',description:'User john.doe logged in from unusual IP address 185.xx.xx.xx. Location: Russia. Previous logins from UAE only.',type:'system',typeLabel:'System',priority:'High',icon:'fa-solid fa-shield-halved',color:'#f59e0b',bg:'#fef3c7',source:'Security',case_id:'',read:false,resolved:false,time:'1 day ago'},
+{id:7,title:'CBUAE Circular Published',description:'New circular regarding enhanced CDD requirements for cross-border wire transfers effective April 2026.',type:'regulatory',typeLabel:'Regulatory',priority:'Medium',icon:'fa-solid fa-file-lines',color:'#6366f1',bg:'#eef2ff',source:'CBUAE',case_id:'',read:true,resolved:false,time:'1 day ago'},
+{id:8,title:'System Performance Warning',description:'API response time exceeded 500ms threshold during peak hours (14:00-16:00). 23 requests affected.',type:'system',typeLabel:'System',priority:'Medium',icon:'fa-solid fa-gauge',color:'#f59e0b',bg:'#fef3c7',source:'Monitor',case_id:'',read:true,resolved:true,time:'2 days ago'}],
+get filteredAlerts(){if(this.tab==='all')return this.allAlerts;if(this.tab==='critical')return this.allAlerts.filter(a=>a.priority==='Critical');if(this.tab==='unread')return this.allAlerts.filter(a=>!a.read);return this.allAlerts.filter(a=>a.type===this.tab)},
+init(){}}}
+</script>

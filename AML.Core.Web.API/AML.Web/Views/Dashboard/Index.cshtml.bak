@@ -1,0 +1,640 @@
+@using AML.ViewModel.ViewModels.Report
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+    var pendingCases = ViewBag.PendingCases as List<CaseReportListModel> ?? new List<CaseReportListModel>();
+    var pendingTotal = (int)(ViewBag.PendingCasesTotal ?? 0);
+    var schedulerLogs = ViewBag.SchedulerLogs as List<AML.DTO.DTO.Report.DigiSchedulerLogsDTO> ?? new List<AML.DTO.DTO.Report.DigiSchedulerLogsDTO>();
+
+    var totalCustomers = (int)(ViewBag.totalcount ?? 0);
+    var individuals = (int)(ViewBag.individualcustomertype ?? 0);
+    var corporates = (int)(ViewBag.corporatecustomertype ?? 0);
+
+    var approved = (int)(ViewBag.Toatalapprovedcount ?? 0);
+    var rejected = (int)(ViewBag.rejectvalcount ?? 0);
+    var pending = (int)(ViewBag.pendingvalcount ?? 0);
+
+    var approvedPct = (double)(ViewBag.ApprovedPct ?? 0.0);
+    var rejectedPct = (double)(ViewBag.RejectedPct ?? 0.0);
+    var onHoldPct = (double)(ViewBag.OnHoldPct ?? 0.0);
+
+    var autoApproved = (int)(ViewBag.autoapproved ?? 0);
+    var manuallyApproved = (int)(ViewBag.ManuallyApproved ?? 0);
+    var potentialMatch = (int)(ViewBag.PotentialMatch ?? 0);
+
+    var highRisk = (int)(ViewBag.totalhighrisk ?? 0);
+    var mediumRisk = (int)(ViewBag.totalmediumrisk ?? 0);
+    var lowRisk = (int)(ViewBag.totallowrisk ?? 0);
+    var unclassified = (int)(ViewBag.Unclassifiedriskcount ?? 0);
+
+    var weeklyCases = (int)(ViewBag.WeeklyCaseCount ?? 0);
+}
+
+<style>
+    /* ── Dashboard Grid Layout ── */
+    .dash { max-width: 1440px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+    .dash-row { display: grid; gap: 20px; }
+    .dash-row-4 { grid-template-columns: repeat(4, 1fr); }
+    .dash-row-2 { grid-template-columns: repeat(2, 1fr); }
+    @@media (max-width: 1024px) { .dash-row-4 { grid-template-columns: repeat(2, 1fr); } }
+    @@media (max-width: 640px) { .dash-row-4, .dash-row-2 { grid-template-columns: 1fr; } }
+
+    /* ── Stat Cards ── */
+    .ds-card { background: var(--g-0); border-radius: var(--r-xl); border: 1px solid var(--g-100); padding: 20px; transition: all 200ms var(--ease); }
+    .ds-card:hover { box-shadow: var(--sh-3); border-color: var(--g-150); transform: translateY(-2px); }
+    .ds-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .ds-card-title { font-size: 0.8125rem; font-weight: 600; color: var(--g-500); }
+    .ds-card-ico { width: 36px; height: 36px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; }
+    .ds-stat-val { font-size: 2rem; font-weight: 700; color: var(--g-800); letter-spacing: -0.04em; line-height: 1; }
+    .ds-stat-label { font-size: 0.75rem; color: var(--g-300); margin-top: 3px; }
+    .ds-card-footer { display: flex; gap: 16px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--g-75); }
+    .ds-legend { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--g-500); }
+    .ds-dot { width: 8px; height: 8px; border-radius: var(--r-pill); flex-shrink: 0; }
+
+    /* ── Progress Bar ── */
+    .ds-progress { width: 100%; height: 6px; border-radius: var(--r-pill); background: var(--g-100); overflow: hidden; display: flex; }
+    .ds-progress-seg { height: 100%; transition: width 400ms var(--ease); }
+
+    /* ── Risk Grid ── */
+    .ds-risk-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .ds-risk-cell { display: flex; flex-direction: column; align-items: center; padding: 12px; border-radius: var(--r-md); border: 1px solid transparent; transition: all 150ms var(--ease); text-decoration: none; }
+    .ds-risk-cell:hover { transform: scale(1.03); }
+    .ds-risk-label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .ds-risk-value { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; transition: transform 120ms var(--ease); }
+    .ds-risk-cell:hover .ds-risk-value { transform: scale(1.1); }
+
+    /* ── Section Card ── */
+    .ds-section { background: var(--g-0); border-radius: var(--r-xl); border: 1px solid var(--g-100); padding: 20px; }
+    .ds-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .ds-section-title { display: flex; align-items: center; gap: 8px; font-size: 0.875rem; font-weight: 600; color: var(--g-700); }
+    .ds-link { font-size: 0.75rem; font-weight: 500; color: var(--b-500); text-decoration: none; display: flex; align-items: center; gap: 4px; }
+    .ds-link:hover { color: var(--b-600); }
+
+    /* ── Case Row ── */
+    .ds-case-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--g-75); transition: background 80ms; text-decoration: none; margin-bottom: 8px; }
+    .ds-case-row:last-child { margin-bottom: 0; }
+    .ds-case-row:hover { background: var(--g-50); }
+    .ds-case-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .ds-case-avatar { width: 32px; height: 32px; border-radius: var(--r-pill); display: flex; align-items: center; justify-content: center; font-size: 0.6875rem; font-weight: 700; flex-shrink: 0; }
+    .ds-case-info { min-width: 0; }
+    .ds-case-name { font-size: 0.875rem; font-weight: 500; color: var(--g-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ds-case-meta { font-size: 0.75rem; color: var(--g-300); }
+
+    /* ── Task Row ── */
+    .ds-task-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--r-md); transition: background 80ms; }
+    .ds-task-row:hover { background: var(--g-50); }
+    .ds-task-circle { width: 20px; height: 20px; border-radius: var(--r-pill); border: 2px solid var(--g-200); flex-shrink: 0; }
+    .ds-task-text { flex: 1; min-width: 0; font-size: 0.875rem; color: var(--g-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ds-task-date { font-size: 0.75rem; color: var(--g-300); flex-shrink: 0; }
+
+    /* ── Empty State ── */
+    .ds-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 16px; color: var(--g-300); }
+    .ds-empty svg { margin-bottom: 8px; }
+    .ds-empty p { font-size: 0.875rem; }
+
+    /* ── Schedule Log Row ── */
+    .ds-log-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-md); background: var(--g-50); margin-bottom: 8px; }
+    .ds-log-row:last-child { margin-bottom: 0; }
+
+    /* ── Summary Grid ── */
+    .ds-summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .ds-summary-box { padding: 16px; border-radius: var(--r-xl); color: white; }
+    .ds-summary-val { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; }
+    .ds-summary-label { font-size: 0.75rem; opacity: 0.7; margin-top: 4px; }
+
+    /* ── Mini Stat ── */
+    .ds-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+    .ds-mini-stat { text-align: center; padding: 14px; border-radius: var(--r-xl); border: 1px solid; }
+    .ds-mini-val { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; }
+    .ds-mini-label { font-size: 0.6875rem; margin-top: 4px; opacity: 0.7; }
+
+    /* ── Info Pair ── */
+    .ds-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .ds-info-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-md); background: var(--g-50); }
+    .ds-info-ico { width: 36px; height: 36px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ds-info-val { font-size: 1.125rem; font-weight: 700; color: var(--g-800); }
+    .ds-info-label { font-size: 0.75rem; color: var(--g-300); }
+</style>
+
+<div class="dash">
+
+    <!-- ROW 1: Key Metrics -->
+    <div class="dash-row dash-row-4">
+
+        <!-- Customer Count -->
+        <div class="ds-card">
+            <div class="ds-card-header">
+                <span class="ds-card-title">Customer Count</span>
+                <div class="ds-card-ico" style="background:var(--b-50);color:var(--b-500);">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:16px;">
+                <div style="flex:1;">
+                    <div class="ds-stat-val">@totalCustomers</div>
+                    <div class="ds-stat-label">Total screened</div>
+                </div>
+                <canvas id="customerDonut" width="80" height="80"></canvas>
+            </div>
+            <div class="ds-card-footer">
+                <div class="ds-legend"><div class="ds-dot" style="background:var(--b-500)"></div>Individuals <strong style="color:var(--g-700)">@individuals</strong></div>
+                <div class="ds-legend"><div class="ds-dot" style="background:var(--blue)"></div>Corporates <strong style="color:var(--g-700)">@corporates</strong></div>
+            </div>
+        </div>
+
+        <!-- Onboarding Status -->
+        <div class="ds-card">
+            <div class="ds-card-header">
+                <span class="ds-card-title">Onboarding Status</span>
+                <div class="ds-card-ico" style="background:var(--green-l);color:var(--green);">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                </div>
+            </div>
+            <div class="ds-stat-val" style="margin-bottom:12px;">@totalCustomers</div>
+            <div class="ds-progress">
+                <div class="ds-progress-seg" style="width:@(approvedPct)%;background:var(--green);"></div>
+                <div class="ds-progress-seg" style="width:@(rejectedPct)%;background:var(--red);"></div>
+                <div class="ds-progress-seg" style="width:@(onHoldPct)%;background:var(--amber);"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:12px;">
+                <div>
+                    <div class="ds-legend"><div class="ds-dot" style="background:var(--green)"></div>Approved @(approvedPct)%</div>
+                    <div style="font-weight:700;color:var(--g-700);font-size:0.875rem;margin-top:2px;">@approved</div>
+                </div>
+                <div>
+                    <div class="ds-legend"><div class="ds-dot" style="background:var(--red)"></div>Rejected @(rejectedPct)%</div>
+                    <div style="font-weight:700;color:var(--g-700);font-size:0.875rem;margin-top:2px;">@rejected</div>
+                </div>
+                <div>
+                    <div class="ds-legend"><div class="ds-dot" style="background:var(--amber)"></div>Pending @(onHoldPct)%</div>
+                    <div style="font-weight:700;color:var(--g-700);font-size:0.875rem;margin-top:2px;">@pending</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screening Results -->
+        <div class="ds-card">
+            <div class="ds-card-header">
+                <span class="ds-card-title">Screening Results</span>
+                <div class="ds-card-ico" style="background:var(--b-50);color:var(--b-500);">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </div>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:16px;">
+                <div style="flex:1;"><canvas id="screeningDonut" width="100" height="100"></canvas></div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div class="ds-legend"><div class="ds-dot" style="background:var(--blue)"></div>Auto <strong>@autoApproved</strong></div>
+                    <div class="ds-legend"><div class="ds-dot" style="background:var(--b-500)"></div>Manual <strong>@manuallyApproved</strong></div>
+                    <div class="ds-legend"><div class="ds-dot" style="background:var(--b-300)"></div>Potential <strong>@potentialMatch</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Distribution -->
+        <div class="ds-card">
+            <div class="ds-card-header">
+                <span class="ds-card-title">Risk Distribution</span>
+                <div class="ds-card-ico" style="background:var(--red-l);color:var(--red);">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                </div>
+            </div>
+            <div class="ds-risk-grid">
+                <a href="/Case/Index" class="ds-risk-cell" style="background:var(--red-l);border-color:rgba(239,68,68,0.1);">
+                    <span class="ds-risk-label" style="color:var(--red);">High</span>
+                    <span class="ds-risk-value" style="color:var(--red);">@highRisk</span>
+                </a>
+                <a href="/Case/Index" class="ds-risk-cell" style="background:var(--amber-l);border-color:rgba(245,158,11,0.1);">
+                    <span class="ds-risk-label" style="color:var(--amber-d);">Medium</span>
+                    <span class="ds-risk-value" style="color:var(--amber);">@mediumRisk</span>
+                </a>
+                <a href="/Case/Index" class="ds-risk-cell" style="background:var(--green-l);border-color:rgba(16,185,129,0.1);">
+                    <span class="ds-risk-label" style="color:var(--green-d);">Low</span>
+                    <span class="ds-risk-value" style="color:var(--green);">@lowRisk</span>
+                </a>
+                <a href="/Case/Index" class="ds-risk-cell" style="background:var(--g-75);border-color:var(--g-100);">
+                    <span class="ds-risk-label" style="color:var(--g-400);">Unclassified</span>
+                    <span class="ds-risk-value" style="color:var(--g-500);">@unclassified</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 2: Decision Points + Task Queue -->
+    <div class="dash-row dash-row-2">
+
+        <!-- Decision Points -->
+        <div class="ds-section">
+            <div class="ds-section-header">
+                <div class="ds-section-title">
+                    <div class="ds-dot" style="background:var(--b-500);animation:lds-spin 2s linear infinite;width:8px;height:8px;"></div>
+                    Decision Points
+                    <span class="lds-pill lds-p-review">@pendingTotal pending</span>
+                </div>
+                <a href="/Case/Index" class="ds-link">
+                    View All
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
+            </div>
+            @if (pendingCases.Any())
+            {
+                <div>
+                    @foreach (var c in pendingCases)
+                    {
+                        <a href="/Case/Index" class="ds-case-row">
+                            <div class="ds-case-left">
+                                <div class="ds-case-avatar" style="background:var(--b-50);color:var(--b-600);">@(c.CustomerType == "I" ? "I" : "C")</div>
+                                <div class="ds-case-info">
+                                    <div class="ds-case-name">@c.CustomerID · @c.CustomerName</div>
+                                    <div class="ds-case-meta">Score: @c.MatchScore · @c.CreatedOn</div>
+                                </div>
+                            </div>
+                            <span class="lds-pill lds-p-pending">Pending Review</span>
+                        </a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="ds-empty">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                    <p>All caught up! No pending decisions.</p>
+                </div>
+            }
+            <div class="ds-card-footer">
+                <span style="font-size:0.75rem;color:var(--g-400);"><strong style="color:var(--g-700);">@pending</strong> Pending</span>
+                <span style="font-size:0.75rem;color:var(--g-400);"><strong style="color:var(--g-700);">@approved</strong> Approved</span>
+                <span style="font-size:0.75rem;color:var(--g-400);"><strong style="color:var(--g-700);">@rejected</strong> Rejected</span>
+            </div>
+        </div>
+
+        <!-- Task Queue -->
+        <div class="ds-section">
+            <div class="ds-section-header">
+                <div class="ds-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--b-500)" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    Task Queue
+                </div>
+                <a href="/Case/Index" class="ds-link">
+                    View All
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
+            </div>
+            @if (pendingCases.Any())
+            {
+                <div>
+                    @foreach (var c in pendingCases)
+                    {
+                        <div class="ds-task-row">
+                            <div class="ds-task-circle"></div>
+                            <div class="ds-task-text">Review <strong>@c.CustomerID</strong> screening results</div>
+                            <span class="ds-task-date">@c.CreatedOn</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="ds-empty">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    <p>Your task queue is clear.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ROW 3: Management Statistics + Calendar -->
+    <div class="dash-row dash-row-2">
+
+        <!-- Management Statistics -->
+        <div class="ds-section">
+            <div class="ds-section-header">
+                <div class="ds-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--b-500)" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                    Management Statistics
+                </div>
+            </div>
+            <div class="ds-mini-grid">
+                <div class="ds-mini-stat" style="background:var(--b-50);border-color:var(--b-100);">
+                    <div class="ds-mini-val" style="color:var(--b-700);">@weeklyCases</div>
+                    <div class="ds-mini-label" style="color:var(--b-600);">Cases This Week</div>
+                </div>
+                <div class="ds-mini-stat" style="background:var(--green-l);border-color:rgba(16,185,129,0.15);">
+                    @{
+                        var approvalRate = totalCustomers > 0 ? Math.Round((double)approved / totalCustomers * 100, 0) : 0;
+                    }
+                    <div class="ds-mini-val" style="color:var(--green-d);">@(approvalRate)%</div>
+                    <div class="ds-mini-label" style="color:var(--green);">Approval Rate</div>
+                </div>
+                <div class="ds-mini-stat" style="background:var(--red-l);border-color:rgba(239,68,68,0.1);">
+                    @{
+                        var totalRisked = highRisk + mediumRisk + lowRisk;
+                        var highRiskPct = totalRisked > 0 ? Math.Round((double)highRisk / totalRisked * 100, 0) : 0;
+                    }
+                    <div class="ds-mini-val" style="color:var(--red-d);">@(highRiskPct)%</div>
+                    <div class="ds-mini-label" style="color:var(--red);">High Risk Rate</div>
+                </div>
+            </div>
+            <div class="ds-info-grid">
+                <div class="ds-info-row">
+                    <div class="ds-info-ico" style="background:var(--b-50);color:var(--b-500);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    </div>
+                    <div>
+                        <div class="ds-info-val">@individuals</div>
+                        <div class="ds-info-label">Individuals</div>
+                    </div>
+                </div>
+                <div class="ds-info-row">
+                    <div class="ds-info-ico" style="background:var(--blue-l);color:var(--blue);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                    </div>
+                    <div>
+                        <div class="ds-info-val">@corporates</div>
+                        <div class="ds-info-label">Corporates</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar & Reminders -->
+        <div class="ds-section">
+            <div class="ds-section-header">
+                <div class="ds-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--b-500)" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                    Calendar & Reminders
+                </div>
+                <button onclick="openReminderModal()" class="lds-btn lds-btn-sm lds-btn-pri">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                    Add Reminder
+                </button>
+            </div>
+            <div id="calendarWidget" style="margin-bottom:16px;"></div>
+            <div id="reminderList" style="max-height:180px;overflow-y:auto;">
+                <div style="text-align:center;padding:16px;color:var(--g-300);font-size:0.875rem;">No reminders set. Click "Add Reminder" to create one.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 4: System Info -->
+    <div class="dash-row dash-row-2">
+
+        <!-- System Updates -->
+        <div class="ds-section">
+            <div class="ds-section-header">
+                <div class="ds-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--b-500)" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="21 3 21 9 15 9"/></svg>
+                    System Updates
+                </div>
+                <a asp-controller="Report" asp-action="DigiSchedulerLogs" class="ds-link">
+                    Scheduler
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+                </a>
+            </div>
+            @if (schedulerLogs.Any())
+            {
+                <div>
+                    @foreach (var log in schedulerLogs.Take(4))
+                    {
+                        <div class="ds-log-row">
+                            <div class="ds-dot" style="background:var(--green);width:8px;height:8px;flex-shrink:0;"></div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:0.875rem;font-weight:500;color:var(--g-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@log.Source</div>
+                                <div style="font-size:0.75rem;color:var(--g-300);">@log.CreatedOn · @log.TotalRecords records · @log.TotalHits hits</div>
+                            </div>
+                            <span class="lds-badge lds-b-green"><span class="lds-bd"></span>Active</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="ds-log-row">
+                    <div class="ds-dot" style="background:var(--g-300);width:8px;height:8px;flex-shrink:0;"></div>
+                    <div>
+                        <div style="font-size:0.875rem;color:var(--g-500);">No scheduler data available</div>
+                        <div style="font-size:0.75rem;color:var(--g-300);">Check the scheduler logs for details</div>
+                    </div>
+                </div>
+            }
+            <div style="margin-top:16px;padding:12px;border-radius:var(--r-md);background:var(--blue-l);border:1px solid rgba(59,130,246,0.12);">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span style="font-size:0.75rem;font-weight:600;color:var(--blue-d);">Last System Refresh</span>
+                </div>
+                <div style="font-size:0.75rem;color:var(--blue);">@(schedulerLogs.Any() ? schedulerLogs.First().CreatedOn : "N/A")</div>
+            </div>
+        </div>
+
+        <!-- Platform Summary -->
+        <div class="ds-section">
+            <div class="ds-section-header">
+                <div class="ds-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--b-500)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                    Platform Summary
+                </div>
+            </div>
+            <div class="ds-summary-grid">
+                <div class="ds-summary-box" style="background:var(--b-600);">
+                    <div class="ds-summary-val">@totalCustomers</div>
+                    <div class="ds-summary-label">Total Customers</div>
+                </div>
+                <div class="ds-summary-box" style="background:var(--green-d);">
+                    <div class="ds-summary-val">@approved</div>
+                    <div class="ds-summary-label">Total Approved</div>
+                </div>
+                <div class="ds-summary-box" style="background:var(--amber-d);">
+                    <div class="ds-summary-val">@pending</div>
+                    <div class="ds-summary-label">Pending Review</div>
+                </div>
+                <div class="ds-summary-box" style="background:var(--red-d);">
+                    <div class="ds-summary-val">@highRisk</div>
+                    <div class="ds-summary-label">High Risk Cases</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reminder Modal -->
+<div id="reminderModal" class="lds-modal-backdrop" style="display:none;">
+    <div class="lds-modal" style="width:100%;max-width:420px;">
+        <div class="lds-modal-h" style="display:flex;align-items:center;justify-content:space-between;">
+            <span class="lds-modal-title">Create Reminder</span>
+            <button onclick="closeReminderModal()" class="lds-btn lds-btn-icon lds-btn-ghost" style="padding:6px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
+        <div class="lds-modal-b">
+            <div class="lds-field">
+                <label class="lds-field-label">Title</label>
+                <input id="reminderTitle" type="text" class="lds-input" placeholder="e.g. KYC Refresh for NAT468" />
+            </div>
+            <div class="lds-field">
+                <label class="lds-field-label">Date</label>
+                <input id="reminderDate" type="date" class="lds-input" />
+            </div>
+            <div class="lds-field">
+                <label class="lds-field-label">Priority</label>
+                <select id="reminderPriority" class="lds-input lds-select">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <button onclick="saveReminder()" class="lds-btn lds-btn-md lds-btn-pri" style="width:100%;">Save Reminder</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Chart.js: Customer Count Donut ──
+(function() {
+    const ctx1 = document.getElementById('customerDonut');
+    if (ctx1) {
+        new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: ['Individuals', 'Corporates'],
+                datasets: [{
+                    data: [@individuals, @corporates],
+                    backgroundColor: ['#6366F1', '#3B82F6'],
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                cutout: '65%',
+                responsive: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#171717',
+                        titleFont: { family: 'Geist' },
+                        bodyFont: { family: 'Geist' },
+                        cornerRadius: 8,
+                        padding: 10
+                    }
+                }
+            }
+        });
+    }
+
+    // ── Chart.js: Screening Results Donut ──
+    const ctx2 = document.getElementById('screeningDonut');
+    if (ctx2) {
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Auto Approved', 'Manually Approved', 'Potential Match'],
+                datasets: [{
+                    data: [@autoApproved, @manuallyApproved, @potentialMatch],
+                    backgroundColor: ['#3B82F6', '#6366F1', '#A5B4FC'],
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                cutout: '60%',
+                responsive: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#171717',
+                        titleFont: { family: 'Geist' },
+                        bodyFont: { family: 'Geist' },
+                        cornerRadius: 8,
+                        padding: 10
+                    }
+                }
+            }
+        });
+    }
+})();
+
+// ── Calendar Widget ──
+(function() {
+    const container = document.getElementById('calendarWidget');
+    if (!container) return;
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const today = now.getDate();
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    let html = '<div style="text-align:center;margin-bottom:12px;"><span style="font-size:0.875rem;font-weight:600;color:var(--g-800);">' + monthNames[month] + ' ' + year + '</span></div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;">';
+    dayNames.forEach(d => { html += '<div style="font-size:0.625rem;font-weight:600;color:var(--g-300);padding:4px 0;text-transform:uppercase;letter-spacing:0.05em;">' + d + '</div>'; });
+
+    for (let i = 0; i < firstDay; i++) { html += '<div></div>'; }
+    for (let d = 1; d <= daysInMonth; d++) {
+        const isToday = d === today;
+        if (isToday) {
+            html += '<div style="width:28px;height:28px;border-radius:var(--r-pill);background:var(--b-500);color:white;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto;cursor:pointer;">' + d + '</div>';
+        } else {
+            html += '<div style="width:28px;height:28px;border-radius:var(--r-pill);font-size:0.75rem;color:var(--g-500);display:flex;align-items:center;justify-content:center;margin:0 auto;cursor:pointer;transition:background 80ms;" onmouseover="this.style.background=\'var(--g-75)\'" onmouseout="this.style.background=\'transparent\'">' + d + '</div>';
+        }
+    }
+    html += '</div>';
+    container.innerHTML = html;
+})();
+
+// ── Reminder System (localStorage) ──
+function getReminders() {
+    try { return JSON.parse(localStorage.getItem('lemon_reminders') || '[]'); } catch { return []; }
+}
+function renderReminders() {
+    const list = document.getElementById('reminderList');
+    const reminders = getReminders();
+    if (!reminders.length) {
+        list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--g-300);font-size:0.875rem;">No reminders set. Click "Add Reminder" to create one.</div>';
+        return;
+    }
+    const priorityColors = {
+        high: 'background:var(--red-l);color:var(--red-d)',
+        medium: 'background:var(--amber-l);color:var(--amber-d)',
+        low: 'background:var(--green-l);color:var(--green-d)'
+    };
+    list.innerHTML = reminders.sort((a,b) => new Date(a.date) - new Date(b.date)).map((r, i) =>
+        '<div class="ds-log-row">' +
+            '<button onclick="deleteReminder(' + i + ')" style="width:20px;height:20px;border-radius:var(--r-pill);border:2px solid var(--g-200);background:none;cursor:pointer;flex-shrink:0;transition:all 80ms;" onmouseover="this.style.borderColor=\'var(--red)\';this.style.background=\'var(--red-l)\'" onmouseout="this.style.borderColor=\'var(--g-200)\';this.style.background=\'none\'"></button>' +
+            '<div style="flex:1;min-width:0;font-size:0.875rem;font-weight:500;color:var(--g-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + r.title + '</div>' +
+            '<span class="lds-pill" style="' + (priorityColors[r.priority] || priorityColors.medium) + '">' + r.priority + '</span>' +
+            '<span style="font-size:0.75rem;color:var(--g-300);flex-shrink:0;">' + r.date + '</span>' +
+        '</div>'
+    ).join('');
+}
+function openReminderModal() {
+    document.getElementById('reminderModal').style.display = 'flex';
+    document.getElementById('reminderDate').valueAsDate = new Date();
+}
+function closeReminderModal() {
+    document.getElementById('reminderModal').style.display = 'none';
+}
+function saveReminder() {
+    const title = document.getElementById('reminderTitle').value.trim();
+    const date = document.getElementById('reminderDate').value;
+    const priority = document.getElementById('reminderPriority').value;
+    if (!title || !date) return;
+    const reminders = getReminders();
+    reminders.push({ title, date, priority });
+    localStorage.setItem('lemon_reminders', JSON.stringify(reminders));
+    renderReminders();
+    closeReminderModal();
+    document.getElementById('reminderTitle').value = '';
+}
+function deleteReminder(index) {
+    const reminders = getReminders();
+    reminders.splice(index, 1);
+    localStorage.setItem('lemon_reminders', JSON.stringify(reminders));
+    renderReminders();
+}
+renderReminders();
+</script>

@@ -13,134 +13,103 @@
         var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
 }
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<!DOCTYPE html>
-<html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Due Diligence - WatchDog</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
-    <div id="loadingCaseDetails" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
-        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
-    </div>
+@section Scripts {
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+}
 
-    <style>
-        .dt-loader {
-            position: relative;
-            width: 80px;
-            height: 20px;
+<style>
+    .dt-loader {
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #6366f1;
+            animation-timing-function: cubic-bezier(0,1,1,0);
         }
 
-            .dt-loader div {
-                position: absolute;
-                top: 8px;
-                width: 13px;
-                height: 13px;
-                border-radius: 50%;
-                background: #2563eb;
-                animation-timing-function: cubic-bezier(0,1,1,0);
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
             }
 
-                .dt-loader div:nth-child(1) {
-                    left: 8px;
-                    animation: dt-anim1 0.6s infinite;
-                }
-
-                .dt-loader div:nth-child(2) {
-                    left: 8px;
-                    animation: dt-anim2 0.6s infinite;
-                }
-
-                .dt-loader div:nth-child(3) {
-                    left: 32px;
-                    animation: dt-anim2 0.6s infinite;
-                }
-
-                .dt-loader div:nth-child(4) {
-                    left: 56px;
-                    animation: dt-anim3 0.6s infinite;
-                }
-
-        @@keyframes dt-anim1 {
-            0% {
-                transform: scale(0);
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
             }
 
-            100% {
-                transform: scale(1);
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
             }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% { transform: scale(0); }
+        100% { transform: scale(1); }
+    }
+
+    @@keyframes dt-anim2 {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(24px); }
+    }
+
+    @@keyframes dt-anim3 {
+        0% { transform: scale(1); }
+        100% { transform: scale(0); }
+    }
+
+    #caseDetailsTbl, #caseDetailsTbl th, #caseDetailsTbl td {
+        border: none !important;
+        border-radius: 0 !important;
+    }
+
+    th.sortable {
+        cursor: pointer;
+        position: relative;
+        padding-right: 20px;
+    }
+
+        th.sortable::after {
+            content: "▲\A▼";
+            white-space: pre;
+            font-size: 10px;
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #bbb;
+            line-height: 1;
+            text-align: center;
         }
 
-        @@keyframes dt-anim2 {
-            0% {
-                transform: translateX(0);
-            }
-
-            100% {
-                transform: translateX(24px);
-            }
+        th.sortable.active.asc::after {
+            content: "▲";
+            color: #000;
         }
 
-        @@keyframes dt-anim3 {
-            0% {
-                transform: scale(1);
-            }
-
-            100% {
-                transform: scale(0);
-            }
+        th.sortable.active.desc::after {
+            content: '\A▼';
+            color: #000;
         }
+</style>
 
-        #caseDetailsTbl, #caseDetailsTbl th, #caseDetailsTbl td {
-            border: none !important;
-            border-radius: 0 !important;
-        }
+<div id="loadingCaseDetails" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden" style="position:fixed;inset:0;background:rgba(255,255,255,0.75);display:none;align-items:center;justify-content:center;z-index:50;">
+    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+</div>
 
-        th.sortable {
-            cursor: pointer;
-            position: relative;
-            padding-right: 20px;
-        }
 
-            th.sortable::after {
-                content: "▲\A▼";
-                white-space: pre;
-                font-size: 10px;
-                position: absolute;
-                right: 6px;
-                top: 50%;
-                transform: translateY(-50%);
-                color: #bbb;
-                line-height: 1;
-                text-align: center;
-            }
-
-            th.sortable.active.asc::after {
-                content: "▲";
-                color: #000;
-            }
-
-            th.sortable.active.desc::after {
-                content: '\A▼';
-                color: #000;
-            }
-    </style>
-</head>
-
-<body class="bg-slate-50 min-h-screen text-slate-900">
     <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
         <!-- Header Section -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -532,8 +501,6 @@
             </div>
         </div>
     </div>
-    </body>
-    </html>
     <script>
     lucide.createIcons();
 

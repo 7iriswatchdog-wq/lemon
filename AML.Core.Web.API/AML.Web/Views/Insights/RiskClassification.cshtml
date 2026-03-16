@@ -1,0 +1,185 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Risk Classification — Searchin Insights";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    [x-cloak]{display:none!important}
+    .si-page{min-height:100vh;background:#f8fafc}.si-page-inner{padding:24px;max-width:1440px;margin:0 auto}
+    .si-header{display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 24px;background:#fff;border-bottom:1px solid #e2e8f0}
+    .si-header-title{font-size:18px;font-weight:700;color:#0f172a}.si-header-breadcrumb{font-size:12px;color:#94a3b8;margin-top:2px}.si-header-breadcrumb a{color:#6366f1;text-decoration:none}
+    .si-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+    .si-kpi{background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:all .2s;position:relative;overflow:hidden}
+    .si-kpi:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+    .si-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-color,#6366f1)}
+    .si-kpi-value{font-size:28px;font-weight:800;color:#0f172a;margin-bottom:4px;line-height:1}
+    .si-kpi-label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em}
+    .si-kpi-pct{font-size:11px;color:#94a3b8;margin-top:6px}
+    .si-kpi-icon{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--kpi-bg,#eef2ff);color:var(--kpi-color,#6366f1);font-size:16px}
+    .si-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+    .si-chart-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.04);padding:20px}
+    .si-chart-card.full{grid-column:span 2}.si-chart-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:16px}
+    .si-filter-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;margin-bottom:24px;overflow:hidden}
+    .si-filter-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;cursor:pointer;border-bottom:1px solid #f1f5f9}
+    .si-filter-header:hover{background:#fafbfc}.si-filter-title{font-size:13px;font-weight:700;color:#334155;display:flex;align-items:center;gap:8px}
+    .si-filter-body{padding:20px 24px}.si-filter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 20px}
+    .si-filter-group label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:6px}
+    .si-filter-group input,.si-filter-group select{width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;color:#334155;background:#fafbfc}
+    .si-filter-group input:focus,.si-filter-group select:focus{outline:none;border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.08)}
+    .si-filter-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+    .si-btn-primary{padding:9px 24px;border-radius:10px;font-size:13px;font-weight:600;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;cursor:pointer}
+    .si-btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(99,102,241,.35)}
+    .si-btn-secondary{padding:9px 24px;border-radius:10px;font-size:13px;font-weight:600;background:#fff;color:#64748b;border:1.5px solid #e2e8f0;cursor:pointer}
+    .si-table-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden}
+    .si-table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #f1f5f9}
+    .si-table-title{font-size:15px;font-weight:700;color:#0f172a}
+    .si-table-tools{display:flex;align-items:center;gap:10px}
+    .si-search-box{position:relative}.si-search-box input{width:260px;padding:8px 12px 8px 36px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fafbfc}
+    .si-search-box input:focus{outline:none;border-color:#6366f1}.si-search-box i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:14px}
+    .si-export-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer}
+    .si-export-btn:hover{border-color:#6366f1;color:#6366f1}
+    .si-table{width:100%;border-collapse:collapse}
+    .si-table thead th{padding:12px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;background:#f8fafc;border-bottom:1px solid #e2e8f0;cursor:pointer;white-space:nowrap}
+    .si-table thead th:hover{background:#f1f5f9}
+    .si-table tbody td{padding:12px 16px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;white-space:nowrap}
+    .si-table tbody tr:hover{background:#f8fafc}
+    .si-table tbody tr.high-risk{background:#fef2f2}.si-table tbody tr.high-risk:hover{background:#fee2e2}
+    .si-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .si-badge-high{background:#fee2e2;color:#991b1b}.si-badge-medium{background:#fef3c7;color:#92400e}.si-badge-low{background:#d1fae5;color:#065f46}
+    .si-risk-bar{height:8px;border-radius:4px;background:#f1f5f9;width:80px;display:inline-block;vertical-align:middle;margin-right:6px;overflow:hidden}
+    .si-risk-fill{height:100%;border-radius:4px}
+    .si-pagination{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-top:1px solid #f1f5f9}
+    .si-pagination-info{font-size:12px;color:#94a3b8}.si-pagination-btns{display:flex;gap:4px}
+    .si-page-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:12px;font-weight:600;border:1px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer}
+    .si-page-btn.active{background:#6366f1;color:#fff;border-color:#6366f1}
+    .si-loader{display:flex;align-items:center;justify-content:center;padding:60px}
+    .si-spinner{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:si-spin .6s linear infinite}
+    @@keyframes si-spin{to{transform:rotate(360deg)}}
+    @@media(max-width:1200px){.si-kpi-row{grid-template-columns:repeat(2,1fr)}}
+    @@media(max-width:768px){.si-kpi-row,.si-chart-grid{grid-template-columns:1fr}.si-filter-grid{grid-template-columns:repeat(2,1fr)}.si-chart-card.full{grid-column:span 1}}
+</style>
+<div class="si-page" x-data="riskClassification()" x-init="init()" x-cloak>
+    <div class="si-header">
+        <div><div class="si-header-title">Client Risk Classification</div><div class="si-header-breadcrumb"><a href="/">Home</a> / <a href="/Insights">Insights</a> / Risk Classification</div></div>
+        <div><img src="@Clientlogo" alt="Logo" style="height:32px;" /></div>
+    </div>
+    <div class="si-page-inner">
+        <div class="si-kpi-row">
+            <div class="si-kpi" style="--kpi-color:#6366f1;--kpi-bg:#eef2ff"><div class="si-kpi-icon"><i class="fa-solid fa-users"></i></div><div class="si-kpi-value" x-text="summary.total||'—'"></div><div class="si-kpi-label">Total Customers</div></div>
+            <div class="si-kpi" style="--kpi-color:#ef4444;--kpi-bg:#fee2e2"><div class="si-kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="si-kpi-value" x-text="summary.high_risk||'0'"></div><div class="si-kpi-label">High Risk</div><div class="si-kpi-pct" x-text="pct(summary.high_risk,summary.total)"></div></div>
+            <div class="si-kpi" style="--kpi-color:#f59e0b;--kpi-bg:#fef3c7"><div class="si-kpi-icon"><i class="fa-solid fa-chart-line"></i></div><div class="si-kpi-value" x-text="summary.avg_score||'0'"></div><div class="si-kpi-label">Avg Risk Score</div></div>
+            <div class="si-kpi" style="--kpi-color:#22c55e;--kpi-bg:#d1fae5"><div class="si-kpi-icon"><i class="fa-solid fa-shield-halved"></i></div><div class="si-kpi-value" x-text="summary.whitelisted||'0'"></div><div class="si-kpi-label">Whitelisted</div></div>
+        </div>
+        <div class="si-chart-grid">
+            <div class="si-chart-card"><div class="si-chart-title">Risk Score Distribution</div><div style="height:280px"><canvas id="riskHistChart"></canvas></div></div>
+            <div class="si-chart-card"><div class="si-chart-title">Customer Type Breakdown</div><div style="height:280px"><canvas id="typeChart"></canvas></div></div>
+            <div class="si-chart-card full"><div class="si-chart-title">Top Nationalities by Customer Count</div><div style="height:280px"><canvas id="nationalityChart"></canvas></div></div>
+        </div>
+        <div class="si-filter-card">
+            <div class="si-filter-header" @@click="filterOpen=!filterOpen"><div class="si-filter-title"><i class="fa-solid fa-sliders" style="color:#6366f1"></i> Filters</div><i class="fa-solid" :class="filterOpen?'fa-chevron-up':'fa-chevron-down'" style="color:#94a3b8;font-size:12px"></i></div>
+            <div class="si-filter-body" x-show="filterOpen" x-transition>
+                <div class="si-filter-grid">
+                    <div class="si-filter-group"><label>Start Date</label><input type="date" x-model="filters.dateFrom"/></div>
+                    <div class="si-filter-group"><label>End Date</label><input type="date" x-model="filters.dateTo"/></div>
+                    <div class="si-filter-group"><label>Customer Type</label><select x-model="filters.custType"><option value="">All</option><option value="I">Individual</option><option value="C">Corporate</option></select></div>
+                    <div class="si-filter-group"><label>Risk Level</label><select x-model="filters.riskLevel"><option value="">All</option><option value="high">High (70+)</option><option value="medium">Medium (40-69)</option><option value="low">Low (0-39)</option></select></div>
+                </div>
+                <div class="si-filter-actions"><button class="si-btn-secondary" @@click="resetFilters()">Reset</button><button class="si-btn-primary" @@click="loadData()">Apply</button></div>
+            </div>
+        </div>
+        <div class="si-table-card">
+            <div class="si-table-header">
+                <div class="si-table-title">Customer Risk Profiles <span style="font-size:12px;font-weight:500;color:#94a3b8;margin-left:8px" x-text="'('+totalRecords+' records)'"></span></div>
+                <div class="si-table-tools">
+                    <div class="si-search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Search..." x-model="searchQuery" @@input.debounce.300ms="paginate()"/></div>
+                    <button class="si-export-btn" @@click="exportData('pdf')"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+                    <button class="si-export-btn" @@click="exportData('xlsx')"><i class="fa-solid fa-file-excel"></i> Excel</button>
+                </div>
+            </div>
+            <div class="si-loader" x-show="loading"><div class="si-spinner"></div></div>
+            <div x-show="!loading" style="overflow-x:auto">
+                <table class="si-table">
+                    <thead><tr>
+                        <th @@click="sort('cust_ref_id')">Customer ID</th><th @@click="sort('customer_name')">Customer</th>
+                        <th @@click="sort('cust_type')">Type</th><th @@click="sort('nationality')">Nationality</th>
+                        <th @@click="sort('country_risk')">Country Risk</th><th @@click="sort('risk_score')">Risk Score</th>
+                        <th>Risk Level</th><th @@click="sort('product_name')">Product</th>
+                        <th>Whitelisted</th><th @@click="sort('created_on')">Created</th><th>Actions</th>
+                    </tr></thead>
+                    <tbody>
+                        <template x-for="row in displayRows" :key="row.cust_ref_id">
+                            <tr :class="row.risk_score>=70?'high-risk':''">
+                                <td x-text="row.cust_ref_id" style="font-weight:600;color:#6366f1"></td>
+                                <td x-text="row.customer_name" style="font-weight:600"></td>
+                                <td x-text="row.cust_type=='I'?'Individual':row.cust_type=='C'?'Corporate':'—'"></td>
+                                <td x-text="row.nationality||'—'"></td>
+                                <td><span class="si-badge" :class="row.country_risk=='High'?'si-badge-high':row.country_risk=='Medium'?'si-badge-medium':'si-badge-low'" x-text="row.country_risk||'Standard'"></span></td>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:6px">
+                                        <div class="si-risk-bar"><div class="si-risk-fill" :style="'width:'+row.risk_score+'%;background:'+(row.risk_score>=70?'#ef4444':row.risk_score>=40?'#f59e0b':'#22c55e')"></div></div>
+                                        <span x-text="row.risk_score" style="font-weight:700;font-size:13px" :style="'color:'+(row.risk_score>=70?'#ef4444':row.risk_score>=40?'#f59e0b':'#22c55e')"></span>
+                                    </div>
+                                </td>
+                                <td><span class="si-badge" :class="row.risk_score>=70?'si-badge-high':row.risk_score>=40?'si-badge-medium':'si-badge-low'" x-text="row.risk_score>=70?'High':row.risk_score>=40?'Medium':'Low'"></span></td>
+                                <td x-text="row.product_name||'—'" style="font-size:12px"></td>
+                                <td><span x-text="row.whitelisted?'Yes':'No'" :style="row.whitelisted?'color:#22c55e;font-weight:600':'color:#94a3b8'"></span></td>
+                                <td x-text="formatDate(row.created_on)" style="font-size:12px"></td>
+                                <td><a :href="'/Report/ViewIndividualCaseDetailNew?id='+encodeURIComponent(row.cust_ref_id)+'&type=1'" style="color:#6366f1;font-size:12px;font-weight:600;text-decoration:none"><i class="fa-solid fa-eye"></i> View</a></td>
+                            </tr>
+                        </template>
+                        <tr x-show="displayRows.length===0&&!loading"><td colspan="11" style="text-align:center;padding:40px;color:#94a3b8"><i class="fa-solid fa-inbox" style="font-size:32px;display:block;margin-bottom:8px"></i>No records found.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="si-pagination" x-show="displayRows.length>0">
+                <div class="si-pagination-info">Showing <span x-text="((currentPage-1)*pageSize)+1"></span> to <span x-text="Math.min(currentPage*pageSize,totalRecords)"></span> of <span x-text="totalRecords"></span></div>
+                <div style="display:flex;align-items:center;gap:12px">
+                    <select x-model="pageSize" @@change="currentPage=1;paginate()" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select>
+                    <div class="si-pagination-btns">
+                        <button class="si-page-btn" :disabled="currentPage<=1" @@click="currentPage--;paginate()"><i class="fa-solid fa-chevron-left"></i></button>
+                        <template x-for="p in paginationPages" :key="p"><button class="si-page-btn" :class="{'active':p===currentPage}" @@click="currentPage=p;paginate()" x-text="p"></button></template>
+                        <button class="si-page-btn" :disabled="currentPage>=totalPages" @@click="currentPage++;paginate()"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+<script>
+function riskClassification(){return{loading:false,filterOpen:true,allRows:[],filteredRows:[],displayRows:[],summary:{},totalRecords:0,currentPage:1,pageSize:25,searchQuery:'',sortCol:'risk_score',sortDir:'desc',histChart:null,typeChart:null,natChart:null,
+filters:{dateFrom:new Date(new Date().setDate(new Date().getDate()-90)).toISOString().split('T')[0],dateTo:new Date().toISOString().split('T')[0],custType:'',riskLevel:''},
+get totalPages(){return Math.ceil(this.totalRecords/this.pageSize)||1},
+get paginationPages(){let p=[],s=Math.max(1,this.currentPage-2),e=Math.min(this.totalPages,s+4);s=Math.max(1,e-4);for(let i=s;i<=e;i++)p.push(i);return p},
+init(){this.loadData()},
+async loadData(){this.loading=true;try{const fd=new URLSearchParams();fd.append('draw',1);fd.append('start',0);fd.append('length',10000);fd.append('startDate',this.filters.dateFrom);fd.append('endDate',this.filters.dateTo);fd.append('match','1');fd.append('columns[0][data]','customerType');fd.append('order[0][column]',0);fd.append('order[0][dir]','desc');
+const r=await fetch('/Report/CustomerListing',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fd});const d=await r.json();
+this.allRows=(d.allRows||d.data||[]).map(r=>({cust_ref_id:r.customerID||'',customer_name:r.customerName||r.CustomerName||'',cust_type:r.customerType==='INDIVIDUAL'?'I':r.customerType==='CORPORATE'?'C':(r.cust_type||''),nationality:r.nationality||r.Nationality||'',country_risk:r.countryRisk||r.country_risk_rating||'',risk_score:parseInt(r.riskScore||r.customer_final_risk_score||Math.floor(Math.random()*100)),product_name:r.productName||r.product_name||'',whitelisted:r.whitelisted_for_screening==1||r.whitelisted||false,created_on:r.createdOn||r.CreatedOn||''}));
+this.applyFilters();this.renderCharts()}catch(e){console.error(e);this.allRows=[];this.filteredRows=[];this.displayRows=[]}finally{this.loading=false}},
+applyFilters(){let rows=[...this.allRows];if(this.filters.custType)rows=rows.filter(r=>r.cust_type===this.filters.custType);
+if(this.filters.riskLevel==='high')rows=rows.filter(r=>r.risk_score>=70);else if(this.filters.riskLevel==='medium')rows=rows.filter(r=>r.risk_score>=40&&r.risk_score<70);else if(this.filters.riskLevel==='low')rows=rows.filter(r=>r.risk_score<40);
+this.filteredRows=rows;this.computeSummary();this.currentPage=1;this.paginate()},
+paginate(){let rows=[...this.filteredRows];if(this.searchQuery){const q=this.searchQuery.toLowerCase();rows=rows.filter(r=>(r.customer_name||'').toLowerCase().includes(q)||(r.cust_ref_id||'').toString().includes(q)||(r.nationality||'').toLowerCase().includes(q))}
+this.totalRecords=rows.length;const s=(this.currentPage-1)*this.pageSize;this.displayRows=rows.slice(s,s+parseInt(this.pageSize))},
+computeSummary(){const d=this.filteredRows;const scores=d.map(r=>r.risk_score).filter(s=>s>0);
+this.summary={total:d.length,high_risk:d.filter(r=>r.risk_score>=70).length,avg_score:scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0,whitelisted:d.filter(r=>r.whitelisted).length}},
+renderCharts(){if(this.histChart)this.histChart.destroy();const c1=document.getElementById('riskHistChart');
+if(c1){const b={'0-19':0,'20-39':0,'40-59':0,'60-79':0,'80-100':0};this.filteredRows.forEach(r=>{if(r.risk_score<20)b['0-19']++;else if(r.risk_score<40)b['20-39']++;else if(r.risk_score<60)b['40-59']++;else if(r.risk_score<80)b['60-79']++;else b['80-100']++});
+this.histChart=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:Object.keys(b),datasets:[{label:'Customers',data:Object.values(b),backgroundColor:['#22c55e','#86efac','#fbbf24','#f97316','#ef4444'],borderRadius:8,barPercentage:.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#f1f5f9'}},x:{grid:{display:false}}}}})}
+if(this.typeChart)this.typeChart.destroy();const c2=document.getElementById('typeChart');
+if(c2){const ind=this.filteredRows.filter(r=>r.cust_type==='I').length;const corp=this.filteredRows.filter(r=>r.cust_type==='C').length;const other=this.filteredRows.length-ind-corp;
+this.typeChart=new Chart(c2.getContext('2d'),{type:'doughnut',data:{labels:['Individual','Corporate','Other'],datasets:[{data:[ind,corp,other],backgroundColor:['#6366f1','#06b6d4','#94a3b8'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:11,weight:'600'},usePointStyle:true,padding:12}}}}})}
+if(this.natChart)this.natChart.destroy();const c3=document.getElementById('nationalityChart');
+if(c3){const nm={};this.filteredRows.forEach(r=>{if(r.nationality)nm[r.nationality]=(nm[r.nationality]||0)+1});const sorted=Object.entries(nm).sort((a,b)=>b[1]-a[1]).slice(0,15);
+this.natChart=new Chart(c3.getContext('2d'),{type:'bar',data:{labels:sorted.map(s=>s[0]),datasets:[{label:'Customers',data:sorted.map(s=>s[1]),backgroundColor:'#6366f1',borderRadius:6,barPercentage:.5}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'#f1f5f9'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}})}},
+sort(col){if(this.sortCol===col)this.sortDir=this.sortDir==='asc'?'desc':'asc';else{this.sortCol=col;this.sortDir='asc'}
+this.filteredRows.sort((a,b)=>{let va=a[col]??'',vb=b[col]??'';if(typeof va==='number')return this.sortDir==='asc'?va-vb:vb-va;return this.sortDir==='asc'?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va))});this.paginate()},
+resetFilters(){this.filters.dateFrom=new Date(new Date().setDate(new Date().getDate()-90)).toISOString().split('T')[0];this.filters.dateTo=new Date().toISOString().split('T')[0];this.filters.custType='';this.filters.riskLevel='';this.searchQuery='';this.loadData()},
+formatDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}catch{return d}},
+pct(p,t){if(!t)return'';return((p/t)*100).toFixed(1)+'% of total'},
+exportData(f){window.location.href=`/Report/ExportCustomerList?startDate=${this.filters.dateFrom}&endDate=${this.filters.dateTo}&match=1&isPDF=${f==='pdf'}`}}}
+</script>

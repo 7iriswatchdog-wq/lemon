@@ -1,0 +1,45 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{ ViewData["Title"] = "Trend Forecasting — Searchin Intelligence"; Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml"; var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl"); }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>[x-cloak]{display:none!important}.si-page{min-height:100vh;background:#f8fafc}.si-page-inner{padding:24px;max-width:1440px;margin:0 auto}.si-header{display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 24px;background:#fff;border-bottom:1px solid #e2e8f0}.si-header-title{font-size:18px;font-weight:700;color:#0f172a}.si-header-breadcrumb{font-size:12px;color:#94a3b8;margin-top:2px}.si-header-breadcrumb a{color:#6366f1;text-decoration:none}.si-intel-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff}.si-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}.si-kpi{background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0;transition:all .2s;position:relative;overflow:hidden}.si-kpi:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}.si-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-color,#6366f1)}.si-kpi-value{font-size:28px;font-weight:800;color:#0f172a;margin-bottom:4px;line-height:1}.si-kpi-label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em}.si-kpi-icon{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--kpi-bg,#eef2ff);color:var(--kpi-color,#6366f1);font-size:16px}.si-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}.si-chart-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:20px}.si-chart-card.full{grid-column:span 2}.si-chart-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:16px}.si-forecast-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:24px;margin-bottom:24px}.si-forecast-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.si-forecast-item{text-align:center;padding:16px;border-radius:12px;background:#fafbfc;border:1px solid #f1f5f9}.si-forecast-item .metric{font-size:24px;font-weight:800;color:#0f172a;margin-bottom:4px}.si-forecast-item .label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase}.si-forecast-item .trend{font-size:12px;margin-top:6px;font-weight:700}
+@@media(max-width:768px){.si-kpi-row,.si-chart-grid,.si-forecast-grid{grid-template-columns:1fr}.si-chart-card.full{grid-column:span 1}}</style>
+<div class="si-page" x-data="trendForecasting()" x-init="init()" x-cloak>
+    <div class="si-header"><div><div class="si-header-title">Trend Forecasting</div><div class="si-header-breadcrumb"><a href="/">Home</a> / <a href="/Intelligence">Intelligence</a> / Trend Forecasting</div></div><div style="display:flex;align-items:center;gap:12px"><span class="si-intel-badge"><i class="fa-solid fa-brain"></i> AI Analytics</span><img src="@Clientlogo" alt="Logo" style="height:32px"/></div></div>
+    <div class="si-page-inner">
+        <div class="si-kpi-row">
+            <div class="si-kpi" style="--kpi-color:#7c3aed;--kpi-bg:#ede9fe"><div class="si-kpi-icon"><i class="fa-solid fa-chart-line"></i></div><div class="si-kpi-value">+12%</div><div class="si-kpi-label">Screening Growth</div></div>
+            <div class="si-kpi" style="--kpi-color:#ef4444;--kpi-bg:#fee2e2"><div class="si-kpi-icon"><i class="fa-solid fa-arrow-trend-up"></i></div><div class="si-kpi-value">+8%</div><div class="si-kpi-label">Risk Trend</div></div>
+            <div class="si-kpi" style="--kpi-color:#22c55e;--kpi-bg:#d1fae5"><div class="si-kpi-icon"><i class="fa-solid fa-arrow-trend-down"></i></div><div class="si-kpi-value">-5%</div><div class="si-kpi-label">False Positive Rate</div></div>
+            <div class="si-kpi" style="--kpi-color:#06b6d4;--kpi-bg:#cffafe"><div class="si-kpi-icon"><i class="fa-solid fa-bullseye"></i></div><div class="si-kpi-value">92%</div><div class="si-kpi-label">Forecast Confidence</div></div>
+        </div>
+        <div class="si-chart-grid">
+            <div class="si-chart-card full"><div class="si-chart-title">6-Month Case Volume Forecast</div><div style="height:320px"><canvas id="forecastChart"></canvas></div></div>
+            <div class="si-chart-card"><div class="si-chart-title">Risk Category Trends</div><div style="height:280px"><canvas id="riskTrendChart"></canvas></div></div>
+            <div class="si-chart-card"><div class="si-chart-title">Match Rate Forecast</div><div style="height:280px"><canvas id="matchForecastChart"></canvas></div></div>
+        </div>
+        <div class="si-forecast-card">
+            <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:16px"><i class="fa-solid fa-crystal-ball" style="color:#7c3aed;margin-right:8px"></i>Next Quarter Projections</div>
+            <div class="si-forecast-grid">
+                <div class="si-forecast-item"><div class="metric">2,450</div><div class="label">Projected Cases</div><div class="trend" style="color:#22c55e"><i class="fa-solid fa-arrow-up"></i> +15% from current</div></div>
+                <div class="si-forecast-item"><div class="metric">18%</div><div class="label">Projected Match Rate</div><div class="trend" style="color:#ef4444"><i class="fa-solid fa-arrow-up"></i> +2% increase</div></div>
+                <div class="si-forecast-item"><div class="metric">42</div><div class="label">Projected STRs</div><div class="trend" style="color:#f59e0b"><i class="fa-solid fa-arrow-up"></i> +8 from current</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+<script>
+function trendForecasting(){return{init(){this.renderCharts()},
+renderCharts(){const months=['Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+const actual=[180,210,195,230,250,220,240,null,null,null,null,null];
+const forecast=[null,null,null,null,null,null,240,260,275,290,310,320];
+const c1=document.getElementById('forecastChart');
+if(c1){new Chart(c1.getContext('2d'),{type:'line',data:{labels:months,datasets:[{label:'Actual',data:actual,borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.1)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:'#6366f1'},{label:'Forecast',data:forecast,borderColor:'#7c3aed',borderDash:[6,4],backgroundColor:'rgba(124,58,237,.05)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:'#7c3aed',pointStyle:'triangle'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:12,weight:'600'},usePointStyle:true}}},scales:{y:{beginAtZero:true,grid:{color:'#f1f5f9'}},x:{grid:{display:false}}}}})}
+const c2=document.getElementById('riskTrendChart');
+if(c2){new Chart(c2.getContext('2d'),{type:'line',data:{labels:months.slice(0,7),datasets:[{label:'High Risk',data:[35,42,38,45,48,44,50],borderColor:'#ef4444',tension:.3,pointRadius:3},{label:'Medium Risk',data:[80,75,82,78,85,80,88],borderColor:'#f59e0b',tension:.3,pointRadius:3},{label:'Low Risk',data:[65,70,75,72,80,76,82],borderColor:'#22c55e',tension:.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11,weight:'600'},usePointStyle:true}}},scales:{y:{beginAtZero:true,grid:{color:'#f1f5f9'}},x:{grid:{display:false}}}}})}
+const c3=document.getElementById('matchForecastChart');
+if(c3){new Chart(c3.getContext('2d'),{type:'bar',data:{labels:months,datasets:[{label:'Match Rate %',data:[16,15,17,18,16,17,18,19,18,20,19,21],backgroundColor:months.map((_,i)=>i>=7?'rgba(124,58,237,0.5)':'#6366f1'),borderRadius:6,barPercentage:.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:30,grid:{color:'#f1f5f9'}},x:{grid:{display:false}}}}})}
+}}}
+</script>

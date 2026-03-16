@@ -1325,7 +1325,7 @@ namespace AML.Web.Controllers.Risk
 
                                 else
                                 {
-                                    _toastNotification.AddSuccessToastMessage("Risk Assessment Sucessfully ");
+                                    _toastNotification.AddSuccessToastMessage("Risk Assessment Successfully ");
                                 }
                             }
                         }
@@ -1577,7 +1577,7 @@ namespace AML.Web.Controllers.Risk
 
                                 else
                                 {
-                                    _toastNotification.AddSuccessToastMessage("Risk Assessment Sucessfully ");
+                                    _toastNotification.AddSuccessToastMessage("Risk Assessment Successfully ");
                                 }
                             }
                         }
