@@ -1,6 +1,7 @@
 using AML.Core.Common.StaticResource;
 using AML.Core.DataContract.Authentication;
 using AML.Core.DataContract.Enum;
+using AML.Core.Service.LovMaster;
 using AML.Core.ServiceContract.CaseAssignment;
 using AML.Core.ServiceContract.CaseComment;
 using AML.Core.ServiceContract.CaseDocument;
@@ -132,6 +133,7 @@ namespace AML.Web.Controllers.Corporate
                 baseC6URL = string.Empty;
             }
             _kycService = kycService;
+            
             //baseC6URL = configuration.GetSection("C6BaseApiUrl").GetSection("BaseUrl").Value;
             //_c6Username = _configuration.GetSection("C6BaseApiUrl:Username").Value;
             //checkThreshold = configuration.GetSection("C6BaseApiUrl").GetSection("Threshold").Value.ParseInt();
@@ -1578,7 +1580,7 @@ namespace AML.Web.Controllers.Corporate
                     CompanyCode = sh.CompanyCode,
                     //CompanyName = sh.CompanyName,
                     //Thershold = sh.Thershold,
-                    //DOB = sh.RegistrationDate?.ToString("yyyy-MM-dd") ?? "",
+                    DOB = sh.RegistrationDate?.ToString("yyyy-mm-dd"),
                     CustomerIdType = sh.IdType,
                     CustomerIdNumber = sh.IdNumber,
                     IdIssueDate = sh.IssueDate,
@@ -1596,6 +1598,9 @@ namespace AML.Web.Controllers.Corporate
                     SOWSOFCountry=sh.SOWSOFCountry,
                     TradeLicenseAuthority=sh.TradeLicenseAuthority,
                     TradeLicenseSector=sh.TradeLicenseSector,
+                    Gender=sh.Gender,
+                    Relationship=sh.Relationship,
+                    FlagType=sh.FlagType
                 };
 
                 // Determine ParentId from TempId (everything before last dot)

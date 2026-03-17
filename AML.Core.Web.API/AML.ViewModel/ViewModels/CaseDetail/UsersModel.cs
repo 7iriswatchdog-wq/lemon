@@ -20,6 +20,8 @@ namespace AML.ViewModel.ViewModels.CaseDetail
         public string Category { get; set; }
         public string MatchUid { get; set; }
 
+        public string CreationDate { get; set; }
+
     }
     public class User
     {

@@ -72,11 +72,14 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_sowsofcountry", _CustomerMasterDTO.SOWSOFCountry);
                 parameters.Add("@p_counterparty", _CustomerMasterDTO.CounterParty);
                 parameters.Add("@p_productvalue", _CustomerMasterDTO.ProductValue);
-                parameters.Add("@p_producttype", _CustomerMasterDTO.ProductType);
+                parameters.Add("@p_productrefno", _CustomerMasterDTO.ProductRefNo);
                 parameters.Add("@p_tradelicenseauthority", _CustomerMasterDTO.TradeLicenseAuthority);
                 parameters.Add("@p_tradelicensesector", _CustomerMasterDTO.TradeLicenseSector);
                 parameters.Add("@p_share", _CustomerMasterDTO.Share);
                 parameters.Add("@p_desgination", _CustomerMasterDTO.Designation);
+                parameters.Add("@p_counterpartyname", _CustomerMasterDTO.CounterPartyName);
+                parameters.Add("@p_relationship", _CustomerMasterDTO.Relationship);
+                parameters.Add("@p_flag", _CustomerMasterDTO.FlagType);
                 //parameters.Add("@p_address",_CustomerMasterDTO.Address);
                 //parameters.Add("@p_establishmentdate", _CustomerMasterDTO.EstablishmentDate);
                 var response = ExecuteScalar("ins_customer_master", parameters, commandType: CommandType.StoredProcedure).ParseString();
@@ -991,7 +994,9 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_docfullpath", _shareholderDTO.DocFullPath);
                 parameters.Add("@p_tradelicenseauthority", _shareholderDTO.TradeLicenseAuthority);
                 parameters.Add("@p_tradelicensesector", _shareholderDTO.TradeLicenseSector);
-
+                parameters.Add("@p_gender", _shareholderDTO.Gender);
+                parameters.Add("@p_relationship", _shareholderDTO.Relationship);
+                parameters.Add("@p_flag", _shareholderDTO.FlagType);
                 var response = ExecuteScalar("ins_shareholders_data", parameters, commandType: CommandType.StoredProcedure).ParseString();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Customer master added successfully.";

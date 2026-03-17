@@ -167,11 +167,14 @@ namespace AML.Core.Service.CustomerCase
                 SOWSOFCountry=_CustomerCaseDT.SOWSOFCountry,
                 TradeLicenseAuthority=_CustomerCaseDT.TradeLicenseAuthority,
                 TradeLicenseSector=_CustomerCaseDT.TradeLicenseSector,
-                ProductType=_CustomerCaseDT.ProductType,
+                ProductRefNo=_CustomerCaseDT.ProductRefNo,
                 ProductValue=_CustomerCaseDT.ProductValue,
                 CounterParty=_CustomerCaseDT.CounterParty,
                 Share=_CustomerCaseDT.Share,
-                Designation=_CustomerCaseDT.Designation
+                Designation=_CustomerCaseDT.Designation,
+                CounterPartyName=_CustomerCaseDT.CounterPartyName,
+                FlagType=_CustomerCaseDT.FlagType,
+                Relationship=_CustomerCaseDT.Relationship
                 
                 //EstablishmentDate=_CustomerCaseDT.EstablishmentDate,
                 //Address= _CustomerCaseDT.Address
@@ -973,9 +976,10 @@ namespace AML.Core.Service.CustomerCase
                 Residence=model.Residence,
                 TradeLicenseAuthority=model.TradeLicenseAuthority,
                 TradeLicenseSector=model.TradeLicenseSector,
-                ProductType=model.ProductType,
+                ProductRefNo=model.ProductRefNo,
                 ProductValue=model.ProductValue,
-                CounterParty=model.CounterParty
+                CounterParty=model.CounterParty,
+                CounterPartyName=model.CounterPartyName
                 
             };
             //ServiceResponse<string> _corpCustomer = this.CreatePrefix(_CustomerCaseDT);

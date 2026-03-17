@@ -97,7 +97,11 @@ namespace AML.Web.Mappings
             CreateMap<ModuleDTO, ModuleModel>();
             CreateMap<FunctionalityModel, FunctionalityDTO>();
             CreateMap<FunctionalityDTO, FunctionalityModel>();
-            CreateMap<CaseModel, CustomerCaseDTO>();
+            CreateMap<CaseModel, CustomerCaseDTO>().ForMember(dest => dest.DOB, opt => opt.MapFrom(src =>
+        string.IsNullOrEmpty(src.DOB)
+            ? (DateTime?)null
+            : DateTime.Parse(src.DOB)
+    )); ;
             CreateMap<ScreenCaseModel, CustomerCaseDTO>();
             CreateMap<CustomerCaseDTO, CaseModel>();
             CreateMap<CustomerApiModel, CustomerCaseDTO>();

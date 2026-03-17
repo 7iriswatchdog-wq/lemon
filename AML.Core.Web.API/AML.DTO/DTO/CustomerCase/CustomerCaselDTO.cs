@@ -250,8 +250,8 @@ namespace AML.DTO.DTO.CustomerCase
         public string TradeLicenseSector { get; set; }
         [Column("countryparty")]
         public string CounterParty { get; set; }
-        [Column("producttype")]
-        public string ProductType { get; set; }
+        [Column("productrefno")]
+        public string ProductRefNo { get; set; }
         [Column("productvalue")]
         public string ProductValue { get; set; }
 
@@ -259,6 +259,16 @@ namespace AML.DTO.DTO.CustomerCase
         public int Share { get; set; }
         [Column("designation")]
         public string Designation { get; set; }
+
+        [Column("counterypartyname")]
+        public string CounterPartyName { get; set; }
+
+
+        [Column("relationship")]
+        public string Relationship { get; set; }
+
+        [Column("flagtype")]
+        public string FlagType { get; set; }
     }
     public class CreatedAndUpdatedByNames
     {
@@ -558,8 +568,8 @@ namespace AML.DTO.DTO.CustomerCase
         public string TradeLicenseSector { get; set; }
         [Column("countryparty")]
         public string CounterParty { get; set; }
-        [Column("producttype")]
-        public string ProductType { get; set; }
+        [Column("productrefno")]
+        public string ProductRefNo { get; set; }
         [Column("productvalue")]
         public string ProductValue { get; set; }
 
@@ -567,6 +577,14 @@ namespace AML.DTO.DTO.CustomerCase
         public int Share { get; set; }
         [Column("designation")]
         public string Designation { get; set; }
+        [Column("counterypartyname")]
+        public string CounterPartyName { get; set; }
+
+        [Column("relationship")]
+        public string Relationship { get; set; }
+
+        [Column("flagtype")]
+        public string FlagType { get; set; }
 
     }
 
@@ -706,6 +724,15 @@ namespace AML.DTO.DTO.CustomerCase
         public string TradeLicenseAuthority { get; set; }
         [Column("tradelicensesector")]
         public string TradeLicenseSector { get; set; }
+
+        [Column("gender")]
+        public string Gender { get; set; }
+
+        [Column("relationship")]
+        public string Relationship { get; set; }
+
+        [Column("flagtype")]
+        public string FlagType { get; set; }
 
 
     }

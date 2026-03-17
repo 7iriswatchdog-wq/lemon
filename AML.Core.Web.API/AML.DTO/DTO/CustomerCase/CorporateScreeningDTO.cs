@@ -80,9 +80,11 @@ namespace AML.DTO.DTO.CustomerCase
 
         public string CounterParty { get; set; }
 
-        public string ProductType { get; set; }
+        public string ProductRefNo { get; set; }
 
         public string ProductValue { get; set; }
+
+        public string CounterPartyName { get; set; }
 
     }
 

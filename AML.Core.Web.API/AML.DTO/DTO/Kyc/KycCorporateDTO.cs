@@ -111,6 +111,8 @@ namespace AML.DTO.DTO.Kyc
 
         public string ModeOfPayment { get; set; }
 
+        public string DualUseGoods { get; set; }
+
 
       
 

@@ -235,6 +235,14 @@
             .tree-item:hover {
                 background: #f8fafc;
             }
+                .no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE & Edge */
+    scrollbar-width: none;     /* Firefox */
+}
+
     </style>
     <style>
         .dt-loader {
@@ -539,9 +547,11 @@
                                                                 <input type="hidden" :name="'Shareholders[' + index + '].SOWSOFCountry'" :value="item.sowsofCountry">
                                                                 <input type="hidden" :name="'Shareholders[' + index + '].TradeLicenseAuthority'" :value="item.tradeLicenseAuthority">
                                                                 <input type="hidden" :name="'Shareholders[' + index + '].TradeLicenseSector'" :value="item.tradeLicenseSector">
+                                                                <input type="hidden" :name="'Shareholders[' + index + '].Gender'" :value="item.gender">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].Relationship'" :value="item.relationship">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].FlagType'" :value="item.flagType">
                                                                 @* :value="item.documentFileName"> *@
                                                                 <input type="hidden" :name="'Shareholders[' + index + '].Residence'" :value="item.residence">
-                                                                    
                                                                     
                                                                     
                                                             </div>
@@ -724,15 +734,19 @@
                                                 class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm outline-none">
                                         </div>
                                         <div class="space-y-2">
-                                            <label class="text-[13px] font-bold text-slate-700">Trade Licence Authority</label>
-                                            <input type="text" x-model="manualForm.tradeLicenseauthority"  placeholder="Enter Trade Licence Authority" asp-for="CorporateDetailList[0].TradeLicenseAuthority" id="tradelicenseAuthority"
-                                                class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm outline-none">
+                                            <label  class="text-[13px] font-bold text-slate-700">Trade Licence Authority</label>
+                                                <select x-model="manualForm.tradeLicenseauthority" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none" asp-for="CorporateDetailList[0].TradeLicenseAuthority" id="tradelicenseAuthority">
+                                                    <option value="">Select</option>
+                                                    <option value="ABC">ABC</option>
+                                                    <option value="DFC">DFC</option>
+                                                </select>
+                                            
                                         </div>
-                                            <div class="space-y-2">
+                                            @* <div class="space-y-2">
                                                 <label class="text-[13px] font-bold text-slate-700">Trade Licence Sector</label>
                                                 <input type="text" x-model="manualForm.tradeLicensesector" placeholder="Enter Trade Licence Sector" asp-for="CorporateDetailList[0].TradeLicenseSector" id="tradelicenseSector"
                                                        class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm outline-none">
-                                            </div>
+                                            </div> *@
                                             
                                         <div class="space-y-2">
                                             <label class="text-[13px] font-bold text-slate-700">Date of Registration</label>
@@ -782,8 +796,20 @@
                                                 </div>
 
                                             </div>
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">
+                                                    Counter Party Name
+                                                </label>
+
+                                                <div class="relative">
+                                                    <input type="text" placeholder="Enter Counter Party Name" asp-for="CorporateDetailList[0].CounterPartyName" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="counterPartyName" min="3" max="50">
+                                                    <span asp-validation-for="CorporateDetailList[0].CounterPartyName" class="validstyle" style="color:red"></span>
+                                                    @* <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i> *@
+                                                </div>
+
+                                            </div>
                                         <div class="space-y-2">
-                                            <label class="text-[13px] font-bold text-slate-700">Product <span class="text-red-500">*</span></label>
+                                                <label class="text-[13px] font-bold text-slate-700">Product/Service Type<span class="text-red-500">*</span></label>
                                             <div class="relative">
                                                 <select x-model="manualForm.product" required class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm appearance-none outline-none" asp-for="CorporateDetailList[0].ProductName" asp-items="Model.ProductTypeList" id="ddlProductType">
                                                     <option value="0">--@localizer["EMPTY"]--</option>
@@ -794,20 +820,20 @@
                                         </div>
                                             <div class="space-y-2">
                                                 <label class="text-[13px] font-bold text-slate-700">
-                                                    Product Value
+                                                    Product/Service Value
                                                 </label>
                                                 <div class="relative">
                                                     <input type="number" placeholder="Enter Product Value" asp-for="CorporateDetailList[0].ProductValue" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="productValue">
                                                 </div>
                                             </div>
-                                            <div class="space-y-2">
+                                            @* <div class="space-y-2">
                                                 <label class="text-[13px] font-bold text-slate-700">
                                                     Product Type
                                                 </label>
                                                 <div class="relative">
                                                     <input type="text" placeholder="Enter Product Type" asp-for="CorporateDetailList[0].ProductType" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="productType">
                                                 </div>
-                                            </div>
+                                            </div> *@
                                          
                                         <div class="space-y-2">
                                             <label class="text-[13px] font-bold text-slate-700">Delivery Channel <span class="text-red-500">*</span></label>
@@ -836,6 +862,14 @@
                                             <input type="text" id="cifnumber" x-model="manualForm.cif" placeholder="Enter Customer CIF No" asp-for="CorporateDetailList[0].CIFNumber"
                                                 class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm outline-none">
                                         </div>
+                                            <div class="space-y-2.5">
+                                                <label class="text-[13px] font-bold text-slate-700">
+                                                    Product Ref No
+                                                </label>
+                                                <div class="relative">
+                                                    <input type="text" placeholder="Enter Product Ref No" asp-for="CorporateDetailList[0].ProductRefNo" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="productrefno">
+                                                </div>
+                                            </div>
                                             
                                         <div class="space-y-3">
                                             <div class="flex justify-between items-center">
@@ -944,225 +978,211 @@
                                 </div>
 
                                 <!-- Actions Area - Only Visible After Search -->
-                                <div x-data="{ hasSearched: false, activeShareholderTab: 'shareholder' }"
-                                             x-on:company-searched.window="
+                                    <div x-data="{ hasSearched: false, activeShareholderTab: 'related_shareholder' }"
+                                         x-on:company-searched.window="
                                                 hasSearched = true;
-                                                activeShareholderTab = 'shareholder';
+                                                activeShareholderTab = 'related_shareholder';
                                              "
-                                             x-on:company-notfound.window="hasSearched = false"
-                                     class="space-y-6 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
-                                    <div x-show="hasSearched" x-transition>
+                                         x-on:company-notfound.window="hasSearched = false"
+                                         class="space-y-6 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <div x-show="hasSearched" x-transition>
 
-                                        <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-4">
-                                            <button  @@click="activeShareholderTab = 'shareholder'"
-                                                :class="activeShareholderTab === 'shareholder'
+                                            <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-4">
+                                                <button @@click="activeShareholderTab = 'related_shareholder';$el.scrollIntoView({ behavior: 'smooth', inline: 'center' }"
+                                                        :class="activeShareholderTab === 'related_shareholder'
                                                     ? 'bg-blue-600 text-white border-blue-600'
                                                     : 'bg-white text-slate-600 border-slate-300'" class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                    data-type="shareholder">
-                                                Add Individual Shareholder
-                                            </button>
-                                            <button  class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                    data-type="corporate_shareholder">
-                                                Add Corporate Shareholder
-                                            </button>
-                                            <button class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                    data-type="signatories">
-                                                Authorized Signatory
-                                            </button>
-                                            <button class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                    data-type="management">
-                                                Senior Management
-                                            </button>
-                                        </div>
+                                                        data-type="related_shareholder">
+                                                    Add Individual Related Parties
+                                                </button>
+                                                <button class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
+                                                        data-type="related_corporate_shareholder">
+                                                    Add Corporate Related Parties
+                                                </button>
+                                                <button class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
+                                                        data-type="shareholder">
+                                                    Add Individual Shareholder
+                                                </button>
+                                                <button class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
+                                                        data-type="corporate_shareholder">
+                                                    Add Corporate Shareholder
+                                                </button>
+                                                <button class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
+                                                        data-type="signatories">
+                                                    Authorized Signatory
+                                                </button>
+                                                <button class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
+                                                        data-type="management">
+                                                    Senior Management
+                                                </button>
+                                            </div>
 
-                                        <!-- Tabs -->
-                                       @*  <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-4">
-                                            <button class="shareholder-tab" data-type="shareholder">Add Individual Shareholder</button>
-                                            <button class="shareholder-tab" data-type="corporate_shareholder">Add Corporate Shareholder</button>
-                                            <button class="shareholder-tab" data-type="signatories">Authorized Signatories</button>
-                                            <button class="shareholder-tab" data-type="management">Senior Management</button>
- *@
-                                          @*   <button @@click="$refs.repeater.updateFormsType('shareholder')"
-                                                    class="px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                    :class="activeShareholderTab === 'shareholder' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'">
-                                                Add Individual Shareholder
-                                            </button>
-                                            <button @@click="$refs.repeater.updateFormsType('corporate_shareholder')"
-                                                    class="px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                    :class="activeShareholderTab === 'corporate_shareholder' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'">
-                                                Add Corporate Shareholder
-                                            </button>
-                                            <button @@click="$refs.repeater.updateFormsType('signatories')"
-                                                    class="px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                    :class="activeShareholderTab === 'signatories' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'">
-                                                Authorized Signatories
-                                            </button>
-                                            <button @@click="$refs.repeater.updateFormsType('management')"
-                                                    class="px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                    :class="activeShareholderTab === 'management' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'">
-                                                Senior Management
-                                            </button> *@
-                                        @* </div> *@
-                                       @*  <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-4">
-                                            <button @@click="activeShareholderTab = 'shareholder'"
-                                                    class="px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                    :class="activeShareholderTab === 'shareholder' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'">
-                                                Add Individual Shareholder
-                                            </button>
-                                            <button @@click="activeShareholderTab = 'corporate_shareholder'"
-                                                    class="px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                    :class="activeShareholderTab === 'corporate_shareholder' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'">
-                                                Add Corporate Shareholder
-                                            </button>
-                                            <button @@click="activeShareholderTab = 'signatories'"
-                                                    class="px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                    :class="activeShareholderTab === 'signatories' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'">
-                                                Authorized Signatories
-                                            </button>
-                                            <button @@click="activeShareholderTab = 'management'"
-                                                    class="px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                    :class="activeShareholderTab === 'management' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'">
-                                                Senior Management
-                                            </button>
-                                        </div> *@
 
-                                        <!-- Shareholder Repeater -->
-                                        <div x-data="shareholderRepeater(activeShareholderTab)" class="shareholder-repeater pt-2">
+                                            <!-- Shareholder Repeater -->
+                                            <div x-data="shareholderRepeater(activeShareholderTab)" class="shareholder-repeater pt-2">
 
-                                            <!-- Repeat Forms -->
-                                            <template x-for="(form,index) in forms" :key="index">
-                                                <div class="border-b border-slate-200 pb-6 mb-6">
+                                                <!-- Repeat Forms -->
+                                                <template x-for="(form,index) in forms" :key="index">
+                                                    <div class="border-b border-slate-200 pb-6 mb-6">
 
-                                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
 
-                                                        <!-- Name -->
-                                                        <div class="space-y-2">
-                                                                <label class="text-[13px] font-bold text-slate-700"
-                                                                   x-text="form.type === 'shareholder' ? 'Name of Individual Shareholder *' :
-                                               form.type === 'corporate_shareholder' ? 'Name of Corporate Shareholder *' :
-                                               form.type === 'signatories' ? 'Name of Authorized Signatory *' :
-                                               'Name of Senior Management *'">
-                                                            </label>
-                                                            <input type="text"
-                                                                   x-model="form.name"
-                                                                   class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                                                   placeholder="Enter name">
-                                                        </div>
-
-                                                        <!-- Share Percentage -->
-                                                        <template x-if="form.type === 'shareholder' || form.type === 'corporate_shareholder'">
+                                                            <!-- Name -->
                                                             <div class="space-y-2">
+                                                                <label class="text-[13px] font-bold text-slate-700"
+                                                                       x-text="form.type === 'shareholder' ? 'Name of Individual Shareholder *' : form.type === 'corporate_shareholder' ? 'Name of Corporate Shareholder *' : form.type === 'related_shareholder' ? 'Name of Individual Related Parties *' : form.type === 'related_corporate_shareholder' ? 'Name of Corporate Related Parties *' : form.type === 'signatories' ? 'Name of Authorized Signatory *' :
+                                               'Name of Senior Management *'">
+                                                                </label>
+                                                                <input type="text"
+                                                                       x-model="form.name"
+                                                                       class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                                       placeholder="Enter name">
+                                                            </div>
+
+                                                            <!-- Share Percentage -->
+                                                            <template x-if="form.type === 'shareholder' || form.type === 'corporate_shareholder'">
+                                                                <div class="space-y-2">
                                                                     <label class="text-[13px] font-bold text-slate-700">Share Percentage</label>
-                                                                <input type="number"
-                                                                       x-model="form.share"
+                                                                    <input type="number"
+                                                                           x-model="form.share"
                                                                            placeholder="e.g. 25" min="0" max="100"
                                                                            @@input="if(form.share > 100) form.share = 100; if(form.share < 0) form.share = 0"
-                                                                       class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm outline-none">
-                                                            </div>
-                                                        </template>
+                                                                           class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm outline-none">
+                                                                </div>
+                                                            </template>
+                                                            <template x-if="form.type === 'related_shareholder' || form.type === 'related_corporate_shareholder'">
+                                                                <div class="space-y-2">
+                                                                    <label class="text-[13px] font-bold text-slate-700">RelationShip</label>
 
-                                                        <!-- Designation -->
-                                                        <template x-if="form.type === 'signatories' || form.type === 'management'">
+                                                                    <select x-model="form.relationship"
+                                                                            class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm bg-white">
+                                                                        <option value="">Select</option>
+                                                                        <option value="ABC">ABC</option>
+                                                                        <option value="DFC">DFC</option>
+
+                                                                    </select>
+                                                                </div>
+                                                            </template>
+
+                                                            <!-- Designation -->
+                                                            <template x-if="form.type === 'signatories' || form.type === 'management'">
+                                                                <div class="space-y-2">
+                                                                    <label class="text-xs font-semibold text-slate-700">Designation</label>
+                                                                    <input type="text"
+                                                                           x-model="form.designation"
+                                                                           placeholder="e.g. Director"
+                                                                           class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm outline-none">
+                                                                </div>
+                                                            </template>
+
+                                                            <!-- Nationality -->
                                                             <div class="space-y-2">
-                                                                    <label class="text-[13px] font-bold text-slate-700">Designation</label>
-                                                                <input type="text"
-                                                                       x-model="form.designation"
-                                                                       placeholder="e.g. Director"
-                                                                       class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm outline-none">
-                                                            </div>
-                                                        </template>
-
-                                                        <!-- Nationality -->
-                                                        <div class="space-y-2">
                                                                 <label class="text-[13px] font-bold text-slate-700">Nationality</label>
-                                                            <select x-model="form.nationality"asp-items="Model.Nationalities"
-                                                                    class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm bg-white">
-                                                                <option value="">Select</option>
-                                                                
-                                                            </select>
-                                                        </div>
-
-                                                        <!-- Residence -->
-                                                        <div class="space-y-2">
-                                                                <label class="text-[13px] font-bold text-slate-700">Residence</label>
-                                                                <select x-model="form.residence" asp-items="Model.Nationalities"
-                                                                    class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm bg-white">
+                                                                <select x-model="form.nationality" asp-items="Model.Nationalities"
+                                                                        class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm bg-white">
                                                                     <option value="">Select</option>
-                                                            </select>
-                                                        </div>
-                                                         <template x-if="form.type !== 'corporate_shareholder'">
-                                                         <div class="space-y-2.5">
-                                                                <label class="text-[13px] font-bold text-slate-700">
-                                                                    SOW/SOF Country
-                                                                </label>
-                                                                <div class="relative">
+
+                                                                </select>
+                                                            </div>
+
+
+                                                            <template x-if="form.type === 'shareholder' || form.type === 'related_shareholder' || form.type === 'signatories' || form.type === 'management'">
+                                                                <div class="contents">
+                                                                    <div class="space-y-2">
+                                                                        <label class="text-xs font-semibold text-slate-700">Date Of Birth</label>
+                                                                        <input type="date" x-model="form.registrationDate" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                                    </div>
+                                                                    <div class="space-y-2">
+                                                                        <label class="text-[13px] font-bold text-slate-700">ID Type</label>
+                                                                        <select x-model="form.idType" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                            <option>Select</option>
+                                                                            <option value="Passport">Passport</option>
+                                                                            <option value="Emirates ID">Emirates ID</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="space-y-2">
+                                                                        <label class="text-[13px] font-bold text-slate-700">ID Number</label>
+                                                                        <input type="text" x-model="form.idNumber" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                    </div>
+                                                                    <div class="space-y-2">
+                                                                        <label class="text-[13px] font-bold text-slate-700">ID Issue Date</label>
+                                                                        <input type="date" x-model="form.issueDate" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                                    </div>
+                                                                    <div class="space-y-2">
+                                                                        <label class="text-[13px] font-bold text-slate-700">ID Expiry Date</label>
+                                                                        <input type="date" x-model="form.idExpiry" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                                    </div>
+                                                                    <div class="space-y-2">
+                                                                        <label class="text-[13px] font-bold text-slate-700">Gender</label>
+
+                                                                        <select x-model="form.gender" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                            <option value="">Select</option>
+                                                                            <option value="Male">Male</option>
+                                                                            <option value="Female">Female</option>
+                                                                        </select>
+                                                                    </div>
+
+                                                                </div>
+                                                            </template>
+
+
+                                                            <!-- Residence -->
+                                                            <div class="space-y-2">
+                                                                <label class="text-[13px] font-bold text-slate-700">Residence Country</label>
+                                                                <select x-model="form.residence" asp-items="Model.Nationalities"
+                                                                        class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm bg-white">
+                                                                    <option value="">Select</option>
+                                                                </select>
+                                                            </div>
+                                                            <template x-if="form.type === 'shareholder' || form.type === 'related_shareholder' || form.type === 'signatories' || form.type === 'management'">
+                                                                <div class="space-y-2.5">
+                                                                    <label class="text-[13px] font-bold text-slate-700">
+                                                                        SOW/SOF Country
+                                                                    </label>
+                                                                    <div class="relative">
                                                                         <select x-model="form.sowsofcountry" asp-items="Model.Nationalities" id="SOWSOFCountry"
                                                                                 class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm bg-white">
                                                                             <option value="">Select</option>
                                                                         </select>
-                                                                      
+
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                       </template>
-                                                            
-                                                        <!-- Corporate Only -->
-                                                        <template x-if="form.type === 'corporate_shareholder'">
-                                                            <div class="contents">
-                                                                <div class="space-y-2">
+                                                            </template>
+
+                                                            <!-- Corporate Only -->
+                                                            <template x-if="form.type === 'corporate_shareholder' || form.type === 'related_corporate_shareholder'">
+                                                                <div class="contents">
+                                                                    <div class="space-y-2">
                                                                         <label class="text-[13px] font-bold text-slate-700">Trade Licence Number</label>
-                                                                    <input type="text" x-model="form.tradeLicence" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
-                                                                </div>
+                                                                        <input type="text" x-model="form.tradeLicence" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                    </div>
                                                                     <div class="space-y-2">
                                                                         <label class="text-[13px] font-bold text-slate-700">Trade Licence Authority</label>
-                                                                        <input type="text" x-model="form.tradeLicenceAuthority" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+
+                                                                        <select x-model="manualForm.tradeLicenseauthority" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm appearance-none outline-none">
+                                                                            <option value="">Select</option>
+                                                                            <option value="ABC">ABC</option>
+                                                                            <option value="DFC">DFC</option>
+                                                                        </select>
                                                                     </div>
                                                                     <div class="space-y-2">
-                                                                        <label class="text-[13px] font-bold text-slate-700">Trade Licence Sector</label>
-                                                                        <input type="text" x-model="form.tradeLicenceSector" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
-                                                                    </div>
-                                                                <div class="space-y-2">
-                                                                        <label class="text-[13px] font-bold text-slate-700">Date of Registration</label>
+                                                                        <label class="text-xs font-semibold text-slate-700">Date of Registration</label>
                                                                         <input type="date" x-model="form.registrationDate" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
-                                                                </div>
-                                                                <div class="space-y-2">
-                                                                        <label class="text-[13px] font-bold text-slate-700">Date of Expiry</label>
-                                                                        <input type="date" x-model="form.expiryDate" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))">
-                                                                </div>
-                                                            </div>
-                                                        </template>
-                                                        
-                                                        <!-- Individual ID -->
-                                                        <template x-if="form.type !== 'corporate_shareholder'">
-                                                            <div class="contents">
-                                                                <div class="space-y-2">
-                                                                        <label class="text-[13px] font-bold text-slate-700">ID Type</label>
-                                                                    <select x-model="form.idType" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
-                                                                        <option>Select</option>
-                                                                        <option>Passport</option>
-                                                                        <option>Emirates ID</option>
-                                                                    </select>
-                                                                </div>
-                                                                <div class="space-y-2">
-                                                                        <label class="text-[13px] font-bold text-slate-700">ID Number</label>
-                                                                    <input type="text" x-model="form.idNumber" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
-                                                                </div>
-                                                                <div class="space-y-2">
-                                                                        <label class="text-[13px] font-bold text-slate-700">ID Issue Date</label>
-                                                                        <input type="date" x-model="form.issueDate" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
-                                                                </div>
-                                                                <div class="space-y-2">
-                                                                        <label class="text-[13px] font-bold text-slate-700">ID Expiry Date</label>
-                                                                        <input type="date" x-model="form.idExpiry" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))">
-                                                                </div>
-                                                            </div>
-                                                        </template>
+                                                                    </div>
+                                                                    @* <div class="space-y-2">
+                                                                            <label class="text-[13px] font-bold text-slate-700">Trade Licence Sector</label>
+                                                                            <input type="text" x-model="form.tradeLicenceSector" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                        </div> *@
 
-                                                        <!-- CIF -->
-                                                        <div class="space-y-2">
-                                                                <label class="text-[13px] font-bold text-slate-700">Customer CIF No</label>
-                                                            <input type="text" x-model="form.cif" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
-                                                        </div>
-                                                            <template x-if="form.type !== 'corporate_shareholder'">
+                                                                    <div class="space-y-2">
+                                                                        <label class="text-xs font-semibold text-slate-700">Date of Expiry</label>
+                                                                        <input type="date" x-model="form.expiryDate" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+
+                                                            <!-- Individual ID -->
+                                                            <template x-if="form.type === 'shareholder' || form.type === 'related_shareholder' || form.type === 'signatories' || form.type === 'management'">
                                                                 <div class="contents">
                                                                     <div class="space-y-2">
                                                                         <label class="text-[13px] font-bold text-slate-700">Employer Name</label>
@@ -1170,11 +1190,21 @@
                                                                     </div>
                                                                     <div class="space-y-2">
                                                                         <label class="text-[13px] font-bold text-slate-700">Employer Industry</label>
-                                                                        <input type="text" x-model="form.employerindustry" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+
+                                                                        <select x-model="form.employerindustry" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                            <option value="">Select</option>
+                                                                            <option value="ABC">ABC</option>
+                                                                            <option value="DFC">DFC</option>
+                                                                        </select>
                                                                     </div>
                                                                     <div class="space-y-2">
                                                                         <label class="text-[13px] font-bold text-slate-700">Employer Sector</label>
-                                                                        <input type="text" x-model="form.employersector" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                        <select x-model="form.employersector" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                                            <option value="">Select</option>
+                                                                            <option value="ABC">ABC</option>
+                                                                            <option value="DFC">DFC</option>
+                                                                        </select>
+
                                                                     </div>
                                                                     <div class="space-y-2">
                                                                         <label class="text-[13px] font-bold text-slate-700">Golden Visa</label>
@@ -1183,10 +1213,16 @@
                                                                             <option value="Yes">Yes</option>
                                                                             <option value="No">No</option>
                                                                         </select>
+
                                                                     </div>
                                                                 </div>
                                                             </template>
-                                                           
+
+                                                            <div class="space-y-2">
+                                                                <label class="text-[13px] font-bold text-slate-700">Customer CIF No</label>
+                                                                <input type="text" x-model="form.cif" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
+                                                            </div>
+
                                                             <div x-data="{ fileName: 'No file chosen' }" class="space-y-2">
                                                                 <label class="text-[13px] font-bold text-slate-700">Document</label>
 
@@ -1223,39 +1259,39 @@
 
                                                             </div>
 
-                                                    </div>
+                                                        </div>
 
-                                                    <!-- Remove Button -->
-                                                    <div class="flex justify-end pt-3">
-                                                        <button x-show="forms.length > 1"
-                                                                @@click="removeForm(index)"
-                                                                class="h-9 px-8 text-white rounded-md bg-red-600">
-                                                            Remove
-                                                        </button>
-                                                    </div>
+                                                        <!-- Remove Button -->
+                                                        <div class="flex justify-end pt-3">
+                                                            <button x-show="forms.length > 1"
+                                                                    @@click="removeForm(index)"
+                                                                    class="h-9 px-8 text-white rounded-md bg-red-600">
+                                                                Remove
+                                                            </button>
+                                                        </div>
 
+                                                    </div>
+                                                </template>
+
+                                                <!-- Add Button -->
+                                                <div class="flex justify-start pt-6 mb-6">
+                                                    <button @@click="addForm()"
+                                                            class="bg-blue-600 hover:bg-blue-700 text-white px-8 h-10 rounded-md font-bold text-sm shadow-sm">
+                                                        Add
+                                                    </button>
                                                 </div>
-                                            </template>
 
-                                            <!-- Add Button -->
-                                            <div class="flex justify-start pt-6 mb-6">
-                                                <button @@click="addForm()"
-                                                        class="bg-blue-600 hover:bg-blue-700 text-white px-8 h-10 rounded-md font-bold text-sm shadow-sm">
-                                                    Add
-                                                </button>
+                                                <!-- Submit Button -->
+                                                <div class="pt-4">
+                                                    <button @@click="submitForms()"
+                                                            class="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg text-sm">
+                                                        Submit
+                                                    </button>
+                                                </div>
+
                                             </div>
-
-                                            <!-- Submit Button -->
-                                            <div class="pt-4">
-                                                <button @@click="submitForms()"
-                                                        class="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg text-sm">
-                                                    Submit
-                                                </button>
-                                            </div>
-
                                         </div>
                                     </div>
-                                </div>
                             </div>
                             @* <div x-show="selectedMethod === 'shareholder'" x-transition class="space-y-8">
                                 <div class="pb-6 border-b border-slate-100 flex flex-col gap-2">
@@ -2470,6 +2506,66 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
 
             const $form = $("#myForm");
 
+                          $form.find("#ddlCounterParty").off("change.counterParty")
+                                                            // ✅ 1. Dropdown change handler
+                        $form.find("#ddlCounterParty")
+                            .off("change.counterParty")
+                            .on("change.counterParty", function () {
+
+                                const counterParty = ($(this).val() || "").trim();
+                                const $name = $form.find("#counterPartyName");
+
+                                // Clear previous error
+                                $name.removeClass("is-invalid");
+                                $form.find("span[data-valmsg-for='CounterPartyName']")
+                                    .text("")
+                                    .removeClass("field-validation-error");
+
+                                if (counterParty && counterParty !== "0") {
+
+                                    $name.prop("required", true);
+
+                                    if (!$name.val().trim()) {
+                                        $name.addClass("is-invalid");
+
+                                                    $form.find("span[data-valmsg-for='CorporateDetailList[0].CounterPartyName']")
+                                            .text("Counter Party Name is required.")
+                                            .addClass("field-validation-error");
+                                    }
+
+                                } else {
+
+                                    $name.prop("required", false)
+                                         .removeClass("is-invalid");
+
+                                    $form.find("span[data-valmsg-for='CorporateDetailList[0].CounterPartyName']")
+                                        .text("")
+                                        .removeClass("field-validation-error");
+                                }
+                            });
+
+
+                        // ✅ 2. Input handler (separate!)
+                        $form.find("#counterPartyName")
+                            .off("input.counterParty")
+                            .on("input.counterParty", function () {
+
+                                const counterParty = ($form.find("#ddlCounterParty").val() || "").trim();
+                                const value = ($(this).val() || "").trim();
+
+                                if (counterParty && counterParty !== "0" && value) {
+
+                                    $(this).removeClass("is-invalid");
+
+                                    $form.find("span[data-valmsg-for='CounterPartyName']")
+                                        .text("")
+                                        .removeClass("field-validation-error");
+                                }
+                            });
+
+
+                        // ✅ Optional: trigger once on load
+                        $form.find("#ddlCounterParty").trigger("change");
             // --- Main Form Submit Validation ---
             $form.off("submit.customValidation").on("submit.customValidation", function (e) {
                 e.preventDefault();
@@ -2504,6 +2600,17 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                 if (!producttype || producttype === "0") markInvalid("CorporateDetailList[0].ProductName", "#ddlProductType", "Product Type is required.");
                 if (!deliveryChannel || deliveryChannel === "0") markInvalid("CorporateDetailList[0].DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
                 if (!modeofpayment || modeofpayment === "0") markInvalid("CorporateDetailList[0].Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
+
+                            if (counterParty && counterParty !== "0") {
+
+                                    if (!counterPartyName) {
+                                        markInvalid(
+                                            "CorporateDetailList[0].CounterPartyName",
+                                            "#counterPartyName",
+                                            "Counter Party Name is required."
+                                        );
+                                    }
+                                }
 
                 // --- Scroll to first error if invalid ---
                 if (!isValid) {
@@ -3230,7 +3337,11 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                             employerSector:item.employerSector || '',
                             sowsofCountry:item.sowsofCountry || '',
                             tradeLicenseAuthority:item.tradeLicenseAuthority || '',
-                            tradeLicenseSector:item.tradeLicenseSector || ''
+                            tradeLicenseSector:item.tradeLicenseSector || '',
+                            gender : item.gender || '',
+                            relationship : item.relationship || '',
+                            flagType    : item.flagType || '',
+
                         }));
 
 
@@ -3324,7 +3435,10 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                     employerSector:item.employerSector || '',
                     sowsofCountry:item.sowsofCountry || '',
                     tradeLicenseAuthority:item.tradeLicenseAuthority || '',
-                    tradeLicenseSector:item.tradeLicenseSector || ''
+                    tradeLicenseSector:item.tradeLicenseSector || '',
+                    gender : item.gender || '',
+                    relationship : item.relationship || '',
+                    flagType    : item.flagType || '',
 
                 }));
 
@@ -3506,13 +3620,32 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
 
                 if (!form.name || form.name.trim() === "") return;
 
+                
+
+
                 const typeValue = form.type === 'shareholder'
-                    ? 'Corporate_Ind'
-                    : form.type === 'corporate_shareholder'
-                        ? 'Corporate_Corp'
-                    : form.type === 'signatories'
-                       ? 'Corporate_Ind'
-                    : 'Corporate_Ind';
+                      ? 'Corporate_Ind'
+                      : form.type === 'corporate_shareholder'
+                      ? 'Corporate_Corp'
+                      : form.type === 'related_shareholder'
+                      ? 'Corporate_Ind'
+                      : form.type === 'related_corporate_shareholder'
+                      ? 'Corporate_Corp'
+                      : form.type === 'signatories'
+                      ? 'Corporate_Ind'
+                      : 'Corporate_Ind';
+
+                 const flagType = form.type === 'shareholder'
+                      ? 'Individual Sharholder'
+                      : form.type === 'corporate_shareholder'
+                      ? 'Corporate Shareholder'
+                      : form.type === 'related_shareholder'
+                      ? 'Individual Related Paries'
+                      : form.type === 'related_corporate_shareholder'
+                      ? 'Corporate Related Parties'
+                      : form.type === 'signatories'
+                      ? 'Authorized Signatory'
+                      : 'Senior Management';
 
                 const obj = {
                     Name: form.name,
@@ -3538,6 +3671,9 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                     SOWSOFCountry:form.sowsofcountry || "",
                     TradeLicenseAuthority:form.tradeLicenceAuthority || "",
                     TradeLicenseSector:form.tradeLicenceSector  || "",
+                    Gender:form.gender || "",
+                    Relationship:form.relationship || "",
+                    FlagType:flagType,
                     CustType:"C",
                     ClientID: 0,
                     UserId: 0,
@@ -4507,6 +4643,9 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
 
                     function creatingrecordShareholder()
                     {
+                           $('#shareholderModel')
+                                .removeClass('flex')
+                                .addClass('hidden');
                         $('#loadingeffect').show();
                                 console.log(selectedCustomerId);
 
@@ -4526,6 +4665,21 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                                                     });
 
                     }
+
+                      document.querySelectorAll('.no-scrollbar').forEach(el => {
+    el.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0) {
+            e.preventDefault();
+            el.scrollLeft += e.deltaY;
+        }
+    });
+});
+
+document.querySelectorAll('.shareholder-tab').forEach(btn => {
+    btn.addEventListener('focus', function () {
+        this.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+    });
+});
 
     </script>
 </body>

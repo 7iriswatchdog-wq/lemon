@@ -1485,6 +1485,7 @@ namespace AML.Web.Controllers.Case
             _CustomerCaseDTO.ClientId = _clientHandler.GetClientId();
             _CustomerCaseDTO.CreatedBy = _clientHandler.GetUserId();
             _CustomerCaseDTO.CustomerId = "0";
+            _CustomerCaseDTO.CreatedOn = null;
 
             int previousStatus = _CustomerCaseDTO.Status;
 
@@ -2177,6 +2178,7 @@ namespace AML.Web.Controllers.Case
 
             UsersModel umodel = new UsersModel();
             BusinessModel bmodel = new BusinessModel();
+            CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(CaseId);
             string url;
 
             //TokenRS token = AMLUtility.CreateC6Token("users/authenticate", baseC6URL, "kycdigi");
@@ -2209,6 +2211,7 @@ namespace AML.Web.Controllers.Case
                     umodel.Resourcesid = Resourcesid;
                     umodel.Category = category;
                     umodel.MatchUid = id;
+                    umodel.CreationDate = _CustomerCaseDTO.CreatedOn;
                     ViewBag.user = umodel;
                 }
                 else
@@ -2232,6 +2235,7 @@ namespace AML.Web.Controllers.Case
                     bmodel.Resourcesid = Resourcesid;
                     bmodel.Category = category;
                     bmodel.MatchUid = id;
+                    bmodel.CreationDate = _CustomerCaseDTO.CreatedOn;
                     ViewBag.business = bmodel;
 
                 }
@@ -3717,7 +3721,7 @@ namespace AML.Web.Controllers.Case
                         streamContent.Headers.ContentType =
                             new MediaTypeHeaderValue(file.ContentType);
 
-                        formData.Add(streamContent, "files", file.FileName);
+                        formData.Add(streamContent, "file", file.FileName);
                     }
                 }
 

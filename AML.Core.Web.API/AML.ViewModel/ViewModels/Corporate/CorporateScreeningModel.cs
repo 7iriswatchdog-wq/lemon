@@ -266,9 +266,12 @@ namespace AML.ViewModel.ViewModels.Corporate
 
         public string CounterParty { get; set; }
 
-        public string ProductType { get; set; }
+        public string ProductRefNo { get; set; }
 
         public string ProductValue { get; set; }
+
+        public string CounterPartyName { get; set; }
+
     }
 
     public class ShareholderModel
@@ -323,6 +326,11 @@ namespace AML.ViewModel.ViewModels.Corporate
        
         public string TradeLicenseSector { get; set; }
 
+        public string Gender { get; set; }
+
+        public string Relationship { get; set; }
+
+        public string FlagType { get; set; }
 
     }
 
