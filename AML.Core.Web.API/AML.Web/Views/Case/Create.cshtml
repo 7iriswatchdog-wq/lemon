@@ -3246,231 +3246,389 @@ hasSearched: false,
 
                     });
 
-                       
+                       $(function () {
+    // Initialize validation for multiple forms
+    initCaseFormValidation("#myForm");
+    initCaseFormValidation("#myOCRForm");
+});
 
-                        $(function () {
+function initCaseFormValidation(formSelector) {
+    const $form = $(formSelector);
 
-                initCaseFormValidation("#myForm");
-                initCaseFormValidation("#myOCRForm");
+    // --- Counter Party Dropdown Change ---
+    $form.find("#ddlCounterParty").off("change.counterParty")
+        .on("change.counterParty", function () {
+            const counterParty = (($(this).val()) || "").trim();
+            const $name = $form.find("#counterPartyName");
+            const nameValue = ($name.val() || "").trim();
 
-            });
+            // Clear previous error
+            $name.removeClass("is-invalid");
+            $form.find("span[data-valmsg-for='CounterPartyName']")
+                .text("")
+                .removeClass("field-validation-error");
 
-
-            function initCaseFormValidation(formSelector) {
-
-                const $form = $(formSelector);
-                            $form.find("#ddlCounterParty").off("change.counterParty")
-                                                // ✅ 1. Dropdown change handler
-            $form.find("#ddlCounterParty")
-                .off("change.counterParty")
-                .on("change.counterParty", function () {
-
-                    const counterParty = ($(this).val() || "").trim();
-                    const $name = $form.find("#counterPartyName");
-
-                    // Clear previous error
-                    $name.removeClass("is-invalid");
+            if (counterParty && counterParty !== "0") {
+                $name.prop("required", true);
+                if (!nameValue) {
+                    $name.addClass("is-invalid");
                     $form.find("span[data-valmsg-for='CounterPartyName']")
-                        .text("")
-                        .removeClass("field-validation-error");
+                        .text("Counter Party Name is required.")
+                        .addClass("field-validation-error");
+                }
+            } else {
+                $name.prop("required", false).removeClass("is-invalid");
+                $form.find("span[data-valmsg-for='CounterPartyName']")
+                    .text("")
+                    .removeClass("field-validation-error");
+            }
+        });
 
-                    if (counterParty && counterParty !== "0") {
+    // --- Counter Party Input Handler ---
+    $form.find("#counterPartyName").off("input.counterParty")
+        .on("input.counterParty", function () {
+            const counterParty = ($form.find("#ddlCounterParty").val() || "").trim();
+            const value = ($(this).val() || "").trim();
 
-                        $name.prop("required", true);
+            if (counterParty && counterParty !== "0" && value) {
+                $(this).removeClass("is-invalid");
+                $form.find("span[data-valmsg-for='CounterPartyName']")
+                    .text("")
+                    .removeClass("field-validation-error");
+            }
+        });
 
-                        if (!$name.val().trim()) {
-                            $name.addClass("is-invalid");
+    // Trigger once on load to apply initial validation
+    $form.find("#ddlCounterParty").trigger("change");
 
-                            $form.find("span[data-valmsg-for='CounterPartyName']")
-                                .text("Counter Party Name is required.")
-                                .addClass("field-validation-error");
-                        }
+    // --- Main Form Submit Validation ---
+    $form.off("submit.customValidation")
+        .on("submit.customValidation", function (e) {
+            e.preventDefault(); // Always stop default submit first
 
-                    } else {
+            console.log("Validation running for:", formSelector);
 
-                        $name.prop("required", false)
-                             .removeClass("is-invalid");
+            // Clear previous errors inside current form ONLY
+            $form.find("span[data-valmsg-for]").text('').removeClass('field-validation-error');
+            $form.find(".is-invalid").removeClass('is-invalid');
 
-                        $form.find("span[data-valmsg-for='CounterPartyName']")
-                            .text("")
-                            .removeClass("field-validation-error");
-                    }
-                });
+            let isValid = true;
+            let $firstErrorElement = null;
+
+            // --- Get values from current form ---
+            const fullName = ($form.find("#fullName").val() || "").trim();
+            const occupation = ($form.find("#ddlOccupation").val() || "").trim();
+            const producttype = ($form.find("#ddlProductType").val() || "").trim();
+            const deliverychannel = ($form.find("#ddlDeliveryChannel").val() || "").trim();
+            const modeofpayment = ($form.find("#ddlModeofpayment").val() || "").trim();
+            const residentStatus = ($form.find("#ddlResidenceStatus").val() || "").trim();
+            const counterParty = ($form.find("#ddlCounterParty").val() || "").trim();
+            const counterPartyName = ($form.find("#counterPartyName").val() || "").trim();
+
+            function markInvalid(valFor, selector, message) {
+                $form.find(`span[data-valmsg-for='${valFor}']`).text(message).addClass('field-validation-error');
+                const $element = $form.find(selector);
+                $element.addClass('is-invalid');
+                if (!$firstErrorElement) $firstErrorElement = $element;
+                isValid = false;
+            }
+
+            // --- Required validations ---
+            if (!fullName) markInvalid("FirstName", "#fullName", "Full Name is required.");
+            if ($("#ddlOccupation").length && $form.find("#ddlOccupation").is(':visible') && (!occupation || occupation === "0")) markInvalid("OccupatinTypeTxt", "#ddlOccupation", "Occupation Type is required.");
+            if ($("#ddlResidenceStatus").length && $form.find("#ddlResidenceStatus").is(':visible') && (!residentStatus || residentStatus === "0")) markInvalid("ResidenceStatus", "#ddlResidenceStatus", "Resident Status is required.");
+            if ($("#ddlProductType").length && $form.find("#ddlProductType").is(':visible') && (!producttype || producttype === "0")) markInvalid("ProductName", "#ddlProductType", "Product Type is required.");
+            if ($("#ddlDeliveryChannel").length && $form.find("#ddlDeliveryChannel").is(':visible') && (!deliverychannel || deliverychannel === "0"))
+                markInvalid("DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
+            if ($("#ddlModeofpayment").length && $form.find("#ddlModeofpayment").is(':visible') && (!modeofpayment || modeofpayment === "0")) markInvalid("Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
+
+            if (counterParty && counterParty !== "0" && !counterPartyName) {
+                markInvalid("CounterPartyName", "#counterPartyName", "Counter Party Name is required.");
+            }
+
+            // --- Emirates ID validation ---
+            if (!validateIdNumber($form, true)) {
+                toastr.clear();
+                toastr.error("Emirates ID must start with 784.");
+                isValid = false;
+            }
+
+            // --- Scroll to first error if invalid ---
+            if (!isValid) {
+                if ($firstErrorElement) {
+                    $("html, body").animate({ scrollTop: $firstErrorElement.offset().top - 150 }, 400);
+                    $firstErrorElement.focus();
+                }
+                return false; // Prevent submission
+            }
+
+            // --- Form is valid: show loader & submit ---
+            $('#loadingeffect').show();
+            $form.find('#btn-ld').prop('disabled', true);
+
+            const thresholdValue = $form.find("#threshold").val();
+
+            $form.off("submit.customValidation"); // remove handler for actual submit
+            setTimeout(() => {
+                $form.find('#btn-ld').prop('disabled', false);
+                $form.find("#threshold").val(thresholdValue);
+                $form.submit(); // submit form now
+            }, 100);
+        });
+}
+
+// --- Emirates ID Validator ---
+function validateIdNumber($form, isSubmit = false) {
+    const $idType = $form.find("#ddlIdType");
+    const $idNumber = $form.find("#txtIdNumber");
+
+    if (!$idType.length || !$idNumber.length) return true;
+
+    const idType = ($idType.val() || "").trim();
+    const idNumber = ($idNumber.val() || "").trim();
+
+    $idNumber.removeClass("is-invalid");
+    $form.find("span[data-valmsg-for='CustomerIdNumber']")
+        .text("")
+        .removeClass("field-validation-error");
+
+    if (idType === "Emirates ID" && idNumber !== "") {
+        if (!idNumber.startsWith("784")) {
+            $idNumber.addClass("is-invalid");
+            $form.find("span[data-valmsg-for='CustomerIdNumber']")
+                .text("Emirates ID must start with 784.")
+                .addClass("field-validation-error");
+            return false;
+        }
+    }
+
+    return true;
+}
+
+            //             $(function () {
+
+            //     initCaseFormValidation("#myForm");
+            //     initCaseFormValidation("#myOCRForm");
+
+            // });
 
 
-            // ✅ 2. Input handler (separate!)
-            $form.find("#counterPartyName")
-                .off("input.counterParty")
-                .on("input.counterParty", function () {
+            // function initCaseFormValidation(formSelector) {
 
-                    const counterParty = ($form.find("#ddlCounterParty").val() || "").trim();
-                    const value = ($(this).val() || "").trim();
+            //     const $form = $(formSelector);
+            //                 $form.find("#ddlCounterParty").off("change.counterParty")
+            //                                     // ✅ 1. Dropdown change handler
+            // $form.find("#ddlCounterParty")
+            //     .off("change.counterParty")
+            //     .on("change.counterParty", function () {
 
-                    if (counterParty && counterParty !== "0" && value) {
+            //         const counterParty = ($(this).val() || "").trim();
+            //         const $name = $form.find("#counterPartyName");
 
-                        $(this).removeClass("is-invalid");
+            //         // Clear previous error
+            //         $name.removeClass("is-invalid");
+            //         $form.find("span[data-valmsg-for='CounterPartyName']")
+            //             .text("")
+            //             .removeClass("field-validation-error");
 
-                        $form.find("span[data-valmsg-for='CounterPartyName']")
-                            .text("")
-                            .removeClass("field-validation-error");
-                    }
-                });
+            //         if (counterParty && counterParty !== "0") {
+
+            //             $name.prop("required", true);
+
+            //             if (!$name.val().trim()) {
+            //                 $name.addClass("is-invalid");
+
+            //                 $form.find("span[data-valmsg-for='CounterPartyName']")
+            //                     .text("Counter Party Name is required.")
+            //                     .addClass("field-validation-error");
+            //             }
+
+            //         } else {
+
+            //             $name.prop("required", false)
+            //                  .removeClass("is-invalid");
+
+            //             $form.find("span[data-valmsg-for='CounterPartyName']")
+            //                 .text("")
+            //                 .removeClass("field-validation-error");
+            //         }
+            //     });
 
 
-            // ✅ Optional: trigger once on load
-            $form.find("#ddlCounterParty").trigger("change");
+            // // ✅ 2. Input handler (separate!)
+            // $form.find("#counterPartyName")
+            //     .off("input.counterParty")
+            //     .on("input.counterParty", function () {
 
-                $form.off("submit.customValidation")
-                    .on("submit.customValidation", function (e) {
+            //         const counterParty = ($form.find("#ddlCounterParty").val() || "").trim();
+            //         const value = ($(this).val() || "").trim();
 
-                        console.log("Validation running for:", formSelector);
+            //         if (counterParty && counterParty !== "0" && value) {
 
-                        // Clear previous errors inside current form ONLY
-                        $form.find("span[data-valmsg-for]").text('').removeClass('field-validation-error');
-                        $form.find(".is-invalid").removeClass('is-invalid');
+            //             $(this).removeClass("is-invalid");
 
-                        let isValid = true;
-                        let $firstErrorElement = null;
+            //             $form.find("span[data-valmsg-for='CounterPartyName']")
+            //                 .text("")
+            //                 .removeClass("field-validation-error");
+            //         }
+            //     });
 
-                        // Get values from CURRENT form only
-                        const fullName = ($form.find("#fullName").val() || "").trim();
-                        const occupation = ($form.find("#ddlOccupation").val() || "").trim();
-                        const producttype = ($form.find("#ddlProductType").val() || "").trim();
-                        const deliverychannel = ($form.find("#ddlDeliveryChannel").val() || "").trim();
-                        const modeofpayment = ($form.find("#ddlModeofpayment").val() || "").trim();
-                        const residentStatus = ($form.find("#ddlResidenceStatus").val() || "").trim();
-                        const counterParty = ($form.find("#ddlCounterParty").val() || "").trim();
-                        const counterPartyName = ($form.find("#counterPartyName").val() || "").trim();
+
+            // // ✅ Optional: trigger once on load
+            // $form.find("#ddlCounterParty").trigger("change");
+
+            //     $form.off("submit.customValidation")
+            //         .on("submit.customValidation", function (e) {
+
+            //             console.log("Validation running for:", formSelector);
+
+            //             // Clear previous errors inside current form ONLY
+            //             $form.find("span[data-valmsg-for]").text('').removeClass('field-validation-error');
+            //             $form.find(".is-invalid").removeClass('is-invalid');
+
+            //             let isValid = true;
+            //             let $firstErrorElement = null;
+
+            //             // Get values from CURRENT form only
+            //             const fullName = ($form.find("#fullName").val() || "").trim();
+            //             const occupation = ($form.find("#ddlOccupation").val() || "").trim();
+            //             const producttype = ($form.find("#ddlProductType").val() || "").trim();
+            //             const deliverychannel = ($form.find("#ddlDeliveryChannel").val() || "").trim();
+            //             const modeofpayment = ($form.find("#ddlModeofpayment").val() || "").trim();
+            //             const residentStatus = ($form.find("#ddlResidenceStatus").val() || "").trim();
+            //             const counterParty = ($form.find("#ddlCounterParty").val() || "").trim();
+            //             const counterPartyName = ($form.find("#counterPartyName").val() || "").trim();
 
                                      
                                                             
-                        function markInvalid(valFor, selector, message) {
+            //             function markInvalid(valFor, selector, message) {
 
-                            $form.find(`span[data-valmsg-for='${valFor}']`)
-                                .text(message)
-                                .addClass('field-validation-error');
+            //                 $form.find(`span[data-valmsg-for='${valFor}']`)
+            //                     .text(message)
+            //                     .addClass('field-validation-error');
 
-                            const $element = $form.find(selector);
-                            $element.addClass('is-invalid');
+            //                 const $element = $form.find(selector);
+            //                 $element.addClass('is-invalid');
 
-                            if (!$firstErrorElement) $firstErrorElement = $element;
+            //                 if (!$firstErrorElement) $firstErrorElement = $element;
 
-                            isValid = false;
-                        }
+            //                 isValid = false;
+            //             }
                          
                                                 
                                                 
-                        // Required validations
-                        if (fullName === "")
-                            markInvalid("FirstName", "#fullName", "Full Name is required.");
+            //             // Required validations
+            //             if (fullName === "")
+            //                 markInvalid("FirstName", "#fullName", "Full Name is required.");
 
-                        if (@Model.CustomerRiskCategory)
-                        {
-                            if ($("#ddlOccupation").length && (!occupation || occupation === "0")){
-                                markInvalid("OccupatinTypeTxt", "#ddlOccupation", "Occupation Type is required.");
-                            }
-                                        if (!residentStatus || residentStatus === "0")
-                                        markInvalid("ResidenceStatus", "#ddlResidenceStatus", "Resident Status is required.");
-                        }
-                        if (@Model.ProductRiskCategory)
-                        {
-                            if ($("#ddlProductType").length && (!producttype || producttype === "0"))
-                                markInvalid("ProductName", "#ddlProductType", "Product Type is required.");
-                        }
-                        if (@Model.DeliveryChannelCategory)                        
-                        {
-                            if ($("#ddlDeliveryChannel").length && (!deliverychannel || deliverychannel === "0"))
-                                markInvalid("DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
-                        }
-                        if (@Model.ModeOfPaymentCategory)
-                        {
-                            if ($("#ddlModeofpayment").length && (!modeofpayment || modeofpayment === "0")) 
-                                markInvalid("Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
-                        }
+            //             if (@Model.CustomerRiskCategory)
+            //             {
+            //                 if ($("#ddlOccupation").length && (!occupation || occupation === "0")){
+            //                     markInvalid("OccupatinTypeTxt", "#ddlOccupation", "Occupation Type is required.");
+            //                 }
+            //                             if (!residentStatus || residentStatus === "0")
+            //                             markInvalid("ResidenceStatus", "#ddlResidenceStatus", "Resident Status is required.");
+            //             }
+            //             if (@Model.ProductRiskCategory)
+            //             {
+            //                 if ($("#ddlProductType").length && (!producttype || producttype === "0"))
+            //                     markInvalid("ProductName", "#ddlProductType", "Product Type is required.");
+            //             }
+            //             if (@Model.DeliveryChannelCategory)                        
+            //             {
+            //                 const $deliveryChannel = $("#ddlDeliveryChannel");
+            //                 if ($("#ddlDeliveryChannel").length && $deliveryChannel.is(':visible') && (!deliverychannel || deliverychannel === "0"))
+            //                     markInvalid("DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
+            //             }
+            //             if (@Model.ModeOfPaymentCategory)
+            //             {
+            //                 if ($("#ddlModeofpayment").length && (!modeofpayment || modeofpayment === "0")) 
+            //                     markInvalid("Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
+            //             }
 
                         
-                        if (counterParty && counterParty !== "0") {
+            //             if (counterParty && counterParty !== "0") {
 
-                        if (!counterPartyName) {
-                            markInvalid(
-                                "CounterPartyName",
-                                "#counterPartyName",
-                                "Counter Party Name is required."
-                            );
-                        }
-                    }
+            //             if (!counterPartyName) {
+            //                 markInvalid(
+            //                     "CounterPartyName",
+            //                     "#counterPartyName",
+            //                     "Counter Party Name is required."
+            //                 );
+            //             }
+            //         }
 
-                        // Emirates validation
-                        if (!validateIdNumber($form, true)) {
+            //             // Emirates validation
+            //             if (!validateIdNumber($form, true)) {
 
-                            toastr.clear();
-                            toastr.error("Emirates ID must start with 784.");
+            //                 toastr.clear();
+            //                 toastr.error("Emirates ID must start with 784.");
 
-                            isValid = false;
-                        }
+            //                 isValid = false;
+            //             }
 
-                        // Scroll to error
-                        if (!isValid) {
+            //             // Scroll to error
+            //             if (!isValid) {
 
-                            if ($firstErrorElement) {
+            //                 if ($firstErrorElement) {
 
-                                $("html, body").animate({
-                                    scrollTop: $firstErrorElement.offset().top - 150
-                                }, 400);
+            //                     $("html, body").animate({
+            //                         scrollTop: $firstErrorElement.offset().top - 150
+            //                     }, 400);
 
-                                $firstErrorElement.focus();
-                            }
+            //                     $firstErrorElement.focus();
+            //                 }
 
-                            e.preventDefault();
-                            return false;
-                        }
+            //                 e.preventDefault();
+            //                 return false;
+            //             }
 
-                        // Loader
-                        $('#loadingeffect').show();
-                        $form.find('#btn-ld').prop('disabled', true);
+            //             // Loader
+            //             $('#loadingeffect').show();
+            //             $form.find('#btn-ld').prop('disabled', true);
 
-                        const thresholdValue = $form.find("#threshold").val();
+            //             const thresholdValue = $form.find("#threshold").val();
 
-                        $form.off("submit.customValidation");
+            //             $form.off("submit.customValidation");
 
-                        setTimeout(() => {
-                            $form.find('#btn-ld').prop('disabled', false);
-                            $form.find("#threshold").val(thresholdValue);
-                        }, 2000);
+            //             setTimeout(() => {
+            //                 $form.find('#btn-ld').prop('disabled', false);
+            //                 $form.find("#threshold").val(thresholdValue);
+            //             }, 2000);
 
-                    });
-            }
-                        function validateIdNumber($form, isSubmit = false) {
+            //         });
+            // }
+            //             function validateIdNumber($form, isSubmit = false) {
 
-                const $idType = $form.find("#ddlIdType");
-                const $idNumber = $form.find("#txtIdNumber");
+            //     const $idType = $form.find("#ddlIdType");
+            //     const $idNumber = $form.find("#txtIdNumber");
 
-                if (!$idType.length || !$idNumber.length) return true;
+            //     if (!$idType.length || !$idNumber.length) return true;
 
-                const idType = ($idType.val() || "").trim();
-                const idNumber = ($idNumber.val() || "").trim();
+            //     const idType = ($idType.val() || "").trim();
+            //     const idNumber = ($idNumber.val() || "").trim();
 
-                $idNumber.removeClass("is-invalid");
-                $form.find("span[data-valmsg-for='CustomerIdNumber']")
-                    .text("")
-                    .removeClass("field-validation-error");
+            //     $idNumber.removeClass("is-invalid");
+            //     $form.find("span[data-valmsg-for='CustomerIdNumber']")
+            //         .text("")
+            //         .removeClass("field-validation-error");
 
-                if (idType === "Emirates ID" && idNumber !== "") {
+            //     if (idType === "Emirates ID" && idNumber !== "") {
 
-                    if (!idNumber.startsWith("784")) {
+            //         if (!idNumber.startsWith("784")) {
 
-                        $idNumber.addClass("is-invalid");
+            //             $idNumber.addClass("is-invalid");
 
-                        $form.find("span[data-valmsg-for='CustomerIdNumber']")
-                            .text("Emirates ID must start with 784.")
-                            .addClass("field-validation-error");
+            //             $form.find("span[data-valmsg-for='CustomerIdNumber']")
+            //                 .text("Emirates ID must start with 784.")
+            //                 .addClass("field-validation-error");
 
-                        return false;
-                    }
-                }
+            //             return false;
+            //         }
+            //     }
 
-                return true;
-            }
+            //     return true;
+            // }
 
 
             
