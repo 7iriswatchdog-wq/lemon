@@ -502,6 +502,12 @@ namespace AML.Core.Service.CustomerCase
             //Perform business requirements here
             return _CustomerCaseRepository.GetDetails(Id).Result;
         }
+
+        public string GetDualGoodsStatus(string customerId)
+        {
+            //Perform business requirements here
+            return _CustomerCaseRepository.GetDualGoodsStatus(customerId).Result;
+        }
         public List<CustomerCaseDTO> GetShareHoldersByCompanyCode(string Id)
         {
             //Perform business requirements here

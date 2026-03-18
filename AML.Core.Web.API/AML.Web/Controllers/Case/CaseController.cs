@@ -1266,6 +1266,8 @@ namespace AML.Web.Controllers.Case
                 
 
                 CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(CaseId);
+
+                var dualMatchStatus = _customerCaseService.GetDualGoodsStatus(_CustomerCaseDTO.CustomerId);
                 model.Case = _mapper.Map<CaseModel>(_CustomerCaseDTO);
                 model.Case.UserGroupName = _UserGroupModel.Name;
                 var dob = model.Case.DOB;

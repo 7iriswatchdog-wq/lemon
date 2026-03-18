@@ -27,6 +27,8 @@ namespace AML.Core.ServiceContract.CustomerCase
         ServiceResponse<string> CreatePrefix(CustomerCaseDTO _customerCaseDTO);
         CustomerCaseDTO GetDetails(int Id);
 
+        string GetDualGoodsStatus(string customerId);
+
         List<CustomerCaseDTO> GetShareHoldersByCompanyCode(string Id);
         List<CustomerMasterDTO> GetUnscreenedCustomers();
         int GetCaseId(string custId);

@@ -253,6 +253,25 @@ namespace AML.Core.Repository.CustomerCase
             }
             return serviceResponse;
         }
+
+        public ServiceResponse<string> GetDualGoodsStatus(string customerId)
+        {
+            ServiceResponse<string> serviceResponse = new ServiceResponse<string>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_id", customerId);
+                serviceResponse.Result = GetFirstOrDefault<string>("get_proliferation_status", parameters, commandType: CommandType.StoredProcedure);
+                serviceResponse.Message = "Customer cases fetched successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
         public ServiceResponse<List<CustomerCaseDTO>> GetShareHoldersByCompanyCode(string Id)
         {
             ServiceResponse<List<CustomerCaseDTO>> serviceResponse = new ServiceResponse<List<CustomerCaseDTO>>();

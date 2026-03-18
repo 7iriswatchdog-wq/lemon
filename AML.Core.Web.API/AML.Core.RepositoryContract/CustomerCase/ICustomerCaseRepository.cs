@@ -27,6 +27,8 @@ namespace AML.Core.RepositoryContract.CustomerCase
 
         ServiceResponse<CustomerCaseDTO> GetDetails(int Id);
 
+        ServiceResponse<string> GetDualGoodsStatus(string customerId);
+
         ServiceResponse<List<CustomerCaseDTO>> GetShareHoldersByCompanyCode(string Id);
         int GetCaseId(string CustId);
 

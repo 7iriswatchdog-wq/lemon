@@ -1,3 +1,4 @@
+using AML.Core.Common.StaticResource;
 using AML.Core.Service.Kyc;
 using AML.Core.Service.Risk;
 using AML.Core.ServiceContract.CaseComment;
@@ -11,9 +12,11 @@ using AML.Core.ServiceContract.Risk;
 using AML.Core.ServiceContract.UserGroup;
 using AML.DTO.DTO.CaseComment;
 using AML.DTO.DTO.CaseDocument;
+using AML.DTO.DTO.CustomerCase;
 using AML.DTO.DTO.Kyc;
 using AML.DTO.DTO.ProliferationFinance;
 using AML.DTO.DTO.Risk;
+using AML.ViewModel.ViewModels.CaseComment;
 using AML.ViewModel.ViewModels.Corporate;
 using AML.ViewModel.ViewModels.CustomerCase;
 using AML.ViewModel.ViewModels.Kyc;
@@ -22,10 +25,12 @@ using AML.ViewModel.ViewModels.Risk;
 using AML.ViewModel.ViewModels.RiskAPI;
 using AML.Web.Helper;
 using AutoMapper;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MySqlX.XDevAPI;
+using Newtonsoft.Json;
 using NToastNotify;
 using OfficeOpenXml;
 using System;
@@ -700,7 +705,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                 using (var range = xl.Cells[1, 1, 1, 9])
                 {
                     range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    range.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(219, 234, 254));
+                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(219, 234, 254));
                     range.Style.Font.Bold = true;
                 }
 
@@ -793,7 +798,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                             }
 
                         }
-                        if (hit.Decision == "True Match")
+                        if (hit.Decision == "True Match" || hit.Decision == "Potential Match")
                         {
                             corpModel.DualUseGoods = "Yes";
                         }
@@ -1045,6 +1050,54 @@ namespace AML.Web.Controllers.ProliferationFinance
 
                         }
                     }
+                }
+
+                int Id = _customerCaseService.GetCaseId(request.corporateId);
+
+                CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(Id);
+
+                int previousStatus = _CustomerCaseDTO.Status;
+
+                var result1 = _clientHandler.PostAsync(new { caseid = Id.ToString() }, ScreeningService.GETBYCASEID).Result;
+
+                // Declare jsonList outside
+                List<DataListModel> jsonList = new List<DataListModel>();
+                bool hasMatchRecords = false;
+
+                if (!string.IsNullOrEmpty(result1))
+                {
+                    jsonList = JsonConvert.DeserializeObject<List<DataListModel>>(result1);
+                    hasMatchRecords = jsonList != null && jsonList.Any();
+                }
+
+                // default first time
+
+                if (previousStatus == 2)
+                {
+                    int newStatus = hasMatchRecords ? 0 : 5;
+
+                    _CustomerCaseDTO.Status = newStatus;
+                }
+
+                _customerCaseService.Update(_CustomerCaseDTO);
+                var comments = new List<(string Comment, string CommentType)>
+                {
+                    ("Risk parameter has been updated", "Risk Assessment(By Profileration)"),
+                    ("Dual goods has been updated", "Profileration")
+                    
+                };
+
+                foreach (var item in comments)
+                {
+                    var remarkModel = new CaseCommentModel
+                    {
+                        CaseId = Id,
+                        Comment = item.Comment,
+                        CommentType = item.CommentType,
+                        CreatedBy = _clientHandler.GetUserId()
+                    };
+
+                    _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
                 }
 
                 return Json(new { success = true });
