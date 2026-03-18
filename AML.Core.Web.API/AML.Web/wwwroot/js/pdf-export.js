@@ -15,129 +15,145 @@ async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.p
     if (loader) loader.style.display = 'flex';
 
     try {
-        // Clone the element
+        // --- STEP 1: PRE-CAPTURE DATA FROM ORIGINAL ---
+        // cloneNode doesn't capture current dynamic values/states well in all browsers/frameworks.
+        // We'll read the original elements and prepare data for the clone.
+        const originalInputs = original.querySelectorAll('select, textarea, input:not([type="hidden"])');
+        const capturedData = Array.from(originalInputs).map(el => {
+            let val = '';
+            if (el.tagName === 'SELECT') {
+                val = el.options[el.selectedIndex]?.text || '';
+            } else if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+                val = el.value || '';
+            }
+            return {
+                type: el.tagName,
+                value: val,
+                checked: (el.type === 'checkbox' || el.type === 'radio') ? el.checked : null
+            };
+        });
+
+        // --- STEP 2: CLONE AND PREPARE ---
         const clone = original.cloneNode(true);
         
-        // --- DATA SYNC (cloneNode doesn't copy current form state) ---
-        const syncInputs = (origRoot, cloneRoot) => {
-            const selects = origRoot.querySelectorAll('select');
-            const cloneSelects = cloneRoot.querySelectorAll('select');
-            selects.forEach((sel, i) => {
-                cloneSelects[i].selectedIndex = sel.selectedIndex;
-                cloneSelects[i].value = sel.value;
-            });
+        // Apply captured data to clone
+        const cloneInputs = clone.querySelectorAll('select, textarea, input:not([type="hidden"])');
+        cloneInputs.forEach((el, idx) => {
+            const data = capturedData[idx];
+            if (data) {
+                el.setAttribute('data-pdf-val', data.value);
+                if (data.checked !== null) el.setAttribute('data-pdf-checked', data.checked);
+            }
+        });
 
-            const textareas = origRoot.querySelectorAll('textarea');
-            const cloneTextareas = cloneRoot.querySelectorAll('textarea');
-            textareas.forEach((ta, i) => {
-                cloneTextareas[i].value = ta.value;
-            });
-
-            const inputs = origRoot.querySelectorAll('input:not([type="hidden"])');
-            const cloneInputs = cloneRoot.querySelectorAll('input:not([type="hidden"])');
-            inputs.forEach((input, i) => {
-                if (input.type === 'checkbox' || input.type === 'radio') {
-                    cloneInputs[i].checked = input.checked;
-                } else {
-                    cloneInputs[i].value = input.value;
-                }
-            });
-        };
-        syncInputs(original, clone);
-
-        // Create a temporary container for the clone
+        // Create a temporary container for styling and dimensioning
         const tempContainer = document.createElement('div');
-        tempContainer.style.position = 'absolute';
-        tempContainer.style.left = '-9999px';
-        tempContainer.style.top = '0';
-        tempContainer.style.width = '1100px'; // Controlled width for A4
+        tempContainer.id = 'pdf-render-temp';
+        tempContainer.style.cssText = `
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            width: 1024px; 
+            background: white;
+            padding: 20px;
+        `;
         tempContainer.appendChild(clone);
         document.body.appendChild(tempContainer);
 
-        // --- PDF LAYOUT ADJUSTMENTS ---
+        // --- STEP 3: TRANSFORM CLONE FOR PDF ---
 
-        // 1. Stack Two-Column Layouts
+        // A. Layout Stacking (Two-column to Single-column)
         const leftCol = clone.querySelector('#leftColumn');
         const rightCol = clone.querySelector('#rightColumn');
-        const mainFlexContainer = leftCol?.parentElement;
-
-        if (mainFlexContainer && leftCol && rightCol) {
-            mainFlexContainer.classList.remove('flex-row', 'gap-6');
-            mainFlexContainer.classList.add('flex-col', 'gap-4');
+        if (leftCol && rightCol) {
+            const container = leftCol.parentElement;
+            container.style.display = 'block'; 
+            leftCol.style.width = '100%';
+            leftCol.style.marginBottom = '20px';
+            rightCol.style.width = '100%';
             
-            leftCol.classList.remove('basis-[65%]');
-            leftCol.classList.add('basis-full', 'w-full');
-            
-            rightCol.classList.remove('basis-[35%]');
-            rightCol.classList.add('basis-full', 'w-full');
-            
-            // Remove fixed heights on risk containers
-            const riskContainer = rightCol.querySelector('.min-h-\\[260px\\]');
-            if (riskContainer) {
-                riskContainer.classList.remove('min-h-[260px]', 'max-h-[260px]');
-                riskContainer.style.minHeight = '0';
-                riskContainer.style.maxHeight = 'none';
-            }
+            // Remove constraints on containers
+            const constrained = rightCol.querySelectorAll('[class*="max-h-"], [class*="min-h-"], [style*="height"]');
+            constrained.forEach(el => {
+                el.style.maxHeight = 'none';
+                el.style.minHeight = '0';
+                el.style.height = 'auto';
+                el.style.overflow = 'visible';
+            });
         }
 
-        // 2. Expand Scrollable Containers
-        const scrollables = clone.querySelectorAll('.overflow-y-auto, .custom-scrollbar, [style*="max-height"], [class*="max-h-"], [class*="min-h-"]');
-        scrollables.forEach(el => {
-            el.classList.remove('overflow-y-auto', 'custom-scrollbar', 'overflow-hidden');
-            // Remove all max-h-* and min-h-* classes
-            const classesToRemove = Array.from(el.classList).filter(c => c.startsWith('max-h-') || c.startsWith('min-h-'));
-            classesToRemove.forEach(c => el.classList.remove(c));
+        // B. Clear All Loaders, Spinners, and Pagination artifacts
+        const uiArtifacts = clone.querySelectorAll('.dt-loader, .spinner-grow, .loader, .loadingeffect, .slider-pagination, .no-pdf, button, .pagination, .loading-dots');
+        uiArtifacts.forEach(el => el.remove());
+
+        // C. Transform Inputs/Selects to clean Static Text
+        clone.querySelectorAll('[data-pdf-val]').forEach(el => {
+            const val = el.getAttribute('data-pdf-val');
+            const replacement = document.createElement('div');
             
-            el.style.maxHeight = 'none';
-            el.style.minHeight = '0';
-            el.style.height = 'auto';
-            el.style.overflow = 'visible';
+            if (el.tagName === 'SELECT') {
+                replacement.className = 'inline-flex items-center px-4 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-100 ml-auto min-w-[80px] justify-center';
+                replacement.innerText = (val === '--Select--' || !val) ? '--EMPTY--' : val;
+            } else if (el.tagName === 'TEXTAREA') {
+                replacement.className = 'text-[11px] font-medium text-slate-700 p-3 border border-slate-100 rounded bg-slate-50 mt-1 whitespace-pre-wrap w-full';
+                replacement.innerText = val || '(No remarks provided)';
+            } else {
+                replacement.className = 'text-[11px] font-semibold text-slate-800';
+                replacement.innerText = val || '-';
+            }
+            
+            el.parentNode.replaceChild(replacement, el);
         });
 
-        // 3. Hide non-PDF elements and transform inputs to text
-        const noPdfElements = clone.querySelectorAll('.no-pdf, button, .dt-loader, .spinner-grow, #loadingeffect, #processLoader');
-        noPdfElements.forEach(el => el.style.display = 'none');
-
-        // Transform interactive elements to static text for clean PDF
-        clone.querySelectorAll('textarea').forEach(el => {
-            const textSpan = document.createElement('div');
-            textSpan.className = 'text-[11px] font-medium text-slate-700 p-2 border border-slate-100 rounded bg-slate-50 mt-1 whitespace-pre-wrap';
-            textSpan.innerText = el.value || '(No remarks)';
-            el.parentNode.replaceChild(textSpan, el);
-        });
-
-        clone.querySelectorAll('select').forEach(el => {
-            const textSpan = document.createElement('span');
-            textSpan.className = 'inline-flex items-center px-4 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-800 ring-1 ring-inset ring-slate-200 ml-auto';
-            textSpan.innerText = el.options[el.selectedIndex]?.text || '-';
-            el.parentNode.replaceChild(textSpan, el);
-        });
-
-        // 4. Clean up tables
+        // D. Table Polish (Fixing "Trimmed Columns")
         clone.querySelectorAll('table').forEach(table => {
             table.style.width = '100%';
-            table.style.tableLayout = 'auto';
+            table.style.tableLayout = 'auto'; // Change to auto to allow columns to fit content better
+            table.style.borderCollapse = 'collapse';
             table.classList.remove('table-fixed');
-            // Ensure table headers repeat if possible (html2pdf limitation but helps)
+            
+            table.querySelectorAll('th, td').forEach(cell => {
+                cell.style.padding = '8px 6px';
+                cell.style.fontSize = '10px';
+                cell.style.wordBreak = 'break-word';
+                cell.style.borderBottom = '1px solid #f1f5f9';
+                cell.style.textAlign = 'left';
+            });
+
+            // Specific fix for Search Results table headers
+            table.querySelectorAll('thead th').forEach(th => {
+                th.style.backgroundColor = '#f8fafc';
+                th.style.color = '#64748b';
+            });
         });
 
-        // 5. Hide the specific blue dots (loading artifacts)
-        const loaders = clone.querySelectorAll('.dt-loader, .loader, .spinner-grow');
-        loaders.forEach(l => l.style.display = 'none');
+        // E. Expand all Overflow containers
+        clone.querySelectorAll('.overflow-y-auto, .custom-scrollbar, .overflow-hidden').forEach(el => {
+            el.style.overflow = 'visible';
+            el.style.maxHeight = 'none';
+            el.style.height = 'auto';
+        });
 
-        // --- GENERATE PDF ---
+        // F. Page Break Optimization
+        clone.querySelectorAll('.card, .info-box, table, tr, .process-section').forEach(el => {
+            el.style.pageBreakInside = 'avoid';
+            el.style.breakInside = 'avoid';
+        });
+
+        // --- STEP 4: GENERATE PDF ---
         const opt = {
-            margin:       10,
+            margin:       [10, 5, 10, 5], 
             filename:     filename,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { 
-                scale: 1.5, // Reduced slightly for memory, increased for quality
+                scale: 2, 
                 useCORS: true, 
                 letterRendering: true,
-                logging: false,
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                logging: false
             },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
         };
 
         await html2pdf().set(opt).from(clone).save();
