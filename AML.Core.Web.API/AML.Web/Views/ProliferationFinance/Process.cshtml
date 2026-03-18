@@ -176,14 +176,14 @@
                                 }
                                 else if (Model.CustomerType == "Goods" || Model.CustomerType == "Chemical")
                                 {
-                                    var rowIndex = 0;
+                                    var hitIndex = 0;
                                     <!-- 1. Database Matches -->
                                     if (Model.MatchedChemicals != null && Model.MatchedChemicals.Count > 0)
                                     {
                                         foreach (var match in Model.MatchedChemicals)
                                         {
                                             var savedHit = Model.MongoHits?.FirstOrDefault(h => h.ChemicalId == match.Id);
-                                            <tr class="bg-white hover:bg-slate-50 transition-colors search-hit-row" data-index="@rowIndex" data-type="Chemical">
+                                            <tr class="bg-white hover:bg-slate-50 transition-colors search-hit-row" data-index="@hitIndex" data-type="Chemical">
                                                 <td class="px-4 py-3 font-bold text-slate-900">
                                                     <div class="flex items-center gap-2">
                                                         <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
@@ -210,7 +210,7 @@
                                                     <textarea class="search-remarks-area h-7 w-full border border-slate-200 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all" placeholder="Enter matching remarks...">@(savedHit?.Remarks ?? "")</textarea>
                                                 </td>
                                             </tr>
-                                            rowIndex++;
+                                            hitIndex++;
                                         }
                                     }
                                     else
@@ -227,11 +227,10 @@
                                     @if (!string.IsNullOrEmpty(Model.SearchHitDetails))
                                     {
                                         var snippets = Model.SearchHitDetails.Split(new[] { "\n\n", "---" }, StringSplitOptions.RemoveEmptyEntries);
-                                        var snippetIndex = 0;
                                         foreach (var snip in snippets)
                                         {
-                                            var savedHit = Model.MongoHits?.FirstOrDefault(h => h.Snippet == snip && h.Index == snippetIndex && h.SearchType == "Non-Chemical");
-                                            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors search-hit-row" data-index="@snippetIndex" data-type="Non-Chemical">
+                                            var savedHit = Model.MongoHits?.FirstOrDefault(h => h.Snippet == snip && h.SearchType == "Non-Chemical");
+                                            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors search-hit-row" data-index="@hitIndex" data-type="Non-Chemical">
                                                 <td class="px-4 py-2 border-l-2 border-blue-200">
                                                     <div class="flex items-start gap-3">
                                                         <i class="fa fa-file-pdf-o text-blue-400 mt-1"></i>
@@ -258,7 +257,7 @@
                                                     <textarea class="search-remarks-area h-7 w-full border border-slate-100 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all bg-white" placeholder="Snippet remarks...">@(savedHit?.Remarks ?? "")</textarea>
                                                 </td>
                                             </tr>
-                                            snippetIndex++;
+                                            hitIndex++;
                                         }
                                     }
                                 }
