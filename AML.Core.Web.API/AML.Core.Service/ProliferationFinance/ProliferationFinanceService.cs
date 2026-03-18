@@ -102,6 +102,7 @@ namespace AML.Core.Service.ProliferationFinance
                     Hits = new List<PFSearchResultsMongoDTO.PF_Hit>()
                 };
 
+                var globalIndex = 0;
                 // Add chemical hits
                 if (chemicalHits != null)
                 {
@@ -109,6 +110,7 @@ namespace AML.Core.Service.ProliferationFinance
                     {
                         result.Hits.Add(new PFSearchResultsMongoDTO.PF_Hit
                         {
+                            Index = globalIndex++,
                             SearchType = "Chemical",
                             ChemicalId = h.Id,
                             MatchedName = h.ChemicalName,
@@ -128,6 +130,7 @@ namespace AML.Core.Service.ProliferationFinance
                     {
                         result.Hits.Add(new PFSearchResultsMongoDTO.PF_Hit
                         {
+                            Index = globalIndex++,
                             SearchType = "Non-Chemical",
                             Snippet = p,
                             FoundOn = DateTime.Now
