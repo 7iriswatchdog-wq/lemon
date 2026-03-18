@@ -6,6 +6,7 @@ using AML.Core.ServiceContract.CustomerCase;
 using AML.Core.ServiceContract.Department;
 using AML.Core.ServiceContract.Designation;
 using AML.Core.ServiceContract.IdentityType;
+using AML.Core.ServiceContract.LovMaster;
 using AML.Core.ServiceContract.User;
 using AML.Core.ServiceContract.UserGroup;
 using AML.Core.ServiceContract.VisaType;
@@ -61,6 +62,7 @@ namespace AML.Web.Controllers.AdminManagement
         private string baseC6URL = string.Empty;
         private string _c6Username;
         private int checkThreshold = 0;
+        private ILovMasterService _lovMasterService;
 
 
         public AdminManagementController(IUserService userService, IDepartmentService departmentService,
@@ -69,7 +71,7 @@ namespace AML.Web.Controllers.AdminManagement
             IUserGroupService usergroupService, IVisaTypeService visatypeService,
             IIdentityTypeService identitytypeService, ICountryService countryService,
             IMapper mapper, IConfiguration configuration, IHttpClientHandler clientHandler, 
-            ICustomerCaseService customerCaseService, IFileUploader fileUploader)
+            ICustomerCaseService customerCaseService, IFileUploader fileUploader, ILovMasterService lovMasterService)
         {
             _userService = userService;
             _departmentService = departmentService;
@@ -85,6 +87,7 @@ namespace AML.Web.Controllers.AdminManagement
             _customerCaseService = customerCaseService;
             _configuration = configuration;
             _fileUploader = fileUploader;
+            _lovMasterService = lovMasterService;
             var clientId = _clientHandler.GetClientId();
             var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
             _c6Username = clientDetails?.C6Username;
@@ -269,6 +272,9 @@ namespace AML.Web.Controllers.AdminManagement
                 string.IsNullOrEmpty(token.user?.Eightemail) || token.user.Eightemail == "0"
                 ? "--"
                 : DateTime.Parse(token.user.Eightemail).ToString("dd/MM/yyyy HH:mm:ss");
+
+            var riskCategoriesAll = _lovMasterService.GetAllLovMasterCategories();
+            _clientModel.RiskCategories = new SelectList(riskCategoriesAll, "LovRiskCategoryCode", "LovRiskCategory");
             return View(_clientModel);
         }
 

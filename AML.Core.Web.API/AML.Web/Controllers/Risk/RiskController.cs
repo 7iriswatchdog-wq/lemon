@@ -556,35 +556,89 @@ namespace AML.Web.Controllers.Risk
         }
 
         [HttpPost("/risk/custompaginationRiskItems")]
-        public JsonResult CustomPagination(DataTableModel model, string riskTypeID,string risKCategoryId)
+        public JsonResult CustomPagination(DataTableModel model, string riskTypeID, string risKCategoryId)
         {
             var clientId = _clientHandler.GetClientId();
-            List<LovMasterModel> abc = _mapper.Map<List<LovMasterModel>>(_lovMasterService.GetRiskItems(Convert.ToInt32(riskTypeID),clientId));
+            List<LovMasterModel> abc = _mapper.Map<List<LovMasterModel>>(_lovMasterService.GetRiskItems(Convert.ToInt32(riskTypeID), clientId));
             int totalcount = abc.Count;
+
+            if (model.search != null && !string.IsNullOrEmpty(model.search.value))
+            {
+                abc = abc.Where(m => (m.LovRiskData != null && m.LovRiskData.ToLower().Contains(model.search.value.ToLower()))).ToList();
+            }
             int filteredcount = abc.Count;
-            var data = abc.Skip(model.start).Take(model.length).ToList();
+
+            var sortCol = (model.order != null && model.order.Count > 0 && model.columns != null) 
+                          ? (model.columns[model.order[0].column].data ?? "LovRiskData") 
+                          : "LovRiskData";
+            var sortDir = (model.order != null && model.order.Count > 0) 
+                          ? (model.order[0].dir ?? "asc") 
+                          : "asc";
+
+            var data = Sort(abc, sortCol, sortDir).Skip(model.start).Take(model.length).ToList();
+
             var response = Json(new
             {
                 // this is what datatables wants sending back
-                model.draw,
+                draw = model.draw,
                 recordsTotal = totalcount,//totalResultsCount,
                 recordsFiltered = filteredcount,//filteredResultsCount,
                 data = data
             });
             return response;
         }
+        //[HttpPost("/risk/getRiskItems")]
+        //public JsonResult GetRiskItems(string riskTypeID, string risKCategoryId)
+        //{
+        //    try
+        //    {
+        //        var clientId = _clientHandler.GetClientId();
+
+        //        var data = _mapper.Map<List<LovMasterModel>>(
+        //            _lovMasterService.GetRiskItems(Convert.ToInt32(riskTypeID), clientId)
+        //        );
+
+        //        return Json(new
+        //        {
+        //            success = true,
+        //            data = data
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Json(new
+        //        {
+        //            success = false,
+        //            message = ex.Message
+        //        });
+        //    }
+        //}
         [HttpPost]
         public JsonResult CustomPaginationRiskTypeCategory(DataTableModel model, string riskCategoryID)
         {
             var clientId = _clientHandler.GetClientId();
             List<LovTypeCategoryDTO> abc = _mapper.Map<List<LovTypeCategoryDTO>>(_lovMasterService.GetRiskCategoryType(riskCategoryID,clientId));
             int totalcount = abc.Count;
+
+            if (model.search != null && !string.IsNullOrEmpty(model.search.value))
+            {
+                abc = abc.Where(m => (m.LovCategoryType != null && m.LovCategoryType.ToLower().Contains(model.search.value.ToLower()))).ToList();
+            }
             int filteredcount = abc.Count;
-            var data = abc.Skip(model.start).Take(model.length).ToList();
+
+            var sortCol = (model.order != null && model.order.Count > 0 && model.columns != null) 
+                          ? (model.columns[model.order[0].column].data ?? "LovCategoryType") 
+                          : "LovCategoryType";
+            var sortDir = (model.order != null && model.order.Count > 0) 
+                          ? (model.order[0].dir ?? "asc") 
+                          : "asc";
+
+            var data = Sort(abc, sortCol, sortDir).Skip(model.start).Take(model.length).ToList();
+
             var response = Json(new
             {
                 // this is what datatables wants sending back
-                model.draw,
+                draw = model.draw,
                 recordsTotal = totalcount,//totalResultsCount,
                 recordsFiltered = filteredcount,//filteredResultsCount,
                 data = data
@@ -597,12 +651,26 @@ namespace AML.Web.Controllers.Risk
             var clientId = _clientHandler.GetClientId();
             List<LovMasterModel> abc = _mapper.Map<List<LovMasterModel>>(_lovMasterService.GetRiskType(RiskTypeCategoryID,  clientId));
             int totalcount = abc.Count;
+
+            if (model.search != null && !string.IsNullOrEmpty(model.search.value))
+            {
+                abc = abc.Where(m => (m.LovTypeName != null && m.LovTypeName.ToLower().Contains(model.search.value.ToLower()))).ToList();
+            }
             int filteredcount = abc.Count;
-            var data = abc.Skip(model.start).Take(model.length).ToList();
+
+            var sortCol = (model.order != null && model.order.Count > 0 && model.columns != null) 
+                          ? (model.columns[model.order[0].column].data ?? "LovTypeName") 
+                          : "LovTypeName";
+            var sortDir = (model.order != null && model.order.Count > 0) 
+                          ? (model.order[0].dir ?? "asc") 
+                          : "asc";
+
+            var data = Sort(abc, sortCol, sortDir).Skip(model.start).Take(model.length).ToList();
+
             var response = Json(new
             {
                 // this is what datatables wants sending back
-                model.draw,
+                draw = model.draw,
                 recordsTotal = totalcount,//totalResultsCount,
                 recordsFiltered = filteredcount,//filteredResultsCount,
                 data = data

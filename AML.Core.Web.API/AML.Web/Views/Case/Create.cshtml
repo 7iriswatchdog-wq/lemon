@@ -1183,7 +1183,7 @@ hasSearched: false,
                                         </div>
 
                                         <!-- Actions Area - Only Visible After Search -->
-                                        <div x-data="{ hasSearched: false, activeShareholderTab: 'related_shareholder' }"
+                                        <div x-data="{ hasSearched: false, activeShareholderTab: 'related_shareholder',showDropdown: false }"
                                              x-on:company-searched.window="
                                                 hasSearched = true;
                                                 activeShareholderTab = 'related_shareholder';
@@ -1191,8 +1191,37 @@ hasSearched: false,
                                              x-on:company-notfound.window="hasSearched = false"
                                              class="space-y-6 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
                                             <div x-show="hasSearched" x-transition>
+                                                <div class="flex gap-3 items-center mb-4 relative">
 
-                                                <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-4">
+                                                    <!-- Form Button -->
+                                                    <button x-on:click="showDropdown = !showDropdown"
+                                                            class="bg-blue-600 hover:bg-blue-700 text-white px-6 h-10 rounded-md font-bold text-sm shadow-sm">
+                                                        Form
+                                                    </button>
+
+                                                    <!-- SELECT DROPDOWN (beside button) -->
+                                                    <select x-show="showDropdown"
+                                                            x-model="activeShareholderTab"
+                                                            x-on:change="
+                                                                    window.dispatchEvent(
+                                                                        new CustomEvent('tab-changed', { detail: activeShareholderTab })
+                                                                    )
+                                                                "
+                                                            class="h-10 w-64 pr-8 border border-slate-300 rounded-md px-3 text-sm bg-white">
+
+                                                        <option value="related_shareholder">Individual Related Parties</option>
+                                                        <option value="related_corporate_shareholder">Corporate Related Parties</option>
+                                                        <option value="shareholder">Individual Shareholder</option>
+                                                        <option value="corporate_shareholder">Corporate Shareholder</option>
+                                                        <option value="signatories">Authorized Signatory</option>
+                                                        <option value="management">Senior Management</option>
+
+                                                    </select>
+                                                    </div>
+
+                                                
+
+                                                @* <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-4">
                                                     <button @@click="activeShareholderTab = 'related_shareholder';$el.scrollIntoView({ behavior: 'smooth', inline: 'center' }"
                                                             :class="activeShareholderTab === 'related_shareholder'
                                                     ? 'bg-blue-600 text-white border-blue-600'
@@ -1220,11 +1249,11 @@ hasSearched: false,
                                                             data-type="management">
                                                         Senior Management
                                                     </button>
-                                                </div>
+                                                </div> *@
 
                                                
                                                 <!-- Shareholder Repeater -->
-                                                <div x-data="shareholderRepeater(activeShareholderTab)" class="shareholder-repeater pt-2">
+                                                <div x-data="shareholderRepeater(activeShareholderTab)" x-ref="repeater" class="shareholder-repeater pt-2">
 
                                                     <!-- Repeat Forms -->
                                                     <template x-for="(form,index) in forms" :key="index">
@@ -1282,7 +1311,8 @@ hasSearched: false,
 
                                                                 <!-- Nationality -->
                                                                 <div class="space-y-2">
-                                                                    <label class="text-[13px] font-bold text-slate-700">Nationality</label>
+                                                                    <label class="text-[13px] font-bold text-slate-700" x-text="form.type === 'shareholder' ? 'Nationality' : form.type === 'corporate_shareholder' ? 'Country of Incorporation' : form.type === 'related_shareholder' ? 'Nationality' : form.type === 'related_corporate_shareholder' ? 'Country of Incorporation' : form.type === 'signatories' ? 'Nationality' :
+                                               'Nationality'"></label>
                                                                     <select x-model="form.nationality" asp-items="Model.Nationalities"
                                                                             class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm bg-white">
                                                                         <option value="">Select</option>
@@ -4830,6 +4860,13 @@ hasSearched: false,
                                 maxForms: 5,
                                 activeShareholderTab: parentTab, // track current tab
 
+                                                      init() {
+                                        // listen for dropdown change
+                                        window.addEventListener('tab-changed', (e) => {
+                                            if (!e.detail) return;
+                                            this.updateFormsType(e.detail);
+                                        });
+                                    },
                                 // Add a new form
                                 addForm() {
                                     if (this.forms.length >= this.maxForms) {

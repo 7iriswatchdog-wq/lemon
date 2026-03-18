@@ -1,4 +1,6 @@
+using AML.ViewModel.ViewModels.Risk;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -51,6 +53,30 @@ namespace AML.ViewModel.ViewModels.Common
         public DateTime? CreatedOn { get; set; }
 
         public int TotalUsageCount { get; set; }
+
+        public string RiskCategory { get; set; }
+        public string RiskCategoryID { get; set; }
+        public SelectList RiskCategories { get; set; }
+
+
+        public string RiskTypeCategoryID { get; set; }
+        public string RiskTypeCategoryName { get; set; }
+        public SelectList RiskTypeCategory { get; set; }
+
+        public List<RiskTypeCategoryModel> AvailableRiskTypeCategory { get; set; }
+        public List<RiskTypeCategoryModel> AddedRiskTypeCategory { get; set; }
+
+        public string RiskTypeID { get; set; }
+        public SelectList RiskTypes { get; set; }
+        public string RiskTypeName { get; set; }
+
+        public List<RiskTypeModel> AvailableRiskType { get; set; }
+        public List<RiskTypeModel> AddedRiskType { get; set; }
+
+        public List<RiskItemsModel> AvailableItems { get; set; }
+        public List<RiskItemsModel> AddedItems { get; set; }
+        public bool userAuthorised { get; set; }
+     
     }
     public class ClientRightsModel
     {
