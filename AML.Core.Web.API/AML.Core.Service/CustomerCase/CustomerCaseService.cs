@@ -2139,6 +2139,12 @@ namespace AML.Core.Service.CustomerCase
 
             return _CustomerCaseRepository.GetCodesByClientID(clientId).Result;
         }
+        public bool GetRiskCategoryStatus(string culture, int ClientId, string CustomerType)
+        {
+
+            return _CustomerCaseRepository.GetRiskCategoryStatus(culture,ClientId,CustomerType).Result;
+        }
+
 
         public ClientMasterDTO GetCustomerCodeprefixByclient(int clientId)
         {

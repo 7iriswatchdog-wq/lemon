@@ -23,6 +23,8 @@ namespace AML.Core.ServiceContract.CustomerCase
         ServiceResponse<string> IndividualRiskCreation(CustomerCaseDTO _customerCaseDTO);
         ServiceResponse<string> CorporateRiskCreation(CustomerCaseDTO _customerCaseDTO);
 
+        bool GetRiskCategoryStatus(string culture,int ClientId, string CustomerType);
+
         string GetUserIdForAPI(string UserId);
         ServiceResponse<string> CreatePrefix(CustomerCaseDTO _customerCaseDTO);
         CustomerCaseDTO GetDetails(int Id);

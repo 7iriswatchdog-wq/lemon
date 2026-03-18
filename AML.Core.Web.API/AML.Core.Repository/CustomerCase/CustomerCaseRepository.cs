@@ -1503,5 +1503,28 @@ namespace AML.Core.Repository.CustomerCase
             return serviceResponse;
         }
 
+        public ServiceResponse<bool> GetRiskCategoryStatus(string Customertype, int ClientId, string Categoryname)
+        {
+            ServiceResponse<bool> serviceResponse = new ServiceResponse<bool>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_clientId", ClientId);
+                parameters.Add("@p_customertype", Customertype);
+                parameters.Add("@p_categoryname", Categoryname);
+                serviceResponse.Result = GetFirstOrDefault<bool>("get_all_riskcategory", parameters, commandType: CommandType.StoredProcedure);
+                serviceResponse.Message = "Codes fetched successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+
+
+        }
+
     }
 }

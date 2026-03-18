@@ -165,7 +165,10 @@ namespace AML.Web.Controllers.Corporate
             model.BusinessTypeList = new SelectList(_mapper.Map<List<BusinessNature>>(_kycService.GetBusinessType(culture, CustomerType, clientId)), "BusinessName", "BusinessName");
             model.EntityType = new SelectList(_mapper.Map<List<LegalStatusModel>>(_kycService.GetLegalStatus(culture, CustomerType, clientId)), "LegalStatus", "LegalStatus");
             model.ModeofpaymentList = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.get_all_mode_of_payment(culture, clientId, CustomerType)), "DeliveryChannelName", "DeliveryChannelName");
-
+            model.CustomerRiskCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, clientId, "Customer Risk");
+            model.ProductRiskCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, clientId, "Product Risk");
+            model.DeliveryChannelCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, clientId, "Delivery Channel Risk");
+            model.ModeOfPaymentCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, clientId, "Mode of Payment");
             if (TempData.TryGetValue("UploadedExcelData", out var uploadedData) && uploadedData != null)
             {
                 // Deserialize Excel data
@@ -933,6 +936,10 @@ namespace AML.Web.Controllers.Corporate
             model.EntityType = new SelectList(_mapper.Map<List<LegalStatusModel>>(_kycService.GetLegalStatus(culture, CustomerType, clientId)), "LegalStatus", "LegalStatus");
             model.ModeofpaymentList = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.get_all_mode_of_payment(culture, clientId, CustomerType)), "DeliveryChannelName", "DeliveryChannelName");
             model.Nationalities = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)), "Name", "Name");
+            model.CustomerRiskCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, model.ClientId, "Customer Risk");
+            model.ProductRiskCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, model.ClientId, "Product Risk");
+            model.DeliveryChannelCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, model.ClientId, "Delivery Channel Risk");
+            model.ModeOfPaymentCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, model.ClientId, "Mode of Payment");
             string CallC6Screening = string.Empty;
             bool isCaseCreated = false;
             string caseRefId = "";

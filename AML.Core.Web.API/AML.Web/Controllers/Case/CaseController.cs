@@ -349,6 +349,10 @@ namespace AML.Web.Controllers.Case
             model.CustomerCategories = new SelectList(_mapper.Map<List<CustomerCategoryModel>>(_customerCategoryService.GetAll().Result), "Code", "Name");
             model.TypeId = CustomerType;
             model.CodesTable = new SelectList(_mapper.Map<List<CodesTableModel>>(_customerCaseService.GetCodesByClientID(clientId)), "ccName", "ccName");
+            model.CustomerRiskCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, clientId, "Customer Risk");
+            model.ProductRiskCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, clientId, "Product Risk");
+            model.DeliveryChannelCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, clientId, "Delivery Channel Risk");
+            model.ModeOfPaymentCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, clientId, "Mode of Payment");
             model.ProfessionalList = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.GetProfessionalStatus(culture, CustomerType, clientId)), "DeliveryChannelName", "DeliveryChannelName");
             model.ResidentialStatusList = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.get_all_residence_status(culture, clientId, CustomerType)), "DeliveryChannelName", "DeliveryChannelName");
             model.DeliveryChannelList = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.GetAllDeliveryChannel(culture, CustomerType, clientId)), "DeliveryChannelName", "DeliveryChannelName");
@@ -667,6 +671,10 @@ namespace AML.Web.Controllers.Case
             model.CreatedBy = _clientHandler.GetUserId();
             model.CustomerId = "0";
             model.CodesTable = new SelectList(_mapper.Map<List<CodesTableModel>>(_customerCaseService.GetCodesByClientID(model.ClientId)), "ccName", "ccName");
+            model.CustomerRiskCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, model.ClientId, "Customer Risk");
+            model.ProductRiskCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, model.ClientId, "Product Risk");
+            model.DeliveryChannelCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, model.ClientId, "Delivery Channel Risk");
+            model.ModeOfPaymentCategory = _customerCaseService.GetRiskCategoryStatus(CustomerType, model.ClientId, "Mode of Payment");
             model.ProfessionalList = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.GetProfessionalStatus(culture, CustomerType, model.ClientId)), "DeliveryChannelName", "DeliveryChannelName");
             model.ResidentialStatusList = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.get_all_residence_status(culture, model.ClientId, CustomerType)), "DeliveryChannelName", "DeliveryChannelName");
             model.DeliveryChannelList = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.GetAllDeliveryChannel(culture, CustomerType, model.ClientId)), "DeliveryChannelName", "DeliveryChannelName");
@@ -1268,6 +1276,7 @@ namespace AML.Web.Controllers.Case
                 CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(CaseId);
 
                 var dualMatchStatus = _customerCaseService.GetDualGoodsStatus(_CustomerCaseDTO.CustomerId);
+                model.DualGoodsMatchStatus = dualMatchStatus;
                 model.Case = _mapper.Map<CaseModel>(_CustomerCaseDTO);
                 model.Case.UserGroupName = _UserGroupModel.Name;
                 var dob = model.Case.DOB;

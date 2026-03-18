@@ -757,7 +757,10 @@
                                             <label class="text-[13px] font-bold text-slate-700">Date of Expiry</label>
                                                 <input type="date" x-model="manualForm.expiryDate" id="expirydate" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm outline-none" asp-for="CorporateDetailList[0].CaseDocumentsL[0].ExpiryDate" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))">
                                         </div>
-                                            
+                                    @if(Model.CustomerRiskCategory)
+                                            {
+                                        @if (Model.EntityType != null && Model.EntityType.Any())
+                                        {
                                         <div class="space-y-2">
                                             <label class="text-[13px] font-bold text-slate-700">Legal Status <span class="text-red-500">*</span></label>
                                             <div class="relative">
@@ -768,7 +771,11 @@
                                                 <span asp-validation-for="CorporateDetailList[0].EntityTypeTxt" class="validstyle" style="color:red"></span>
                                             </div>
                                         </div>
+                                        }
+                                        
                                            
+                                        @if (Model.BusinessTypeList != null && Model.BusinessTypeList.Any())
+                                        {
                                         <div class="space-y-2">
                                             <label class="text-[13px] font-bold text-slate-700">Business Activities <span class="text-red-500">*</span></label>
                                             <div class="relative">
@@ -779,7 +786,8 @@
                                                 <span asp-validation-for="CorporateDetailList[0].BusinessType" class="validstyle" style="color:red"></span>
                                             </div>
                                         </div>
-
+                                        }
+                                        }
                                             <div class="space-y-2">
                                                 <label class="text-[13px] font-bold text-slate-700">
                                                     Counter Party
@@ -808,6 +816,10 @@
                                                 </div>
 
                                             </div>
+                                             @if(Model.ProductRiskCategory)
+                                            {
+                                            @if (Model.ProductTypeList != null && Model.ProductTypeList.Any())
+                                                    {
                                         <div class="space-y-2">
                                                 <label class="text-[13px] font-bold text-slate-700">Product/Service Type<span class="text-red-500">*</span></label>
                                             <div class="relative">
@@ -818,6 +830,8 @@
                                                 <span asp-validation-for="CorporateDetailList[0].ProductName" class="validstyle" style="color:red"></span>
                                             </div>
                                         </div>
+                                        }
+                                        }
                                             <div class="space-y-2">
                                                 <label class="text-[13px] font-bold text-slate-700">
                                                     Product/Service Value
@@ -834,7 +848,10 @@
                                                     <input type="text" placeholder="Enter Product Type" asp-for="CorporateDetailList[0].ProductType" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none" id="productType">
                                                 </div>
                                             </div> *@
-                                         
+                                     @if(Model.DeliveryChannelCategory)
+                                            {
+                                         @if (Model.DeliveryChannelList != null && Model.DeliveryChannelList.Any())
+                                                    {
                                         <div class="space-y-2">
                                             <label class="text-[13px] font-bold text-slate-700">Delivery Channel <span class="text-red-500">*</span></label>
                                             <div class="relative">
@@ -845,17 +862,24 @@
                                                 <span asp-validation-for="CorporateDetailList[0].DeliveryChannelName" class="validstyle" style="color:red"></span>
                                             </div>
                                         </div>
-                                        
-                                        <div class="space-y-2">
-                                            <label class="text-[13px] font-bold text-slate-700">Mode Of Payment<span class="text-red-500">*</span></label>
-                                            <div class="relative">
-                                                <select x-model="manualForm.modeofpayment" required class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm appearance-none outline-none" id="ddlModeofpayment" asp-items="Model.ModeofpaymentList" asp-for="CorporateDetailList[0].Modeofpayment">
-                                                    <option value="0">--@localizer["EMPTY"]--</option>
-                                                </select>
-                                                <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-3 text-slate-400 pointer-events-none"></i>
-                                                <span asp-validation-for="CorporateDetailList[0].Modeofpayment" class="validstyle" style="color:red"></span>
-                                            </div>
-                                        </div>
+                                        }
+                                        }
+                                        @if(Model.ModeOfPaymentCategory)
+                                            {   
+                                                    @if (Model.ModeofpaymentList != null && Model.ModeofpaymentList.Any())
+                                                            {
+                                                <div class="space-y-2">
+                                                    <label class="text-[13px] font-bold text-slate-700">Mode Of Payment<span class="text-red-500">*</span></label>
+                                                    <div class="relative">
+                                                        <select x-model="manualForm.modeofpayment" required class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm appearance-none outline-none" id="ddlModeofpayment" asp-items="Model.ModeofpaymentList" asp-for="CorporateDetailList[0].Modeofpayment">
+                                                            <option value="0">--@localizer["EMPTY"]--</option>
+                                                        </select>
+                                                        <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-3 text-slate-400 pointer-events-none"></i>
+                                                        <span asp-validation-for="CorporateDetailList[0].Modeofpayment" class="validstyle" style="color:red"></span>
+                                                    </div>
+                                                </div>
+                                                }
+                                        }
 
                                         <div class="space-y-2">
                                             <label class="text-[13px] font-bold text-slate-700">Customer CIF No</label>
@@ -2594,14 +2618,31 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                         if (!$firstErrorElement) $firstErrorElement = $(selector);
                         isValid = false;
                     }
-
+ 
+                                            
+                                            
+                                            
+                                            
                     // --- Required field checks ---
-                    if (fullName === "") markInvalid("CorporateDetailList[0].FirstName", "#txtCompanyName", "Company Full Name is required.");
-                    if (!legalStatus || legalStatus === "0") markInvalid("CorporateDetailList[0].EntityTypeTxt", "#LegalStatus", "Legal Status is required.");
-                    if (!bussinessType || bussinessType === "0") markInvalid("CorporateDetailList[0].BusinessType", "#bussinessType", "Business Type is required.");
-                    if (!producttype || producttype === "0") markInvalid("CorporateDetailList[0].ProductName", "#ddlProductType", "Product Type is required.");
-                    if (!deliveryChannel || deliveryChannel === "0") markInvalid("CorporateDetailList[0].DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
-                    if (!modeofpayment || modeofpayment === "0") markInvalid("CorporateDetailList[0].Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
+                        if (fullName === "") markInvalid("CorporateDetailList[0].FirstName", "#txtCompanyName", "Company Full Name is required.");
+                                if (@Model.CustomerRiskCategory)
+                                    {
+                                        if ($("#LegalStatus").length && (!legalStatus || legalStatus === "0")) markInvalid("CorporateDetailList[0].EntityTypeTxt", "#LegalStatus", "Legal Status is required.");
+                                    
+                                        if ($("#bussinessType").length && (!bussinessType || bussinessType === "0")) markInvalid("CorporateDetailList[0].BusinessType", "#bussinessType", "Business Type is required.");
+                                    }
+                                    if (@Model.ProductRiskCategory)
+                                    {
+                                        if ($("#ddlProductType").length && (!producttype || producttype === "0")) markInvalid("CorporateDetailList[0].ProductName", "#ddlProductType", "Product Type is required.");
+                                    }
+                                    if (@Model.DeliveryChannelCategory)
+                                    {
+                                         if ($("#ddlDeliveryChannel").length && (!deliveryChannel || deliveryChannel === "0")) markInvalid("CorporateDetailList[0].DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
+                                    }
+                                            if (@Model.ModeOfPaymentCategory)
+                                    {
+                                        if ($("#ddlModeofpayment").length && (!modeofpayment || modeofpayment === "0")) markInvalid("CorporateDetailList[0].Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
+                                    }
 
                     // ✅ Counter Party validation (fixed)
                     const counterParty = ($("#ddlCounterParty").val() || "").trim();

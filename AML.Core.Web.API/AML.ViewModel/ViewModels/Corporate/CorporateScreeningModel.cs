@@ -117,8 +117,16 @@ namespace AML.ViewModel.ViewModels.Corporate
 
         public string CIFNumber { get; set; }
 
-        
 
+        public bool CustomerRiskCategory { get; set; }
+
+        public bool ProductRiskCategory { get; set; }
+
+        public bool DeliveryChannelCategory { get; set; }
+
+        public bool ModeOfPaymentCategory { get; set; }
+
+        
 
     }
 

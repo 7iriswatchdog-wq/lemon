@@ -82,7 +82,7 @@ namespace AML.Core.RepositoryContract.CustomerCase
 
         ServiceResponse<ClientMasterDTO> GetCustomerCodeprefixByclient(int ClientId);
 
-
+        ServiceResponse<bool> GetRiskCategoryStatus(string culture, int ClientId, string CustomerType);
         ServiceResponse<int> InsertScreeninglogs(ScreeinglogsModel model);
 
         Task<ServiceResponse<List<ClientMasterDTO>>> GetAllClientsAsync();

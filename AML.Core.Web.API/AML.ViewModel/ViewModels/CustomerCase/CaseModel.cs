@@ -242,6 +242,16 @@ namespace AML.ViewModel.ViewModels.CustomerCase
 
         public List<ShareholderModel> Shareholders { get; set; } = new List<ShareholderModel>();
 
+        public bool CustomerRiskCategory { get; set; }
+
+        public bool ProductRiskCategory { get; set; }
+
+        public bool DeliveryChannelCategory { get; set; }
+
+        public bool ModeOfPaymentCategory { get; set; }
+
+        
+
     }
 
     

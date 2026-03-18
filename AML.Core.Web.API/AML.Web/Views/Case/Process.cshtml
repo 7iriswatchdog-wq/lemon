@@ -203,12 +203,12 @@
                         </button>
                         <span class="h-4 w-px bg-blue-300 no-pdf"></span>
                         <button onclick="downloadPageAsPDF('#process-container', 'Case-PF-@(Model.Case.Id).pdf')"
-                                class="h-auto p-0 text-[11px] font-bold text-red-600 hover:text-red-700 flex items-center gap-1 tracking-tight no-pdf">
+                                class="h-auto p-0 text-[11px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 tracking-tight no-pdf">
                             <i data-lucide="file-text" class="h-3.5 w-3.5"></i> Download PDF
                         </button>
                     </div>
                 </div>
-
+                
                 <!-- 🔹 KEY FIX IS HERE -->
                 <div class="grid w-1/2 gap-x-4"
                      style="grid-template-columns: 110px 110px 110px 160px 110px 130px;">
@@ -997,11 +997,7 @@
                         <div class="space-y-4" x-data="{ comment: '' }">
                             <h3 class="text-sm font-bold text-slate-900">Case Comments</h3>
 
-                            <div id="commentsContainer" class="space-y-3">
-                                <div id="noCommentsMsg" class="text-sm text-slate-500 italic pb-2">
-                                    No comments yet
-                                </div>
-                            </div>
+
 
                             <div class="flex gap-4">
                                 <textarea id="commentText"
@@ -1022,15 +1018,25 @@
                     
 
                </form>
-               @{
-                    bool disableButtons = false;
+                    @{
+                        bool disableButtons = false;
+                        bool hasPendingShareholders = false;
+                        bool hasDualGoodsMatch = false;
 
-                    if (Model.ShareholdersData != null)
-                    {
-                        disableButtons = Model.ShareholdersData
-                            .Any(s => s.Status == 5 || s.Status == 0 || s.Status == 6);
+                        // Check Shareholders
+                        if (Model.ShareholdersData != null && Model.ShareholdersData.Any())
+                        {
+                            hasPendingShareholders = Model.ShareholdersData
+                            .Any(s => s.Status == 0 || s.Status == 5 || s.Status == 6);
+                        }
+
+                        // Check Dual Goods
+                        hasDualGoodsMatch = Model.DualGoodsMatchStatus == "True Match"
+                        || Model.DualGoodsMatchStatus == "Potential Match";
+
+                        // Disable button if either condition is true
+                        disableButtons = hasPendingShareholders || hasDualGoodsMatch;
                     }
-                }
                 <form role="form" id="frmCloseCase" class="form-horizontal" enctype="multipart/form-data" method="post">
 
                     <input type="hidden" name="CaseId" value="@Model.Case.Id" />
@@ -1053,14 +1059,24 @@
                     <div class="flex flex-col gap-2 pt-4 border-t border-slate-50">
 
                         @* Warning Message *@
-                        @if (disableButtons)
-                        {
-                            <div class="flex">
-                                <div class="text-red-500 text-xs font-semibold">
-                                    All shareholders must be cleared before taking further action.
+                            @if (disableButtons)
+                            {
+                                <div class="flex flex-col gap-1">
+                                    @if (hasPendingShareholders)
+                                    {
+                                        <div class="text-red-500 text-xs font-semibold">
+                                            All shareholders must be cleared before taking further action.
+                                        </div>
+                                    }
+
+                                    @if (hasDualGoodsMatch)
+                                    {
+                                        <div class="text-red-500 text-xs font-semibold">
+                                            Dual Use Goods match detected. Further action is blocked.
+                                        </div>
+                                    }
                                 </div>
-                            </div>
-                        }
+                            }
 
                         @* Main Buttons Container *@
                         <div class="flex items-center gap-3 w-full">
