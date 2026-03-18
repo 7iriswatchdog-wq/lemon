@@ -978,7 +978,7 @@
                                 </div>
 
                                 <!-- Actions Area - Only Visible After Search -->
-                                    <div x-data="{ hasSearched: false, activeShareholderTab: 'related_shareholder' }"
+                                    <div x-data="{ hasSearched: false, activeShareholderTab: 'related_shareholder',showDropdown: false }"
                                          x-on:company-searched.window="
                                                 hasSearched = true;
                                                 activeShareholderTab = 'related_shareholder';
@@ -986,35 +986,32 @@
                                          x-on:company-notfound.window="hasSearched = false"
                                          class="space-y-6 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
                                         <div x-show="hasSearched" x-transition>
+                                            <div class="flex gap-3 items-center mb-4 relative">
 
-                                            <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-4">
-                                                <button @@click="activeShareholderTab = 'related_shareholder';$el.scrollIntoView({ behavior: 'smooth', inline: 'center' }"
-                                                        :class="activeShareholderTab === 'related_shareholder'
-                                                    ? 'bg-blue-600 text-white border-blue-600'
-                                                    : 'bg-white text-slate-600 border-slate-300'" class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                        data-type="related_shareholder">
-                                                    Add Individual Related Parties
+                                                <!-- Form Button -->
+                                                <button x-on:click="showDropdown = !showDropdown"
+                                                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 h-10 rounded-md font-bold text-sm shadow-sm">
+                                                    Form
                                                 </button>
-                                                <button class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                        data-type="related_corporate_shareholder">
-                                                    Add Corporate Related Parties
-                                                </button>
-                                                <button class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                        data-type="shareholder">
-                                                    Add Individual Shareholder
-                                                </button>
-                                                <button class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                        data-type="corporate_shareholder">
-                                                    Add Corporate Shareholder
-                                                </button>
-                                                <button class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                        data-type="signatories">
-                                                    Authorized Signatory
-                                                </button>
-                                                <button class="shareholder-tab px-5 py-2 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap"
-                                                        data-type="management">
-                                                    Senior Management
-                                                </button>
+
+                                                <!-- SELECT DROPDOWN (beside button) -->
+                                                <select x-show="showDropdown"
+                                                        x-model="activeShareholderTab"
+                                                        x-on:change="
+                                                                    window.dispatchEvent(
+                                                                        new CustomEvent('tab-changed', { detail: activeShareholderTab })
+                                                                    )
+                                                                "
+                                                        class="h-10 w-64 pr-8 border border-slate-300 rounded-md px-3 text-sm bg-white">
+
+                                                    <option value="related_shareholder">Individual Related Parties</option>
+                                                    <option value="related_corporate_shareholder">Corporate Related Parties</option>
+                                                    <option value="shareholder">Individual Shareholder</option>
+                                                    <option value="corporate_shareholder">Corporate Shareholder</option>
+                                                    <option value="signatories">Authorized Signatory</option>
+                                                    <option value="management">Senior Management</option>
+
+                                                </select>
                                             </div>
 
 
@@ -1077,7 +1074,9 @@
 
                                                             <!-- Nationality -->
                                                             <div class="space-y-2">
-                                                                <label class="text-[13px] font-bold text-slate-700">Nationality</label>
+                                                                <label class="text-[13px] font-bold text-slate-700" x-text="form.type === 'shareholder' ? 'Nationality' : form.type === 'corporate_shareholder' ? 'Country of Incorporation' : form.type === 'related_shareholder' ? 'Nationality' : form.type === 'related_corporate_shareholder' ? 'Country of Incorporation' : form.type === 'signatories' ? 'Nationality' :
+                                               'Nationality'"></label>
+
                                                                 <select x-model="form.nationality" asp-items="Model.Nationalities"
                                                                         class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm bg-white">
                                                                     <option value="">Select</option>
@@ -2499,148 +2498,143 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
             });
 
         });
-                  
-
-                $(function () {
-            console.log("Validation script loaded");
-
-            const $form = $("#myForm");
-
-                          $form.find("#ddlCounterParty").off("change.counterParty")
-                                                            // ✅ 1. Dropdown change handler
-                        $form.find("#ddlCounterParty")
-                            .off("change.counterParty")
-                            .on("change.counterParty", function () {
-
-                                const counterParty = ($(this).val() || "").trim();
-                                const $name = $form.find("#counterPartyName");
-
-                                // Clear previous error
-                                $name.removeClass("is-invalid");
-                                $form.find("span[data-valmsg-for='CounterPartyName']")
-                                    .text("")
-                                    .removeClass("field-validation-error");
-
-                                if (counterParty && counterParty !== "0") {
-
-                                    $name.prop("required", true);
-
-                                    if (!$name.val().trim()) {
-                                        $name.addClass("is-invalid");
-
-                                                    $form.find("span[data-valmsg-for='CorporateDetailList[0].CounterPartyName']")
-                                            .text("Counter Party Name is required.")
-                                            .addClass("field-validation-error");
-                                    }
-
-                                } else {
-
-                                    $name.prop("required", false)
-                                         .removeClass("is-invalid");
-
-                                    $form.find("span[data-valmsg-for='CorporateDetailList[0].CounterPartyName']")
-                                        .text("")
-                                        .removeClass("field-validation-error");
-                                }
-                            });
 
 
-                        // ✅ 2. Input handler (separate!)
-                        $form.find("#counterPartyName")
-                            .off("input.counterParty")
-                            .on("input.counterParty", function () {
+                            $(function () {
+                console.log("Validation script loaded");
 
-                                const counterParty = ($form.find("#ddlCounterParty").val() || "").trim();
-                                const value = ($(this).val() || "").trim();
+                const $form = $("#myForm");
 
-                                if (counterParty && counterParty !== "0" && value) {
+                // ✅ 1. Dropdown change handler
+                $form.find("#ddlCounterParty")
+                    .off("change.counterParty")
+                    .on("change.counterParty", function () {
 
-                                    $(this).removeClass("is-invalid");
+                        const counterParty = (($(this).val()) || "").trim();
 
-                                    $form.find("span[data-valmsg-for='CounterPartyName']")
-                                        .text("")
-                                        .removeClass("field-validation-error");
-                                }
-                            });
+                        // ✅ FIXED selector (ASP.NET style)
+                        const $name = $form.find("#CorporateDetailList_0__CounterPartyName");
+
+                        const nameValue = ($name.val() || "").trim();
+
+                        // Clear previous error
+                        $name.removeClass("is-invalid");
+                        $form.find("span[data-valmsg-for='CorporateDetailList[0].CounterPartyName']")
+                            .text("")
+                            .removeClass("field-validation-error");
+
+                        if (counterParty && counterParty !== "0") {
+
+                            $name.prop("required", true);
+
+                            if (!nameValue) {
+                                $name.addClass("is-invalid");
+
+                                $form.find("span[data-valmsg-for='CorporateDetailList[0].CounterPartyName']")
+                                    .text("Counter Party Name is required.")
+                                    .addClass("field-validation-error");
+                            }
+
+                        } else {
+
+                            $name.prop("required", false).removeClass("is-invalid");
+
+                            $form.find("span[data-valmsg-for='CorporateDetailList[0].CounterPartyName']")
+                                .text("")
+                                .removeClass("field-validation-error");
+                        }
+                    });
 
 
-                        // ✅ Optional: trigger once on load
-                        $form.find("#ddlCounterParty").trigger("change");
-            // --- Main Form Submit Validation ---
-            $form.off("submit.customValidation").on("submit.customValidation", function (e) {
-                e.preventDefault();
+                // ✅ 2. Input handler
+                $form.find("#counterPartyName")
+                    .off("input.counterParty")
+                    .on("input.counterParty", function () {
 
-                console.log("Form submit validation started");
+                        const counterParty = ($form.find("#ddlCounterParty").val() || "").trim();
+                        const value = (($(this).val()) || "").trim();
 
-                // Clear previous error messages
-                $("span[data-valmsg-for]").text('').removeClass('field-validation-error');
-                $(".is-invalid").removeClass('is-invalid');
+                        if (counterParty && counterParty !== "0" && value) {
 
-                let isValid = true;
-                let $firstErrorElement = null;
+                            $(this).removeClass("is-invalid");
 
-                const fullName = ($("#txtCompanyName").val() || "").trim();
-                const legalStatus = ($("#LegalStatus").val() || "").trim();
-                const bussinessType = ($("#bussinessType").val() || "").trim();
-                const producttype = ($("#ddlProductType").val() || "").trim();
-                const deliveryChannel = ($("#ddlDeliveryChannel").val() || "").trim();
-                const modeofpayment = ($("#ddlModeofpayment").val() || "").trim();
+                            $form.find("span[data-valmsg-for='CorporateDetailList[0].CounterPartyName']")
+                                .text("")
+                                .removeClass("field-validation-error");
+                        }
+                    });
 
-                function markInvalid(valFor, selector, message) {
-                    $("span[data-valmsg-for='" + valFor + "']").text(message).addClass('field-validation-error');
-                    $(selector).addClass('is-invalid');
-                    if (!$firstErrorElement) $firstErrorElement = $(selector);
-                    isValid = false;
-                }
 
-                // --- Required field checks ---
-                if (fullName === "") markInvalid("CorporateDetailList[0].FirstName", "#txtCompanyName", "Company Full Name is required.");
-                if (!legalStatus || legalStatus === "0") markInvalid("CorporateDetailList[0].EntityTypeTxt", "#LegalStatus", "Legal Status is required.");
-                if (!bussinessType || bussinessType === "0") markInvalid("CorporateDetailList[0].BusinessType", "#bussinessType", "Business Type is required.");
-                if (!producttype || producttype === "0") markInvalid("CorporateDetailList[0].ProductName", "#ddlProductType", "Product Type is required.");
-                if (!deliveryChannel || deliveryChannel === "0") markInvalid("CorporateDetailList[0].DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
-                if (!modeofpayment || modeofpayment === "0") markInvalid("CorporateDetailList[0].Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
+                // ✅ Trigger once on load
+                $form.find("#ddlCounterParty").trigger("change");
 
-                            if (counterParty && counterParty !== "0") {
 
-                                    if (!counterPartyName) {
-                                        markInvalid(
-                                            "CorporateDetailList[0].CounterPartyName",
-                                            "#counterPartyName",
-                                            "Counter Party Name is required."
-                                        );
-                                    }
-                                }
+                // --- Main Form Submit Validation ---
+                $form.off("submit.customValidation").on("submit.customValidation", function (e) {
+                    e.preventDefault();
 
-                // --- Scroll to first error if invalid ---
-                if (!isValid) {
-                    if ($firstErrorElement && $firstErrorElement.length) {
-                        $("html, body").animate({ scrollTop: $firstErrorElement.offset().top - 150 }, 400);
-                        $firstErrorElement.focus();
+                    console.log("Form submit validation started");
+
+                    $("span[data-valmsg-for]").text('').removeClass('field-validation-error');
+                    $(".is-invalid").removeClass('is-invalid');
+
+                    let isValid = true;
+                    let $firstErrorElement = null;
+
+                    const fullName = ($("#txtCompanyName").val() || "").trim();
+                    const legalStatus = ($("#LegalStatus").val() || "").trim();
+                    const bussinessType = ($("#bussinessType").val() || "").trim();
+                    const producttype = ($("#ddlProductType").val() || "").trim();
+                    const deliveryChannel = ($("#ddlDeliveryChannel").val() || "").trim();
+                    const modeofpayment = ($("#ddlModeofpayment").val() || "").trim();
+
+                    function markInvalid(valFor, selector, message) {
+                        $("span[data-valmsg-for='" + valFor + "']").text(message).addClass('field-validation-error');
+                        $(selector).addClass('is-invalid');
+                        if (!$firstErrorElement) $firstErrorElement = $(selector);
+                        isValid = false;
                     }
-                    return false;
-                }
 
-                // --- Form is valid: show loader and submit ---
-                $('#loadingeffect').show();                  // Show loader
-                $('#btn-ld').prop('disabled', true);        // Disable submit button
+                    // --- Required field checks ---
+                    if (fullName === "") markInvalid("CorporateDetailList[0].FirstName", "#txtCompanyName", "Company Full Name is required.");
+                    if (!legalStatus || legalStatus === "0") markInvalid("CorporateDetailList[0].EntityTypeTxt", "#LegalStatus", "Legal Status is required.");
+                    if (!bussinessType || bussinessType === "0") markInvalid("CorporateDetailList[0].BusinessType", "#bussinessType", "Business Type is required.");
+                    if (!producttype || producttype === "0") markInvalid("CorporateDetailList[0].ProductName", "#ddlProductType", "Product Type is required.");
+                    if (!deliveryChannel || deliveryChannel === "0") markInvalid("CorporateDetailList[0].DeliveryChannelName", "#ddlDeliveryChannel", "Delivery Channel is required.");
+                    if (!modeofpayment || modeofpayment === "0") markInvalid("CorporateDetailList[0].Modeofpayment", "#ddlModeofpayment", "Mode Of Payment is required.");
 
-                // Submit form after a short delay to show loader
-                setTimeout(() => {
-                    // Remove custom validation to allow actual submit
-                    $form.off("submit.customValidation").submit();
-                }, 200); // small delay for loader animation
+                    // ✅ Counter Party validation (fixed)
+                    const counterParty = ($("#ddlCounterParty").val() || "").trim();
+                    const counterPartyName = ($("#counterPartyName").val() || "").trim();
+
+                    if (counterParty && counterParty !== "0") {
+                        if (!counterPartyName) {
+                            markInvalid(
+                                "CorporateDetailList[0].CounterPartyName",
+                                "#counterPartyName",
+                                "Counter Party Name is required."
+                            );
+                        }
+                    }
+
+                    // --- Scroll to first error ---
+                    if (!isValid) {
+                        if ($firstErrorElement && $firstErrorElement.length) {
+                            $("html, body").animate({ scrollTop: $firstErrorElement.offset().top - 150 }, 400);
+                            $firstErrorElement.focus();
+                        }
+                        return false;
+                    }
+
+                    // --- Submit ---
+                    $('#loadingeffect').show();
+                    $('#btn-ld').prop('disabled', true);
+
+                    setTimeout(() => {
+                        $form.off("submit.customValidation").submit();
+                    }, 200);
+                });
             });
-
-            // Optional: loader hide after submit complete (if using AJAX)
-            /*
-            $(document).ajaxComplete(function() {
-                $('#loadingeffect').hide();
-                $('#btn-ld').prop('disabled', false);
-                $form[0].reset();
-            });
-            */
-        });
 
 
         //   $(function () {
@@ -3586,6 +3580,14 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                     forms: [{ type: parentTab }],
                     maxForms: 5,
                     activeShareholderTab: parentTab, // track current tab
+
+                                  init() {
+                                                    // listen for dropdown change
+                                                    window.addEventListener('tab-changed', (e) => {
+                                                        if (!e.detail) return;
+                                                        this.updateFormsType(e.detail);
+                                                    });
+                                                },
 
                     // Add a new form
                     addForm() {

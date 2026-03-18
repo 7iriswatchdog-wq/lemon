@@ -71,6 +71,8 @@ namespace AML.ViewModel.ViewModels.CorporateDetail
         [JsonProperty("identifiers")]
         public List<Identifier> Identifiers { get; set; }
         public List<string> Datasets { get; set; }
+
+        public string CreationDate { get; set; }
     }
 
     public class RelEntry
