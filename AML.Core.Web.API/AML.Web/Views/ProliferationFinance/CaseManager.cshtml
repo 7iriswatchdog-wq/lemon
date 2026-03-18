@@ -24,13 +24,13 @@
         <div class="flex items-center justify-between mb-5">
             <h3 class="text-sm font-bold text-slate-800 tracking-tight">Case Filter</h3>
             <div class="flex items-center gap-3">
-                <button onclick="resetFilters()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-6 rounded-md text-sm transition-all shadow-sm">
+                <button onclick="resetFilters()" class="bg-blue-600 hover:bg-blue-600 text-white font-bold h-10 px-6 rounded-md text-sm transition-all shadow-sm">
                     Reset
                 </button>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
             <!-- Start Date -->
             <div class="space-y-2">
                 <label class="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
@@ -53,10 +53,19 @@
                 </select>
             </div>
 
-            <!-- Search Button -->
-            <div class="flex items-center gap-2">
-                <button onclick="loadCases()" class="h-10 flex-1 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm flex items-center justify-center gap-2">
-                    <i data-lucide="search" class="w-4 h-4"></i> Apply Filter
+            <!-- Buttons -->
+            <div class="flex items-center gap-3">
+                <!-- Apply Filter -->
+                <button onclick="loadCases()" id="applyBtn"
+                        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold h-10 px-5 rounded-md text-sm transition">
+                    Apply
+                </button>
+
+                <!-- Export -->
+                <button onclick="ExportList(false)" id="exportBtn"
+                        class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-5 rounded-md text-sm transition">
+                    <i data-lucide="download" class="h-4 w-4"></i>
+                    Export
                 </button>
             </div>
         </div>
@@ -79,7 +88,7 @@
         <div class="flex flex-col sm:flex-row gap-4 items-center w-full">
             <div class="relative flex-1 w-full">
                 <i data-lucide="search" class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                <input type="text" id="searchInput" placeholder="Quick search..." onkeyup="filterTable()"
+                <input type="text" id="searchInput" placeholder="Global Search" onkeyup="filterTable()"
                        class="pl-10 h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 shadow-sm transition-all placeholder:text-slate-500">
             </div>
         </div>
@@ -91,19 +100,15 @@
                 <div class="text-sm font-bold text-slate-600 animate-pulse tracking-wide">Loading Case Data...</div>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left whitespace-nowrap min-w-[1200px]">
-                    <thead class="text-[10px] text-slate-500 bg-white border-b border-slate-200">
+                <table class="w-full text-sm text-left table-fixed border-collapse">
+                    <thead class="text-[12px] text-slate-500 bg-white border-b border-slate-200">
                         <tr>
-                            <th class="px-2 py-4 font-small h-12">ID</th>
-                            <th class="px-2 py-4 font-small h-12">Created on</th>
-                            <th class="px-2 py-4 font-small h-12">Updated on</th>
-                            <th class="px-2 py-4 font-small h-12">Product Name</th>
-                            <th class="px-2 py-4 font-small h-12">HS Code</th>
-                            <th class="px-2 py-4 font-small h-12">CAS Number</th>
-                            <th class="px-2 py-4 font-small h-12">ECCN</th>
-                            <th class="px-2 py-4 font-small h-12">Synonym</th>
-                            <th class="px-2 py-4 font-small h-12 text-center">Status</th>
-                            <th class="px-2 py-4 font-small h-12 text-center">Action</th>
+                            <th class="px-2 py-4 h-12">ID</th>
+                            <th class="px-2 py-4 h-12">Created on</th>
+                            <th class="px-2 py-4 h-12">Updated on</th>
+                            <th class="px-2 py-4 h-12">Search Detail</th>
+                            <th class="px-2 py-4 h-12">Status</th>
+                            <th class="px-2 py-4 h-12">Action</th>
                         </tr>
                     </thead>
                     <tbody id="casesTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
@@ -289,7 +294,7 @@
 
                 rows += `
                 <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                    <td class="px-2 py-4 font-bold text-blue-600">${caseRefId}</td>
+                    <td class="px-2 py-4 font-normal text-slate-700">${caseRefId}</td>
                     <td class="px-2 py-4">
                         <div class="text-xs text-slate-700">
                             <div>${created.date}</div>
@@ -302,18 +307,15 @@
                             <div class="ml-2 text-slate-400 font-normal">${updated.time !== '-' ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}</div>
                         </div>
                     </td>
-                    <td class="px-2 py-4 text-slate-700 font-medium whitespace-normal max-w-[200px]">
-                        <div class="line-clamp-2" title="${chemName}">${chemName}</div>
-                    </td>
-                    <td class="px-2 py-4 text-slate-500 font-medium whitespace-nowrap">${hsCode}</td>
-                    <td class="px-2 py-4 text-slate-500 font-medium whitespace-nowrap">${casNum}</td>
-                    <td class="px-2 py-4 text-slate-500 font-medium whitespace-nowrap">${eccn}</td>
-                    <td class="px-2 py-4 text-slate-500 font-medium whitespace-normal max-w-[200px]">
-                        <div class="line-clamp-2" title="${synonym}">${synonym}</div>
+                    <td class="px-2 py-4 text-slate-700 font-medium" 
+                        title="Product: ${chemName}\nHS Code: ${hsCode}\nCAS: ${casNum}\nECCN: ${eccn}\nSynonym: ${synonym}">
+                        <div class="truncate">
+                            ${[chemName, hsCode, casNum, eccn, synonym].find(x => x && x !== '-' && x !== 'N/A') || '-'}
+                        </div>
                     </td>
                     <td class="px-2 py-4 text-center">
                         <div class="flex items-center justify-center">
-                            <span class="flex w-24 items-center justify-center px-3 py-1.5 rounded-full text-[10px] font-bold uppercase ${statusClass} ring-1 ring-inset ${statusClass.replace('bg-', 'ring-').replace('100', '200')}">
+                            <span class="flex w-full items-center justify-center px-2 py-1 rounded-full text-[12px] font-bold ${statusClass} ring-1 ring-inset ${statusClass.replace('bg-', 'ring-').replace('100', '200')}">
                                 ${status}
                             </span>
                         </div>
@@ -321,7 +323,7 @@
                     <td class="px-2 py-4">
                          <div class="flex items-center justify-center gap-2">
                             <a href="/ProliferationFinance/Process/${id}" class="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1">
-                                Process <span class="text-[10px]">→</span>
+                                Process
                              </a>
                         </div>
                     </td>

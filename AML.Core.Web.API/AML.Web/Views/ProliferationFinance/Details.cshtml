@@ -5,6 +5,7 @@
     ViewData["Title"] = "Case Details";
     Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
     var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+    var type = Context.Request.Query["type"].ToString().ToLower();
 }
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -217,24 +218,27 @@
                 </div>
             </div>
             <div class="report-actions">
-                <a href="@Url.Action("DownloadDetails", "ProliferationFinance", new { id = Model.CaseId })" class="btn-secondary">
-                    <i class="fa fa-download mr-2"></i> Download
+                <a href="@Url.Action("DownloadDetails", "ProliferationFinance", new { id = Model.CaseId })" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 px-6 rounded-md text-sm transition-all shadow-sm flex items-center justify-center gap-2 no-underline">
+                    <i class="fa fa-download"></i> Download
                 </a>
-                <a href="/ProliferationFinance/Process/@Model.CaseId" class="btn-secondary details-back-btn">
-                    <i class="fa fa-arrow-left mr-2"></i> Back
+                <a href="/ProliferationFinance/Process/@Model.CaseId" class="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold h-9 px-6 rounded-md text-sm transition-all shadow-sm flex items-center justify-center gap-2 no-underline">
+                    <i class="fa fa-arrow-left"></i> Back
                 </a>
             </div>
         </div>
 
         <div class="report-content">
             <!-- Tabs -->
-            <div class="tab-nav">
-                <button class="tab-link active" onclick="switchTab('chemical', this)">Chemical Matching</button>
-                <button class="tab-link" onclick="switchTab('non-chemical', this)">Non-Chemical Matching</button>
-            </div>
+            @if (string.IsNullOrEmpty(type))
+            {
+                <div class="tab-nav">
+                    <button class="tab-link active" onclick="switchTab('chemical', this)">Chemical Matching</button>
+                    <button class="tab-link" onclick="switchTab('non-chemical', this)">Non-Chemical Matching</button>
+                </div>
+            }
 
             <!-- Chemical Tab -->
-            <div id="chemical-tab" class="tab-pane">
+            <div id="chemical-tab" class="tab-pane" style="@(type == "non-chemical" ? "display: none;" : "")">
                 <div class="report-section">
                     <h3 class="report-section-title">Case Summary</h3>
                     <div class="report-grid-3">
@@ -308,7 +312,7 @@
             </div>
 
             <!-- Non-Chemical Tab -->
-            <div id="non-chemical-tab" class="tab-pane" style="display: none;">
+            <div id="non-chemical-tab" class="tab-pane" style="@(type == "non-chemical" ? "" : "display: none;")">
                 <div class="report-section">
                     <h3 class="report-section-title">Matched Content Snippets</h3>
                     <div class="space-y-6">
