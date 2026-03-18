@@ -136,6 +136,46 @@ namespace AML.Web.Controllers.ProliferationFinance
         }
 
         [HttpPost]
+        public IActionResult SearchChemicalsOnly([FromBody] ProliferationFinanceModel model)
+        {
+            try
+            {
+                if (model.CustomerType == "Chemical")
+                {
+                    var searchDto = new ProliferationFinanceCaseDTO
+                    {
+                        HsCode = model.HsCode,
+                        CasNumber = model.CasNumber,
+                        Eccn = model.Eccn,
+                        ChemicalName = model.ChemicalName,
+                        SynonymName = model.SynonymName
+                    };
+                    var searchResponse = _proliferationFinanceService.SearchChemicals(searchDto);
+                    if (searchResponse.Status == 200)
+                    {
+                        return Json(new { success = true, results = searchResponse.Result });
+                    }
+                    return Json(new { success = false, message = searchResponse.Message });
+                }
+                else
+                {
+                    // For non-chemical, search in PDF
+                    var pdfResponse = _proliferationFinanceService.SearchNonChemical(model.SearchKeyword ?? model.ChemicalName);
+                    if (pdfResponse.Status == 200 && !string.IsNullOrEmpty(pdfResponse.Result))
+                    {
+                        // Wrap the single paragraph result in a list as expected by the frontend
+                        return Json(new { success = true, results = new List<string> { pdfResponse.Result } });
+                    }
+                    return Json(new { success = true, results = new List<string>() });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
         public IActionResult SearchChemicals([FromBody] ProliferationFinanceModel model)
         {
             try
@@ -451,6 +491,32 @@ namespace AML.Web.Controllers.ProliferationFinance
                         model.CasNumber = chem.CasNumber;
                         model.Eccn = chem.Eccn;
                         model.SynonymName = chem.SynonymName;
+                    }
+                }
+                else if (model.CustomerType == "Goods" || model.CustomerType == "Chemical")
+                {
+                    // Re-fetch ALL potential hits to display in a list if requested
+                    var searchDto = new AML.DTO.DTO.ProliferationFinance.ProliferationFinanceCaseDTO
+                    {
+                        ChemicalName = model.ChemicalName,
+                        HsCode = model.HsCode,
+                        CasNumber = model.CasNumber,
+                        Eccn = model.Eccn,
+                        SynonymName = model.SynonymName
+                    };
+
+                    var searchResponse = _proliferationFinanceService.SearchChemicals(searchDto);
+                    if (searchResponse.Status == 200 && searchResponse.Result != null)
+                    {
+                        model.MatchedChemicals = searchResponse.Result
+                            .GroupBy(c => new { 
+                                Name = (c.ChemicalName ?? "").Trim().ToLower(), 
+                                Hs = (c.HsCode ?? "").Trim().ToLower(), 
+                                Cas = (c.CasNumber ?? "").Trim().ToLower(), 
+                                Ec = (c.Eccn ?? "").Trim().ToLower() 
+                            })
+                            .Select(g => g.First())
+                            .ToList();
                     }
                 }
 
@@ -825,7 +891,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
 
-                            var spStr1 = str1.Result.Split('Ø');
+                            var spStr1 = str1.Result.Split('Ã˜');
                             var entlovId = spStr1[2];
                             var buslovId = spStr1[4];
                             var incorplovId = spStr1[3];
@@ -846,7 +912,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                             {
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
-                            var spStr = str.Result.Split('Ø');
+                            var spStr = str.Result.Split('Ã˜');
                             var entId = spStr[2];
                             var busId = spStr[4];
                             var incorpId = spStr[3];

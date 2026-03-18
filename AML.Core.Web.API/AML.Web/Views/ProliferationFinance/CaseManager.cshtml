@@ -107,6 +107,7 @@
                             <th class="px-2 py-4 h-12">Created on</th>
                             <th class="px-2 py-4 h-12">Updated on</th>
                             <th class="px-2 py-4 h-12">Search Detail</th>
+                            <th class="px-2 py-4 h-12">Datasets</th>
                             <th class="px-2 py-4 h-12">Status</th>
                             <th class="px-2 py-4 h-12">Action</th>
                         </tr>
@@ -281,6 +282,19 @@
                 const eccn         = item.eccn         || item.Eccn         || '-';
                 const synonym      = item.synonymName  || item.SynonymName  || '-';
                 const status       = item.status       || item.Status       || 'Pending';
+                const hitDetails   = item.searchHitDetails || item.SearchHitDetails || '';
+
+                let datasets = [];
+                const hasChemical = (chemName && chemName !== '-' && chemName !== 'N/A') || 
+                                    (hsCode && hsCode !== '-' && hsCode !== 'N/A') || 
+                                    (casNum && casNum !== '-' && casNum !== 'N/A') || 
+                                    (eccn && eccn !== '-' && eccn !== 'N/A') || 
+                                    (synonym && synonym !== '-' && synonym !== 'N/A');
+                const hasNonChemical = hitDetails && hitDetails.trim() !== '';
+
+                if (hasChemical) datasets.push('Chemical');
+                if (hasNonChemical) datasets.push('Non-Chemical');
+                const datasetstr = datasets.length > 0 ? datasets.join(', ') : 'Chemical';
 
                 const created = formatDateTime(createdDate);
                 const updated = formatDateTime(updatedDate);
@@ -309,9 +323,14 @@
                     </td>
                     <td class="px-2 py-4 text-slate-700 font-medium" 
                         title="Product: ${chemName}\nHS Code: ${hsCode}\nCAS: ${casNum}\nECCN: ${eccn}\nSynonym: ${synonym}">
-                        <div class="truncate">
+                        <div class="truncate text-[12px]">
                             ${[chemName, hsCode, casNum, eccn, synonym].find(x => x && x !== '-' && x !== 'N/A') || '-'}
                         </div>
+                    </td>
+                    <td class="px-2 py-4">
+                        <span class="px-2 py-0.5 rounded text-slate-600 text-[12px] font-bold">
+                            ${datasetstr}
+                        </span>
                     </td>
                     <td class="px-2 py-4 text-center">
                         <div class="flex items-center justify-center">
@@ -321,7 +340,7 @@
                         </div>
                     </td>
                     <td class="px-2 py-4">
-                         <div class="flex items-center justify-center gap-2">
+                         <div class="flex items-center justify-start gap-2">
                             <a href="/ProliferationFinance/Process/${id}" class="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1">
                                 Process
                              </a>

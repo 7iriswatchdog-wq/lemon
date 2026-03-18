@@ -176,95 +176,85 @@
                                             <td class="px-4 py-3 align-top text-slate-400 italic">No matches found in scan</td>
                                             <td class="px-4 py-3 text-slate-300">-</td>
                                             <td class="px-4 py-3 text-slate-300">-</td>
-                                            <td class="px-4 py-3 text-slate-300">-</td>
+                                            <td colspan="4" class="px-4 py-3 text-slate-400 italic text-center">No matches found in scan</td>
                                         </tr>
                                     }
                                 }
                                 else if (Model.CustomerType == "Goods" || Model.CustomerType == "Chemical")
                                 {
-                                    var hitIndex = 0;
-                                    <!-- 1. Database Matches -->
-                                    if (Model.MatchedChemicals != null && Model.MatchedChemicals.Count > 0)
+                                    <!-- 1. Chemical Summary Row -->
+                                    @if (Model.MatchedChemicals != null && Model.MatchedChemicals.Count > 0)
                                     {
-                                        foreach (var match in Model.MatchedChemicals)
-                                        {
-                                            var savedHit = Model.MongoHits?.FirstOrDefault(h => h.ChemicalId == match.Id);
-                                            <tr class="bg-white hover:bg-slate-50 transition-colors search-hit-row" data-index="@hitIndex" data-type="Chemical">
-                                                <td class="px-4 py-3 font-bold text-slate-900">
-                                                    <div class="flex items-center gap-2">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
-                                                        <div class="truncate" title="@match.ChemicalName">
-                                                            @(!string.IsNullOrEmpty(match.ChemicalName) ? match.ChemicalName : "-")
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="px-4 py-3">
-                                                    <a href="/ProliferationFinance/Details/@Model.CaseId?chemicalId=@match.Id&type=chemical" class="inline-flex items-center justify-center h-6 px-3 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95">
-                                                        Details
-                                                    </a>
-                                                </td>
-                                                <td class="px-4 py-3">
-                                                    <select class="search-decision-select h-7 w-full border border-slate-200 rounded-md px-2 text-[10px] font-bold text-slate-700 bg-white focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none">
-                                                        <option value="">Select Action</option>
-                                                        <option value="True Match" selected="@(savedHit?.Decision == "True Match")">True Match</option>
-                                                        <option value="False Match" selected="@(savedHit?.Decision == "False Match")">False Match</option>
-                                                        <option value="Potential Match" selected="@(savedHit?.Decision == "Potential Match")">Potential Match</option>
-                                                        <option value="No Match" selected="@(savedHit?.Decision == "No Match")">No Match</option>
-                                                    </select>
-                                                </td>
-                                                <td class="px-4 py-3">
-                                                    <textarea class="search-remarks-area h-7 w-full border border-slate-200 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all" placeholder="Enter matching remarks...">@(savedHit?.Remarks ?? "")</textarea>
-                                                </td>
-                                            </tr>
-                                            hitIndex++;
-                                        }
+                                        var savedHit = Model.MongoHits?.FirstOrDefault(h => h.SearchType == "Chemical" || h.ChemicalId > 0);
+                                        <tr class="bg-white hover:bg-slate-50 transition-colors search-hit-row" data-index="0" data-type="Chemical">
+                                            <td class="px-4 py-3 font-bold text-slate-900">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                                                    <div class="truncate">Chemical Matches (@Model.MatchedChemicals.Count)</div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <a href="/ProliferationFinance/Details/@Model.CaseId?type=chemical" class="inline-flex items-center justify-center h-6 px-3 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95">
+                                                    Details
+                                                </a>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <select class="search-decision-select h-7 w-full border border-slate-200 rounded-md px-2 text-[10px] font-bold text-slate-700 bg-white focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none">
+                                                    <option value="">Select Action</option>
+                                                    <option value="True Match" selected="@(savedHit?.Decision == "True Match")">True Match</option>
+                                                    <option value="False Match" selected="@(savedHit?.Decision == "False Match")">False Match</option>
+                                                    <option value="Potential Match" selected="@(savedHit?.Decision == "Potential Match")">Potential Match</option>
+                                                    <option value="No Match" selected="@(savedHit?.Decision == "No Match")">No Match</option>
+                                                </select>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <textarea class="search-remarks-area h-7 w-full border border-slate-200 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all" placeholder="Enter matching remarks...">@(savedHit?.Remarks ?? "")</textarea>
+                                            </td>
+                                        </tr>
                                     }
-                                    else
+                                    else if (Model.CustomerType != "Non-Chemical")
                                     {
-                                        <tr class="bg-white hover:bg-slate-50 transition-colors" data-index="0">
-                                            <td colspan="@(Model.CustomerType == "Goods" ? 6 : 5)" class="px-4 py-3 text-slate-400 italic">No matches found in UAE Control List</td>
-                                            <td class="px-4 py-3 text-slate-300">-</td>
-                                            <td class="px-4 py-3 text-slate-300">-</td>
-                                            <td class="px-4 py-3 text-slate-300">-</td>
+                                        <tr class="bg-white hover:bg-slate-50 transition-colors">
+                                            <td colspan="4" class="px-4 py-3 text-slate-400 italic text-center">No chemical matches found</td>
                                         </tr>
                                     }
 
-                                    <!-- 2. PDF Snippet Rows -->
+                                    <!-- 2. Non-Chemical Summary Row -->
                                     @if (!string.IsNullOrEmpty(Model.SearchHitDetails))
                                     {
                                         var snippets = Model.SearchHitDetails.Split(new[] { "\n\n", "---" }, StringSplitOptions.RemoveEmptyEntries);
-                                        foreach (var snip in snippets)
-                                        {
-                                            var savedHit = Model.MongoHits?.FirstOrDefault(h => h.Snippet == snip && h.SearchType == "Non-Chemical");
-                                            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors search-hit-row" data-index="@hitIndex" data-type="Non-Chemical">
-                                                <td class="px-4 py-2 border-l-2 border-blue-200">
-                                                    <div class="flex items-start gap-3">
-                                                        <i class="fa fa-file-pdf-o text-blue-400 mt-1"></i>
-                                                        <div class="pdf-snippet text-[10px] text-slate-600 leading-relaxed italic truncate font-medium" title="@snip">
-                                                            "@snip.Trim()" <span class="ml-2 text-[9px] font-bold text-blue-600 uppercase">[PDF Snippet]</span>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="px-4 py-2">
-                                                    <a href="/ProliferationFinance/Details/@Model.CaseId?type=non-chemical" class="inline-flex items-center justify-center h-6 px-3 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95">
-                                                        Details
-                                                    </a>
-                                                </td>
-                                                <td class="px-4 py-2">
-                                                    <select class="search-decision-select h-7 w-full border border-slate-200 rounded-md px-2 text-[10px] font-bold text-slate-700 bg-white focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none">
-                                                        <option value="">Select Action</option>
-                                                        <option value="True Match" selected="@(savedHit?.Decision == "True Match")">True Match</option>
-                                                        <option value="False Match" selected="@(savedHit?.Decision == "False Match")">False Match</option>
-                                                        <option value="Potential Match" selected="@(savedHit?.Decision == "Potential Match")">Potential Match</option>
-                                                        <option value="No Match" selected="@(savedHit?.Decision == "No Match")">No Match</option>
-                                                    </select>
-                                                </td>
-                                                <td class="px-4 py-2">
-                                                    <textarea class="search-remarks-area h-7 w-full border border-slate-100 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all bg-white" placeholder="Snippet remarks...">@(savedHit?.Remarks ?? "")</textarea>
-                                                </td>
-                                            </tr>
-                                            hitIndex++;
-                                        }
+                                        var savedHit = Model.MongoHits?.FirstOrDefault(h => h.SearchType == "Non-Chemical" || !string.IsNullOrEmpty(h.Snippet));
+                                        <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors search-hit-row" data-index="1" data-type="Non-Chemical">
+                                            <td class="px-4 py-3 font-bold text-slate-900 border-l-2 border-blue-200">
+                                                <div class="flex items-center gap-2">
+                                                    <i class="fa fa-file-pdf-o text-blue-500"></i>
+                                                    <div class="truncate">Non-Chemical Matches (@snippets.Length)</div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <a href="/ProliferationFinance/Details/@Model.CaseId?type=non-chemical" class="inline-flex items-center justify-center h-6 px-3 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95">
+                                                    Details
+                                                </a>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <select class="search-decision-select h-7 w-full border border-slate-200 rounded-md px-2 text-[10px] font-bold text-slate-700 bg-white focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none">
+                                                    <option value="">Select Action</option>
+                                                    <option value="True Match" selected="@(savedHit?.Decision == "True Match")">True Match</option>
+                                                    <option value="False Match" selected="@(savedHit?.Decision == "False Match")">False Match</option>
+                                                    <option value="Potential Match" selected="@(savedHit?.Decision == "Potential Match")">Potential Match</option>
+                                                    <option value="No Match" selected="@(savedHit?.Decision == "No Match")">No Match</option>
+                                                </select>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <textarea class="search-remarks-area h-7 w-full border border-slate-200 rounded-md p-1.5 resize-none text-[10px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all" placeholder="Enter matching remarks...">@(savedHit?.Remarks ?? "")</textarea>
+                                            </td>
+                                        </tr>
+                                    }
+                                    else if (Model.CustomerType == "Goods")
+                                    {
+                                        <tr class="bg-white hover:bg-slate-50 transition-colors">
+                                            <td colspan="4" class="px-4 py-3 text-slate-400 italic text-center">No non-chemical matches found</td>
+                                        </tr>
                                     }
                                 }
                                 else
