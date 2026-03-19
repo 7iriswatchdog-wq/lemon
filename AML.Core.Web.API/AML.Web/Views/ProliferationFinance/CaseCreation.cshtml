@@ -53,7 +53,7 @@
                     <button @@click="sidebarOpen = !sidebarOpen" class="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500">
                         <i data-lucide="panel-left-close" class="w-5 h-5"></i>
                     </button>
-                    <h2 class="text-xl font-bold text-slate-900 tracking-tight">Proliferation Finance - Case Creation</h2>
+                    <h2 class="text-xl font-bold text-slate-900 tracking-tight">Case Creation</h2>
                 </div>
             </header>
 
@@ -259,7 +259,12 @@
                                     <div x-show="showGoodsSearchResults" x-transition class="space-y-6 pt-10 border-t border-slate-100">
                                         <div class="flex items-center justify-between">
                                             <h3 class="text-base font-bold text-slate-900 tracking-tight">Search Results</h3>
-                                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest" x-text="goodsSearchResults.length + ' Matches Found'"></span>
+                                            <div class="flex items-center gap-4">
+                                                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest" x-text="goodsSearchResults.length + ' Matches Found'"></span>
+                                                <button @@click="downloadAllResultsPDF()" title="Download Results" class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition-colors">
+                                                    Download Report
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <!-- Chemical Result Cards -->
@@ -293,7 +298,7 @@
                                                             </div>
                                                         </div>
                                                         <div class="flex border-t border-slate-100">
-                                                            <button @@click="openModal(result)" class="flex-1 h-10 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-[11px] transition-colors border-r border-slate-100 uppercase tracking-wider">
+                                                            <button @@click="openModal(result)" class="flex-1 h-10 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-[11px] transition-colors uppercase tracking-wider">
                                                                 View Details
                                                             </button>
                                                         </div>
@@ -868,6 +873,60 @@
                     this.isModalOpen = true;
                 },
 
+                downloadAllResultsPDF() {
+                    if (this.goodsSearchResults.length === 0) return;
+
+                    try {
+                        toastr.info('Generating Master PDF...', { showDuration: 200, timeOut: 2000 });
+                        const payload = {
+                            CorporateId: this.formData.corporateId || '-',
+                            CompanyName: this.formData.companyName || '-',
+                            CustomerType: this.selectedSearchType === 'chemical' ? 'Chemical' : 'Non-Chemical'
+                        };
+
+                        if (this.selectedSearchType === 'chemical') {
+                            const terms = [];
+                            if (this.searchForm.chemical.chemicalName) terms.push("Chemical Name: " + this.searchForm.chemical.chemicalName);
+                            if (this.searchForm.chemical.hsCode) terms.push("HS Code: " + this.searchForm.chemical.hsCode);
+                            if (this.searchForm.chemical.casNumber) terms.push("CAS Number: " + this.searchForm.chemical.casNumber);
+                            if (this.searchForm.chemical.eccn) terms.push("ECCN: " + this.searchForm.chemical.eccn);
+                            if (this.searchForm.chemical.synonymName) terms.push("Synonym Name: " + this.searchForm.chemical.synonymName);
+                            
+                            payload.MatchedChemicalName = terms.join("\n") || "-";
+
+                            this.goodsSearchResults.forEach((res, index) => {
+                                payload[`MatchedChemicals[${index}].ChemicalName`] = res.chemicalName || res.ChemicalName || '-';
+                                payload[`MatchedChemicals[${index}].HsCode`] = res.hsCode || res.HsCode || '-';
+                                payload[`MatchedChemicals[${index}].CasNumber`] = res.casNumber || res.CasNumber || '-';
+                                payload[`MatchedChemicals[${index}].Eccn`] = res.eccn || res.Eccn || '-';
+                                payload[`MatchedChemicals[${index}].SynonymName`] = res.synonymName || res.SynonymName || '-';
+                            });
+                        } else {
+                            payload.MatchedChemicalName = this.searchForm.nonchemical.keyword || '-';
+                            payload.SearchHitDetails = this.goodsSearchResults.join('|||');
+                        }
+                        
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = '/ProliferationFinance/DownloadGoodsSearchPDF';
+                        
+                        for (const key in payload) {
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = key;
+                            input.value = payload[key];
+                            form.appendChild(input);
+                        }
+                        
+                        document.body.appendChild(form);
+                        form.submit();
+                        form.remove();
+                    } catch(e) {
+                        console.error(e);
+                        toastr.error('Error generating PDF.');
+                    }
+                },
+
                 handleFileSelect(file) {
                     if (!file) return;
                     this.selectedFile = file;
@@ -1051,7 +1110,7 @@
                         </div>
                     </div>
                     <p class="text-sm font-medium text-slate-500 leading-relaxed px-4">
-                        Your case has been successfully created. <br><br>
+                        <br><br><br>
                     </p>
                 </div>
                 <div class="grid grid-cols-2 gap-4 w-full pt-4">

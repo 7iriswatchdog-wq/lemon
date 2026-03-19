@@ -734,6 +734,28 @@ namespace AML.Web.Controllers.ProliferationFinance
             }
         }
 
+        [HttpPost("/ProliferationFinance/DownloadGoodsSearchPDF")]
+        public async Task<IActionResult> DownloadGoodsSearchPDF([FromForm] ProliferationFinanceModel model)
+        {
+            try
+            {
+                // Assign sensible defaults for non-DB cases
+                model.CreatedOn = DateTime.Now;
+                if (string.IsNullOrEmpty(model.CustomerType)) model.CustomerType = "Chemical";
+                
+                string html = await _viewRenderService.RenderToStringAsync("ProliferationFinance/GoodsSeach_PDF", model);
+                var pdfBytes = _exportDataService.HtmlToPDFforChecklistLogs(html);
+
+                string fileName = $"GoodsSearch_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+                
+                return File(pdfBytes, "application/pdf", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Error generating PDF: " + ex.Message);
+            }
+        }
+
         [HttpGet]
         public IActionResult GetComments(int caseId)
         {
