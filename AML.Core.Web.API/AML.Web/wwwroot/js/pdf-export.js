@@ -53,78 +53,50 @@ async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.p
             position: absolute;
             left: -9999px;
             top: 0;
-            width: 1024px; 
+            width: 800px; 
             background: white;
-            padding: 20px;
+            padding: 0;
         `;
         tempContainer.appendChild(clone);
         document.body.appendChild(tempContainer);
 
         // --- STEP 3: TRANSFORM CLONE FOR PDF ---
 
-        // A. Layout Stacking (Two-column to Single-column)
+        // A. Layout Stability (Convert Flex to Block for PDF)
+        clone.querySelectorAll('.flex-col, .flex-row, .flex, .grid').forEach(el => {
+            // We only convert major containers that might cause "gaps" in PDF renderers
+            if (el.classList.contains('rounded-lg') || el.classList.contains('card') || el.classList.contains('rounded-xl')) {
+                el.style.display = 'block';
+                el.style.overflow = 'visible';
+            }
+        });
+
         const leftCol = clone.querySelector('#leftColumn');
         const rightCol = clone.querySelector('#rightColumn');
         if (leftCol && rightCol) {
-            const container = leftCol.parentElement;
-            container.style.display = 'block'; 
-            leftCol.style.width = '100%';
-            leftCol.style.marginBottom = '20px';
-            rightCol.style.width = '100%';
-            
-            // Remove constraints on containers
-            const constrained = rightCol.querySelectorAll('[class*="max-h-"], [class*="min-h-"], [style*="height"]');
-            constrained.forEach(el => {
-                el.style.maxHeight = 'none';
-                el.style.minHeight = '0';
-                el.style.height = 'auto';
-                el.style.overflow = 'visible';
-            });
+            // If they are side-by-side but causing overflow, we can stack, 
+            // but for Process_PDF we expect them to be well-behaved.
+            // leftCol.parentElement.style.display = 'block'; 
         }
 
         // B. Clear All Loaders, Spinners, and Pagination artifacts
         const uiArtifacts = clone.querySelectorAll('.dt-loader, .spinner-grow, .loader, .loadingeffect, .slider-pagination, .no-pdf, button, .pagination, .loading-dots');
         uiArtifacts.forEach(el => el.remove());
 
-        // C. Transform Inputs/Selects to clean Static Text
+        // C. Clean Dynamic Inputs (keep local styles)
         clone.querySelectorAll('[data-pdf-val]').forEach(el => {
             const val = el.getAttribute('data-pdf-val');
-            const replacement = document.createElement('div');
-            
-            if (el.tagName === 'SELECT') {
-                replacement.className = 'inline-flex items-center px-4 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-100 ml-auto min-w-[80px] justify-center';
-                replacement.innerText = (val === '--Select--' || !val) ? '--EMPTY--' : val;
-            } else if (el.tagName === 'TEXTAREA') {
-                replacement.className = 'text-[11px] font-medium text-slate-700 p-3 border border-slate-100 rounded bg-slate-50 mt-1 whitespace-pre-wrap w-full';
-                replacement.innerText = val || '(No remarks provided)';
-            } else {
-                replacement.className = 'text-[11px] font-semibold text-slate-800';
-                replacement.innerText = val || '-';
-            }
-            
+            const replacement = document.createElement('span');
+            replacement.innerText = val || '-';
+            // Inherit parent classes for minimal disruption
+            if (el.className) replacement.className = el.className;
             el.parentNode.replaceChild(replacement, el);
         });
 
-        // D. Table Polish (Fixing "Trimmed Columns")
+        // D. Respect Existing Table Styles
         clone.querySelectorAll('table').forEach(table => {
             table.style.width = '100%';
-            table.style.tableLayout = 'auto'; // Change to auto to allow columns to fit content better
-            table.style.borderCollapse = 'collapse';
-            table.classList.remove('table-fixed');
-            
-            table.querySelectorAll('th, td').forEach(cell => {
-                cell.style.padding = '8px 6px';
-                cell.style.fontSize = '10px';
-                cell.style.wordBreak = 'break-word';
-                cell.style.borderBottom = '1px solid #f1f5f9';
-                cell.style.textAlign = 'left';
-            });
-
-            // Specific fix for Search Results table headers
-            table.querySelectorAll('thead th').forEach(th => {
-                th.style.backgroundColor = '#f8fafc';
-                th.style.color = '#64748b';
-            });
+            // We trust Process_PDF for tableLayout, borderCollapse, padding, and font sizes
         });
 
         // E. Expand all Overflow containers
@@ -135,14 +107,14 @@ async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.p
         });
 
         // F. Page Break Optimization
-        clone.querySelectorAll('.card, .info-box, table, tr, .process-section').forEach(el => {
+        clone.querySelectorAll('tr, .info-box, .pl-6.relative, .timeline-item').forEach(el => {
             el.style.pageBreakInside = 'avoid';
             el.style.breakInside = 'avoid';
         });
 
         // --- STEP 4: GENERATE PDF ---
         const opt = {
-            margin:       [10, 5, 10, 5], 
+            margin:       [5, 12, 10, 12], 
             filename:     filename,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { 
@@ -150,12 +122,18 @@ async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.p
                 useCORS: true, 
                 letterRendering: true,
                 backgroundColor: '#ffffff',
-                logging: false
+                logging: false,
+                scrollY: 0,
+                scrollX: 0
             },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+            pagebreak:    { mode: ['css', 'legacy'] }
         };
 
+        // G. Add a small delay for Lucide icons and Tailwind styles to settle in clone
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        window.scrollTo(0, 0); // Ensure window is at top
         await html2pdf().set(opt).from(clone).save();
 
         // Cleanup

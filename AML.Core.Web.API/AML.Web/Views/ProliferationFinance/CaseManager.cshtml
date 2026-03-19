@@ -33,23 +33,38 @@
         <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
             <!-- Start Date -->
             <div class="space-y-2">
-                <label class="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
+                <label class="text-[12px] font-bold text-slate-500 tracking-wider">Start Date</label>
                 <input type="date" id="startDate" class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all">
             </div>
 
             <!-- End Date -->
             <div class="space-y-2">
-                <label class="text-[12px] font-bold text-slate-500 uppercase tracking-wider">End Date</label>
+                <label class="text-[12px] font-bold text-slate-500 tracking-wider">End Date</label>
                 <input type="date" id="endDate" class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all">
             </div>
 
-            <!-- Customer Type -->
+            <!-- Datasets -->
             <div class="space-y-2">
-                <label class="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Customer Type</label>
+                <label class="text-[12px] font-bold text-slate-500 tracking-wider">Datasets</label>
                 <select id="customerTypeFilter" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all appearance-none">
                     <option value="0">All</option>
                     <option value="Chemical">Chemical</option>
                     <option value="Non-Chemical">Non-Chemical</option>
+                </select>
+            </div>
+
+            <!-- Status -->
+            <div class="space-y-2">
+                <label class="text-[12px] font-bold text-slate-500 tracking-wider">Status</label>
+                <select id="statusFilter" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all appearance-none">
+                    <option value="0">All</option>
+                    <option value="Pending">Pending</option>
+                    <option value="True Match">True Match</option>
+                    <option value="False Match">False Match</option>
+                    <option value="Potential Match">Potential Match</option>
+                    <option value="No Match">No Match</option>
+                    <option value="Submit to Senior Management">Submit to Senior Management</option>
+                    <option value="Hold">Hold</option>
                 </select>
             </div>
 
@@ -88,7 +103,7 @@
         <div class="flex flex-col sm:flex-row gap-4 items-center w-full">
             <div class="relative flex-1 w-full">
                 <i data-lucide="search" class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                <input type="text" id="searchInput" placeholder="Global Search" onkeyup="filterTable()"
+                <input type="text" id="searchInput" placeholder="Search by Search Detail" onkeyup="filterTable()"
                        class="pl-10 h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 shadow-sm transition-all placeholder:text-slate-500">
             </div>
         </div>
@@ -206,6 +221,22 @@
     let filteredCases = [];
 
     $(document).ready(function() {
+        // Restrict End Date to today (local time)
+        const todayLocal = new Date().toLocaleDateString('en-CA'); // yyyy-mm-dd
+        const endDateInput = document.getElementById('endDate');
+        if (endDateInput) {
+            endDateInput.setAttribute('max', todayLocal);
+        }
+
+        // Prevent future dates
+        $('#endDate').on('change', function() {
+            if (this.value > todayLocal) {
+                this.value = todayLocal;
+                toastr.warning('End date cannot be in the future.');
+            }
+        });
+
+        lucide.createIcons();
         loadCases();
     });
 
@@ -213,6 +244,7 @@
         $('#startDate').val('');
         $('#endDate').val('');
         $('#customerTypeFilter').val('0');
+        $('#statusFilter').val('0');
         $('#searchInput').val('');
         loadCases();
     }
@@ -227,6 +259,7 @@
         const startDate = $('#startDate').val();
         const endDate = $('#endDate').val();
         const customerType = $('#customerTypeFilter').val();
+        const status = $('#statusFilter').val();
 
         showLoader();
         $.ajax({
@@ -235,7 +268,8 @@
             data: { 
                 startDate: startDate, 
                 endDate: endDate, 
-                customerType: customerType 
+                customerType: customerType,
+                status: status
             },
             success: function(response) {
                 hideLoader();

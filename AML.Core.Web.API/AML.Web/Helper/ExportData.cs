@@ -415,14 +415,36 @@ namespace AML.Web.Helper
 
                 var bytes = System.Text.Encoding.UTF8.GetBytes(html);
                 HtmlToPdf converter = new HtmlToPdf();
-                converter.Options.PdfPageSize = PdfPageSize.Letter;
+                converter.Options.PdfPageSize = PdfPageSize.A4;
                 converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
-                converter.Options.MarginLeft = 30;
-                converter.Options.MarginRight = 30;
-                converter.Options.MarginTop = 20;
-                converter.Options.MarginBottom = 20;
-                // create a new pdf document converting an url
-                PdfDocument doc = converter.ConvertHtmlString(html);
+                converter.Options.MarginLeft = 10;
+                converter.Options.MarginRight = 10;
+                converter.Options.MarginTop = 15;
+                converter.Options.MarginBottom = 15;
+
+                // CRITICAL: Background graphics and width fitting
+                converter.Options.DrawBackground = true; // Enables background colors/images
+                converter.Options.WebPageWidth = 1024;   // Matches typical Tailwind container
+                converter.Options.WebPageFixedSize = false;
+                converter.Options.AutoFitWidth = HtmlToPdfPageFitMode.ShrinkOnly; // Fit to A4
+                converter.Options.CssMediaType = HtmlToPdfCssMediaType.Print; // Use print styles
+                 // Allow time for Tailwind JS CDN or static CSS to transform the page
+                 converter.Options.JavaScriptEnabled = true;
+                 converter.Options.MinPageLoadTime = 5;
+
+
+                
+                // Provide base URL for resource resolution (CDN icons, fonts, etc.)
+                string baseUrl = string.Empty;
+                if (httpContextAccessor != null && httpContextAccessor.HttpContext != null && httpContextAccessor.HttpContext.Request != null)
+                {
+                    baseUrl = httpContextAccessor.HttpContext.Request.Scheme + "://" + httpContextAccessor.HttpContext.Request.Host.Value;
+                }
+
+                // create a new pdf document converting the HTML string
+                PdfDocument doc = converter.ConvertHtmlString(html, baseUrl);
+
+
 
                 // create memory stream to save PDF
                 MemoryStream pdfStream = new MemoryStream();

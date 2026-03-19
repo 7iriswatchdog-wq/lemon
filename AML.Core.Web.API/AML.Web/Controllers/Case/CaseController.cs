@@ -1487,6 +1487,269 @@ namespace AML.Web.Controllers.Case
             return View(model);
         }
 
+        [HttpGet("/case/Process_PDF/{CaseId}")]
+        public async Task<ActionResult> Process_PDF(int CaseId)
+        {
+            CaseProcessModel model = new CaseProcessModel();
+            try
+            {
+                var userId = _clientHandler.GetUserId();
+                var BranchId = _clientHandler.GetBranchId();
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+               
+                model.Case = new CaseModel();
+
+                CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(CaseId);
+
+                var dualMatchStatus = _customerCaseService.GetDualGoodsStatus(_CustomerCaseDTO.CustomerId);
+                model.DualGoodsMatchStatus = dualMatchStatus;
+                model.Case = _mapper.Map<CaseModel>(_CustomerCaseDTO);
+                model.Case.UserGroupName = _UserGroupModel.Name;
+                var dob = model.Case.DOB;
+                var createddated = model.Case.CreatedOn;
+                string dobText;
+
+                if (string.IsNullOrWhiteSpace(dob) || dob == "1/1/0001 12:00:00 AM")
+                {
+                    dobText = "NA";
+                }
+                else
+                {
+                    if (DateTime.TryParse(dob, out DateTime parsedDob))
+                    {
+                        dobText = parsedDob.ToString("dd/MM/yyyy");
+                    }
+                    else
+                    {
+                        dobText = dob;
+                    }
+                }
+                var createdDate = model.Case.CreatedOn;
+                string createdDateText;
+
+                if (createdDate == DateTime.MinValue)
+                {
+                    createdDateText = "NA";
+                }
+                else
+                {
+                    createdDateText = createdDate.ToString("dd/MM/yyyy");
+                }
+
+                model.Case.CreatedOnText = createdDateText;
+                model.Case.DOB = dobText;
+                
+                string sessionId = this.HttpContext.Session.GetString("SessID");
+                
+                List<CaseDocumentDTO> caseDocumentbyId = _caseDocumentService.GetCaseDocumentByCaseId(CaseId);
+                model.CaseDocuments = _mapper.Map<List<CaseDocumentModel>>(caseDocumentbyId);
+                List<CustomerCaseDTO> _CustomerCaseshareholders = _customerCaseService.GetShareHoldersByCompanyCode(_CustomerCaseDTO.CustomerId);
+                model.ShareholdersData = _mapper.Map<List<CaseModel>>(_CustomerCaseshareholders);
+                List<RiskReportModel> riskReports = _mapper.Map<List<RiskReportModel>>(_riskService.GetLastestRiskVersion(_CustomerCaseDTO.CustomerId,_CustomerCaseDTO.CustomerType));
+                model.RiskVersionData= _mapper.Map<List<RiskReportModel>>(riskReports);
+
+                var clientId = _clientHandler.GetClientId();
+                RiskModel _riskmodel = new RiskModel();
+                int riskid = _riskService.GetRiskIdByCustomercode(model.Case.CustomerId, model.Case.CustomerType).Result;
+
+                if (riskid != 0)
+                {
+                    dynamic modelrisk = null;
+
+                    if (model.Case.CustomerType == "I")
+                    {
+                        modelrisk = _mapper.Map<RiskModel>(_riskService.GetRiskDetailsOfIndividual(riskid).Result);
+                        int riskVersion = modelrisk != null ? modelrisk.version : 1;
+                        if (riskVersion == 0) riskVersion = 1;
+
+                        model.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfigReport("I", 1, 0, 0, clientId, riskVersion);
+
+                        MapRiskValues(model.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
+
+                        model.FinalRiskScore = modelrisk.FinalRiskScore;
+                        model.RiskScoreCount = modelrisk.RiskScoreCount;
+                        model.RiskScoreSum = modelrisk.RiskScoreSum;
+                        model.DateofAssessment = modelrisk.DateofAssessment;
+
+                        // Check for Override (O)
+                        bool hasHighOverride = model.RiskTypeCategoryDTO != null && model.RiskTypeCategoryDTO.Any(c => c.RiskTypes.Any(r => r.OverrideScore == 3));
+                        if (model.FinalRiskScore != null && model.FinalRiskScore.ToLower().Contains("high risk") && hasHighOverride)
+                        {
+                            model.FinalRiskScore = "High Risk (O)";
+                        }
+                    }
+                    else
+                    {
+                        modelrisk = _mapper.Map<RiskCorpCustomerModel>(_riskService.GetRiskDetailsOfCorporate(riskid).Result);
+                        int riskVersion = modelrisk != null ? modelrisk.version : 1;
+                        if (riskVersion == 0) riskVersion = 1;
+
+                        model.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfigReport("C", 1, 0, 0, clientId, riskVersion);
+
+                        MapRiskValues(model.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
+
+                        model.RiskAssessmentRating = modelrisk.RiskAssessmentRating;
+                        model.RiskScoreCount = modelrisk.RiskScoreCount;
+                        model.RiskScoreSum = modelrisk.RiskScoreSum;
+                        model.DateofAssessment = modelrisk.DateofAssessment;
+
+                        // Check for Override (O)
+                        bool hasHighOverrideCor = model.RiskTypeCategoryDTO != null && model.RiskTypeCategoryDTO.Any(c => c.RiskTypes.Any(r => r.OverrideScore == 3));
+                        if (model.RiskAssessmentRating != null && model.RiskAssessmentRating.ToLower().Contains("high risk") && hasHighOverrideCor)
+                        {
+                            model.RiskAssessmentRating = "High Risk (O)";
+                        }
+                    }
+                }
+
+                var allComments = _caseCommentService.GetAllByCase(CaseId);
+                if (allComments != null)
+                {
+                    model.CaseComments = allComments.Select(c => new CaseModel
+                    {
+                        Comments = c.Comment,
+                        CreatedUser = c.CreatedUser,
+                        CreatedOn = c.CreatedOnDB ?? DateTime.MinValue,
+                        MatchType = c.CommentType
+                    }).ToList();
+                }
+                
+                var result = _clientHandler.PostAsync(new { caseid = CaseId.ToString() }, ScreeningService.GETBYCASEID).Result;
+                if (!string.IsNullOrEmpty(result))
+                {
+                    List<DataListModel> jsonList = JsonConvert.DeserializeObject<List<DataListModel>>(result);
+                    model.DataList = jsonList;
+                }
+                
+                return View("Process_PDF", model);
+            }
+            catch (Exception ex)
+            {
+                return RedirectToAction("Index");
+            }
+        }
+
+        [HttpGet("/case/DownloadProcessPDF/{CaseId}")]
+        public async Task<IActionResult> DownloadProcessPDF(int CaseId)
+        {
+            CaseProcessModel model = new CaseProcessModel();
+            try
+            {
+                var userId = _clientHandler.GetUserId();
+                var BranchId = _clientHandler.GetBranchId();
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+
+                model.Case = new CaseModel();
+                CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(CaseId);
+
+                var dualMatchStatus = _customerCaseService.GetDualGoodsStatus(_CustomerCaseDTO.CustomerId);
+                model.DualGoodsMatchStatus = dualMatchStatus;
+                model.Case = _mapper.Map<CaseModel>(_CustomerCaseDTO);
+                model.Case.UserGroupName = _UserGroupModel.Name;
+
+                var dob = model.Case.DOB;
+                string dobText;
+                if (string.IsNullOrWhiteSpace(dob) || dob == "1/1/0001 12:00:00 AM")
+                    dobText = "NA";
+                else if (DateTime.TryParse(dob, out DateTime parsedDob))
+                    dobText = parsedDob.ToString("dd/MM/yyyy");
+                else
+                    dobText = dob;
+
+                var createdDate = model.Case.CreatedOn;
+                model.Case.CreatedOnText = createdDate == DateTime.MinValue ? "NA" : createdDate.ToString("dd/MM/yyyy");
+                model.Case.DOB = dobText;
+
+                List<CaseDocumentDTO> caseDocumentbyId = _caseDocumentService.GetCaseDocumentByCaseId(CaseId);
+                model.CaseDocuments = _mapper.Map<List<CaseDocumentModel>>(caseDocumentbyId);
+
+                List<CustomerCaseDTO> _CustomerCaseshareholders = _customerCaseService.GetShareHoldersByCompanyCode(_CustomerCaseDTO.CustomerId);
+                model.ShareholdersData = _mapper.Map<List<CaseModel>>(_CustomerCaseshareholders);
+
+                List<RiskReportModel> riskReports = _mapper.Map<List<RiskReportModel>>(_riskService.GetLastestRiskVersion(_CustomerCaseDTO.CustomerId, _CustomerCaseDTO.CustomerType));
+                model.RiskVersionData = _mapper.Map<List<RiskReportModel>>(riskReports);
+
+                var clientId = _clientHandler.GetClientId();
+                var sessionId = this.HttpContext.Session.GetString("SessID");
+
+                // Risk Assessment
+                int riskid = _riskService.GetRiskIdByCustomercode(_CustomerCaseDTO.CustomerId, _CustomerCaseDTO.CustomerType).Result;
+                if (riskid != 0)
+                {
+                    var riskReportVersion = 1;
+                    model.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfigReport(_CustomerCaseDTO.CustomerType, 1, 0, 0, clientId, riskReportVersion);
+
+                    if (_CustomerCaseDTO.CustomerType == "I")
+                    {
+                        dynamic modelrisk = _mapper.Map<RiskModel>(_riskService.GetRiskDetailsOfIndividual(riskid).Result);
+                        MapRiskValues(model.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
+                        model.FinalRiskScore = modelrisk.FinalRiskScore;
+                        model.RiskScoreCount = modelrisk.RiskScoreCount;
+                        model.RiskScoreSum = modelrisk.RiskScoreSum;
+                        model.DateofAssessment = modelrisk.DateofAssessment;
+                        
+                        // For Individual, RiskAssessmentRating comes from FinalRiskScore
+                        model.RiskAssessmentRating = modelrisk.FinalRiskScore;
+                    }
+                    else if (_CustomerCaseDTO.CustomerType == "C")
+                    {
+                        dynamic modelrisk = _mapper.Map<RiskCorpCustomerModel>(_riskService.GetRiskDetailsOfCorporate(riskid).Result);
+                        MapRiskValues(model.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
+                        model.RiskScoreCount = modelrisk.RiskScoreCount;
+                        model.RiskScoreSum = modelrisk.RiskScoreSum;
+                        model.RiskAssessmentRating = modelrisk.RiskAssessmentRating;
+                        model.DateofAssessment = modelrisk.DateofAssessment;
+                        // For Corporate, FinalRiskScore is mapped from RiskAssessmentRating
+                        model.FinalRiskScore = modelrisk.RiskAssessmentRating;
+                    }
+
+                    // Check for Override (O)
+                    bool hasHighOverrideCor = model.RiskTypeCategoryDTO != null && model.RiskTypeCategoryDTO.Any(c => c.RiskTypes.Any(r => r.OverrideScore == 3));
+                    if (model.RiskAssessmentRating != null && model.RiskAssessmentRating.ToLower().Contains("high risk") && hasHighOverrideCor)
+                    {
+                        model.RiskAssessmentRating = "High Risk (O)";
+                        model.FinalRiskScore = "High Risk (O)";
+                    }
+                }
+
+
+
+                var allComments = _caseCommentService.GetAllByCase(CaseId);
+                if (allComments != null)
+                {
+                    model.CaseComments = allComments.Select(c => new CaseModel
+                    {
+                        Comments = c.Comment,
+                        CreatedUser = c.CreatedUser,
+                        CreatedOn = c.CreatedOnDB ?? DateTime.MinValue,
+                        MatchType = c.CommentType
+                    }).ToList();
+                }
+
+                // Screening results
+
+                var result = _clientHandler.PostAsync(new { caseid = CaseId.ToString() }, ScreeningService.GETBYCASEID).Result;
+                if (!string.IsNullOrEmpty(result))
+                {
+                    List<DataListModel> jsonList = JsonConvert.DeserializeObject<List<DataListModel>>(result);
+                    model.DataList = jsonList;
+                }
+
+                // Render view to HTML string then convert to PDF
+                string html = await _viewRenderService.RenderToStringAsync("Case/Process_PDF", model);
+                byte[] pdfBytes = _exportService.HtmlToPDFforChecklistLogs(html);
+                string fileName = $"Case_{_CustomerCaseDTO.CustomerId}_{DateTime.Now:yyyyMMdd}.pdf";
+                return File(pdfBytes, "application/pdf", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Error generating PDF: " + ex.Message);
+            }
+        }
+
+
         public IActionResult CreateMainparty(string customerCode, string custtype)
         {
             int Id = _customerCaseService.GetCaseId(customerCode);
@@ -1754,12 +2017,15 @@ namespace AML.Web.Controllers.Case
 
         private void MapRiskValues(List<RiskTypeCategoryDTO> categories, List<ReportDataDTO> reportData)
         {
+            if (reportData == null) return;
+
             foreach (var category in categories)
             {
                 foreach (var riskType in category.RiskTypes)
                 {
+                    var isCountry = riskType.lov_country_duplicate == 1;
                     var match = reportData.FirstOrDefault(x =>
-                        x.lov_type_category_id == category.Id &&
+                        (isCountry || x.lov_type_category_id == category.Id) &&
                         x.lov_type_id == riskType.Id);
 
                     if (match != null)
