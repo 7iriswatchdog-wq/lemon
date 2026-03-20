@@ -14,8 +14,8 @@
     string matchDob = Convert.ToString(matchData.matchdob);
     string matchNat = Convert.ToString(matchData.matchnationality);
     string remarks = Convert.ToString(matchData.remarks);
-    string auditDate = DateTime.Now.ToString("dd-MMM-yyyy HH:mm:ss") + " UTC";
-    string creationDate = Model.Case.CreatedOn?.ToString("dd-MM-yyyy HH:mm:ss") ?? "";
+    string auditDate = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss") + " GST";
+    string creationDate = Model.Case.CreatedOn?.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss") ?? "";
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -226,8 +226,8 @@
         <thead>
             <tr>
                 <th>Field</th>
-                <th>Screening Output</th>
                 <th>Screening Input</th>
+                <th>Screening Output</th>
                 @* <th>Sanction Record (Matched)</th>
                 <th>Client Profile (Case Input)</th> *@
             </tr>
@@ -235,23 +235,23 @@
         <tbody>
             <tr>
                 <td style="font-weight: 600;">Name</td>
-                <td>@Model.Case.FirstName @Model.Case.MiddleName @Model.Case.LastName</td>
                 <td class="comp-val-match">@matchName</td>
+                <td>@Model.Case.FirstName @Model.Case.MiddleName @Model.Case.LastName</td>
             </tr>
             <tr>
                 <td style="font-weight: 600;">Date of Birth</td>
-                <td>@(Model.Case.DOB == "1/1/0001 12:00:00 AM" ? "-" : Model.Case.DOB)</td>
                 <td>@(string.IsNullOrEmpty(matchDob) ? "-" : matchDob)</td>
+                <td>@(Model.Case.DOB == "1/1/0001 12:00:00 AM" ? "-" : Model.Case.DOB)</td>
             </tr>
             <tr>
                 <td style="font-weight: 600;">Nationality</td>
-                <td>@(string.IsNullOrEmpty(Model.Case.Nationality) ? "-" : Model.Case.Nationality)</td>
                 <td>@(string.IsNullOrEmpty(matchNat) ? "-" : matchNat)</td>
+                <td>@(string.IsNullOrEmpty(Model.Case.Nationality) ? "-" : Model.Case.Nationality)</td>
             </tr>
             <tr>
                 <td style="font-weight: 600;">Id Number</td>
-                <td>@(string.IsNullOrEmpty(matchIdNo) ? "-" : matchIdNo)</td>
                 <td>@(string.IsNullOrEmpty(Model.Case.CustomerIdNumber) ? "-" : Model.Case.CustomerIdNumber)</td>
+                <td>@(string.IsNullOrEmpty(matchIdNo) ? "-" : matchIdNo)</td>
             </tr>
         </tbody>
     </table>

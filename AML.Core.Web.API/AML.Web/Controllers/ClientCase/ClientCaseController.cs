@@ -340,7 +340,7 @@ namespace AML.Web.Controllers.ClientCase
                                             _toastNotification.AddWarningToastMessage("Unable to calculate risk due to insufficient data.");
                                             return View("Create", "Case");
                                         }
-                                        var spStr1 = str1.Result.Split('Ø');
+                                        var spStr1 = str1.Result.Split('ï¿½');
                                         var proflovId = spStr1[0];
                                         var natlovId = spStr1[1];
                                         var reslovId = spStr1[5];
@@ -357,7 +357,7 @@ namespace AML.Web.Controllers.ClientCase
                                             _toastNotification.AddWarningToastMessage("Unable to calculate risk due to insufficient data.");
                                             return View("Create", "Case");
                                         }
-                                        var spStr = str.Result.Split('Ø');
+                                        var spStr = str.Result.Split('ï¿½');
                                         var profId = spStr[0];
                                         var natId = spStr[1];
                                         var resId = spStr[5];
@@ -660,7 +660,7 @@ namespace AML.Web.Controllers.ClientCase
                                             _toastNotification.AddWarningToastMessage("Unable to calculate risk due to insufficient data.");
                                             return RedirectToAction("Create", "Case");
                                         }
-                                        var spStr1 = str1.Result.Split('Ø');
+                                        var spStr1 = str1.Result.Split('ï¿½');
                                         var entlovId = spStr1[2];
                                         var buslovId = spStr1[4];
                                         var incorplovId = spStr1[3];
@@ -684,7 +684,7 @@ namespace AML.Web.Controllers.ClientCase
                                             _toastNotification.AddWarningToastMessage("Unable to calculate risk due to insufficient data.");
                                             return RedirectToAction("Create", "Case");
                                         }
-                                        var spStr = str.Result.Split('Ø');
+                                        var spStr = str.Result.Split('ï¿½');
                                         var entId = spStr[2];
                                         var busId = spStr[4];
                                         var incorpId = spStr[3];
@@ -1014,7 +1014,7 @@ namespace AML.Web.Controllers.ClientCase
                 header.DefaultCell.Border = 0;
                 PdfPCell hd = new PdfPCell(new Phrase("Report                :   Customer Listing"));
                 PdfPCell _hd = new PdfPCell(new Phrase("\n"));
-                PdfPCell dateRange = new PdfPCell(new Phrase("Date Range        :   " + model.FromDate.ToString("dd-MM-yyyy") + "  to  " + model.ToDate.ToString("dd-MM-yyyy")));
+                PdfPCell dateRange = new PdfPCell(new Phrase("Date Range        :   " + model.FromDate.ToString("dd/MM/yyyy") + "  to  " + model.ToDate.ToString("dd/MM/yyyy")));
                 PdfPCell _dateRange = new PdfPCell(new Phrase("\n"));
                 PdfPCell caseStat = new PdfPCell(new Phrase("Match Type        :   " + model.MatchType));
                 PdfPCell _caseStat = new PdfPCell(new Phrase("\n"));
@@ -1500,3 +1500,4 @@ namespace AML.Web.Controllers.ClientCase
 
     }
 }
+
