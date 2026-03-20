@@ -16,6 +16,11 @@
     string remarks = Convert.ToString(matchData.remarks);
     string auditDate = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss") + " GST";
     string creationDate = Model.Case.CreatedOn.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss");
+
+    var isIndividual = Model.Case.CustomerType == "I";
+    var dobLabel = isIndividual ? "Date of Birth" : "Date of Registration";
+    var natLabel = isIndividual ? "Nationality" : "Country of Incorporation";
+    var idLabel = isIndividual ? "Id Number" : "Trade Licence Number";
 }
 
 <!DOCTYPE html>
@@ -103,8 +108,8 @@
         <table class="header-table">
             <tr>
                 <td>
-                    <div style="font-size: 10px; color: #64748B;">Official Sanctions Match Report</div>
-                    <div style="font-size: 10px; color: #64748B;">Generated: @auditDate</div>
+                    <div style="font-size: 10px; color: #64748B;">Sanctions Match Report</div>
+                    @* <div style="font-size: 10px; color: #64748B;">Generated: @auditDate</div> *@
                 </td>
                 <td class="logo-cell">
                     @if (!string.IsNullOrEmpty(clientLogo))
@@ -127,7 +132,7 @@
                     @matchName
                     <span class="pill">@matchType</span>
                 </div>
-                <div class="ph-type">Sanctions Name Match Report</div>
+                <div class="ph-type">#@apiResult.matchuid</div>
             </div>
         </div>
 
@@ -152,15 +157,15 @@
             </tr>
             <tr>
                 <td></td>
-                <td class="pd-field">Date Of Birth:</td>
+                <td class="pd-field">@dobLabel:</td>
                 <td class="pd-val">@(string.IsNullOrEmpty(matchDob) ? "-" : matchDob)</td>
             </tr>
             <tr>
                 <td></td>
-                <td class="pd-field">Nationality:</td>
+                <td class="pd-field">@natLabel:</td>
                 <td class="pd-val">@(string.IsNullOrEmpty(matchNat) ? "-" : matchNat)</td>
             </tr>
-            <tr>
+            @* <tr>
                 <td class="pd-group">System Metadata</td>
                 <td class="pd-field">API Data ID (Uid):</td>
                 <td class="pd-val">@apiResult.matchuid</td>
@@ -169,7 +174,7 @@
                 <td></td>
                 <td class="pd-field">API Ref Number:</td>
                 <td class="pd-val">@apiResult.matchidnumber</td>
-            </tr>
+            </tr> *@
             <tr>
                 <td class="pd-group">Analysis</td>
                 <td class="pd-field">Remarks:</td>
@@ -205,25 +210,26 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td style="font-weight: 600;">ID Number</td>
-                    <td class="comp-val-match">@matchIdNo</td>
-                    <td>@Model.Case.Id</td>
-                </tr>
+                
                 <tr>
                     <td style="font-weight: 600;">Name</td>
                     <td class="comp-val-match">@matchName</td>
                     <td>@Model.Case.FirstName @(string.IsNullOrEmpty(Model.Case.MiddleName) ? "" : Model.Case.MiddleName + " ") @Model.Case.LastName</td>
                 </tr>
                 <tr>
-                    <td style="font-weight: 600;">Date of Birth</td>
+                    <td style="font-weight: 600;">@dobLabel</td>
                     <td>@(string.IsNullOrEmpty(matchDob) ? "-" : matchDob)</td>
                     <td>@(Model.Case.DOB == "1/1/0001 12:00:00 AM" ? "-" : Model.Case.DOB)</td>
                 </tr>
                 <tr>
-                    <td style="font-weight: 600;">Nationality</td>
+                    <td style="font-weight: 600;">@natLabel</td>
                     <td class="comp-val-match">@(string.IsNullOrEmpty(matchNat) ? "-" : matchNat)</td>
                     <td>@(string.IsNullOrEmpty(Model.Case.Nationality) ? "-" : Model.Case.Nationality)</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 600;">@idLabel</td>
+                    <td>@(string.IsNullOrEmpty(Model.Case.CustomerIdNumber) ? "-" : Model.Case.CustomerIdNumber)</td>
+                    <td>@(string.IsNullOrEmpty(matchIdNo) ? "-" : matchIdNo)</td>
                 </tr>
             </tbody>
         </table>
