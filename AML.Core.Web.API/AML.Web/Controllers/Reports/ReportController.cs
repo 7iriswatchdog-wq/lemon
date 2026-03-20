@@ -3070,6 +3070,7 @@ public IActionResult CustomerList(DataTableModel model,
                                                        Text = s.FName + " " + s.LName.ToString()
                                                    };
             model.Users = new SelectList(userList, "Value", "Text");
+            model.CaseComments = _mapper.Map<List<CaseModel>>(_caseCommentService.GetAllByCase(Id));
 
             if (type == 1)
             {
@@ -3120,8 +3121,135 @@ public IActionResult CustomerList(DataTableModel model,
             }
 
             return View(model);
+        }
 
+        public ActionResult ViewIndividualCaseDetail_PDF(string id, int type)
+        {
+            CaseProcessModel model = new CaseProcessModel();
+            model.Case = new CaseModel();
+            int Id = _customerCaseService.GetCaseId(id);
+            CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(Id);
+            model.Case = _mapper.Map<CaseModel>(_CustomerCaseDTO);
+            var dob = model.Case.DOB;
+            var createddated = model.Case.CreatedOn;
+            string dobText;
 
+            if (string.IsNullOrWhiteSpace(dob) || dob == "1/1/0001 12:00:00 AM")
+            {
+                dobText = "NA";
+            }
+            else
+            {
+                if (DateTime.TryParse(dob, out DateTime parsedDob))
+                {
+                    dobText = parsedDob.ToString("dd/MM/yyyy");
+                }
+                else
+                {
+                    dobText = dob;
+                }
+            }
+            var createdDate = model.Case.CreatedOn;
+            string createdDateText;
+
+            if (createdDate == DateTime.MinValue)
+            {
+                createdDateText = "NA";
+            }
+            else
+            {
+                createdDateText = createdDate.ToString("dd/MM/yyyy");
+            }
+
+            model.Case.CreatedOnText = createdDateText;
+            model.Case.DOB = dobText;
+            var appBaseUrl = MyHttpContext.AppBaseUrl;
+            model.Url = appBaseUrl;
+            List<CaseDocumentDTO> caseDocumentbyId = _caseDocumentService.GetCaseDocumentByCaseId(Id);
+            model.CaseDocuments = _mapper.Map<List<CaseDocumentModel>>(caseDocumentbyId);
+            List<CustomerCaseDTO> _CustomerCaseshareholders = _customerCaseService.GetShareHoldersByCompanyCode(_CustomerCaseDTO.CustomerId);
+            model.ShareholdersData = _mapper.Map<List<CaseModel>>(_CustomerCaseshareholders);
+            List<RiskReportModel> riskReports = _mapper.Map<List<RiskReportModel>>(_riskService.GetLastestRiskVersion(_CustomerCaseDTO.CustomerId, _CustomerCaseDTO.CustomerType));
+            model.RiskVersionData = _mapper.Map<List<RiskReportModel>>(riskReports);
+
+            var clientId = _clientHandler.GetClientId();
+            RiskModel _riskmodel = new RiskModel();
+            int riskid = _riskService.GetRiskIdByCustomercode(model.Case.CustomerId, model.Case.CustomerType).Result;
+
+            if (riskid != 0)
+            {
+                dynamic modelrisk = null;
+
+                if (model.Case.CustomerType == "I")
+                {
+                    _riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("I", 1, 0, 0, clientId);
+                    modelrisk = _mapper.Map<RiskModel>(_riskService.GetRiskDetailsOfIndividual(riskid).Result);
+                    MapRiskValues(_riskmodel.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
+                    model.RiskTypeCategoryDTO = _riskmodel.RiskTypeCategoryDTO;
+                    model.FinalRiskScore = modelrisk.FinalRiskScore;
+                    model.RiskScoreCount = modelrisk.RiskScoreCount;
+                    model.RiskScoreSum = modelrisk.RiskScoreSum;
+                    model.DateofAssessment = modelrisk.DateofAssessment;
+                    model.MainNationalityTxt = modelrisk.MainNationalityTxt;
+                    model.Address = modelrisk.Address;
+                }
+                else
+                {
+                    _riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("C", 1, 0, 0, clientId);
+                    modelrisk = _mapper.Map<RiskCorpCustomerModel>(_riskService.GetRiskDetailsOfCorporate(riskid).Result);
+                    MapRiskValues(_riskmodel.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
+                    model.RiskTypeCategoryDTO = _riskmodel.RiskTypeCategoryDTO;
+                    model.FinalRiskScore = modelrisk.RiskAssessmentRating;
+                    model.RiskScoreBeforeOverride = modelrisk.RiskAssessmentRatingWithoutOverride;
+                    model.RiskScoreCount = modelrisk.RiskScoreCount;
+                    model.RiskScoreSum = modelrisk.RiskScoreSum;
+                    model.DateofAssessment = modelrisk.DateofAssessment;
+                    model.MainNationalityTxt = modelrisk.CountryOfIncorporationTxt;
+                }
+            }
+            IEnumerable<SelectListItem> userList = from s in _mapper.Map<List<UserModel>>(_userService.GetAll(clientId))
+                                                   select new SelectListItem
+                                                   {
+                                                       Value = Convert.ToString(s.Id),
+                                                       Text = s.FName + " " + s.LName.ToString()
+                                                   };
+            model.Users = new SelectList(userList, "Value", "Text");
+            model.CaseComments = _mapper.Map<List<CaseModel>>(_caseCommentService.GetAllByCase(Id));
+
+            if (type == 1)
+            {
+                var result = _clientHandler.PostAsync(new { caseid = Id.ToString() }, ScreeningService.GETBYCASEID).Result;
+                if (!string.IsNullOrEmpty(result))
+                {
+                    List<DataListModel> jsonList = JsonConvert.DeserializeObject<List<DataListModel>>(result);
+                    model.DataList = jsonList;
+                }
+            }
+            else if (type == 2)
+            {
+                var result = _freeSourceRepository.GetDetailsByCaseId(Id);
+                if (!string.IsNullOrEmpty(result))
+                {
+                    List<DataListModel> jsonList = JsonConvert.DeserializeObject<List<DataListModel>>(result);
+                    model.DataList = jsonList;
+                }
+            }
+            else if (type == 3)
+            {
+                var result = _freeSourceRepository.GetPendingDetailsByCaseId(Id);
+                if (!string.IsNullOrEmpty(result))
+                {
+                    List<DataListModel> jsonList = JsonConvert.DeserializeObject<List<DataListModel>>(result);
+                    model.DataList = jsonList;
+                }
+            }
+
+            if (model.Case == null)
+            {
+                return RedirectToAction("PageNotFound", "Error");
+            }
+
+            return View(model);
         }
 
         public ActionResult ViewShareholderCaseDetails(string id, int type)

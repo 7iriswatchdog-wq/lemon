@@ -104,6 +104,10 @@ namespace AML.Web.Mappings
     )); ;
             CreateMap<ScreenCaseModel, CustomerCaseDTO>();
             CreateMap<CustomerCaseDTO, CaseModel>();
+            CreateMap<CaseCommentDTO, CaseModel>()
+                .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.Comment))
+                .ForMember(dest => dest.MatchType, opt => opt.MapFrom(src => src.CommentType))
+                .ForMember(dest => dest.CreatedOn, opt => opt.MapFrom(src => src.CreatedOnDB ?? DateTime.MinValue));
             CreateMap<CustomerApiModel, CustomerCaseDTO>();
             CreateMap<CustomerCaseDTO, CustomerApiModel>();
             CreateMap<CustomerCaseApiModel, CustomerCaseDTO>();
