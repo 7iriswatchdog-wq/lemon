@@ -31,7 +31,7 @@
                 </div>
                 <div class="flex gap-4 no-pdf absolute top-5 right-5">
                     <button onclick="downloadPageAsPDF('#process-container', 'PF-Case-@(Model.CaseId).pdf')"
-                            class="h-auto p-0 text-[11px] font-bold text-red-600 hover:text-red-700 flex items-center gap-1 tracking-tight">
+                            class="h-auto p-0 text-[11px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 tracking-tight no-pdf">
                         <i data-lucide="file-text" class="h-3.5 w-3.5"></i> Download PDF
                     </button>
                 </div>
@@ -292,14 +292,33 @@
                     </div>
                 </div>
 
+                <div class="flex-1 min-h-0 py-2 overflow-hidden flex w-full">
+
+                    <!-- FULL WIDTH COLUMN -->
+                    <div id="leftColumn" class="flex flex-col gap-6 w-full">
+                     <div class="flex-6 min-h-0 flex flex-col gap-6">
+                            <div class="flex-1 min-h-0 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+
+                                <div class="px-5 py-3 border-b shrink-0">
+                                    <h3 class="text-[13px] font-bold ">Case History</h3>
+                                </div>
+
+                                <div class="flex-1 min-h-0 overflow-y-auto p-5">
+                                    <div id="commentsContainer"
+                                         class="relative border-l-2 border-slate-100 ml-2 space-y-8">
+                                    </div>
+                                </div>
+
+                            </div>
+                     </div>
+                     </div>
+                    </div>
                 <!-- Case History & Comments Card (Aligned with Case/Process) -->
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col flex-1 min-h-[400px] mb-4">
                     <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
                         <h3 class="text-[13px] font-bold text-slate-800 tracking-tight">Case Comments</h3>
                     </div>
-                    <div class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/20 custom-scrollbar" id="commentsContainer">
-                        <div class="text-xs text-slate-400 italic">Loading comments...</div>
-                    </div>
+                   
                     <div class="p-5 border-t border-slate-100 bg-white">
                         <div class="flex gap-4">
                             <textarea id="caseComment" oninput="toggleSaveButton()" class="flex-1 h-12 border border-slate-200 rounded-lg p-3 text-[11px] focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none resize-none placeholder:text-slate-400 font-medium" placeholder="Enter Your Comments"></textarea>
@@ -309,18 +328,30 @@
                         </div>
                         
                         <!-- Main Decision Buttons Alignment -->
-                         <div class="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-100">
-                            <div class="flex items-center gap-3 w-full">
-                                <button onclick="updateDecision('Submit to Senior Management')" class="h-9 px-6 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm uppercase tracking-widest">
-                                    Submit to Senior Management
-                                </button>
-                                <button onclick="updateDecision('Hold')" class="h-9 px-6 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm uppercase tracking-widest mr-auto">
-                                    Hold
-                                </button>
-                            </div>
-                        </div>
+
                     </div>
+                    <div class="flex flex-col gap-2 pt-4 border-t border-slate-50 ml-5">
+                <div class="flex items-center gap-3 w-full">
+
+                    <button type="button"  onclick="updateDecision('Submit to Senior Management')"
+                                    class="case-action-btn h-9 px-4 border rounded-md"
+                                    >
+                                Submit To Senior Management
+                            </button>
+
+                    <button type="button" onclick="updateDecision('Hold')"
+                                class="case-action-btn h-9 px-4 border rounded-md"
+                                >
+                            Hold
+                        </button>
+                   
+
+                       
+
                 </div>
+            </div>
+                </div>
+                
             </div>
         </div>
     </div>
@@ -541,35 +572,84 @@
             type: 'GET',
             data: { caseId: caseId },
             success: function(res) {
+                  let showVersionTypes = ["Approved", "Rejected", "Whitelisted"];
+                let versionCounter = 0;
                 if (res.success && res.data) {
                     let html = '';
                     if (res.data.length === 0) {
                         html = '<div id="noCommentsMsg" class="text-xs text-slate-500 italic text-center py-4">No comments found for this case.</div>';
                     } else {
-                        res.data.forEach(comment => {
-                            const date = comment.createdOn || '-';
-                            const user = comment.createdByEmail || 'User';
-                            const initials = (user.charAt(0) || 'U').toUpperCase();
-                            
-                            html += `
-                            <div class="flex gap-4 mb-4">
-                                <div class="shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">${initials}</div>
-                                <div class="flex-1">
-                                    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                                        <p class="text-[11px] text-slate-700 leading-relaxed font-medium">${comment.comment}</p>
-                                    </div>
-                                    <div class="mt-2 flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">
-                                        <span>${user}</span>
-                                        <span class="h-1 w-1 rounded-full bg-slate-200"></span>
-                                        <span>${date}</span>
-                                    </div>
-                                </div>
-                            </div>`;
-                        });
+                $.each(res.data, function (i, v) {
+
+                let userName = v.createdUser || "User";
+                let commentText = v.comment || "";
+                let duration = v.duration || "";
+                let version = v.version || (i + 1);
+                            let commentType = (v.commentType || "");
+
+                // Check allowed types
+                             let displayText = "";
+
+                    if (showVersionTypes.includes(commentType)) {
+                        versionCounter++;
+                        displayText = `Version ${versionCounter}`;
+                    } else {
+                        displayText = `Action On ${commentType}`;
                     }
-                    $('#commentsContainer').html(html);
+
+                            let createdOn = v.createdOnDB ? new Date(v.createdOnDB) : null;
+
+                    let formattedDateTime = createdOn
+                        ? createdOn.toLocaleString('en-GB', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                          }).replace(',', '')
+                        : "";
+
+                let html = `
+                    <div class="pl-6 relative">
+
+                        <div class="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-white bg-blue-500">
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-xs font-bold text-slate-900">
+                                                 ${displayText}
+                                </span>
+
+                                <span class="text-[11px] text-slate-500">
+                                     by
+                                    <span class="font-semibold text-blue-600">${userName}</span>
+                                </span>
+                            </div>
+
+                            <p class="text-[11px] font-medium text-slate-700 leading-relaxed">
+                                ${commentText}
+                            </p>
+
+                            <span class="text-[10px] font-bold uppercase tracking-wide text-blue-600">
+                                ${formattedDateTime}
+                            </span>
+
+                        </div>
+
+                    </div>
+                `;
+
+                $('#commentsContainer').append(html);
+                
+            });
+                    
                 }
             }
+        }
         });
     }
 

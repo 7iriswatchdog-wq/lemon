@@ -1,3 +1,4 @@
+using AML.ViewModel.ViewModels.CustomerCase;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ namespace AML.ViewModel.ViewModels.CorporateDetail
 
         [JsonProperty("users")]
         public User Users { get; set; }
+        public CaseModel Case { get; set; }
         public int Status { get; set; }
 
         public int caseid { get; set; }

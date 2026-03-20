@@ -2232,6 +2232,7 @@ namespace AML.Web.Controllers.Case
                     umodel.Category = category;
                     umodel.MatchUid = id;
                     umodel.CreationDate = _CustomerCaseDTO.CreatedOn;
+                    umodel.Case= _mapper.Map<CaseModel>(_CustomerCaseDTO);
                     ViewBag.user = umodel;
                 }
                 else
@@ -2256,6 +2257,7 @@ namespace AML.Web.Controllers.Case
                     bmodel.Category = category;
                     bmodel.MatchUid = id;
                     bmodel.CreationDate = _CustomerCaseDTO.CreatedOn;
+                    bmodel.Case = _mapper.Map<CaseModel>(_CustomerCaseDTO);
                     ViewBag.business = bmodel;
 
                 }

@@ -29,6 +29,7 @@ using DocumentFormat.OpenXml.Office2010.Excel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.CodeAnalysis.Operations;
 using MySqlX.XDevAPI;
 using Newtonsoft.Json;
 using NToastNotify;
@@ -553,14 +554,15 @@ namespace AML.Web.Controllers.ProliferationFinance
                 
                 // 1. Update the main status reason for quick reference
                 var response = _proliferationFinanceService.UpdateCaseRemarks(caseId, remarks);
-                
+
                 // 2. Add to Case Comment history table
                 var commentDto = new CaseCommentDTO
                 {
                     CaseId = caseId.ToString(),
                     Comment = remarks,
                     CreatedBy = userId,
-                    CreatedOn = DateTime.Now.ToString("dd/MM/yyyy")
+                    CreatedOn = DateTime.Now.ToString("dd/MM/yyyy"),
+                    CommentType = "Comments"
                 };
                 _caseCommentService.CreateProliferationCaseComments(commentDto);
                 
@@ -981,6 +983,7 @@ namespace AML.Web.Controllers.ProliferationFinance
             try
             {
                 var clientId = _clientHandler.GetClientId();
+                var userId=_clientHandler.GetUserId();
                 if (request == null || request.CaseId == 0) return Json(new { success = false, message = "Invalid request" });
 
                 foreach (var hit in request.Hits)
@@ -1031,11 +1034,22 @@ namespace AML.Web.Controllers.ProliferationFinance
                         CaseId = Id,
                         Comment = item.Comment,
                         CommentType = item.CommentType,
-                        CreatedBy = _clientHandler.GetUserId()
+                        CreatedBy = _clientHandler.GetUserId(),
+
                     };
 
                     _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
                 }
+
+                var commentDto = new CaseCommentDTO
+                {
+                    CaseId = request.CaseId.ToString(),
+                    Comment = "Search Results Has been Updated",
+                    CreatedBy = userId,
+                    CreatedOn = DateTime.Now.ToString("dd/MM/yyyy"),
+                    CommentType = "Search Results"
+                };
+                _caseCommentService.CreateProliferationCaseComments(commentDto);
 
                 return Json(new { success = true });
             }
