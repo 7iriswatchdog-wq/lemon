@@ -136,7 +136,7 @@ namespace AML.Web.Controllers.Reports
             _riskService = RiskService;
             _lovMasterService = lovMasterService;
             _kycService = kycService;
-            baseC6URL = clientDetails.C6BaseUrl;
+            baseC6URL = clientDetails?.C6BaseUrl;
             _UserGroupService = UserGroupService;
 
         }
