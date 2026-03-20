@@ -560,7 +560,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                     CaseId = caseId.ToString(),
                     Comment = remarks,
                     CreatedBy = userId,
-                    CreatedOn = DateTime.Now.ToString("dd/MM/yyyy")
+                    CreatedOn = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy")
                 };
                 _caseCommentService.CreateProliferationCaseComments(commentDto);
                 
@@ -604,7 +604,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                     DocumentName = file.FileName,
                     DocumentFileName = file.FileName,
                     CreatedBy = userId,
-                    CreatedOn = DateTime.Now.ToString("dd/MM/yyyy")
+                    CreatedOn = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy")
                 };
 
                 // In a real scenario, we'd save the file to disk here

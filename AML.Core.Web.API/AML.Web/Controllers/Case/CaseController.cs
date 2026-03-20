@@ -2289,7 +2289,7 @@ namespace AML.Web.Controllers.Case
             var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
 
             model.CreatedBy = _clientHandler.GetUserId();
-            model.CreatedOn = DateTime.Now;
+            model.CreatedOn = DateTime.UtcNow.AddHours(4);
             CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(model.CaseId);
             if (_UserGroupModel.Name == "Senior Management") 
             {
@@ -2303,7 +2303,7 @@ namespace AML.Web.Controllers.Case
                 }
 
                     _CustomerCaseDTO.UpdatedBy = _clientHandler.GetUserId();
-                _CustomerCaseDTO.UpdatedOn = Convert.ToString(DateTime.Now);
+                _CustomerCaseDTO.UpdatedOn = Convert.ToString(DateTime.UtcNow.AddHours(4));
                 _CustomerCaseDTO.Comments = model.Comment;
 
                  _customerCaseService.Update(_CustomerCaseDTO);

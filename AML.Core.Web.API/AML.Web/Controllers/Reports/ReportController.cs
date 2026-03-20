@@ -566,7 +566,7 @@ public IActionResult CustomerList(DataTableModel model,
                 footer2.LockedWidth = true;
                 footer2.DefaultCell.Border = 0;
                 footer2.AddCell("Computer generated report; hence no signature is required. ");
-                footer2.AddCell("Date of Extraction :   " + DateTime.Now.ToString());
+                footer2.AddCell("Date of Extraction :   " + DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss") + " GST");
                 document.Add(footer2);
 
                 PdfContentByte content = writer.DirectContent;
@@ -753,12 +753,12 @@ public IActionResult CustomerList(DataTableModel model,
                 var clientId = _clientHandler.GetClientId();
                 if (model.SourceType == "UAE IEC LIST")
                 {
-                    var response = await _clientHandler.PostAsync(new { StartDate = model.StartDate.ToString("dd-MM-yyyy"), EndDate = model.EndDate.ToString("dd-MM-yyyy"), Type = model.SourceType }, ScreeningService.INTERNALWATCHLISTREPORT);
+                    var response = await _clientHandler.PostAsync(new { StartDate = model.StartDate.ToString("dd/MM/yyyy"), EndDate = model.EndDate.ToString("dd/MM/yyyy"), Type = model.SourceType }, ScreeningService.INTERNALWATCHLISTREPORT);
                     return Json(response);
                 }
                 else
                 {
-                    var response = await _clientHandler.PostAsync(new { StartDate = model.StartDate.ToString("dd-MM-yyyy"), EndDate = model.EndDate.ToString("dd-MM-yyyy"), Type = model.SourceType, client_id = clientId }, ScreeningService.INTERNALWATCHLISTREPORT);
+                    var response = await _clientHandler.PostAsync(new { StartDate = model.StartDate.ToString("dd/MM/yyyy"), EndDate = model.EndDate.ToString("dd/MM/yyyy"), Type = model.SourceType, client_id = clientId }, ScreeningService.INTERNALWATCHLISTREPORT);
                     return Json(response);
                 }
 
@@ -1081,11 +1081,11 @@ public IActionResult CustomerList(DataTableModel model,
         [HttpGet("Report/ExportWatchList")]
         public async Task<IActionResult> ExportWatchList(DateTime startDate, DateTime endDate, string sourceType, bool isPDF)
         {
-            var response = await _clientHandler.PostAsync(new { StartDate = startDate.ToString("dd-MM-yyyy"), EndDate = endDate.ToString("dd-MM-yyyy"), Type = sourceType }, ScreeningService.INTERNALWATCHLISTREPORT);
+            var response = await _clientHandler.PostAsync(new { StartDate = startDate.ToString("dd/MM/yyyy"), EndDate = endDate.ToString("dd/MM/yyyy"), Type = sourceType }, ScreeningService.INTERNALWATCHLISTREPORT);
             var clientData = _customerCaseService.GetClientDetailsByID(_clientHandler.GetClientId());
             List<ReportInternalWatchListLogModel> downloadModel = new List<ReportInternalWatchListLogModel>();
             string details = "Report               :   Internal Watchlist Update Logs<br /><br />" + 
-                "Date Range       :   " + startDate.ToString("dd-MM-yyyy") + "  to  " + endDate.ToString("dd-MM-yyyy") + "<br />" + 
+                "Date Range       :   " + startDate.ToString("dd/MM/yyyy") + "  to  " + endDate.ToString("dd/MM/yyyy") + "<br />" + 
                 "Source Type      :   " + sourceType + "<br />" +
                 "Created by        :   " + clientData.ClientName + "<br />";
 
@@ -1099,7 +1099,7 @@ public IActionResult CustomerList(DataTableModel model,
                 List<InternalReportExcelModel> excelData = new List<InternalReportExcelModel>();
                 InternalReportExcelModel excelModel = new InternalReportExcelModel();
                 string reportdetails = "Report               :   Internal Watchlist Update Logs\r\n" + 
-                "Date Range       :   " + startDate.ToString("dd-MM-yyyy") + "  to  " + endDate.ToString("dd-MM-yyyy") + "\r\n" +
+                "Date Range       :   " + startDate.ToString("dd/MM/yyyy") + "  to  " + endDate.ToString("dd/MM/yyyy") + "\r\n" +
                 "Source Type      :   " + sourceType + "\r\n" +
                 "Created by        :   " + clientData.ClientName + "\r\n";
 
