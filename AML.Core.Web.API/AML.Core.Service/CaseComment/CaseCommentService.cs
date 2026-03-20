@@ -24,6 +24,11 @@ namespace AML.Core.Service.CaseComment
             return _CaseCommentRepository.Create(_CaseCommentDTO);
         }
 
+        public ServiceResponse<int> CreateProliferationCaseComments(CaseCommentDTO _CaseCommentDTO)
+        {
+            return _CaseCommentRepository.CreateProliferationCaseComments(_CaseCommentDTO);
+        }
+
         public CaseCommentDTO GetDetails(int Id)
         {
             //Perform business requirements here
@@ -33,6 +38,12 @@ namespace AML.Core.Service.CaseComment
         {
             //Perform business requirements here
             return _CaseCommentRepository.GetAllByCase(Id).Result;
+        }
+
+        public List<CaseCommentDTO> GetAllProliferationByCase(int Id)
+        {
+            //Perform business requirements here
+            return _CaseCommentRepository.GetAllProliferationByCase(Id).Result;
         }
 
         public List<CaseCommentDTO> GetAll()

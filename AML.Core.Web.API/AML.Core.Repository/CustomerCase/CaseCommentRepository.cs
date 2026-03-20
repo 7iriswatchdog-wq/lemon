@@ -51,6 +51,25 @@ namespace AML.Core.Repository.CustomerCase
             }
             return serviceResponse;
         }
+
+        public ServiceResponse<List<CaseCommentDTO>> GetAllProliferationByCase(int CaseId)
+        {
+            ServiceResponse<List<CaseCommentDTO>> serviceResponse = new ServiceResponse<List<CaseCommentDTO>>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_case_id", CaseId);
+                serviceResponse.Result = Get<CaseCommentDTO>("get_case_comments_proliferation_by_case_id", parameters, commandType: CommandType.StoredProcedure).ToList();
+                serviceResponse.Message = "Case Comment details fetched successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
         public ServiceResponse<CaseCommentDTO> GetDetails(int Id)
         {
             ServiceResponse<CaseCommentDTO> serviceResponse = new ServiceResponse<CaseCommentDTO>();
@@ -83,6 +102,30 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_created_by", _CaseCommentDTO.CreatedBy);
                 parameters.Add("@p_commenttype", _CaseCommentDTO.CommentType);
                 var response = ExecuteScalar("ins_case_comment", parameters, commandType: CommandType.StoredProcedure).ParseInt();
+                serviceResponse.Result = response;
+                serviceResponse.Message = "Case Comment added successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
+        public ServiceResponse<int> CreateProliferationCaseComments(CaseCommentDTO _CaseCommentDTO)
+        {
+            ServiceResponse<int> serviceResponse = new ServiceResponse<int>();
+            try
+            {
+
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_case_id", _CaseCommentDTO.CaseId);
+                parameters.Add("@p_comment", _CaseCommentDTO.Comment);
+                parameters.Add("@p_created_on", _CaseCommentDTO.CreatedOn);
+                parameters.Add("@p_created_by", _CaseCommentDTO.CreatedBy);
+                parameters.Add("@p_commenttype", _CaseCommentDTO.CommentType);
+                var response = ExecuteScalar("ins_case_proliferation_comment", parameters, commandType: CommandType.StoredProcedure).ParseInt();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Case Comment added successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;

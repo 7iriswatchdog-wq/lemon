@@ -15,6 +15,8 @@ namespace AML.ViewModel.ViewModels.CaseComment
         public string Duration { get; set; }
 
         public string CommentType { get; set; }
+
+        public string ScreenCommentType { get; set; }
     }
     public class CaseCloseModel
     {

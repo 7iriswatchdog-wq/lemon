@@ -562,7 +562,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                     CreatedBy = userId,
                     CreatedOn = DateTime.Now.ToString("dd/MM/yyyy")
                 };
-                _caseCommentService.Create(commentDto);
+                _caseCommentService.CreateProliferationCaseComments(commentDto);
                 
                 return Json(new { success = response.Status == 200, message = response.Message });
             }
@@ -761,7 +761,7 @@ namespace AML.Web.Controllers.ProliferationFinance
         {
             try
             {
-                var response = _caseCommentService.GetAllByCase(caseId);
+                var response = _caseCommentService.GetAllProliferationByCase(caseId);
                 return Json(new { success = response != null, data = response });
             }
             catch (Exception ex)

@@ -8,10 +8,14 @@ namespace AML.Core.RepositoryContract.CustomerCase
     public interface ICaseCommentRepository : IBaseRepository
     {
         ServiceResponse<int> Create(CaseCommentDTO _CaseCommentDTO);
+
+        ServiceResponse<int> CreateProliferationCaseComments(CaseCommentDTO _CaseCommentDTO);
         ServiceResponse<CaseCommentDTO> GetDetails(int Id);
         ServiceResponse<int> Update(CaseCommentDTO _CaseCommentDTO);
         ServiceResponse<int> Delete(int Id);
         ServiceResponse<List<CaseCommentDTO>> GetAll();
         ServiceResponse<List<CaseCommentDTO>> GetAllByCase(int CaseId);
+
+        ServiceResponse<List<CaseCommentDTO>> GetAllProliferationByCase(int CaseId);
     }
 }

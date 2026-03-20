@@ -9,10 +9,14 @@ namespace AML.Core.ServiceContract.CaseComment
     public interface ICaseCommentService : IBaseService
     {
         ServiceResponse<int> Create(CaseCommentDTO _CaseCommentDTO);
+
+        ServiceResponse<int> CreateProliferationCaseComments(CaseCommentDTO _CaseCommentDTO);
         CaseCommentDTO GetDetails(int Id);
         ServiceResponse<int> Update(CaseCommentDTO _CaseCommentDTO);
         ServiceResponse<int> Delete(int Id);
         List<CaseCommentDTO> GetAll();
         List<CaseCommentDTO> GetAllByCase(int CaseId);
+
+        List<CaseCommentDTO> GetAllProliferationByCase(int CaseId);
     }
 }
