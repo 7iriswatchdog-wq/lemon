@@ -251,6 +251,7 @@ html,body{font-family:'Inter',Arial,sans-serif;background:#f5f5f5;color:#000;}
                 }
             </div>
             <div class="ph-id">#@profileId</div>
+            <div class="ph-id">KYC6 Match Report</div>
             <div class="ph-flags">
                 @if(hasPEP){<span class="pill pill-pep">PEP</span>}
                 @if(hasSanCurr || hasSanPrev){<span class="pill @(hasSanCurr?"pill-san":"pill-gray")">@(hasSanCurr?"Current Sanction":"Previous Sanction")</span>}
@@ -526,6 +527,94 @@ html,body{font-family:'Inter',Arial,sans-serif;background:#f5f5f5;color:#000;}
             </div>
         }
     }
+
+        @if (isIndividual)
+        {
+            string fn2 = Convert.ToString(pu.Forename) ?? "", mn2 = Convert.ToString(pu.Middlename) ?? "", sn2 = Convert.ToString(pu.Surname) ?? "", gn = Convert.ToString(pu.Gender) ?? "";
+            <!-- Data Comparison -->
+            <div class="sec-hdr">Data Comparison</div>
+            <hr class="sec-line" />
+            <div style="font-size: 14px; color: #64748B; margin-bottom: 12px;">Comparison between the matched sanction record and the provided client profile.</div>
+            <table class="comp-table">
+                <thead> 
+                <tr>
+                    <th>Field</th>
+                    <th>Screening Output</th>
+                    <th>Screening Input</th>
+                    @* <th>Sanction Record (Matched)</th>
+                <th>Client Profile (Case Input)</th> *@
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-weight: 600;">Name</td>
+                        <td class="comp-val-match">@fn2</td>
+                    <td>@Model.Case.FirstName @Model.Case.MiddleName @Model.Case.LastName</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 600;">Date of Birth</td>
+                    <td>-</td>
+                    <td>@(Model.Case.DOB == "1/1/0001 12:00:00 AM" ? "-" : Model.Case.DOB)</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 600;">Nationality</td>
+                        <td>
+                            @(
+                                                pu.Nationality == null ||
+                                                string.IsNullOrEmpty(pu.Nationality.NationalityText ?? pu.Nationality.Name)
+                                                ? "-"
+                                                : (pu.Nationality.NationalityText ?? pu.Nationality.Name)
+                                                )
+                    </td>
+                    <td>@(string.IsNullOrEmpty(Model.Case.Nationality) ? "-" : Model.Case.Nationality)</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 600;">Id Number</td>
+                    <td>-</td>
+                    <td>@(string.IsNullOrEmpty(Model.Case.CustomerIdNumber) ? "-" : Model.Case.CustomerIdNumber)</td>
+                </tr>
+            </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="sec-hdr">Data Comparison</div>
+            <hr class="sec-line" />
+            <div style="font-size: 14px; color: #64748B; margin-bottom: 12px;">Comparison between the matched sanction record and the provided client profile.</div>
+            <table class="comp-table">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Screening Output</th>
+                        <th>Screening Input</th>
+                        @* <th>Sanction Record (Matched)</th>
+                <th>Client Profile (Case Input)</th> *@
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight: 600;">Name</td>
+                        <td class="comp-val-match">@(Convert.ToString(pu.BusinessName) ?? "")</td>
+                        <td>@Model.Case.FirstName @Model.Case.MiddleName @Model.Case.LastName</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Date of Registration</td>
+                        <td>-</td>
+                        <td>@(Model.Case.DOB == "1/1/0001 12:00:00 AM" ? "-" : Model.Case.DOB)</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Country of Incorporation</td>
+                        <td>-</td>
+                        <td>@(string.IsNullOrEmpty(Model.Case.Nationality) ? "-" : Model.Case.Nationality)</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Id Number</td>
+                        <td>-</td>
+                        <td>@(string.IsNullOrEmpty(Model.Case.CustomerIdNumber) ? "-" : Model.Case.CustomerIdNumber)</td>
+                    </tr>
+                </tbody>
+            </table>
+        }
 
     <!-- Evidence -->
     @if (hasArticles)

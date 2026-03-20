@@ -39,11 +39,13 @@ using AML.ViewModel.ViewModels.User;
 using AML.Web.CustomFilters;
 using AML.Web.Helper;
 using AutoMapper;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using iTextSharp.text;
 using iTextSharp.text.html.simpleparser;
 using iTextSharp.text.pdf;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
 using MySqlX.XDevAPI;
@@ -1067,7 +1069,15 @@ namespace AML.Web.Controllers.Corporate
                                     }
                                 }
 
-                                string body = string.Empty;
+                            CaseCommentModel remarkModel = new CaseCommentModel();
+                            remarkModel.CaseId = Convert.ToInt32(_caseDoc.CaseId);
+                            remarkModel.Comment = "Case is Created"; // ✅ FIXED
+                            remarkModel.CommentType = "Corporate Screening";
+                            remarkModel.CreatedBy = _clientHandler.GetUserId();
+
+                            var remarkResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
+
+                            string body = string.Empty;
                                 using (StreamReader reader = new StreamReader(@"Views/Risk/RiskEmailBody.html"))
                                 {
                                     body = reader.ReadToEnd();
@@ -1542,6 +1552,7 @@ namespace AML.Web.Controllers.Corporate
             var clientId = _clientHandler.GetClientId();
             string CallC6Screening = _configuration["CallC6Screening"];
             List<string> selectedScreeningOptions = new List<string>();
+            var flagTypes = new HashSet<string>();
             model.CodesTables = _mapper.Map<List<CodesTableModel>>(_customerCaseService.GetCodesByClientID(clientId));
 
             bool IsSanction = false;
@@ -1719,12 +1730,42 @@ namespace AML.Web.Controllers.Corporate
 
                 // Optional: Delete temp shareholder record if using temp table
                 _customerCaseService.DeleteShareholders(sh.Id);
-                var id=_customerCaseService.GetCaseId(sh.CompanyCode);
-                _customerCaseService.UpdateCase(id, _ccDTO.CreatedBy);
+
+                if (!string.IsNullOrEmpty(sh.FlagType))
+                {
+                    flagTypes.Add(sh.FlagType);
+                }
+                
+
             }
+            
+           
 
             if (isCaseCreated && !string.IsNullOrEmpty(caseRefId))
             {
+                int id = _customerCaseService.GetCaseId(caseRefId);
+                CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(id);
+
+                _customerCaseService.Update(_CustomerCaseDTO);
+
+                string commentText = string.Empty;
+                var uniqueFlagTypes = flagTypes.ToList();
+                
+
+                if (uniqueFlagTypes.Any())
+                {
+                    commentText = uniqueFlagTypes.Count == 1
+                        ? $"{uniqueFlagTypes[0]} Case Has Been Created."
+                        : $"{string.Join(", ", uniqueFlagTypes)} Cases Have Been Created.";
+                }
+
+                CaseCommentModel remarkModel = new CaseCommentModel();
+                remarkModel.CaseId = id;
+                remarkModel.Comment = commentText; // ✅ FIXED
+                remarkModel.CommentType = "Related Parties";
+                remarkModel.CreatedBy = _clientHandler.GetUserId();
+
+                var remarkResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
                 // Pass values to View / JS / TempData
                 TempData["CaseRefId"] = caseRefId;
                 TempData["IsCaseCreated"]= true;

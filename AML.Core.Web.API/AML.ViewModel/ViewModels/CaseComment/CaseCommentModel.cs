@@ -41,6 +41,12 @@ namespace AML.ViewModel.ViewModels.CaseComment
 
         public string CaseChangeStatus { get; set; }
 
+        public string screenType { get; set; }
+
+        public string CorporateId { get; set; }
+
+        public string FlagType { get; set; }
+
     }
 
 }

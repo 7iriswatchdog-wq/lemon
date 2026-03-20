@@ -1138,7 +1138,7 @@ namespace AML.Web.Controllers.ProliferationFinance
 
                 // default first time
 
-                if (previousStatus == 2)
+                if (previousStatus == 2 || previousStatus == 3)
                 {
                     int newStatus = hasMatchRecords ? 0 : 5;
 
