@@ -1064,7 +1064,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                             }
 
                         }
-                        if (hit.Decision == "True Match")
+                        if (hit.Decision == "True Match" || hit.Decision == "Potential Hits")
                         {
                             corpModel.DualUseGoods = "Yes";
                         }
