@@ -1,0 +1,402 @@
+@using Microsoft.AspNetCore.Html
+@using System.Text
+@using Microsoft.AspNetCore.Http
+@using AML.ViewModel.ViewModels.CustomerCase
+@model AML.ViewModel.ViewModels.CaseProcess.CaseProcessModel
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Completed Case Process Report";
+    Layout = null; 
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName") ?? "AML Systems";
+    var clientLogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completed Case-@Model.Case.Id</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8fafc; /* bg-slate-50 */
+        }
+        @@media print {
+            .page-break { page-break-before: always; }
+            .no-print { display: none; }
+        }
+        
+        /* Help PDF renderer with some basic layout rules */
+        .flex { display: flex !important; }
+        .grid { display: grid !important; }
+        
+        /* Prevent cards/sections from breaking across pages */
+        tr { 
+            page-break-inside: avoid !important; 
+            break-inside: avoid !important;
+        }
+
+        @@media print {
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-900 text-[9px] bg-slate-50">
+    <!-- Loader Overlay -->
+    <div id="processLoader" class="fixed inset-0 bg-white/80 backdrop-blur-md z-[9999] flex-col items-center justify-center gap-6 transition-all duration-300" style="display:none;">
+        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        <div class="flex flex-col items-center gap-2 text-sm font-bold">
+            <div class="text-slate-900">Preparing Report...</div>
+            <div class="text-slate-500 animate-pulse italic">Setting up high-fidelity PDF layout</div>
+        </div>
+    </div>
+
+    <!-- No-print action bar -->
+    <div class="no-print flex items-center justify-end gap-2 my-4 max-w-[1024px] mx-auto px-2">
+        <button onclick="downloadPageAsPDF('#pdf-container', 'Completed_Case_Report_@Model.Case.Id' + '.pdf')"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold rounded-lg shadow transition-all active:scale-95 cursor-pointer">
+            Download PDF
+        </button>
+        <button onclick="window.print()"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[9px] font-bold rounded-lg shadow transition-all active:scale-95">
+            Print
+        </button>
+        <a href="/Report/ViewIndividualCaseDetail?id=@Model.Case.CustomerId&type=@(Context.Request.Query["type"])"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[9px] font-bold rounded-lg shadow transition-all active:scale-95">
+            Back
+        </a>
+    </div>
+
+    <div id="pdf-container" class="max-w-[1024px] mx-auto flex flex-col gap-6 px-2">
+
+        
+        <!-- Premium Header -->
+        <div class="shrink-0 bg-gradient-to-b from-[#33394e] to-[#2F3961] px-8 py-6 mb-6 shadow-lg rounded-b-2xl">
+            <div class="flex justify-between items-center">
+                <div>
+                    <div class="flex items-center gap-2 text-slate-300 text-[10px] mb-2">
+                        <span>Completed Cases</span>
+                        <i data-lucide="chevron-right" class="h-3 w-3"></i>
+                        <span class="text-white font-medium">Process</span>
+                    </div>
+                    <h1 class="text-2xl font-black text-white tracking-tight">Completed Case Process Report</h1>
+                    <div class="mt-2 flex items-center gap-4">
+                        <div class="px-2 py-0.5 bg-blue-500/20 border border-blue-400/30 rounded text-[10px] font-bold text-blue-200 uppercase tracking-wider">
+                            Official Audit Document
+                        </div>
+                        <div class="text-[10px] text-slate-400">
+                            Generated on @DateTime.Now.ToString("dd MMM yyyy, HH:mm")
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div class="text-right">
+                        <div class="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Case ID</div>
+                        <div class="text-xl font-black text-white">#@Model.Case.Id</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(clientLogo))
+                    {
+                        <div class="h-16 w-16 bg-white/10 rounded-xl p-2 backdrop-blur-sm border border-white/10 flex items-center justify-center">
+                            <img src="@clientLogo" alt="Logo" class="max-h-full max-w-full object-contain" />
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <!-- Case Details Summary Card -->
+        <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+            <div class="flex items-center gap-2 mb-4">
+                <div class="h-4 w-1 bg-blue-600 rounded-full"></div>
+                <h2 class="text-base font-bold text-slate-900 leading-none">Case Details</h2>
+            </div>
+            
+            <div class="grid grid-cols-6 lg:grid-cols-6 gap-6">
+                <div>
+                    <div class="text-[11px] text-slate-400">Customer ID</div>
+                    <div class="text-[12px] font-medium text-slate-800">@Model.Case.CustomerId</div>
+                </div>
+                <div>
+                    <div class="text-[11px] text-slate-400">Date</div>
+                    <div class="text-[12px] font-medium text-slate-800">@Model.Case.CreatedOnText</div>
+                </div>
+                <div>
+                    <div class="text-[11px] text-slate-400">Category</div>
+                    <div class="text-[12px] font-medium text-slate-800">@(Model.Case.CustomerType == "I" ? "Individual" : "Corporate")</div>
+                </div>
+                <div>
+                    <div class="text-[11px] text-slate-400">Customer Name</div>
+                    <div class="text-[12px] font-medium text-slate-900">@(Model.Case.FirstName + " " + Model.Case.LastName)</div>
+                </div>
+                <div>
+                    <div class="text-[11px] text-slate-400">Nationality</div>
+                    <div class="text-[12px] font-medium text-slate-800">@Model.Case.Nationality</div>
+                </div>
+                <div>
+                    <div class="text-[11px] text-slate-400">Customer CIF No</div>
+                    <div class="text-[12px] font-medium text-slate-800">@Model.Case.CIFNumber</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Results Card -->
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm mb-6">
+            <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-white">
+                <div class="flex items-center gap-2">
+                    <div class="h-4 w-1 bg-blue-600 rounded-full"></div>
+                    <h3 class="text-sm font-bold text-slate-900 leading-none">Search Results</h3>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto px-5 pb-5">
+                <table class="w-full text-left border-collapse">
+                    <thead class="text-xs text-slate-500 bg-white border-b border-slate-200">
+                        <tr>
+                            <th class="px-3 py-3 font-bold">Name</th>
+                            <th class="px-3 py-3 font-bold">Score</th>
+                            <th class="px-3 py-3 font-bold">Nationality</th>
+                            <th class="px-3 py-3 font-bold">DOB</th>
+                            <th class="px-3 py-3 font-bold">Datasets</th>
+                            <th class="px-3 py-3 font-bold">Search Type</th>
+                            <th class="px-3 py-3 font-bold text-right">Search Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @if (Model.DataList != null && Model.DataList.Any())
+                        {
+                            foreach (var item in Model.DataList)
+                            {
+                                <tr class="bg-white">
+                                    <td class="px-4 py-4 align-top font-bold text-slate-900 text-xs">@item.matchname</td>
+                                    <td class="px-4 py-4 align-top font-bold text-slate-700 text-xs">@item.matchscore</td>
+                                    <td class="px-4 py-4 align-top text-slate-600 text-[10px]">@item.matchnationality</td>
+                                    <td class="px-4 py-4 align-top text-slate-600 text-[10px]">@item.matchdob</td>
+                                    <td class="px-4 py-4 align-top text-[10px] text-slate-500">
+                                        @{ var datasets = item.matchdatasets?.Split(','); }
+                                        @if (datasets != null) { foreach (var ds in datasets) { <div class="mb-0.5">@ds.Trim()</div> } }
+                                    </td>
+                                    <td class="px-4 py-4 align-top">
+                                        @{ var decisions = item.searchTypes != null ? string.Join(", ", item.searchTypes) : "-"; }
+                                        <span class="inline-flex px-2 py-1 rounded @GetStatusClass(decisions) text-[10px] font-bold">@decisions</span>
+                                    </td>
+                                    <td class="px-4 py-4 align-top text-[10px] text-slate-500 italic">@(string.IsNullOrEmpty(item.remarks) ? "-" : item.remarks)</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="7" class="px-4 py-12 text-center text-slate-400 italic font-medium">No search results found</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (Model.ShareholdersData != null && Model.ShareholdersData.Any())
+        {
+            <div class="page-break"></div>
+            <!-- Shareholders Card -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm mb-6">
+                <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-white">
+                    <div class="flex items-center gap-2">
+                        <div class="h-4 w-1 bg-blue-600 rounded-full"></div>
+                        <h3 class="text-[10px] font-bold text-slate-800 tracking-tight">Related Parties Detail</h3>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="text-xs text-slate-500 bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-4 py-2 font-bold">ID</th>
+                                <th class="px-4 py-2 font-bold">Name</th>
+                                <th class="px-4 py-2 font-bold">Shareholder Type</th>
+                                <th class="px-4 py-2 font-bold">Status</th>
+                                <th class="px-4 py-2 font-bold">Link</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @functions {
+                                public string GetStatusClass(string statusText) {
+                                    if (string.IsNullOrEmpty(statusText)) return "bg-slate-100 text-slate-800";
+                                    var t = statusText.ToLower().Trim();
+                                    if (t.Contains("pending")) return "bg-yellow-100 text-yellow-800";
+                                    if (t.Contains("approved")) return "bg-green-700 text-white";
+                                    if (t.Contains("auto") || t.Contains("transfer")) return "bg-green-100 text-green-800";
+                                    if (t.Contains("rejected")) return "bg-red-100 text-red-800";
+                                    return "bg-slate-100 text-slate-800";
+                                }
+
+                                public Microsoft.AspNetCore.Html.IHtmlContent RenderShareholderRows(List<AML.ViewModel.ViewModels.CustomerCase.CaseModel> allData, string parentId, int depth = 0)
+                                {
+                                    var children = allData.Where(s => s.ParentId == parentId).ToList();
+                                    if (string.IsNullOrEmpty(parentId))
+                                    {
+                                        var allIds = new HashSet<string>(allData.Select(s => s.CustomerId).Where(id => !string.IsNullOrEmpty(id)), StringComparer.OrdinalIgnoreCase);
+                                        children = allData.Where(s => string.IsNullOrEmpty(s.ParentId) || !allIds.Contains(s.ParentId)).ToList();
+                                    }
+
+                                    var str = new StringBuilder();
+                                    foreach (var item in children)
+                                    {
+                                        var indent = depth * 20;
+                                        var prefix = depth > 0 ? "<span style='color: #cbd5e1; margin-right: 8px; font-family: monospace;'>&#x2514;&#x2500;</span>" : "";
+                                        
+                                        str.Append("<tr class='border-b border-slate-100'>");
+                                        // Column 1: ID
+                                        str.Append("<td class='px-4 py-3' style='font-size: 10px; color: #64748b; font-weight: 500;'>");
+                                        str.Append(item.CustomerId);
+                                        str.Append("</td>");
+                                        
+                                        // Column 2: Name
+                                        str.Append("<td class='px-4 py-3'>");
+                                        str.Append("<div style='display: flex; align-items: center; padding-left: " + indent + "px;'>");
+                                        str.Append(prefix);
+                                        str.Append("<span style='font-size: 11px; font-weight: 700; color: #0f172a;'>" + (item.LastName ?? item.FirstName ?? "Unknown") + "</span>");
+                                        str.Append("</div></td>");
+                                        
+                                        // Column 3: Type
+                                        str.Append("<td class='px-4 py-3' style='font-size: 10px; font-weight: 500; color: #475569; font-style: italic;'>" + (item.Type ?? "-") + "</td>");
+                                        
+                                        // Column 4: Status
+                                        str.Append("<td class='px-4 py-3' style='text-align: left;'>");
+                                        str.Append("<span class='inline-flex px-2 py-0.5 border rounded-full " + GetStatusClass(item.CaseStatus) + "' style='font-size: 9px; font-weight: 700;'>");
+                                        str.Append(item.CaseStatus ?? "-");
+                                        str.Append("</span></td>");
+                                        
+                                        // Column 5: Link
+                                        str.Append("<td class='px-4 py-3'></td>");
+                                        str.Append("</tr>");
+
+                                        str.Append(RenderShareholderRows(allData, item.CustomerId, depth + 1).ToString());
+                                    }
+                                    return new Microsoft.AspNetCore.Html.HtmlString(str.ToString());
+                                }
+                            }
+
+                            @RenderShareholderRows(Model.ShareholdersData, null)
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+        <!-- Risk Assessment Card -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm mb-6">
+            <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-white">
+                <div class="flex items-center gap-2">
+                    <div class="h-4 w-1 bg-blue-600 rounded-full"></div>
+                    <h3 class="text-sm font-bold text-slate-800 tracking-tight">Risk Assessment</h3>
+                </div>
+                @{
+                    var finalRating = Model.Case.CustomerType == "I" ? Model.FinalRiskScore : Model.FinalRiskScore; // Both use FinalRiskScore in model
+                    var ratingColor = "bg-slate-200 text-slate-600";
+                    if (!string.IsNullOrEmpty(finalRating)) {
+                        if (finalRating.ToLower().Contains("high")) ratingColor = "bg-red-500 text-white";
+                        else if (finalRating.ToLower().Contains("medium")) ratingColor = "bg-yellow-400 text-white";
+                        else if (finalRating.ToLower().Contains("low")) ratingColor = "bg-green-500 text-white";
+                    }
+                }
+                <span class="px-3 py-1 rounded-full text-[10px] font-black @ratingColor shadow-sm">
+                    @(string.IsNullOrEmpty(finalRating) ? "Risk Score" : finalRating)
+                </span>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                @if (Model.RiskTypeCategoryDTO != null)
+                {
+                    foreach (var category in Model.RiskTypeCategoryDTO)
+                    {
+                        <div>
+                            <div class="space-y-3">
+                                <h4 class="text-[10px] font-bold bg-slate-100 px-3 py-2 rounded tracking-wider text-slate-600">@category.RiskCategory</h4>
+                                @foreach (var risk in category.RiskTypes)
+                                {
+                                    <div class="flex items-center justify-between gap-3 break-inside-avoid-page">
+                                        <label class="text-[11px] w-full pl-3 text-slate-400 font-bold tracking-tight">@risk.RiskType</label>
+                                        <div class="w-64 h-8 flex items-center border border-slate-200 bg-white px-3 rounded-md shadow-sm">
+                                            <span class="text-[12px] font-medium text-slate-800">@(string.IsNullOrEmpty(risk.ItemTxt) || risk.ItemTxt == "--EMPTY--" ? "-" : risk.ItemTxt)</span>
+                                        </div>
+                                        @{
+                                            var scoreColor = "bg-slate-100 text-slate-600 border-slate-200";
+                                            if (risk.ItemScore >= 1 && (risk.ItemTxt != "--EMPTY--" && !string.IsNullOrEmpty(risk.ItemTxt))) {
+                                                if (risk.ItemScore == 1) scoreColor = "bg-green-500 text-white border-green-600";
+                                                else if (risk.ItemScore == 2) scoreColor = "bg-yellow-400 text-white border-yellow-500";
+                                                else if (risk.ItemScore >= 3) scoreColor = "bg-red-500 text-white border-red-600";
+                                            }
+                                        }
+                                        <span class="text-[8px] font-black inline-flex items-center justify-center w-8 h-8 rounded-full border @scoreColor shadow-sm">
+                                            @(risk.ItemTxt == "--EMPTY--" || string.IsNullOrEmpty(risk.ItemTxt) ? "0" : risk.ItemScore.ToString())
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/30 flex items-center justify-end gap-3 break-inside-avoid-page">
+                <span class="text-[10px] font-bold text-slate-400 tracking-widest">Total Selected Items:</span>
+                <span class="text-[9px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100">@Model.RiskScoreCount</span>
+            </div>
+        </div>
+
+        <!-- Case History Card -->
+        @if (Model.CaseComments != null && Model.CaseComments.Count > 0)
+        {
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+                <div class="flex items-center gap-2 mb-6 text-slate-900">
+                    <div class="h-4 w-1 bg-blue-600 rounded-full"></div>
+                    <h2 class="text-sm font-bold tracking-tight">Case History</h2>
+                </div>
+                <div class="relative border-l border-slate-200 ml-3 flex flex-col gap-6">
+                    @foreach (var comment in Model.CaseComments.OrderByDescending(c => c.CreatedOn))
+                    {
+                        var label = string.IsNullOrEmpty(comment.MatchType) ? "Action" : "Action On " + comment.MatchType;
+                        var displayDate = comment.CreatedOn == DateTime.MinValue ? "NA" : comment.CreatedOn.ToString("dd/MM/yyyy HH:mm:ss");
+                        
+                        <div class="pl-0 relative break-inside-avoid-page">
+                            <div class="absolute -left-[5px] -ml-1 top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-white bg-blue-500"></div>
+                            <div class="flex flex-col gap-1 pl-6">
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-xs font-bold text-slate-900">@label</span>
+                                    <span class="text-[11px] text-slate-500">by <span class="font-semibold text-blue-600">@comment.CreatedUser</span></span>
+                                </div>
+                                <p class="text-[11px] font-medium text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                    @comment.Comments
+                                </p>
+                                <span class="text-[10px] font-bold uppercase tracking-wide text-blue-600">
+                                    @displayDate
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="~/js/pdf-export.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('download') === 'true') {
+                // Trigger the high-fidelity client-side download
+                setTimeout(() => {
+                    downloadPageAsPDF('#pdf-container', 'Completed_Case_Report_@Model.Case.Id' + '.pdf');
+                }, 1000); // Small buffer for any remaining styles to settle
+            }
+        });
+    </script>
+</body>
+</html>

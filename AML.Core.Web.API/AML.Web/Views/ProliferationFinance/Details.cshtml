@@ -6,395 +6,272 @@
     Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
     var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
     var type = Context.Request.Query["type"].ToString().ToLower();
+    
+    string auditDate = DateTime.Now.ToString("dd-MMM-yyyy HH:mm:ss") + " UTC";
+    string creationDate = Model.CreatedOn?.ToString("dd-MM-yyyy HH:mm:ss") ?? "-";
+    string matchName = Model.CompanyName;
+    string matchType = type == "non-chemical" ? "Non-Chemical" : "Chemical";
 }
 
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
+<!-- Loader -->
+<div id="loadingdetails" style="display:flex;position:fixed;inset:0;background:rgba(255,255,255,.92);align-items:center;justify-content:center;z-index:9999;">
+    <div class="kld"><div></div><div></div><div></div><div></div></div>
+</div>
+
 <style>
-    :root {
-        --font-lexend: 'Lexend', sans-serif;
-        --font-inter: 'Inter', sans-serif;
+    html, body { font-family: 'Inter', Arial, sans-serif; background: #f5f5f5; color: #000; }
+    
+    .kld { display: inline-block; position: relative; width: 60px; height: 13px }
+    .kld div { position: absolute; top: 1px; width: 11px; height: 11px; border-radius: 50%; background: #1a56db; animation-timing-function: cubic-bezier(0, 1, 1, 0) }
+    .kld div:nth-child(1) { left: 6px; animation: k1 .6s infinite }
+    .kld div:nth-child(2) { left: 6px; animation: k2 .6s infinite }
+    .kld div:nth-child(3) { left: 26px; animation: k2 .6s infinite }
+    .kld div:nth-child(4) { left: 46px; animation: k3 .6s infinite }
+    @@keyframes k1 { 0% { transform: scale(0) } 100% { transform: scale(1) } }
+    @@keyframes k3 { 0% { transform: scale(1) } 100% { transform: scale(0) } }
+    @@keyframes k2 { 0% { transform: translate(0, 0) } 100% { transform: translate(19px, 0) } }
+
+    .doc { 
+        max-width: 900px; 
+        margin: 0 auto; 
+        padding: 0 40px 60px; 
+        background: #fff; 
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        margin-top: 24px;
+        border-radius: 8px;
     }
 
-    body {
-        background-color: #F8FAFC;
-        font-family: var(--font-inter);
+    .topbar { 
+        display: flex; 
+        justify-content: flex-end; 
+        gap: 8px; 
+        padding: 20px 0; 
+        margin-bottom: 10px;
     }
 
-    .report-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 0 1rem;
-        width: 100%;
+    .ph { 
+        display: flex; 
+        gap: 25px; 
+        align-items: flex-start; 
+        margin-bottom: 25px;
     }
-
-    .report-card {
-        background: #ffffff;
-        border-radius: 12px;
-        border: 1px solid #E2E8F0;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        overflow: hidden;
-        margin-bottom: 24px;
-    }
-
-    .report-header {
-        border-bottom: 1px solid #E2E8F0;
-        padding: 24px 32px;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-    }
-
-    .report-title-area {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-    }
-
-    .report-profile-img {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
+    .ph-photo { 
+        width: 100px; 
+        height: 100px; 
+        background: #fdfdfd; 
+        border: 1px solid #eee;
+        flex-shrink: 0; 
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #E2E8F0;
-        color: #64748B;
-        border: 2px solid #E2E8F0;
+        color: #94A3B8;
+        border-radius: 50%;
     }
-
-    .lexend-font {
-        font-family: var(--font-lexend);
-    }
-
-    .report-actions {
-        display: flex;
+    .ph-info { flex: 1; }
+    .ph-name { 
+        font-size: 24px; 
+        font-weight: 700; 
+        color: #0F172A; 
+        display: flex; 
+        align-items: center; 
         gap: 12px;
-    }
-
-    .btn-secondary {
-        padding: 8px 16px;
-        background: #F1F5F9;
-        color: #475569;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 14px;
-        border: 1px solid #E2E8F0;
-        transition: all 0.2s;
-        text-decoration: none;
-    }
-
-    .btn-secondary:hover {
-        background: #E2E8F0;
-        color: #0F172A;
-    }
-
-    .btn-primary {
-        padding: 8px 16px;
-        background: #2563EB;
-        color: #ffffff;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 14px;
-        border: none;
-        transition: all 0.2s;
-    }
-
-    .btn-primary:hover {
-        background: #1D4ED8;
-    }
-
-    .report-content {
-        padding: 32px;
-    }
-
-    .report-section {
-        margin-bottom: 32px;
-    }
-
-    .report-section-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #0F172A;
-        margin-bottom: 16px;
-        padding-bottom: 8px;
-        border-bottom: 2px solid #F1F5F9;
-        font-family: var(--font-lexend);
-    }
-
-    .report-grid-3 {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 24px;
-    }
-
-    .info-group {
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 12px;
-    }
-
-    .info-label {
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748B;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
         margin-bottom: 4px;
     }
+    .ph-type { font-size: 15px; color: #64748B; font-weight: 500; }
 
-    .info-value {
-        font-size: 15px;
-        color: #0F172A;
-        font-weight: 600;
-        line-height: 1.5;
+    .pill { 
+        display: inline-block; 
+        padding: 2px 12px; 
+        border-radius: 99px; 
+        font-size: 11px; 
+        font-weight: 700; 
+        background: #3b82f6; 
+        color: #fff;
+        text-transform: uppercase;
     }
+    .pill-red { background: #ef4444; }
 
-    .tab-nav {
-        display: flex;
-        gap: 24px;
-        border-bottom: 1px solid #E2E8F0;
-        margin-bottom: 24px;
-    }
+    .sec-hdr { font-size: 16px; font-weight: 700; color: #000; margin: 30px 0 6px; text-transform: uppercase; letter-spacing: 0.025em; }
+    .sec-line { border: 0; border-top: 2px solid #3b82f6; margin: 0 0 15px; opacity: 1; }
 
-    .tab-link {
-        padding: 12px 4px;
-        font-weight: 600;
-        font-size: 14px;
-        color: #64748B;
-        text-decoration: none;
-        border-bottom: 2px solid transparent;
-        transition: all 0.2s;
-        background: none;
-        border-top: none;
-        border-left: none;
-        border-right: none;
-        cursor: pointer;
-    }
+    .pd-table { width: 100%; border-collapse: collapse; }
+    .pd-table td { padding: 8px 0; vertical-align: top; font-size: 14px; border-bottom: 1px solid #F1F5F9; }
+    .pd-table tr:last-child td { border-bottom: none; }
+    .pd-group { font-weight: 700; color: #0F172A; width: 180px; }
+    .pd-field { color: #64748B; width: 160px; font-weight: 500; }
+    .pd-val { color: #0F172A; font-weight: 500; }
 
-    .tab-link.active {
-        color: #2563EB;
-        border-bottom-color: #2563EB;
-    }
+    .grid-row { display: grid; grid-template-columns: 180px 1fr; gap: 10px; padding: 8px 0; font-size: 14px; border-bottom: 1px solid #F1F5F9; }
+    .grid-row:last-child { border-bottom: none; }
+    .grid-lbl { color: #64748B; font-weight: 500; }
+    .grid-val { color: #0F172A; font-weight: 500; }
 
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: #F1F5F9;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #CBD5E1;
-        border-radius: 10px;
-    }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .tag-item { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
 
-    /* Print styling */
-    @@media print {
-        .report-actions, .tab-nav { display: none !important; }
-        .report-card { border: none !important; box-shadow: none !important; }
-        .report-container { max-width: 100% !important; padding: 0 !important; }
-        .tab-content { display: block !important; }
-    }
+    .comp-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #F8FAFC; border-radius: 8px; overflow: hidden; table-layout: fixed; word-wrap: break-word; }
+    .comp-table th { background: #E2E8F0; padding: 12px; text-align: left; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; }
+    .comp-table td { padding: 12px; font-size: 14px; color: #334155; border-bottom: 1px solid #E2E8F0; }
+    .comp-table tr:last-child td { border-bottom: none; }
+    .comp-val-match { color: #B91C1C; font-weight: 700; }
 </style>
 
-<div class="report-container mt-6">
-    <div class="report-card">
-        <!-- Header -->
-        <div class="report-header">
-            <div class="report-title-area">
-                <div class="report-profile-img">
-                    <i class="fa fa-flask fa-2x"></i>
-                </div>
-                <div>
-                    <h1 class="text-3xl font-bold text-slate-900 lexend-font mb-1">@Model.CompanyName</h1>
-                    <div class="text-slate-500 font-medium flex items-center gap-3">
-                        <span>Proliferation Finance Match Report</span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-100">
-                            ID: @Model.CorporateId
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="report-actions">
-                <a href="@Url.Action("DownloadDetails", "ProliferationFinance", new { id = Model.CaseId })" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 px-6 rounded-md text-sm transition-all shadow-sm flex items-center justify-center gap-2 no-underline">
-                    <i class="fa fa-download"></i> Download
-                </a>
-                <a href="/ProliferationFinance/Process/@Model.CaseId" class="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold h-9 px-6 rounded-md text-sm transition-all shadow-sm flex items-center justify-center gap-2 no-underline">
-                    <i class="fa fa-arrow-left"></i> Back
-                </a>
-            </div>
-        </div>
+<div class="doc">
+    <div class="topbar">
+        <a href="/ProliferationFinance/Process/@Model.CaseId" class="details-back-btn">
+            <button type="button" class="h-9 px-4 border rounded-md bg-white hover:bg-gray-50 transition-colors">
+                <i class="fa fa-arrow-left mr-2"></i> Back
+            </button>
+        </a>
+        <a href="@Url.Action("DownloadDetails", "ProliferationFinance", new { id = Model.CaseId })" class="details-back-btn" style="margin-left: 8px;">
+            <button type="button" class="h-9 px-4 border rounded-md bg-blue-500 hover:bg-blue-600 text-white transition-colors">
+                Download
+            </button>
+        </a>
+    </div>
 
-        <div class="report-content">
-            <!-- Tabs -->
-            @if (string.IsNullOrEmpty(type))
-            {
-                <div class="tab-nav">
-                    <button class="tab-link active" onclick="switchTab('chemical', this)">Chemical Matching</button>
-                    <button class="tab-link" onclick="switchTab('non-chemical', this)">Non-Chemical Matching</button>
-                </div>
+    <!-- Profile Header -->
+    <div class="ph">
+        <div class="ph-photo">
+            @if(type == "non-chemical") {
+                <i class="fa fa-file-pdf-o fa-4x"></i>
+            } else {
+                <i class="fa fa-flask fa-4x"></i>
             }
-
-            <!-- Chemical Tab -->
-            <div id="chemical-tab" class="tab-pane" style="@(type == "non-chemical" ? "display: none;" : "")">
-                <div class="report-section">
-                    <h3 class="report-section-title">Case Summary</h3>
-                    <div class="report-grid-3">
-                        <div class="info-group">
-                            <span class="info-label">Customer Type</span>
-                            <span class="info-value">@Model.CustomerType</span>
-                        </div>
-                        <div class="info-group">
-                            <span class="info-label">Created On</span>
-                            <span class="info-value">@(Model.CreatedOn?.ToString("dd-MMM-yyyy") ?? "-")</span>
-                        </div>
-                        <div class="info-group">
-                            <span class="info-label text-blue-600 font-bold">Product Name</span>
-                            <span class="info-value text-blue-700 italic font-bold">
-                                @Model.ChemicalName
-                            </span>
-                        </div>
-                        <div class="info-group">
-                            <span class="info-label">Current Status</span>
-                            <span class="info-value">
-                                @{
-                                    var statusClass = "bg-slate-100 text-slate-800";
-                                    var s = (Model.Status ?? "").ToLower();
-                                    if (s.Contains("pending")) statusClass = "bg-yellow-100 text-yellow-800";
-                                    else if (s.Contains("approved") || s.Contains("true match")) statusClass = "bg-blue-100 text-blue-800";
-                                    else if (s.Contains("transfer")) statusClass = "bg-green-100 text-green-800";
-                                    else if (s.Contains("rejected") || s.Contains("false match")) statusClass = "bg-red-100 text-red-800";
-                                }
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold @statusClass ring-1 ring-inset @statusClass.Replace("bg-", "ring-").Replace("100", "200")">
-                                    @Model.Status
-                                </span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="report-section">
-                    <h3 class="report-section-title">Chemical Specifications</h3>
-                    @if (Model.MatchedChemicals != null && Model.MatchedChemicals.Count > 0)
-                    {
-                        @for (int i = 0; i < Model.MatchedChemicals.Count; i++)
-                        {
-                            var chem = Model.MatchedChemicals[i];
-                            <div class="mb-8 last:mb-0">
-                                <div class="flex items-center gap-2 mb-4">
-                                    <span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">Match @(i + 1)</span>
-                                    <span class="text-xs font-bold text-slate-500 uppercase">@chem.ChemicalName</span>
-                                </div>
-                                <div class="report-grid-3 bg-slate-50/50 p-6 rounded-xl border border-slate-100">
-                                    <div class="info-group">
-                                        <span class="info-label">Matched Chemical Name</span>
-                                        <span class="info-value text-blue-700">@(!string.IsNullOrEmpty(chem.ChemicalName) ? chem.ChemicalName : "-")</span>
-                                    </div>
-                                    <div class="info-group">
-                                        <span class="info-label">HS Code</span>
-                                        <span class="info-value">@(!string.IsNullOrEmpty(chem.HsCode) ? chem.HsCode : "-")</span>
-                                    </div>
-                                    <div class="info-group">
-                                        <span class="info-label">CAS Number</span>
-                                        <span class="info-value">@(!string.IsNullOrEmpty(chem.CasNumber) ? chem.CasNumber : "-")</span>
-                                    </div>
-                                    <div class="info-group">
-                                        <span class="info-label">ECCN</span>
-                                        <span class="info-value">@(!string.IsNullOrEmpty(chem.Eccn) ? chem.Eccn : "-")</span>
-                                    </div>
-                                    <div class="info-group">
-                                        <span class="info-label">Synonym</span>
-                                        <span class="info-value">@(!string.IsNullOrEmpty(chem.SynonymName) ? chem.SynonymName : "-")</span>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    }
-                    else if (Model.Score != "0" && (!string.IsNullOrEmpty(Model.MatchedChemicalName) || !string.IsNullOrEmpty(Model.HsCode) || !string.IsNullOrEmpty(Model.CasNumber)))
-                    {
-                        <div class="report-grid-3 bg-slate-50/50 p-6 rounded-xl border border-slate-100">
-                            <div class="info-group">
-                                <span class="info-label">Matched Chemical Name</span>
-                                <span class="info-value text-blue-700">@(!string.IsNullOrEmpty(Model.MatchedChemicalName) ? Model.MatchedChemicalName : "-")</span>
-                            </div>
-                            <div class="info-group">
-                                <span class="info-label">HS Code</span>
-                                <span class="info-value">@(!string.IsNullOrEmpty(Model.HsCode) ? Model.HsCode : "-")</span>
-                            </div>
-                            <div class="info-group">
-                                <span class="info-label">CAS Number</span>
-                                <span class="info-value">@(!string.IsNullOrEmpty(Model.CasNumber) ? Model.CasNumber : "-")</span>
-                            </div>
-                            <div class="info-group">
-                                <span class="info-label">ECCN</span>
-                                <span class="info-value">@(!string.IsNullOrEmpty(Model.Eccn) ? Model.Eccn : "-")</span>
-                            </div>
-                            <div class="info-group">
-                                <span class="info-label">Synonym</span>
-                                <span class="info-value">@(!string.IsNullOrEmpty(Model.SynonymName) ? Model.SynonymName : "-")</span>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-8 text-slate-400 italic bg-slate-50 rounded-lg border border-dashed border-slate-200">
-                            No chemical matches recorded for this case.
-                        </div>
-                    }
-                </div>
+        </div>
+        <div class="ph-info">
+            <div class="ph-name">
+                @matchName
+                <span class="pill @(type == "non-chemical" ? "pill-red" : "")">@matchType Match</span>
             </div>
-
-            <!-- Non-Chemical Tab -->
-            <div id="non-chemical-tab" class="tab-pane" style="@(type == "non-chemical" ? "" : "display: none;")">
-                <div class="report-section">
-                    <h3 class="report-section-title">Matched Content Snippets</h3>
-                    <div class="space-y-6">
-                        @{
-                            var pdfSrc = Model.SearchHitDetails;
-                        }
-                        @if (!string.IsNullOrEmpty(pdfSrc))
-                        {
-                            <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center gap-3 mb-4">
-                                <i class="fa fa-file-pdf-o text-blue-500"></i>
-                                <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Source: UAE Proliferation Finance PDF</span>
-                            </div>
-                            
-                            var paragraphList = pdfSrc.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
-                            var totalCount = paragraphList.Length;
-                            for (int i = 0; i < totalCount; i++)
-                            {
-                                var para = paragraphList[i];
-                                <div class="bg-slate-50 rounded-xl border border-slate-100 p-6">
-                                    <div class="info-label mb-3">Paragraph @(i + 1) of @totalCount</div>
-                                    <div class="pdf-snippet italic text-slate-700 leading-relaxed text-sm bg-white p-6 rounded-lg border border-slate-200 shadow-inner">
-                                        "@para"
-                                    </div>
-                                </div>
-                            }
-                        }
-                        else
-                        {
-                            <div class="text-center py-12 text-slate-400 italic">
-                                No PDF content matches recorded for this case.
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
+            <div class="ph-type">Proliferation Finance Match Report</div>
         </div>
     </div>
+
+    <!-- Audit Stamp -->
+    <div class="sec-hdr">Audit Stamp</div>
+    <hr class="sec-line"/>
+    <div class="grid-row">
+        <span class="grid-lbl">Extraction Date:</span>
+        <span class="grid-val">@auditDate</span>
+    </div>
+
+    <div class="grid-row">
+        <span class="grid-lbl">Creation Date:</span>
+        <span class="grid-val">@creationDate</span>
+    </div>
+
+    @if (type == "chemical" || string.IsNullOrEmpty(type))
+    {
+        <!-- Match Key Details -->
+        <div class="sec-hdr">Match Key Details</div>
+        <hr class="sec-line"/>
+        <table class="pd-table">
+            <tr>
+                <td class="pd-group">Case Identity</td>
+                <td class="pd-field">Case ID:</td>
+                <td class="pd-val">PF-@Model.CaseId</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="pd-field">Corporate ID:</td>
+                <td class="pd-val">@Model.CorporateId</td>
+            </tr>
+            <tr>
+                <td class="pd-group">Match Status</td>
+                <td class="pd-field">Current Status:</td>
+                <td class="pd-val">@(string.IsNullOrEmpty(Model.Status) ? "-" : Model.Status)</td>
+            </tr>
+        </table>
+
+        <!-- Comparison Section -->
+        <div class="sec-hdr">Chemical Specifications</div>
+        <hr class="sec-line"/>
+        <div style="font-size: 14px; color: #64748B; margin-bottom: 12px;">Review the identified chemical matches and their specifications below.</div>
+        
+        <table class="comp-table">
+            <thead>
+                <tr>
+                    <th>Chemical Name</th>
+                    <th>HS Code</th>
+                    <th>CAS Number</th>
+                    <th>ECCN</th>
+                    <th>Synonym</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.MatchedChemicals != null && Model.MatchedChemicals.Count > 0)
+                {
+                    @foreach (var chem in Model.MatchedChemicals)
+                    {
+                        <tr>
+                            <td class="comp-val-match">@(string.IsNullOrEmpty(chem.ChemicalName) ? "-" : chem.ChemicalName)</td>
+                            <td>@(string.IsNullOrEmpty(chem.HsCode) ? "-" : chem.HsCode)</td>
+                            <td>@(string.IsNullOrEmpty(chem.CasNumber) ? "-" : chem.CasNumber)</td>
+                            <td>@(string.IsNullOrEmpty(chem.Eccn) ? "-" : chem.Eccn)</td>
+                            <td>@(string.IsNullOrEmpty(chem.SynonymName) ? "-" : chem.SynonymName)</td>
+                        </tr>
+                    }
+                }
+                else if (Model.Score != "0" && (!string.IsNullOrEmpty(Model.MatchedChemicalName) || !string.IsNullOrEmpty(Model.HsCode) || !string.IsNullOrEmpty(Model.CasNumber)))
+                {
+                    <tr>
+                        <td class="comp-val-match">@(string.IsNullOrEmpty(Model.MatchedChemicalName) ? "-" : Model.MatchedChemicalName)</td>
+                        <td>@(string.IsNullOrEmpty(Model.HsCode) ? "-" : Model.HsCode)</td>
+                        <td>@(string.IsNullOrEmpty(Model.CasNumber) ? "-" : Model.CasNumber)</td>
+                        <td>@(string.IsNullOrEmpty(Model.Eccn) ? "-" : Model.Eccn)</td>
+                        <td>@(string.IsNullOrEmpty(Model.SynonymName) ? "-" : Model.SynonymName)</td>
+                    </tr>
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" style="text-align:center; color:#64748b; font-style:italic;">No chemical matches recorded for this case.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (type == "non-chemical" || (string.IsNullOrEmpty(type) && (Model.CustomerType == "Non-Chemical" || Model.CustomerType == "Both")))
+    {
+        <div class="sec-hdr">Matched Content Snippets</div>
+        <hr class="sec-line"/>
+        <div style="font-size: 14px; color: #64748B; margin-bottom: 12px;">Source: UAE Proliferation Finance PDF Document</div>
+        
+        <div style="margin-top:20px;">
+            @{
+                var pdfSrc = Model.SearchHitDetails;
+            }
+            @if (!string.IsNullOrEmpty(pdfSrc))
+            {
+                var paragraphList = pdfSrc.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
+                var totalCount = paragraphList.Length;
+                for (int i = 0; i < totalCount; i++)
+                {
+                    var para = paragraphList[i];
+                    <div style="font-size:14px; font-weight:700; color:#0F172A; margin-bottom:8px;">Paragraph @(i + 1) of @totalCount</div>
+                    <div class="pdf-snippet" style="background:#F8FAFC; border:1px solid #E2E8F0; padding:12px; border-radius:8px; margin-bottom:20px; font-size:14px; color:#334155;">
+                        "@para"
+                    </div>
+                }
+            }
+            else
+            {
+                <div style="text-align:center; padding:40px 0; color:#64748B; font-style:italic;">
+                    No PDF content matches recorded for this case.
+                </div>
+            }
+        </div>
+    }
+
 </div>
 
 <script>
-    function switchTab(tabId, btn) {
-        $('.tab-pane').hide();
-        $(`#${tabId}-tab`).show();
-        $('.tab-link').removeClass('active');
-        $(btn).addClass('active');
-    }
-
     function highlightSnippets() {
         const searchTerm = "@Html.Raw(Model.ChemicalName?.Replace("\"", "\\\""))";
         if (!searchTerm) return;
@@ -406,13 +283,21 @@
         $('.pdf-snippet').each(function() {
             const $this = $(this);
             const text = $this.text();
-            // Wrap in quotes as per the original design if needed, or just highlight
-            const newHtml = text.replace(regex, '<mark class="bg-yellow-200 text-slate-900 rounded px-1">$1</mark>');
+            const newHtml = text.replace(regex, '<mark class="tag-item" style="padding:0 4px; border-radius:2px;">$1</mark>');
             $this.html(newHtml);
         });
     }
 
-    $(document).ready(function() {
+    $(document).ready(function () {
+        $("#loadingdetails").css("display", "flex");
         highlightSnippets();
+    });
+
+    $(window).on("load", function () {
+        $("#loadingdetails").fadeOut("slow");
+    });
+
+    $('.details-back-btn').on('click', function () {
+        $('#loadingdetails').css("display", "flex");
     });
 </script>

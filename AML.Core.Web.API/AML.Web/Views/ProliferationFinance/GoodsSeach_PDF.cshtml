@@ -1,0 +1,248 @@
+@model AML.ViewModel.ViewModels.ProliferationFinance.ProliferationFinanceModel
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    Layout = null; // Generating standalone PDF
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+    var type = Model.CustomerType?.ToLower() == "non-chemical" ? "non-chemical" : "chemical";
+    
+    string auditDate = DateTime.Now.ToString("dd-MMM-yyyy HH:mm:ss") + " UTC";
+    string creationDate = Model.CreatedOn?.ToString("dd-MMM-yyyy HH:mm:ss") ?? "-";
+    string matchName = string.IsNullOrEmpty(Model.CompanyName) || Model.CompanyName == "-" ? "Unknown" : Model.CompanyName;
+    string matchType = type == "non-chemical" ? "Non-Chemical" : "Chemical";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Goods Search Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        html, body { font-family: 'Inter', Arial, sans-serif; background: #fff; color: #000; margin: 0; padding: 20px; }
+        
+        .doc { 
+            max-width: 900px; 
+            margin: 0 auto; 
+            padding: 0 40px 60px; 
+            background: #fff; 
+        }
+
+        .ph { 
+            margin-bottom: 25px;
+            margin-top: 20px;
+        }
+        .ph-photo { 
+            width: 100px; 
+            height: 100px; 
+            background: #fdfdfd; 
+            border: 1px solid #eee;
+            color: #94A3B8;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 100px;
+            float: left;
+            margin-right: 25px;
+        }
+        .ph-info { float: left; padding-top: 15px; }
+        .ph-name { 
+            font-size: 24px; 
+            font-weight: 700; 
+            color: #0F172A; 
+            margin-bottom: 8px;
+        }
+        .ph-type { font-size: 15px; color: #64748B; font-weight: 500; }
+        .clearfix::after { content: ""; clear: both; display: table; }
+
+        .pill { 
+            display: inline-block; 
+            padding: 2px 12px; 
+            border-radius: 99px; 
+            font-size: 11px; 
+            font-weight: 700; 
+            background: #3b82f6; 
+            color: #fff;
+            text-transform: uppercase;
+            margin-left: 12px;
+            vertical-align: top;
+            margin-top: 10px;
+        }
+        .pill-red { background: #ef4444; }
+
+        .sec-hdr { font-size: 16px; font-weight: 700; color: #000; margin: 30px 0 6px; text-transform: uppercase; letter-spacing: 0.025em; clear: both; }
+        .sec-line { border: 0; border-top: 2px solid #3b82f6; margin: 0 0 15px; opacity: 1; }
+
+        .pd-table { width: 100%; border-collapse: collapse; }
+        .pd-table td { padding: 8px 0; vertical-align: top; font-size: 14px; border-bottom: 1px solid #F1F5F9; }
+        .pd-table tr:last-child td { border-bottom: none; }
+        .pd-group { font-weight: 700; color: #0F172A; width: 180px; }
+        .pd-field { color: #64748B; width: 160px; font-weight: 500; }
+        .pd-val { color: #0F172A; font-weight: 500; }
+
+        .comp-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #F8FAFC; border-radius: 8px; overflow: hidden; table-layout: fixed; word-wrap: break-word; }
+        .comp-table th { background: #E2E8F0; padding: 12px; text-align: left; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; }
+        .comp-table td { padding: 12px; vertical-align: top; font-size: 14px; color: #334155; border-bottom: 1px solid #E2E8F0; }
+        .comp-table tr { page-break-inside: avoid; }
+        .comp-table thead { display: table-header-group; }
+        .comp-table tr:last-child td { border-bottom: none; }
+        .comp-val-match { color: #B91C1C; font-weight: 700; }
+    </style>
+</head>
+<body>
+<div class="doc">
+    <!-- Profile Header -->
+    <div class="ph clearfix">
+        <div class="ph-photo">
+            @if(type == "non-chemical") {
+                <i class="fa fa-file-pdf-o fa-4x" style="line-height:100px;"></i>
+            } else {
+                <i class="fa fa-flask fa-4x" style="line-height:100px;"></i>
+            }
+        </div>
+        <div class="ph-info">
+            <div class="ph-name">
+                Proliferation Finance
+                <span class="pill @(type == "non-chemical" ? "pill-red" : "")">@matchType Search</span>
+            </div>
+            <div class="ph-type">Goods Search Report</div>
+        </div>
+    </div>
+
+    <!-- Audit Stamp -->
+    <div class="sec-hdr">Audit Stamp</div>
+    <hr class="sec-line"/>
+    <table class="pd-table">
+        <tr>
+            <td class="pd-group" style="width:180px;">Extraction Date:</td>
+            <td class="pd-val">@auditDate</td>
+        </tr>
+        <tr>
+            <td class="pd-group">Search Date:</td>
+            <td class="pd-val">@creationDate</td>
+        </tr>
+    </table>
+
+    @if (type == "chemical" || string.IsNullOrEmpty(type))
+    {
+        <!-- Match Key Details -->
+        <div class="sec-hdr">Search Key Details</div>
+        <hr class="sec-line"/>
+        <table class="pd-table">
+            <tr>
+                <td class="pd-group">Search Identity</td>
+                <td class="pd-field">Type:</td>
+                <td class="pd-val">@matchType</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="pd-field">Search Term(s):</td>
+                <td class="pd-val">
+                    @if (string.IsNullOrEmpty(Model.MatchedChemicalName))
+                    {
+                        @:-
+                    }
+                    else
+                    {
+                        var terms = Model.MatchedChemicalName.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var term in terms)
+                        {
+                            <div style="margin-bottom: 4px;">@term</div>
+                        }
+                    }
+                </td>
+            </tr>
+        </table>
+
+        <!-- Comparison Section -->
+        <div class="sec-hdr">Chemical Specifications</div>
+        <hr class="sec-line"/>
+        <div style="font-size: 14px; color: #64748B; margin-bottom: 12px;">Identified chemical match for the search criteria.</div>
+        
+        <table class="comp-table">
+            <thead>
+                <tr>
+                    <th>Chemical Name</th>
+                    <th>HS Code</th>
+                    <th>CAS Number</th>
+                    <th>ECCN</th>
+                    <th>Synonym</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.MatchedChemicals != null && Model.MatchedChemicals.Count > 0)
+                {
+                    @foreach (var chem in Model.MatchedChemicals)
+                    {
+                        <tr>
+                            <td class="comp-val-match">@(string.IsNullOrEmpty(chem.ChemicalName) ? "-" : chem.ChemicalName)</td>
+                            <td>@(string.IsNullOrEmpty(chem.HsCode) ? "-" : chem.HsCode)</td>
+                            <td>@(string.IsNullOrEmpty(chem.CasNumber) ? "-" : chem.CasNumber)</td>
+                            <td>@(string.IsNullOrEmpty(chem.Eccn) ? "-" : chem.Eccn)</td>
+                            <td>@(string.IsNullOrEmpty(chem.SynonymName) ? "-" : chem.SynonymName)</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td class="comp-val-match">@(string.IsNullOrEmpty(Model.ChemicalName) ? "-" : Model.ChemicalName)</td>
+                        <td>@(string.IsNullOrEmpty(Model.HsCode) ? "-" : Model.HsCode)</td>
+                        <td>@(string.IsNullOrEmpty(Model.CasNumber) ? "-" : Model.CasNumber)</td>
+                        <td>@(string.IsNullOrEmpty(Model.Eccn) ? "-" : Model.Eccn)</td>
+                        <td>@(string.IsNullOrEmpty(Model.SynonymName) ? "-" : Model.SynonymName)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (type == "non-chemical" || (string.IsNullOrEmpty(type) && (Model.CustomerType == "Non-Chemical" || Model.CustomerType == "Both")))
+    {
+        <div class="sec-hdr">Matched Content Snippets</div>
+        <hr class="sec-line"/>
+        <div style="font-size: 14px; color: #64748B; margin-bottom: 12px;">Source: UAE Proliferation Finance PDF Document</div>
+        
+        <div style="margin-top:20px;">
+            @{
+                var pdfSrc = Model.SearchHitDetails;
+            }
+            @if (!string.IsNullOrEmpty(pdfSrc))
+            {
+                var paragraphList = pdfSrc.Split(new[] { "|||" }, StringSplitOptions.RemoveEmptyEntries);
+                var totalCount = paragraphList.Length;
+                
+                var keyword = Model.MatchedChemicalName ?? "";
+                if (keyword == "-") keyword = "";
+
+                for (int i = 0; i < totalCount; i++)
+                {
+                    var para = paragraphList[i];
+                    var highlightedPara = para;
+                    
+                    if (!string.IsNullOrEmpty(keyword))
+                    {
+                        highlightedPara = System.Text.RegularExpressions.Regex.Replace(
+                            para, 
+                            System.Text.RegularExpressions.Regex.Escape(keyword), 
+                            "<mark style=\"background:#fef08a;color:#713f12;border-radius:3px;padding:0 2px;font-weight:600;\">$0</mark>", 
+                            System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                        );
+                    }
+
+                    <div style="font-size:14px; font-weight:700; color:#0F172A; margin-bottom:8px; page-break-inside: avoid;">Paragraph @(i + 1) of @totalCount</div>
+                    <div class="pdf-snippet" style="background:#F8FAFC; border:1px solid #E2E8F0; padding:12px; border-radius:8px; margin-bottom:20px; font-size:14px; color:#334155; page-break-inside: avoid;">
+                        "@Html.Raw(highlightedPara)"
+                    </div>
+                }
+            }
+            else
+            {
+                <div style="text-align:center; padding:40px 0; color:#64748B; font-style:italic;">
+                    No PDF content matches recorded for this summary.
+                </div>
+            }
+        </div>
+    }
+</div>
+</body>
+</html>
