@@ -1,0 +1,232 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@model AML.ViewModel.ViewModels.CaseProcess.CaseProcessModel
+@{
+    Layout = null;
+    var clientLogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+
+    var matchData = Model.DataList[Model.Index];
+    var apiResult = Model.apiResultModels[0];
+    string matchName = matchData.matchname;
+    string matchType = matchData.matchtype;
+    string matchIdNo = Convert.ToString(matchData.matchidno);
+    string matchDob = Convert.ToString(matchData.matchdob);
+    string matchNat = Convert.ToString(matchData.matchnationality);
+    string remarks = Convert.ToString(matchData.remarks);
+    string auditDate = DateTime.Now.ToString("dd-MMM-yyyy HH:mm:ss") + " UTC";
+    string creationDate = Model.Case.CreatedOn.ToString("dd-MM-yyyy HH:mm:ss");
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Case Details - @matchName</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <style>
+        body { font-family: 'Inter', Arial, sans-serif; background: #fff; color: #000; margin: 0; padding: 20px; font-size: 12px; }
+        
+        .doc { 
+            max-width: 100%; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background: #fff; 
+        }
+
+        .ph { 
+            display: table;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+        .ph-cell { display: table-cell; vertical-align: middle; }
+        .ph-photo { 
+            width: 80px; 
+            height: 80px; 
+            background: #fdfdfd; 
+            border: 1px solid #eee;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 80px;
+            color: #94A3B8;
+            font-size: 40px;
+        }
+        .ph-info { padding-left: 20px; }
+        .ph-name { 
+            font-size: 20px; 
+            font-weight: 700; 
+            color: #0F172A; 
+            margin-bottom: 4px;
+        }
+        .ph-type { font-size: 13px; color: #64748B; font-weight: 500; }
+
+        .pill { 
+            display: inline-block; 
+            padding: 2px 10px; 
+            border-radius: 10px; 
+            font-size: 10px; 
+            font-weight: 700; 
+            background: #3b82f6; 
+            color: #fff;
+            text-transform: uppercase;
+            margin-left: 10px;
+        }
+
+        .sec-hdr { font-size: 14px; font-weight: 700; color: #000; margin: 25px 0 5px; text-transform: uppercase; letter-spacing: 0.025em; border-bottom: 2px solid #3b82f6; padding-bottom: 2px; }
+
+        .pd-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .pd-table td { padding: 6px 0; vertical-align: top; font-size: 12px; border-bottom: 1px solid #F1F5F9; }
+        .pd-table tr:last-child td { border-bottom: none; }
+        .pd-group { font-weight: 700; color: #0F172A; width: 150px; }
+        .pd-field { color: #64748B; width: 150px; font-weight: 500; }
+        .pd-val { color: #0F172A; font-weight: 500; }
+
+        .grid-row { display: table; width: 100%; padding: 6px 0; font-size: 12px; border-bottom: 1px solid #F1F5F9; }
+        .grid-lbl { display: table-cell; color: #64748B; font-weight: 500; width: 150px; }
+        .grid-val { display: table-cell; color: #0F172A; font-weight: 500; }
+
+        .tag-list { margin-top: 5px; }
+        .tag-item { display: inline-block; background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 5px; margin-bottom: 5px; }
+
+        .comp-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #F8FAFC; border: 1px solid #E2E8F0; }
+        .comp-table th { background: #E2E8F0; padding: 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
+        .comp-table td { padding: 10px; font-size: 12px; color: #334155; border-bottom: 1px solid #E2E8F0; }
+        .comp-val-match { color: #B91C1C; font-weight: 700; }
+        
+        .header-table { width: 100%; margin-bottom: 20px; }
+        .logo-cell { text-align: right; }
+        .logo-img { max-height: 50px; }
+    </style>
+</head>
+<body>
+    <div class="doc">
+        <table class="header-table">
+            <tr>
+                <td>
+                    <div style="font-size: 10px; color: #64748B;">Official Sanctions Match Report</div>
+                    <div style="font-size: 10px; color: #64748B;">Generated: @auditDate</div>
+                </td>
+                <td class="logo-cell">
+                    @if (!string.IsNullOrEmpty(clientLogo))
+                    {
+                        <img src="@clientLogo" class="logo-img" />
+                    }
+                </td>
+            </tr>
+        </table>
+
+        <!-- Profile Header -->
+        <div class="ph">
+            <div class="ph-cell" style="width: 80px;">
+                <div class="ph-photo">
+                    👤
+                </div>
+            </div>
+            <div class="ph-cell ph-info">
+                <div class="ph-name">
+                    @matchName
+                    <span class="pill">@matchType</span>
+                </div>
+                <div class="ph-type">Sanctions Name Match Report</div>
+            </div>
+        </div>
+
+        <!-- Audit Stamp -->
+        <div class="sec-hdr">Audit Stamp</div>
+        <div class="grid-row">
+            <span class="grid-lbl">Extraction Date:</span>
+            <span class="grid-val">@auditDate</span>
+        </div>
+        <div class="grid-row">
+            <span class="grid-lbl">Creation Date:</span>
+            <span class="grid-val">@creationDate</span>
+        </div>
+
+        <!-- Match Key Details -->
+        <div class="sec-hdr">Match Key Details</div>
+        <table class="pd-table">
+            <tr>
+                <td class="pd-group">Core Identifiers</td>
+                <td class="pd-field">Code / ID Number:</td>
+                <td class="pd-val">@(string.IsNullOrEmpty(matchIdNo) ? "-" : matchIdNo)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="pd-field">Date Of Birth:</td>
+                <td class="pd-val">@(string.IsNullOrEmpty(matchDob) ? "-" : matchDob)</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="pd-field">Nationality:</td>
+                <td class="pd-val">@(string.IsNullOrEmpty(matchNat) ? "-" : matchNat)</td>
+            </tr>
+            <tr>
+                <td class="pd-group">System Metadata</td>
+                <td class="pd-field">API Data ID (Uid):</td>
+                <td class="pd-val">@apiResult.matchuid</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="pd-field">API Ref Number:</td>
+                <td class="pd-val">@apiResult.matchidnumber</td>
+            </tr>
+            <tr>
+                <td class="pd-group">Analysis</td>
+                <td class="pd-field">Remarks:</td>
+                <td class="pd-val">@(string.IsNullOrEmpty(remarks) ? "-" : remarks)</td>
+            </tr>
+        </table>
+
+        <!-- Aliases Section -->
+        <div class="sec-hdr">Known Aliases</div>
+        @if (apiResult.alias != null && apiResult.alias.Count > 0)
+        {
+            <div class="tag-list">
+                @foreach (var item in apiResult.alias)
+                {
+                    <span class="tag-item">@item</span>
+                }
+            </div>
+        }
+        else
+        {
+            <div style="font-size:12px; color:#64748B; font-style:italic;">No aliases recorded for this match.</div>
+        }
+
+        <!-- Comparison Section -->
+        <div class="sec-hdr">Data Comparison</div>
+        <div style="font-size: 12px; color: #64748B; margin-bottom: 8px;">Comparison between the matched sanction record and the provided client profile.</div>
+        <table class="comp-table">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Screening Output</th>
+                    <th>Screening Input</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-weight: 600;">ID Number</td>
+                    <td>@Model.Case.Id</td>
+                    <td class="comp-val-match">@matchIdNo</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 600;">Name</td>
+                    <td>@Model.Case.FirstName @(string.IsNullOrEmpty(Model.Case.MiddleName) ? "" : Model.Case.MiddleName + " ") @Model.Case.LastName</td>
+                    <td class="comp-val-match">@matchName</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 600;">Date of Birth</td>
+                    <td>@(Model.Case.DOB == "1/1/0001 12:00:00 AM" ? "-" : Model.Case.DOB)</td>
+                    <td>@(string.IsNullOrEmpty(matchDob) ? "-" : matchDob)</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 600;">Nationality</td>
+                    <td>@(string.IsNullOrEmpty(Model.Case.Nationality) ? "-" : Model.Case.Nationality)</td>
+                    <td class="comp-val-match">@(string.IsNullOrEmpty(matchNat) ? "-" : matchNat)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
