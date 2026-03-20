@@ -1,39 +1,44 @@
 ﻿using AML.Core.Common.StaticResource;
-using AML.Core.ServiceContract.Branch;
-using AML.DTO.DTO.Branch;
-using AML.DTO.DTO.CustomerCase;
-using System;
-
-using System.Collections.Generic;
-using AML.Core.ServiceContract.CustomerCase;
+using AML.Core.DataContract.Enum;
 using AML.Core.Repository.CustomerCase;
-using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.Hosting;
+using AML.Core.RepositoryContract.CorporateShareholder;
+using AML.Core.RepositoryContract.Country;
 using AML.Core.RepositoryContract.CustomerCase;
 using AML.Core.RepositoryContract.CustomerScreening;
-using AML.DTO.DTO.CustomerScreening;
-using AML.DTO.DTO.EtlBatch;
-using AML.ViewModel.ViewModels.Common;
 using AML.Core.RepositoryContract.EtlBatch;
-using AML.DTO.DTO.Common;
-using AML.Core.DataContract.Enum;
+using AML.Core.Service.CaseComment;
+using AML.Core.ServiceContract.Branch;
+using AML.Core.ServiceContract.CaseComment;
 using AML.Core.ServiceContract.Common;
-using System.Linq;
-using AML.Core.RepositoryContract.CorporateShareholder;
-using AML.DTO.DTO.CorporateShareholder;
-using AML.Core.RepositoryContract.Country;
-using System.Globalization;
-using System.Text.RegularExpressions;
-using AML.DTO.DTO.Risk;
-using AML.ViewModel.ViewModels.RiskAPI;
-using Microsoft.AspNetCore.Mvc;
-using AML.ViewModel.ViewModels.Risk;
+using AML.Core.ServiceContract.CustomerCase;
 using AML.Core.ServiceContract.LovMaster;
 using AML.Core.ServiceContract.Risk;
+using AML.DTO.DTO.Branch;
+using AML.DTO.DTO.CaseComment;
 using AML.DTO.DTO.CodesMaster;
+using AML.DTO.DTO.Common;
+using AML.DTO.DTO.CorporateShareholder;
+using AML.DTO.DTO.CustomerCase;
+using AML.DTO.DTO.CustomerScreening;
+using AML.DTO.DTO.EtlBatch;
+using AML.DTO.DTO.Risk;
 using AML.ViewModel.ViewModels.ApiAuthentication;
-using System.Threading.Tasks;
+using AML.ViewModel.ViewModels.CaseComment;
+using AML.ViewModel.ViewModels.Common;
 using AML.ViewModel.ViewModels.Kyc;
+using AML.ViewModel.ViewModels.Risk;
+using AML.ViewModel.ViewModels.RiskAPI;
+using AutoMapper;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Net.Http;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace AML.Core.Service.CustomerCase
 {
@@ -47,13 +52,16 @@ namespace AML.Core.Service.CustomerCase
         ICountryRepository _countryRepository;
         IRiskService _riskService;
         ILovMasterService _lovMasterService;
-       
+        private ICaseCommentService _caseCommentService;
+        private IMapper _mapper;
+  
+
         private string baseURL = string.Empty;
         private int clientId = 0;
         private object _customerCaseService;
 
         public CustomerCaseService(IEtlLogRepository etlLogRepository, ICustomerCaseRepository customerCaseRepository, IConfiguration configuration, ICorporateShareholderRepository corporateShareholderRepository,
-            IHostingEnvironment environment, ICustomerScreeningRepository customerScreeningRepository, ICustomerMasterRepository customerMasterRepository,
+            IHostingEnvironment environment, ICustomerScreeningRepository customerScreeningRepository, ICustomerMasterRepository customerMasterRepository, ICaseCommentService caseCommentService, IMapper mapper,
             ICountryRepository countryRepository, ILovMasterService lovMasterService, IRiskService riskService)
             : base(customerCaseRepository, configuration)
         {
@@ -66,6 +74,7 @@ namespace AML.Core.Service.CustomerCase
             _countryRepository = countryRepository;
             _lovMasterService = lovMasterService;
             _riskService = riskService;
+            _caseCommentService = caseCommentService;
         }
         public string Create(CustomerCaseDTO _CustomerCaseDT, bool returnId = false)
         {
@@ -754,8 +763,20 @@ namespace AML.Core.Service.CustomerCase
                                         _custExcelDataList[_counter].CustomerID = Cust_Id;
                                         _custExcelDataList[_counter].Status = 3;
                                     }
+
+                                    int CustomerCaseId = GetCaseId(Cust_Id);
+                                    CaseCommentModel remarkModel = new CaseCommentModel();
+                                    remarkModel.CaseId = CustomerCaseId;
+                                    remarkModel.Comment = "Case is Created"; // ✅ FIXED
+                                    remarkModel.CommentType = "Individual Bulk Screening";
+                                    remarkModel.CreatedBy = _documentsModel.AddedBy;
+
+                                    var remarkResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
                                 }
+
+                                
                             }
+                            
                             _etlBatchDTO.RowsRecorded = _processedCount;
                             _etlLogRepository.Update(_etlBatchDTO);
                             _custExcelDataResponse.Status = StaticResource.SuccessStatusCode;
@@ -905,6 +926,15 @@ namespace AML.Core.Service.CustomerCase
                                             _custExcelDataList[_counter].CustomerID = resu1;
                                             _custExcelDataList[_counter].Status = 3;
                                         }
+
+                                        int CustomerCaseId = GetCaseId(resu1);
+                                        CaseCommentModel remarkModel = new CaseCommentModel();
+                                        remarkModel.CaseId = CustomerCaseId;
+                                        remarkModel.Comment = "Case is Created"; // ✅ FIXED
+                                        remarkModel.CommentType = "Corporate Bulk Screening";
+                                        remarkModel.CreatedBy = _documentsModel.AddedBy;
+
+                                        var remarkResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
 
                                     }
                                 }

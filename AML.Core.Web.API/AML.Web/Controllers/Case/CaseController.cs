@@ -56,9 +56,11 @@ using AML.ViewModel.ViewModels.UserGroup;
 using AML.Web.CustomFilters;
 using AML.Web.Helper;
 using AutoMapper;
+using DocumentFormat.OpenXml.Bibliography;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Drawing.Wordprocessing;
 using DocumentFormat.OpenXml.Office2010.Excel;
+using DocumentFormat.OpenXml.Spreadsheet;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.collection;
@@ -87,6 +89,7 @@ using static AML.DTO.DTO.FreeSource.BlackListMongoDTO;
 using static AML.DTO.DTO.FreeSource.CaseLogsMongoDTO;
 using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
 using ApiResultModel = AML.DTO.DTO.CustomerCase.ApiResultModel;
+using Font = iTextSharp.text.Font;
 using Formatting = Newtonsoft.Json.Formatting;
 
 namespace AML.Web.Controllers.Case
@@ -767,6 +770,13 @@ namespace AML.Web.Controllers.Case
                                 }
                             }
                             
+                            CaseCommentModel remarkModel = new CaseCommentModel();
+                            remarkModel.CaseId = Convert.ToInt32(_caseDoc.CaseId);
+                            remarkModel.Comment = "Case is Created"; // ✅ FIXED
+                            remarkModel.CommentType = "Individual Screening";
+                            remarkModel.CreatedBy = _clientHandler.GetUserId();
+
+                            var remarkResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
 
                             //foreach (var item in model.CodesTable)
                             //{
@@ -1274,6 +1284,7 @@ namespace AML.Web.Controllers.Case
                 
 
                 CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(CaseId);
+                HttpContext.Session.SetString("CorporateId", _CustomerCaseDTO.CustomerId);
 
                 var dualMatchStatus = _customerCaseService.GetDualGoodsStatus(_CustomerCaseDTO.CustomerId);
                 model.DualGoodsMatchStatus = dualMatchStatus;
@@ -1786,7 +1797,7 @@ namespace AML.Web.Controllers.Case
 
              // default first time
 
-            if (previousStatus == 2)
+            if (previousStatus == 2 || previousStatus == 3)
             {
                 int newStatus = hasMatchRecords ? 0 : 5;
 
@@ -1848,6 +1859,17 @@ namespace AML.Web.Controllers.Case
 
             if (isCaseCreated && !string.IsNullOrEmpty(caseRefId))
             {
+                int id = _customerCaseService.GetCaseId(caseRefId);
+                
+
+                CaseCommentModel remarkModel = new CaseCommentModel();
+                remarkModel.CaseId = id;
+                remarkModel.Comment = "Case is Created"; // ✅ FIXED
+                remarkModel.CommentType = "Convert Related Parties to Main Party";
+                remarkModel.CreatedBy = _clientHandler.GetUserId();
+
+                var remarkResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
+
                 TempData["CaseRefId"] = caseRefId;
                 TempData["IsCaseCreated"] = true;
             }
@@ -1871,6 +1893,9 @@ namespace AML.Web.Controllers.Case
                 var BranchId = _clientHandler.GetBranchId();
                 var GroupId = _clientHandler.GetGroupId();
                 var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+
+                var corporateId = HttpContext.Session.GetString("CorporateId");
+                TempData["CorporateId"] = corporateId;
 
                 model.Case = new CaseModel();
 
@@ -2677,6 +2702,7 @@ namespace AML.Web.Controllers.Case
             _CustomerCaseDTO.Partialadversemedia = model.Partialadversemedia;
             _CustomerCaseDTO.TrueUAEUNSanction = model.TrueUAEUNSanction;
             _CustomerCaseDTO.TrueOtherSanction = model.TrueOtherSanction;
+
             
 
             var result = _customerCaseService.Update(_CustomerCaseDTO);
@@ -2750,8 +2776,21 @@ namespace AML.Web.Controllers.Case
             }
             commentModel.Comment = comment;
             commentModel.CreatedBy = _clientHandler.GetUserId();
-            commentModel.CommentType = commenttype;
+            commentModel.CommentType = commenttype; 
             var commentResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(commentModel));
+
+            if (model.screenType == "Shareholder")
+            {
+                int id = _customerCaseService.GetCaseId(model.CorporateId);
+
+                CaseCommentModel remarkModel = new CaseCommentModel();
+                remarkModel.CaseId = Convert.ToInt32(id);
+                remarkModel.Comment = model.FlagType + " Case is Updated"; // ✅ FIXED
+                remarkModel.CommentType = model.FlagType;
+                remarkModel.CreatedBy = _clientHandler.GetUserId();
+
+                var remarkResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
+            }
 
 
             return Json(response);
@@ -2790,6 +2829,8 @@ namespace AML.Web.Controllers.Case
             string response = string.Empty;
             response = result ? "Remarks Updated" : "Saving Remarks failed";
             _customerCaseService.UpdateCase(id, userid);
+
+            
             if (type == "Individual" || type == "Corporate")
             {
                 bool hasOFAC = false;
