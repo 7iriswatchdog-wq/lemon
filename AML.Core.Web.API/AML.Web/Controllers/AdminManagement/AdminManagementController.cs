@@ -252,7 +252,9 @@ namespace AML.Web.Controllers.AdminManagement
             ViewBag.totalcount = Convert.ToInt32(token.user.individualCount) + Convert.ToInt32(token.user.corporateCount);
             ViewBag.individualCount = Convert.ToInt32(token.user.individualCount);
             ViewBag.corporateCount =  Convert.ToInt32(token.user.corporateCount);
-            ViewBag.contractExpiryDate = token.user.contractExpiryDate != null ? Convert.ToDateTime(token.user.contractExpiryDate).ToString("yyyy-MM-dd") : "";
+            ViewBag.contractExpiryDate = token.user.contractExpiryDate != null
+    ? Convert.ToDateTime(token.user.contractExpiryDate)
+    : (DateTime?)null;
             ViewBag.hundredemail =
      string.IsNullOrEmpty(token.user?.hundredemail) || token.user.hundredemail == "0"
      ? "--"

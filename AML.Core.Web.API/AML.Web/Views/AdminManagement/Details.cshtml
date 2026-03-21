@@ -17,6 +17,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <style>
     body { font-family: 'Inter', sans-serif; }
@@ -45,6 +49,15 @@
     }
     th.sortable.active.asc::after { content: "▲"; color: #2563eb; }
     th.sortable.active.desc::after { content: '\A▼'; color: #2563eb; }
+
+    .flatpickr-wrapper {
+        width: 100% !important;
+    }
+
+    .flatpickr-alt-input {
+        width: 100% !important;
+        display: block !important;
+    }
 </style>
 
 <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 items-center justify-center z-50 hidden">
@@ -204,7 +217,7 @@
                         </div>
                         <div class="space-y-1.5">
                             <label class="text-[11px] font-bold text-slate-500 uppercase ml-0.5">Search Limit</label>
-                            <input type="number" value="@ViewBag.userlimit" id="txtSearchCount" class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                            <input type="number" value="@ViewBag.userlimit" id="txtSearchCount" asp-for="SearchCount" class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
                         </div>
                         <div class="space-y-1.5">
                             <label class="text-[11px] font-bold text-slate-500 uppercase ml-0.5">Creation Date</label>
@@ -212,11 +225,15 @@
                         </div>
                         <div class="space-y-1.5">
                             <label class="text-[11px] font-bold text-slate-500 uppercase ml-0.5">Contract Start Date</label>
-                            <input type="date" asp-for="ApplicationStartDate" id="txtApplicationStartDate" class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
-                        </div>
+                            <input type="text" id="txtApplicationStartDate" asp-for="ApplicationStartDate" placeholder="dd/MM/yyyy"
+                                   class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium">
+                            @* <input type="date" asp-for="ApplicationStartDate" id="" class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">*@
+                        </div> 
                         <div class="space-y-1.5">
                             <label class="text-[11px] font-bold text-slate-500 uppercase ml-0.5">Contract End Date</label>
-                            <input type="date" asp-for="ApplicationEndDate" value="@ViewBag.contractExpiryDate" id="txtApplicationEndDate" class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                                <input type="text" id="txtApplicationEndDate" asp-for="ApplicationEndDate" placeholder="dd/MM/yyyy"
+                                       class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium">
+                            @* <input type="date" asp-for="" value="@ViewBag.contractExpiryDate" id="" class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"> *@
                         </div>
                     </div>
                     <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end">
@@ -226,7 +243,7 @@
                     </div>
                 </form>
             </div>
-
+           
             <!-- Client Rights Card -->
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
     <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -2286,6 +2303,125 @@
         $('#rowIndex2').val('1');
         $('#rowIndex3').val('1');
     }
+
+        function initDatePicker(selector, defaultDate, options = {}) {
+        const elements = document.querySelectorAll(selector);
+
+        elements.forEach(el => {
+            if (el._flatpickr) return; // prevent duplicate init
+
+            flatpickr(el, {
+                dateFormat: "Y-m-d",       // actual value posted to backend
+                altInput: true,            // user sees altInput
+                altFormat: "d/m/Y",        // display format
+                altInputClass: "block w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium",
+                allowInput: true,
+                defaultDate: defaultDate,
+                appendTo: document.body,   // calendar floats over card
+                ...options,
+
+                // ------------------ Custom key restrictions & auto-format ------------------
+                onReady: function (selectedDates, dateStr, instance) {
+                    const input = instance.altInput;
+
+                    // Restrict keys to numbers and navigation
+                    input.addEventListener("keydown", function (e) {
+                        const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+                        if (allowedKeys.includes(e.key) || (e.key >= "0" && e.key <= "9")) return;
+                        e.preventDefault();
+                    });
+
+                    // Auto-format as dd/MM/yyyy while typing
+                    input.addEventListener("input", function () {
+                        let value = input.value.replace(/\D/g, '');
+                        if (value.length > 8) value = value.substring(0, 8);
+
+                        let formatted = '';
+                        if (value.length > 0) formatted += value.substring(0, 2);
+                        if (value.length >= 3) formatted += '/' + value.substring(2, 4);
+                        if (value.length >= 5) formatted += '/' + value.substring(4, 8);
+
+                        input.value = formatted;
+                    });
+                },
+
+                // ------------------ Sync with Alpine ------------------
+                onChange: function (selectedDates, dateStr, instance) {
+                    if (el._x_model) {
+                        el._x_model.set(dateStr);
+                    }
+                },
+
+                // ------------------ Final validation ------------------
+                onClose: function (selectedDates, dateStr, instance) {
+                    if (selectedDates.length > 0) return; // date picked by calendar, safe
+
+                    let val = instance.altInput.value;
+                    if (!val) return;
+
+                    // Validate manually typed value dd/MM/yyyy
+                    let regex = /^\d{2}\/\d{2}\/\d{4}$/;
+                    if (!regex.test(val)) {
+                        instance.clear();
+                        return;
+                    }
+
+                    let parts = val.split('/');
+                    let dd = parseInt(parts[0], 10);
+                    let mm = parseInt(parts[1], 10);
+                    let yyyy = parseInt(parts[2], 10);
+
+                    let date = new Date(yyyy, mm - 1, dd);
+                    if (date.getFullYear() !== yyyy || date.getMonth() !== mm - 1 || date.getDate() !== dd) {
+                        instance.clear();
+                        return;
+                    }
+
+                    // ✅ Set Flatpickr date correctly for backend
+                    instance.setDate(`${yyyy}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`, true);
+                }
+            });
+        });
+    }
+
+    // ------------------ Example usage ------------------
+    document.addEventListener("DOMContentLoaded", function () {
+
+        initDatePicker(
+            "#txtApplicationStartDate",
+            "@(Model.ApplicationStartDate.HasValue? Model.ApplicationStartDate.Value.ToString("yyyy-MM-dd") : null)",
+            { maxDate: "today" }
+        );
+
+        initDatePicker(
+            "#txtApplicationEndDate",
+            "@(ViewBag.contractExpiryDate != null ? ((DateTime)ViewBag.contractExpiryDate).ToString("yyyy-MM-dd") : null)",
+            { minDate: "today" }
+        );
+
+    });
+             
+            
+            function initAllDatePickers() {
+                            const elements = document.querySelectorAll(".date-picker");
+
+                console.log("Date elements found:", elements.length); // 👈 DEBUG
+                                        initDatePicker(".date-picker-dob", null, {
+                                    maxDate: "today",
+                                    static: true
+                                });
+
+                                initDatePicker(".date-picker-past", null, {
+                                    maxDate: "today",
+                                    static: true
+                                });
+
+                                // ✅ Future dates (Expiry)
+                                initDatePicker(".date-picker-future", null, {
+                                    minDate: "today",
+                                    static: true
+                                });
+            }
 </script>
 
 <!-- Custom Confirmation Modal -->

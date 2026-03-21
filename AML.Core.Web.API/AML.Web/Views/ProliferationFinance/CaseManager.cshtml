@@ -10,6 +10,10 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <div class="p-8 space-y-8 max-w-[1600px] mx-auto min-h-screen text-slate-900" style="font-family: 'Inter', sans-serif;">
     <!-- Header Section -->
@@ -34,13 +38,21 @@
             <!-- Start Date -->
             <div class="space-y-2">
                 <label class="text-[12px] font-bold text-slate-500 tracking-wider">Start Date</label>
-                <input type="date" id="startDate" class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all">
+                <input type="text" id="startDate" name="StartDate"
+                       placeholder="dd/MM/yyyy"
+                       class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all">
+                <span id="formattedDate" hidden></span>
+                @* <input type="date" id="startDate" class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all"> *@
             </div>
 
             <!-- End Date -->
             <div class="space-y-2">
                 <label class="text-[12px] font-bold text-slate-500 tracking-wider">End Date</label>
-                <input type="date" id="endDate" class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all">
+                <input type="text" id="endDate" name="EndDate"
+                       placeholder="dd/MM/yyyy"
+                       class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all">
+                <span id="formattedEndDate" hidden></span>
+                @* <input type="date" id="endDate" class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all"> *@
             </div>
 
             <!-- Datasets -->
@@ -222,28 +234,28 @@
 
     $(document).ready(function() {
         // Compute today and one year ago
-        const todayLocal = new Date().toLocaleDateString('en-CA'); // yyyy-mm-dd
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const oneYearAgoLocal = oneYearAgo.toLocaleDateString('en-CA'); // yyyy-mm-dd
+        // const todayLocal = new Date().toLocaleDateString('en-CA'); // yyyy-mm-dd
+        // const oneYearAgo = new Date();
+        // oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        // const oneYearAgoLocal = oneYearAgo.toLocaleDateString('en-CA'); // yyyy-mm-dd
 
-        // Set default date range to last 1 year
-        $('#startDate').val(oneYearAgoLocal);
-        $('#endDate').val(todayLocal);
+        // // Set default date range to last 1 year
+        // $('#startDate').val(oneYearAgoLocal);
+        // $('#endDate').val(todayLocal);
 
-        // Restrict End Date to today (local time)
-        const endDateInput = document.getElementById('endDate');
-        if (endDateInput) {
-            endDateInput.setAttribute('max', todayLocal);
-        }
+        // // Restrict End Date to today (local time)
+        // const endDateInput = document.getElementById('endDate');
+        // if (endDateInput) {
+        //     endDateInput.setAttribute('max', todayLocal);
+        // }
 
-        // Prevent future dates
-        $('#endDate').on('change', function() {
-            if (this.value > todayLocal) {
-                this.value = todayLocal;
-                toastr.warning('End date cannot be in the future.');
-            }
-        });
+        // // Prevent future dates
+        // $('#endDate').on('change', function() {
+        //     if (this.value > todayLocal) {
+        //         this.value = todayLocal;
+        //         toastr.warning('End date cannot be in the future.');
+        //     }
+        // });
 
         lucide.createIcons();
         loadCases();
@@ -270,8 +282,10 @@
     }
 
     function loadCases() {
-        const startDate = $('#startDate').val();
-        const endDate = $('#endDate').val();
+
+        
+        const startDate = formatDate($('#startDate').val());
+        const endDate = formatDate($('#endDate').val());
         const customerType = $('#customerTypeFilter').val();
         const status = $('#statusFilter').val();
 
@@ -439,6 +453,23 @@
         renderTable();
     }
  
+
+    function formatDate(value) {
+        if (!value) return null;
+
+        // ? Already in yyyy-MM-dd
+        if (value.includes('-') && value.split('-')[0].length === 4) {
+            return value;
+        }
+
+        // ? Convert dd/MM/yyyy ? yyyy-MM-dd
+        if (value.includes('/')) {
+            let parts = value.split('/');
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+
+        return null;
+    }
     function highlight(text, keyword) {
         if (!text || !keyword) return text || '';
         const esc = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -547,4 +578,30 @@
     function closeModal() {
         $('#detailsModal').addClass('hidden');
     }
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        function initDatePicker(selector, defaultDate, isEndDate = false) {
+            return flatpickr(selector, {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                defaultDate: defaultDate,
+                allowInput: true,
+
+                // ? Conditional logic
+                ...(isEndDate
+                    ? { minDate: "today" }   // End Date ? no past dates
+                    : { maxDate: "today" }   // Start Date ? no future dates
+                )
+            });
+        }
+
+        // ? Start Date ? 1 year back, max today
+        const startPicker = initDatePicker("#startDate", new Date().fp_incr(-365));
+
+        // ? End Date ? today, min today
+        const endPicker = initDatePicker("#endDate", new Date(), true);
+
+    });
 </script>

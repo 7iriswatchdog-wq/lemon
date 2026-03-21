@@ -200,8 +200,12 @@
                 <!-- End Date -->
                 <div class="space-y-2">
                     <label class="text-[12px] font-bold text-slate-500">End Date</label>
-                    <input type="date" id="endDate" asp-for="EndDate" max="@(DateTime.Now.ToString("yyyy/MM/dd"))"
+                    <input type="text" id="endDate" name="EndDate"
+                           placeholder="dd/MM/yyyy"
                            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                    <span id="formattedEndDate" hidden></span>
+                   @*  <input type="date" id="endDate" asp-for="EndDate" max="@(DateTime.Now.ToString("yyyy/MM/dd"))"
+                           class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"> *@
                 </div>
 
                 <!-- Customer Type -->
@@ -923,8 +927,8 @@
                 searchValue: searchValue,
                 search: { value: searchValue },
 
-                startDate: $('#startDate').val(),
-                endDate: $('#endDate').val(),
+                startDate: formatDate($('#startDate').val()),
+                endDate: formatDate($('#endDate').val()),
                 cust_type: $('#customertype').val(),
                 createdBy: $('#user').val(),
                 matchScore: $('#screeningScore').val(),
@@ -1006,6 +1010,23 @@
                 alert('Error loading data');
             }
         });
+    }
+
+        function formatDate(value) {
+        if (!value) return null;
+
+        // ✅ Already in yyyy-MM-dd
+        if (value.includes('-') && value.split('-')[0].length === 4) {
+            return value;
+        }
+
+        // ✅ Convert dd/MM/yyyy → yyyy-MM-dd
+        if (value.includes('/')) {
+            let parts = value.split('/');
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+
+        return null;
     }
     // function loadCases(page = 1) {
 
@@ -1274,12 +1295,17 @@
             const yyyy = date.getFullYear();
             const mm = String(date.getMonth() + 1).padStart(2, '0');
             const dd = String(date.getDate()).padStart(2, '0');
-            return `${yyyy}-${mm}-${dd}`;
+            return `${dd}/${mm}/${yyyy}`;
         }
 
         // Reset values with defaults
-        $('#startDate').val(formatDate(lastYear));
-        $('#endDate').val(formatDate(today));
+             if (document.querySelector("#startDate")._flatpickr) {
+            document.querySelector("#startDate")._flatpickr.setDate(lastYear, true);
+        }
+
+        if (document.querySelector("#endDate")._flatpickr) {
+            document.querySelector("#endDate")._flatpickr.setDate(today, true);
+        }
     $('#customertype').val(0);
     $('#searchInput').val('');
     $('#user').val(0);
@@ -1425,17 +1451,55 @@
         el.addEventListener("change", checkFilterValues);
         el.addEventListener("input", checkFilterValues);
     });
-             document.addEventListener("DOMContentLoaded", function () {
-        flatpickr("#startDate", {
-            dateFormat: "d/m/Y",
-            defaultDate: new Date().fp_incr(-365), // 1 year back
-            maxDate: "today"
-        });
-    });
-        document.getElementById("startDate").addEventListener("change", function () {
-        const date = new Date(this.value);
-        const formatted = date.toLocaleDateString("en-GB"); // dd/MM/yyyy
-        document.getElementById("formattedDate").innerText = formatted;
+    //          document.addEventListener("DOMContentLoaded", function () {
+    //     flatpickr("#startDate", {
+    //         dateFormat: "d/m/Y",
+    //         defaultDate: new Date().fp_incr(-365), // 1 year back
+    //         maxDate: "today"
+    //     });
+
+    //             flatpickr("#endDate", {
+    //             dateFormat: "Y-m-d",   // actual value (backend)
+    //             altInput: true,
+    //             altFormat: "d/m/Y",    // display in UI
+    //             defaultDate: new Date()
+    //         });
+    // });
+    //     document.getElementById("startDate").addEventListener("change", function () {
+    //     const date = new Date(this.value);
+    //     const formatted = date.toLocaleDateString("en-GB"); // dd/MM/yyyy
+    //     document.getElementById("formattedDate").innerText = formatted;
+    // });
+    //         document.getElementById("endDate").addEventListener("change", function () {
+    //         const date = new Date(this.value);
+    //         const formatted = date.toLocaleDateString("en-GB"); // dd/MM/yyyy
+    //             document.getElementById("formattedEndDate").innerText = formatted;
+    //     });
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+        function initDatePicker(selector, defaultDate, isEndDate = false) {
+            return flatpickr(selector, {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                defaultDate: defaultDate,
+                allowInput: true,
+
+                // ✅ Conditional logic
+                ...(isEndDate
+                    ? { minDate: "today" }   // End Date → no past dates
+                    : { maxDate: "today" }   // Start Date → no future dates
+                )
+            });
+        }
+
+        // ✅ Start Date → 1 year back, max today
+        const startPicker = initDatePicker("#startDate", new Date().fp_incr(-365));
+
+        // ✅ End Date → today, min today
+        const endPicker = initDatePicker("#endDate", new Date(), true);
+
     });
        
         </script>

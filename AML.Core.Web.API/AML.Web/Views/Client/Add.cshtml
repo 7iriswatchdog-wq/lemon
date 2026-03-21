@@ -9,6 +9,10 @@
 
 @model AML.ViewModel.ViewModels.Common.ClientMaster
 <script src="~/plugins/jquery/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <style>
     .page {
         width: 100%;
@@ -162,6 +166,17 @@
                 left: 56px;
                 animation: dt-anim3 0.6s infinite;
             }
+
+    .flatpickr-wrapper {
+        width: 100% !important;
+    }
+
+    .flatpickr-alt-input {
+        width: 100% !important;
+        display: block !important;
+    }
+
+    
 
     @@keyframes dt-anim1 {
         0% {
@@ -330,9 +345,11 @@
                         <div class="col-md-4 flex-item">
                             <div class="form-group gap-2">
                                 <label for="dtStartDate">Contract Start Date<span class="text-red-500">*</span></label>
-                                <input type="date" id="Appstartdt" asp-for="ApplicationStartDate"
-                                       class="form-control br-50"
-                                       max="@DateTime.Now.ToString("yyyy-MM-dd")"/>
+                                
+
+                                <input type="text" id="Appstartdt" asp-for="ApplicationStartDate" placeholder="dd/MM/yyyy"
+                                       
+                                       class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium">
                             </div>
 
                         </div>
@@ -345,11 +362,9 @@
             <label for="Appenddt">
                 Contract End Date <span class="text-red-500">*</span>
             </label>
-            <input type="date"
-                   id="Appenddt"
-                   asp-for="ApplicationEndDate"
-                   class="form-control br-50"
-                   min="@DateTime.Now.ToString("yyyy-MM-dd")">
+                                <input type="text" id="Appenddt" asp-for="ApplicationEndDate" placeholder="dd/MM/yyyy"
+                                       class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium">
+            
         </div>
     </div>
 
@@ -495,4 +510,147 @@
                     this.value = 100;
                 }
             });
+
+            function initDatePicker(selector, defaultDate, options = {}) {
+
+                const elements = document.querySelectorAll(selector);
+
+                elements.forEach(el => {
+
+                    // ✅ prevent duplicate initialization
+                    if (el._flatpickr) return;
+
+                    flatpickr(el, {
+                        dateFormat: "Y-m-d",
+                        altInput: true,
+                        altFormat: "d/m/Y",
+                        altInputClass: "block w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium",
+                        allowInput: true,
+                        defaultDate: defaultDate,
+                        appendTo: document.body,
+
+                        ...options,
+
+                              
+                        // ✅ Attach events AFTER input is created
+                        onReady: function (selectedDates, dateStr, instance) {
+
+                            const input = instance.altInput;
+
+                            // Restrict keys
+                            input.addEventListener("keydown", function (e) {
+                                const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+
+                                if (
+                                    allowedKeys.includes(e.key) ||
+                                    (e.key >= "0" && e.key <= "9")
+                                ) return;
+
+                                e.preventDefault();
+                            });
+
+                            // Auto format
+                            input.addEventListener("input", function () {
+                                let value = input.value.replace(/\D/g, '');
+
+                                if (value.length > 8) value = value.substring(0, 8);
+
+                                let formatted = '';
+                                if (value.length > 0) formatted += value.substring(0, 2);
+                                if (value.length >= 3) formatted += '/' + value.substring(2, 4);
+                                if (value.length >= 5) formatted += '/' + value.substring(4, 8);
+
+                                input.value = formatted;
+                            });
+                        },
+
+                        // ✅ Sync with Alpine (IMPORTANT)
+                        onChange: function (selectedDates, dateStr, instance) {
+                            if (el._x_model) {
+                                el._x_model.set(dateStr);
+                            }
+                        },
+
+                        // ✅ Final validation
+                        onClose: function (selectedDates, dateStr, instance) {
+
+                            if (selectedDates.length > 0) return;
+
+                            let val = instance.altInput.value;
+                            if (!val) return;
+
+                            let regex = /^\d{2}\/\d{2}\/\d{4}$/;
+
+                            if (!regex.test(val)) {
+                                instance.clear();
+                                return;
+                            }
+
+                            let parts = val.split('/');
+                            let dd = parseInt(parts[0], 10);
+                            let mm = parseInt(parts[1], 10);
+                            let yyyy = parseInt(parts[2], 10);
+
+                            let date = new Date(yyyy, mm - 1, dd);
+
+                            if (
+                                date.getFullYear() !== yyyy ||
+                                date.getMonth() !== mm - 1 ||
+                                date.getDate() !== dd
+                            ) {
+                                instance.clear();
+                                return;
+                            }
+
+                            instance.setDate(`${yyyy}-${parts[1]}-${parts[0]}`, true);
+                        }
+                    });
+
+                });
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+
+                // DOB → no future dates
+                const dobPicker = initDatePicker("#Appstartdt", null, {
+                    maxDate: "today",
+                               
+                });
+
+              const issueDatePicker = initDatePicker("#issueDate", null, {
+                                maxDate: "today",
+                                            static: true
+              });
+
+              const expiryDatePicker = initDatePicker("#Appenddt", null, {
+                                            minDate: "today",
+                                                      
+              });
+
+
+
+
+
+            });
+
+            function initAllDatePickers() {
+                            const elements = document.querySelectorAll(".date-picker");
+
+                console.log("Date elements found:", elements.length); // 👈 DEBUG
+                                        initDatePicker(".date-picker-dob", null, {
+                                    maxDate: "today",
+                                    static: true
+                                });
+
+                                initDatePicker(".date-picker-past", null, {
+                                    maxDate: "today",
+                                    static: true
+                                });
+
+                                // ✅ Future dates (Expiry)
+                                initDatePicker(".date-picker-future", null, {
+                                    minDate: "today",
+                                    static: true
+                                });
+            }
         </script>
