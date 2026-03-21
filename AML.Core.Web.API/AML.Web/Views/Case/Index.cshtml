@@ -18,6 +18,11 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -182,14 +187,20 @@
                 <!-- Start Date -->
                 <div class="space-y-2">
                     <label class="text-[12px] font-bold text-slate-500">Start Date</label>
-                    <input type="date" id="startDate" asp-for="StartDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"
+                   @*  <input type="date" id="startDate" asp-for="StartDate" max="@(DateTime.Now.ToString("yyyy/MM/dd"))"
+                           class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"> *@
+
+                    <input type="text" id="startDate" name="StartDate"
+                           
+                           placeholder="dd/MM/yyyy"
                            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                    <span id="formattedDate" hidden></span>
                 </div>
 
                 <!-- End Date -->
                 <div class="space-y-2">
                     <label class="text-[12px] font-bold text-slate-500">End Date</label>
-                    <input type="date" id="endDate" asp-for="EndDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"
+                    <input type="date" id="endDate" asp-for="EndDate" max="@(DateTime.Now.ToString("yyyy/MM/dd"))"
                            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
                 </div>
 
@@ -1414,5 +1425,18 @@
         el.addEventListener("change", checkFilterValues);
         el.addEventListener("input", checkFilterValues);
     });
+             document.addEventListener("DOMContentLoaded", function () {
+        flatpickr("#startDate", {
+            dateFormat: "d/m/Y",
+            defaultDate: new Date().fp_incr(-365), // 1 year back
+            maxDate: "today"
+        });
+    });
+        document.getElementById("startDate").addEventListener("change", function () {
+        const date = new Date(this.value);
+        const formatted = date.toLocaleDateString("en-GB"); // dd/MM/yyyy
+        document.getElementById("formattedDate").innerText = formatted;
+    });
+       
         </script>
 
