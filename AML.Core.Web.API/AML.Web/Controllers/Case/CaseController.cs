@@ -2040,6 +2040,148 @@ namespace AML.Web.Controllers.Case
             return View(model);
         }
 
+        [HttpGet("/case/Shareholder_PDF/{CaseId}")]
+        public async Task<ActionResult> Shareholder_PDF(int CaseId)
+        {
+            CaseProcessModel model = new CaseProcessModel();
+            try
+            {
+                var BranchId = _clientHandler.GetBranchId();
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+
+                var corporateId = HttpContext.Session.GetString("CorporateId");
+                TempData["CorporateId"] = corporateId;
+
+                model.Case = new CaseModel();
+
+                CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(CaseId);
+                model.Case = _mapper.Map<CaseModel>(_CustomerCaseDTO);
+                model.Case.UserGroupName = _UserGroupModel.Name;
+                var dob = model.Case.DOB;
+                var createddated = model.Case.CreatedOn;
+                string dobText;
+
+                if (string.IsNullOrWhiteSpace(dob) || dob == "1/1/0001 12:00:00 AM")
+                {
+                    dobText = "NA";
+                }
+                else
+                {
+                    if (DateTime.TryParse(dob, out DateTime parsedDob))
+                    {
+                        dobText = parsedDob.ToString("dd/MM/yyyy");
+                    }
+                    else
+                    {
+                        dobText = dob;
+                    }
+                }
+                var createdDate = model.Case.CreatedOn;
+                string createdDateText;
+
+                if (createdDate == DateTime.MinValue)
+                {
+                    createdDateText = "NA";
+                }
+                else
+                {
+                    createdDateText = createdDate.ToString("dd/MM/yyyy");
+                }
+
+                model.Case.CreatedOnText = createdDateText;
+                model.Case.DOB = dobText;
+
+
+                List<CaseDocumentDTO> caseDocumentbyId = _caseDocumentService.GetCaseDocumentByCaseId(CaseId);
+                model.CaseDocuments = _mapper.Map<List<CaseDocumentModel>>(caseDocumentbyId);
+                List<CustomerCaseDTO> _CustomerCaseshareholders = _customerCaseService.GetShareHoldersByCompanyCode(_CustomerCaseDTO.CustomerId);
+                model.ShareholdersData = _mapper.Map<List<CaseModel>>(_CustomerCaseshareholders);
+                List<RiskReportModel> riskReports = _mapper.Map<List<RiskReportModel>>(_riskService.GetLastestRiskVersion(_CustomerCaseDTO.CustomerId, _CustomerCaseDTO.CustomerType));
+                model.RiskVersionData = _mapper.Map<List<RiskReportModel>>(riskReports);
+
+                var clientId = _clientHandler.GetClientId();
+                RiskModel _riskmodel = new RiskModel();
+                int riskid = _riskService.GetRiskIdByCustomercode(model.Case.CustomerId, model.Case.CustomerType).Result;
+
+                if (riskid != 0)
+                {
+                    dynamic modelrisk = null;
+
+                    if (model.Case.CustomerType == "I")
+                    {
+                        _riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("I", 1, 0, 0, clientId);
+
+                        modelrisk = _mapper.Map<RiskModel>(_riskService.GetRiskDetailsOfIndividual(riskid).Result);
+
+                        MapRiskValues(_riskmodel.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
+
+                        model.RiskTypeCategoryDTO = _riskmodel.RiskTypeCategoryDTO;
+                        model.FinalRiskScore = modelrisk.FinalRiskScore;
+                        model.RiskScoreCount = modelrisk.RiskScoreCount;
+                        model.RiskScoreSum = modelrisk.RiskScoreSum;
+                        model.DateofAssessment = modelrisk.DateofAssessment;
+                        model.MainNationalityTxt = modelrisk.MainNationalityTxt;
+                        model.Address = modelrisk.Address;
+                    }
+                    else
+                    {
+                        _riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("C", 1, 0, 0, clientId);
+
+                        modelrisk = _mapper.Map<RiskCorpCustomerModel>(_riskService.GetRiskDetailsOfCorporate(riskid).Result);
+
+                        MapRiskValues(_riskmodel.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
+
+                        model.RiskTypeCategoryDTO = _riskmodel.RiskTypeCategoryDTO;
+                        model.FinalRiskScore = modelrisk.RiskAssessmentRating;
+                        model.RiskScoreBeforeOverride = modelrisk.RiskAssessmentRatingWithoutOverride;
+                        model.RiskScoreCount = modelrisk.RiskScoreCount;
+                        model.RiskScoreSum = modelrisk.RiskScoreSum;
+                        model.DateofAssessment = modelrisk.DateofAssessment;
+                        model.MainNationalityTxt = modelrisk.CountryOfIncorporationTxt;
+                    }
+                }
+
+                var id = _clientHandler.GetUserId();
+                string actionName = this.ControllerContext.RouteData.Values["action"].ToString();
+                string controllerName = this.ControllerContext.RouteData.Values["controller"].ToString();
+                IEnumerable<SelectListItem> userList = from s in _mapper.Map<List<UserModel>>(_userService.GetAuthorisedUser(controllerName, actionName, clientId).Where(m => m.Id != id))
+                                                       select new SelectListItem
+                                                       {
+                                                           Value = Convert.ToString(s.Id),
+                                                           Text = s.FName + " " + s.LName.ToString()
+                                                       };
+
+                model.Users = new SelectList(userList, "Value", "Text");
+                var result = _clientHandler.PostAsync(new { caseid = CaseId.ToString() }, ScreeningService.GETBYCASEID).Result;
+                if (!string.IsNullOrEmpty(result))
+                {
+                    List<DataListModel> jsonList = JsonConvert.DeserializeObject<List<DataListModel>>(result);
+                    model.DataList = jsonList;
+                }
+                
+                return View("Shareholder_PDF", model);
+            }
+            catch (Exception ex)
+            {
+                ErrorLogDTO error = new ErrorLogDTO();
+                error.created_on = DateTime.Now;
+                error.createdBy = _clientHandler.GetUserId();
+                error.description = ex.InnerException?.Message ?? ex.Message;
+                error.module = "CaseManagement_Shareholder_PDF";
+                error.comments = "API call Error while Getting data from mongo db";
+                error.status_code = 404;
+
+                var result = _commonService.createErrorlog(error);
+
+                _toastNotification.AddErrorToastMessage(error.description);
+
+                Console.Error.WriteLine(ex);
+
+                return RedirectToAction("Index");
+            }
+        }
+
         private void MapRiskValues(List<RiskTypeCategoryDTO> categories, List<ReportDataDTO> reportData)
         {
             if (reportData == null) return;
