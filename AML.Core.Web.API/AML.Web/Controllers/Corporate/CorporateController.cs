@@ -1598,7 +1598,7 @@ namespace AML.Web.Controllers.Corporate
                     CompanyCode = sh.CompanyCode,
                     //CompanyName = sh.CompanyName,
                     //Thershold = sh.Thershold,
-                    DOB = sh.RegistrationDate?.ToString("yyyy-mm-dd"),
+                    DOB = sh.RegistrationDate?.ToString("yyyy-MM-dd"),
                     CustomerIdType = sh.IdType,
                     CustomerIdNumber = sh.IdNumber,
                     IdIssueDate = sh.IssueDate,

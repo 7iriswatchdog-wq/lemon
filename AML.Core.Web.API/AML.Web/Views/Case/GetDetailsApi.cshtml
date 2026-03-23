@@ -73,10 +73,14 @@
         return "";
     };
 
-    string auditDate = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy - HH:mm:ss") + " GST";
+    string auditDate = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss");
     string creationDate = string.IsNullOrEmpty(profile?.CreationDate)
     ? ""
     : DateTime.Parse(profile.CreationDate).ToString("dd/MM/yyyy HH:mm:ss");
+    DateTime dob = DateTime.MinValue;
+    var dobValue = ViewBag.user?.Case?.DOB;
+
+    bool isValid = dobValue != null && DateTime.TryParse(dobValue.ToString(), out dob);
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -279,11 +283,11 @@ html,body{font-family:'Inter',Arial,sans-serif;background:#f5f5f5;color:#000;}
                     if (!string.IsNullOrEmpty(sn)) { <text> @sn</text> }
                 }
                 else { @fullName }
-                @if (!string.IsNullOrEmpty(primaryBadge))
+                @* @if (!string.IsNullOrEmpty(primaryBadge))
                 {
                     string pc = primaryBadge=="REL"?"pill-rel":primaryBadge=="SAN"?"pill-san":primaryBadge=="PEP"?"pill-pep":primaryBadge=="ID"?"pill-id":primaryBadge=="AM"?"pill-am":primaryBadge=="FINREG"?"pill-fin":"pill-gray";
                     <span class="pill @pc">@primaryBadge</span>
-                }
+                } *@
             </div>
             <div class="ph-id">#@profileId</div>
             <div class="ph-id">KYC6 Match Report</div>
@@ -504,7 +508,11 @@ html,body{font-family:'Inter',Arial,sans-serif;background:#f5f5f5;color:#000;}
 
                                     if (art != null)
                                     {
-                                        string artCapt = Convert.ToString(art.DateCollected)??"";
+                                            DateTime dt;
+                                            string artCapt = DateTime.TryParse(art.DateCollected, out dt)
+                                            ? dt.ToString("dd/MM/yyyy")
+                                            : "";
+                                        @* string artCapt = Convert.ToString(art.DateCollected)??""; *@
                                         string artPub  = Convert.ToString(art.DatePublished)??"";
                                         string artTitle = art.EvidenceId ?? (art.Snippet != null ? Convert.ToString(art.Snippet.Title) : "");
 
@@ -539,7 +547,11 @@ html,body{font-family:'Inter',Arial,sans-serif;background:#f5f5f5;color:#000;}
                         @foreach (var art in articles)
                         {
                             // Ideally match evidence here, but just listing for now if positions don't have evidence IDs
-                            string artCapt = Convert.ToString(art.DateCollected)??"";
+                                    DateTime dt;
+                                    string artCapt = DateTime.TryParse(art.DateCollected, out dt)
+                                    ? dt.ToString("dd/MM/yyyy")
+                                    : "";
+                            //string artCapt = Convert.ToString(art.DateCollected.toString("dd/mm/yyyy"))??"";
                             string artPub  = Convert.ToString(art.DatePublished)??"";
                             string artTitle = art.EvidenceId ?? (art.Snippet != null ? Convert.ToString(art.Snippet.Title) : "");
 
@@ -590,7 +602,11 @@ html,body{font-family:'Inter',Arial,sans-serif;background:#f5f5f5;color:#000;}
                 </tr>
                 <tr>
                     <td style="font-weight: 600;">Date of Birth</td>
-                    <td>@(ViewBag.user.Case.DOB == "1/1/0001 12:00:00 AM" ? "-" : ViewBag.user.Case.DOB)</td>
+                        <td>
+                            @(isValid && dob != DateTime.MinValue
+                                                ? dob.ToString("dd/MM/yyyy")
+                                                : "-")
+                                                                                           </td>
                     <td>-</td>
                         
                 </tr>
@@ -621,6 +637,10 @@ html,body{font-family:'Inter',Arial,sans-serif;background:#f5f5f5;color:#000;}
         else
         {
            var caseData = ViewBag.business?.Case;
+           DateTime Corpdob = DateTime.MinValue;
+            var CorpdobValue = caseData.DOB;
+
+            bool isCorpValid = CorpdobValue != null && DateTime.TryParse(CorpdobValue.ToString(), out Corpdob);
                     
             <div class="sec-hdr">Data Comparison</div>
             <hr class="sec-line" />
@@ -654,9 +674,11 @@ html,body{font-family:'Inter',Arial,sans-serif;background:#f5f5f5;color:#000;}
                     <tr>
                         <td style="font-weight: 600;">Date of Registration</td>
                          <td>
-                            @(caseData == null || caseData.DOB == "1/1/0001 12:00:00 AM"
-                                ? "-"
-                                : caseData.DOB)
+                           
+
+                                 @(isCorpValid && Corpdob != DateTime.MinValue
+                                                ? Corpdob.ToString("dd/MM/yyyy")
+                                                : "-")
                         </td>
                         <td>-</td>
                        
@@ -698,7 +720,11 @@ html,body{font-family:'Inter',Arial,sans-serif;background:#f5f5f5;color:#000;}
         @foreach (var art in articles)
         {
             evNum++;
-            string artCapt   = Convert.ToString(art.DateCollected)??"";
+                DateTime dt;
+                string artCapt = DateTime.TryParse(art.DateCollected, out dt)
+                ? dt.ToString("dd/MM/yyyy")
+                : "";
+            //string artCapt   = Convert.ToString(art.DateCollected.toString("dd/mm/yyyy"))??"";
             string artPub    = Convert.ToString(art.DatePublished)??"";
             string artTitle  = art.EvidenceId ?? (art.Snippet != null ? Convert.ToString(art.Snippet.Title) : "");
             
