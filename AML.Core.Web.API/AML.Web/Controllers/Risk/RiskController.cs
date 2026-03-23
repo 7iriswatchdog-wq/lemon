@@ -541,24 +541,24 @@ namespace AML.Web.Controllers.Risk
             return View(modelVal);
         }
 
-        public JsonResult GetRiskCategoryTypes(string riskCategoryID)
+        public JsonResult GetRiskCategoryTypes(string riskCategoryID,int clientId)
         {
-            var clientId = _clientHandler.GetClientId();
+           // var clientId = _clientHandler.GetClientId();
             dynamic riskCategoryTypes = _lovMasterService.GetRiskCategoryTypes(riskCategoryID,clientId);
             return Json(new SelectList(riskCategoryTypes, "LovTypeCategoryId", "LovCategoryType"));
         }
 
-        public JsonResult GetRiskTypes(string riskTypeCategoryID)
+        public JsonResult GetRiskTypes(string riskTypeCategoryID, int clientId)
         {
-            var clientId = _clientHandler.GetClientId();
+            //var clientId = _clientHandler.GetClientId();
             var riskTypes = _lovMasterService.GetRiskTypes(riskTypeCategoryID, clientId);
             return Json(new SelectList(riskTypes, "LovTypeId", "LovTypeName"));
         }
 
         [HttpPost("/risk/custompaginationRiskItems")]
-        public JsonResult CustomPagination(DataTableModel model, string riskTypeID, string risKCategoryId)
+        public JsonResult CustomPagination(DataTableModel model, string riskTypeID, string risKCategoryId, int clientId)
         {
-            var clientId = _clientHandler.GetClientId();
+            //var clientId = _clientHandler.GetClientId();
             List<LovMasterModel> abc = _mapper.Map<List<LovMasterModel>>(_lovMasterService.GetRiskItems(Convert.ToInt32(riskTypeID), clientId));
             int totalcount = abc.Count;
 
@@ -614,9 +614,9 @@ namespace AML.Web.Controllers.Risk
         //    }
         //}
         [HttpPost]
-        public JsonResult CustomPaginationRiskTypeCategory(DataTableModel model, string riskCategoryID)
+        public JsonResult CustomPaginationRiskTypeCategory(DataTableModel model, string riskCategoryID,int clientId)
         {
-            var clientId = _clientHandler.GetClientId();
+            //var clientId = _clientHandler.GetClientId();
             List<LovTypeCategoryDTO> abc = _mapper.Map<List<LovTypeCategoryDTO>>(_lovMasterService.GetRiskCategoryType(riskCategoryID,clientId));
             int totalcount = abc.Count;
 
@@ -646,9 +646,9 @@ namespace AML.Web.Controllers.Risk
             return response;
         }
 
-        public JsonResult CustomPaginationRiskType(DataTableModel model, string RiskTypeCategoryID,string RiskCategoryID)
+        public JsonResult CustomPaginationRiskType(DataTableModel model, string RiskTypeCategoryID,string RiskCategoryID, int clientId)
         {
-            var clientId = _clientHandler.GetClientId();
+            //var clientId = _clientHandler.GetClientId();
             List<LovMasterModel> abc = _mapper.Map<List<LovMasterModel>>(_lovMasterService.GetRiskType(RiskTypeCategoryID,  clientId));
             int totalcount = abc.Count;
 
@@ -688,12 +688,12 @@ namespace AML.Web.Controllers.Risk
         {
             if (ModelState.IsValid)
             {
-                model.ClientId = _clientHandler.GetClientId();
+                //model.ClientId = _clientHandler.GetClientId();
                 model.CreatedBy = _clientHandler.GetUserId();
 
                 string returnMsg = null;
                 bool isSuccess = true;
-                model.ClientId = _clientHandler.GetClientId();
+                //model.ClientId = _clientHandler.GetClientId();
                 _lovMasterService.AddRiskTypes(_mapper.Map<RIskConfigurationMasterDTO>(model), out returnMsg, out isSuccess);
 
                 if (!isSuccess)
@@ -721,11 +721,11 @@ namespace AML.Web.Controllers.Risk
         [HttpPost]
         public ActionResult SaveType(RIskConfigurationMasterModel model)
         {
-            model.ClientId = _clientHandler.GetClientId();
+            //model.ClientId = _clientHandler.GetClientId();
             model.CreatedBy = _clientHandler.GetUserId();
             string returnMsg = null;
             bool isSuccess = true;
-           model.ClientId = _clientHandler.GetClientId();
+           //model.ClientId = _clientHandler.GetClientId();
             RIskConfigurationMasterDTO riskConfigurationMasterDTO = _mapper.Map<RIskConfigurationMasterDTO>(model);
             _lovMasterService.AddRiskType(riskConfigurationMasterDTO, out returnMsg, out isSuccess);
 
@@ -751,7 +751,7 @@ namespace AML.Web.Controllers.Risk
         [HttpPost]
         public ActionResult SaveCategoryType(RIskConfigurationMasterModel model)
         {
-            model.ClientId = _clientHandler.GetClientId();
+            //model.ClientId = _clientHandler.GetClientId();
             model.CreatedBy = _clientHandler.GetUserId();
             if (ModelState.IsValid)
             {
