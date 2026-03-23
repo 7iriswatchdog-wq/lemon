@@ -2260,16 +2260,16 @@ namespace AML.Web.Controllers.Case
 
             using (HttpClient httpClient = new HttpClient())
             {
-                string url = pdfbaseURL;
-                //string url = baseC6URL;
+                //string url = pdfbaseURL;
+                string url = baseC6URL;
                 //TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, url, "kycdigi");
                 TokenRS token =  AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
                 //     string accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1ZmQ4NzVjNWVmMmFmYjMxNGNhMWE1YjIiLCJpYXQiOjE2MTI2OTE4MTMsImV4cCI6MTYxMzI5NjYxM30.trsanUcNCINZTa0gkWD_5LfofoHG1aD2wX8tq3XsP8I";
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.user.token);
                 if (category == "INDIVIDUAL")
-                    url = pdfbaseURL + "personal/" + id;
+                    url = baseC6URL + "personal/" + id;
                 else
-                    url = pdfbaseURL + "business/" + id;
+                    url = baseC6URL + "business/" + id;
                 Task<HttpResponseMessage> response = httpClient.GetAsync(url);
                 file = response.Result;
 

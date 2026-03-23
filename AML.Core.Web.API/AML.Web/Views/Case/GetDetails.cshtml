@@ -22,6 +22,9 @@
     var natLabel = isIndividual ? "Nationality" : "Country of Incorporation";
     var idLabel = isIndividual ? "Id Number" : "Trade Licence Number";
 
+    DateTime dob;
+    bool isValid = DateTime.TryParse(Model.Case.DOB, out dob);
+
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -244,22 +247,27 @@
         <tbody>
             <tr>
                 <td style="font-weight: 600;">Name</td>
-                <td class="comp-val-match">@matchName</td>
                 <td>@Model.Case.FirstName @Model.Case.MiddleName @Model.Case.LastName</td>
+                <td class="comp-val-match">@matchName</td>
+                
             </tr>
             <tr>
                 
                  <td style="font-weight: 600;">@dobLabel</td>
-               
+                <td>
+                    @(isValid && dob != DateTime.MinValue
+                                        ? dob.ToString("dd/MM/yyyy")
+                                        : "-")
+                </td>
                 <td>@(string.IsNullOrEmpty(matchDob) ? "-" : matchDob)</td>
-                <td>@(Model.Case.DOB == "1/1/0001 12:00:00 AM" ? "-" : Model.Case.DOB)</td>
+                
             </tr>
             <tr>
                 
                 <td style="font-weight: 600;">@natLabel</td>
-                
-                <td>@(string.IsNullOrEmpty(matchNat) ? "-" : matchNat)</td>
                 <td>@(string.IsNullOrEmpty(Model.Case.Nationality) ? "-" : Model.Case.Nationality)</td>
+                <td>@(string.IsNullOrEmpty(matchNat) ? "-" : matchNat)</td>
+                
             </tr>
             <tr>
                 <td style="font-weight: 600;">@idLabel</td>
