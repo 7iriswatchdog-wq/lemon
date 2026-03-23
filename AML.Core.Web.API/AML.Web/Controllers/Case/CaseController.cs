@@ -737,7 +737,7 @@ namespace AML.Web.Controllers.Case
                         //var customerCodeprefix = _mapper.Map<ClientMasterDTO>(_customerCaseService.GetCustomerCodeprefixByclient(model.ClientId));
                         //_ccDTO.customerCodeprefix = customerCodeprefix.Prefix;
                         //var result = _customerCaseService.CreatePrefix(_ccDTO);
-                        _ccDTO.ScreeningOptions = string.Join(",", selectedScreeningOptions);
+                        _ccDTO.ScreeningOptions = string.Join(", ", selectedScreeningOptions);
                         var result = _customerCaseService.Create(_ccDTO);
                             _ccDTO.CustomerId = result.Result.Split('Ø')[1];
 
