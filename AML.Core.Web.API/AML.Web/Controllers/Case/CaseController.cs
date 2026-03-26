@@ -186,7 +186,14 @@ namespace AML.Web.Controllers.Case
             model.StartDate = System.DateTime.Now.AddYears(-1);
             //model.StartDate = System.DateTime.Now.AddDays(-7);
             model.EndDate = System.DateTime.Now;
-            model.CustomerCategories = new SelectList(_mapper.Map<List<CustomerCategoryModel>>(_customerCategoryService.GetAll().Result), "Code", "Name");
+            //model.CustomerCategories = new SelectList(_mapper.Map<List<CustomerCategoryModel>>(_customerCategoryService.GetAll().Result), "Code", "Name");
+            model.CustomerCategories = new SelectList(
+    _mapper.Map<List<CustomerCategoryModel>>(_customerCategoryService.GetAll().Result)
+        .Where(x => x.Name == "INDIVIDUAL" || x.Name == "CORPORATE")
+        .ToList(),
+    "Code",
+    "Name"
+);
 
             IEnumerable<SelectListItem> userList = from s in _mapper.Map<List<UserModel>>(_userService.GetAll(clientId))
                                                    select new SelectListItem
@@ -3596,7 +3603,14 @@ namespace AML.Web.Controllers.Case
             model.StartDate = System.DateTime.Now.AddYears(-1);
             //model.StartDate = System.DateTime.Now.AddDays(-7);
             model.EndDate = System.DateTime.Now;
-            model.CustomerCategories = new SelectList(_mapper.Map<List<CustomerCategoryModel>>(_customerCategoryService.GetAll().Result), "Code", "Name");
+            //model.CustomerCategories = new SelectList(_mapper.Map<List<CustomerCategoryModel>>(_customerCategoryService.GetAll().Result), "Code", "Name");
+            model.CustomerCategories = new SelectList(
+   _mapper.Map<List<CustomerCategoryModel>>(_customerCategoryService.GetAll().Result)
+       .Where(x => x.Name == "INDIVIDUAL" || x.Name == "CORPORATE")
+       .ToList(),
+   "Code",
+   "Name"
+);
             IEnumerable<SelectListItem> userList = from s in _mapper.Map<List<UserModel>>(_userService.GetAll(clientId))
                                                    select new SelectListItem
                                                    {

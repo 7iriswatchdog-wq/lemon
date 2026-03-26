@@ -1,5 +1,6 @@
 using AML.DTO.DTO.Report;
 using AML.ViewModel.ViewModels.Report;
+using AML.Web.Controllers.Reports;
 using System.Collections.Generic;
 
 namespace AML.Core.ServiceContract.Report
@@ -26,5 +27,7 @@ namespace AML.Core.ServiceContract.Report
         List<RiskDashboardDTO> GetRiskCount(int status,int clientId);
         List<CaseReportListDTO> GetKycReportList(CaseReportRequestDTO model);
         List<CaseReportListDTO> GetLatestDate(int clientid);
+
+        List<ScreeningDatabaseLogDTO> GetScreeningDatabaseLogs(CaseReportRequestDTO model);
     }
 }

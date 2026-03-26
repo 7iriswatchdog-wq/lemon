@@ -1,6 +1,7 @@
 using AML.Core.Common.StaticResource;
 using AML.DTO.DTO.Report;
 using AML.ViewModel.ViewModels.Report;
+using AML.Web.Controllers.Reports;
 using System.Collections.Generic;
 
 namespace AML.Core.RepositoryContract.Report
@@ -29,5 +30,7 @@ namespace AML.Core.RepositoryContract.Report
         ServiceResponse<List<CaseReportListDTO>> GetLatestDate(int clientId);
 
         ServiceResponse<int> GetClientCountReportList(CaseReportRequestDTO requestModel);
+
+        ServiceResponse<List<ScreeningDatabaseLogDTO>> GetScreeningDatabaseLogs(CaseReportRequestDTO model);
     }
 }

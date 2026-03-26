@@ -17,6 +17,12 @@ namespace AML.DTO.DTO.Report
         public string CustomerIdType { get; set; }
         [Column("customer_name")]
         public string CustomerName { get; set; }
+        [Column("fname")]
+        public string FirstName { get; set; }
+        [Column("mname")]
+        public string MiddleName { get; set; }
+        [Column("lname")]
+        public string LastName { get; set; }
         [Column("status")]
         public string Status { get; set; }
         [Column("CaseStatus")]
@@ -162,7 +168,10 @@ namespace AML.DTO.DTO.Report
 
         [Column("updated_on")]
         public string UpdatedOn { get; set; }
-        
+
+        [Column("type")]
+        public string Type { get; set; }
+
     }
     public class RiskDashboardDTO
     {

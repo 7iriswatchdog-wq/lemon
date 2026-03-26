@@ -1293,7 +1293,8 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_clientId", _ETLDataLoadReportDTO.ClientId);
                 parameters.Add("@p_startDate", _ETLDataLoadReportDTO.FromDate);
                 parameters.Add("@p_endDate", _ETLDataLoadReportDTO.ToDate);
-                serviceResponse.Result = Get<EtlBatchDTO>("get_etl_data_load_report", parameters, commandType: CommandType.StoredProcedure).ToList();
+                parameters.Add("@p_matchtype", _ETLDataLoadReportDTO.MatchType);
+                serviceResponse.Result = Get<EtlBatchDTO>("get_etl_dataload_report", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Report fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
             }
@@ -1313,7 +1314,7 @@ namespace AML.Core.Repository.CustomerCase
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_batchId", BatchId);
                 parameters.Add("@p_clientId", clientId);
-                serviceResponse.Result = Get<CustomerCaseDTO>("get_etl_data_load_report_by_batch", parameters, commandType: CommandType.StoredProcedure).ToList();
+                serviceResponse.Result = Get<CustomerCaseDTO>("get_etl_dataload_report_by_batch", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Report fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
             }

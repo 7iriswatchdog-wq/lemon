@@ -2,6 +2,7 @@ using AML.Core.RepositoryContract.Report;
 using AML.Core.ServiceContract.Report;
 using AML.DTO.DTO.Report;
 using AML.ViewModel.ViewModels.Report;
+using AML.Web.Controllers.Reports;
 using System.Collections.Generic;
 
 namespace AML.Core.Service.Report
@@ -84,6 +85,10 @@ namespace AML.Core.Service.Report
         {
             //Perform business requirements here
             return _reportRepository.GetClientCountReportList(model).Result;
+        }
+        public List<ScreeningDatabaseLogDTO> GetScreeningDatabaseLogs(CaseReportRequestDTO model)
+        {
+            return _reportRepository.GetScreeningDatabaseLogs(model).Result;
         }
     }
 }

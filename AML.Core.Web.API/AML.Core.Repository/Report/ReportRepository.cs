@@ -6,6 +6,7 @@ using AML.DTO.DTO.Kyc;
 using AML.DTO.DTO.Report;
 using AML.DTO.DTO.Risk;
 using AML.ViewModel.ViewModels.Report;
+using AML.Web.Controllers.Reports;
 using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -15,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace AML.Core.Repository.Report
 {
@@ -30,40 +32,35 @@ namespace AML.Core.Repository.Report
                 ServiceResponse<List<CaseReportListDTO>> serviceResponse = new ServiceResponse<List<CaseReportListDTO>>();
                 try
                 {
-                    var userID = String.IsNullOrEmpty(requestModel.User) ? "0" : requestModel.User;
-                    var UpdatedByUserId = String.IsNullOrEmpty(requestModel.UpdatedByUserId) ? "0" : requestModel.UpdatedByUserId;
-                    DynamicParameters parameters = new DynamicParameters();
+                //var userID = String.IsNullOrEmpty(requestModel.User) ? "0" : requestModel.User;
+                //var UpdatedByUserId = String.IsNullOrEmpty(requestModel.UpdatedByUserId) ? "0" : requestModel.UpdatedByUserId;
+                int? matchFrom = null;
+                int? matchTo = null;
+
+                if (!string.IsNullOrWhiteSpace(requestModel.matchscore))
+                {
+                    var parts = requestModel.matchscore.Split('-');
+
+                    if (parts.Length == 2 &&
+                        int.TryParse(parts[0], out int from) &&
+                        int.TryParse(parts[1], out int to))
+                    {
+                        matchFrom = from;
+                        matchTo = to;
+                    }
+                }
+                DynamicParameters parameters = new DynamicParameters();
                     parameters.Add("@c_from", Convert.ToDateTime(requestModel.StartDate));
                     parameters.Add("@c_to", Convert.ToDateTime(requestModel.EndDate));
-                    parameters.Add("@c_user", Convert.ToInt32(userID));
                     parameters.Add("@c_status", Convert.ToInt32(requestModel.Status));
                     parameters.Add("@c_clientId", requestModel.ClientId);
                     parameters.Add("@cust_type", (requestModel.Cust_type));
-                    parameters.Add("@c_updated_by_id", UpdatedByUserId);
-                    parameters.Add("@c_nomatch", requestModel.NoMatch);
-                    parameters.Add("@c_tdomesticpep", requestModel.TrueDomesticpep);
-                    parameters.Add("@c_tforeignpep", requestModel.TrueForeignpep);
-                    parameters.Add("@c_tadversemedia", requestModel.TrueAdverseMedia);
-                    parameters.Add("@c_pdomesticpep", requestModel.PartialDomesticpep);
-                    parameters.Add("@c_pforeignpep", requestModel.PartialForeignpep);
-                    parameters.Add("@c_padversemedia", requestModel.Partialadversemedia);
-                    parameters.Add("@c_expirystartdate", requestModel.expiryStartDate);
-                    parameters.Add("@c_expiryenddate", requestModel.expiryEndDate);
-                    parameters.Add("@c_trueuaeunsanction", requestModel.TrueUAEUNSanction);
-                    parameters.Add("@c_trueothersanction", requestModel.TrueOtherSanction);
-                    parameters.Add("@c_searchvalue", requestModel.SearchValue);
-
-                if (Convert.ToInt32(requestModel.idstatus) > 0)
-                    {
-                        parameters.Add("@c_documentstatus", requestModel.idstatus);
-                        serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_report_by_expiry", parameters, commandType: CommandType.StoredProcedure).ToList();
-                    }
-                    else
-                    {
-
-                        serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_report", parameters, commandType: CommandType.StoredProcedure).ToList();
-                    }
-                
+                    parameters.Add("p_matchfrom", matchFrom, DbType.Int32);
+                    parameters.Add("p_matchto", matchTo, DbType.Int32);
+                    parameters.Add("p_createdBy", requestModel.createdBy);
+                    parameters.Add("c_status", requestModel.caseStatus);
+                    parameters.Add("p_riskLevel", requestModel.riskLevel);
+                serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_report", parameters, commandType: CommandType.StoredProcedure).ToList();
                     serviceResponse.Message = "CustomerCase details fetched successfully.";
                     serviceResponse.Status = StaticResource.SuccessStatusCode;
             }
@@ -453,6 +450,25 @@ namespace AML.Core.Repository.Report
             catch (Exception ex)
             {
                 Console.Error.WriteLine(ex);
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
+        public ServiceResponse<List<ScreeningDatabaseLogDTO>> GetScreeningDatabaseLogs(CaseReportRequestDTO model)
+        {
+            ServiceResponse<List<ScreeningDatabaseLogDTO>> serviceResponse = new ServiceResponse<List<ScreeningDatabaseLogDTO>>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@c_from", Convert.ToDateTime(model.StartDate));
+                parameters.Add("@c_to", Convert.ToDateTime(model.EndDate));
+                serviceResponse.Result = Get<ScreeningDatabaseLogDTO>("get_all_Screening_database_logs", parameters, commandType: CommandType.StoredProcedure).ToList();
+                serviceResponse.Message = "CustomerCase details fetched successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
                 serviceResponse.Message = ex.Message;
                 serviceResponse.Status = StaticResource.FailStatusCode;
             }

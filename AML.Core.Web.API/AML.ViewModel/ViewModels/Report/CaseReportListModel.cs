@@ -17,6 +17,10 @@ namespace AML.ViewModel.ViewModels.Report
         public string CustomerID { get; set; }
         public string CustomerType { get; set; }
         public string CustomerName { get; set; }
+
+        public string FirstName { get; set; }
+        public string MiddleName { get; set; }
+        public string LastName { get; set; }
         public string Status { get; set; }
         public string CreatedBy { get; set; }
 
@@ -134,6 +138,8 @@ namespace AML.ViewModel.ViewModels.Report
         public string Corporate_final_risk_sum { get; set; }
 
         public string CaseChangeStatus { get; set; }
+
+        public string Type { get; set; }
 
 
     }

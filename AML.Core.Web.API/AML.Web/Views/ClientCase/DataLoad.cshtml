@@ -1,4 +1,5 @@
-﻿@using Microsoft.AspNetCore.Http
+@using AML.ViewModel.ViewModels.EtlBatch
+@using Microsoft.AspNetCore.Http
 @using Newtonsoft.Json;
 @inject IHttpContextAccessor HttpContextAccessor
 @{
@@ -8,759 +9,477 @@
 }
 
 @model AML.ViewModel.ViewModels.CustomerCase.ETLReport
-<script src="~/plugins/jquery/jquery.min.js"></script>
-
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.15/css/jquery.dataTables.min.css" />
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.4.0/css/buttons.dataTables.min.css" />
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-<script src="https://cdn.rawgit.com/bpampuch/pdfmake/0.1.27/build/pdfmake.min.js"></script>
-<script src="https://cdn.rawgit.com/bpampuch/pdfmake/0.1.27/build/vfs_fonts.js"></script>
-<script src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/1.4.0/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/1.4.0/js/buttons.flash.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/1.4.0/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/1.4.0/js/buttons.print.min.js"></script>
-
-
-<style>
-    .chip {
-        display: inline-block;
-        padding: 0 25px;
-        height: 35px;
-        line-height: 35px;
-        border-radius: 25px;
-        margin: 5px;
-    }
-
-        .chip img {
-            float: left;
-            margin: 0 10px 0 -25px;
-            height: 50px;
-            width: 50px;
-            border-radius: 50%;
-        }
-
-        .chip label {
-            margin-bottom: 0;
-            padding-right: 10px;
-        }
-
-    .closebtn {
-        color: #fff;
-        font-weight: bold;
-        float: right;
-        font-size: 20px;
-        cursor: pointer;
-    }
-
-        .closebtn:hover {
-            color: #000;
-        }
-
-    tr {
-        cursor: pointer;
-    }
-
-    #filterContent {
-        height: 337px;
-        /*width: auto;
-            float: left;*/
-        overflow-y: auto;
-    }
-
-    select {
-        appearance: none !important;
-        -webkit-appearance: none !important;
-        -moz-appearance: none !important;
-        background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.41 0L6 4.59L10.59 0L12 1.42L6 7.42L0 1.42L1.41 0Z' fill='black'/%3E%3C/svg%3E") !important;
-        background-repeat: no-repeat !important;
-        background-position-x: calc(100% - 20px) !important;
-        background-position-y: 50% !important;
-        background-size: 12px 8px !important;
-        padding-right: 2rem;
-    }
-
-    heading {
-        font-size: 1.25rem;
-    }
-
-    .page {
-        width: 100%;
-        overflow-x: hidden;
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-    }
-
-    .head-section {
-        display: flex;
-        justify-content: space-between; /* Better than flex-start + auto margin */
-        align-items: center;
-        width: 100%;
-        height: 72px;
-        overflow-x: hidden;
-        padding: 0 16px; /* Add horizontal padding if needed */
-        box-sizing: border-box;
-        background-color: white !important;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .heading, .menu-icon, .md.block {
-        min-width: 0; /* allows shrinking */
-        flex-shrink: 1; /* enables shrinking */
-    }
-
-    .heading {
-        font-size: 1.25rem;
-    }
-
-
-    .card1 {
-        max-width: 100%; /* Ensures it never overflows parent */
-        border-radius: 8px;
-        overflow: hidden; /* Contains all child elements */
-        background-color: white !important;
-        margin: 30px 30px;
-        padding: 20px;
-        box-shadow: 0 0 #0000, /* fallback ring-offset-shadow */
-        0 0 #0000, /* fallback ring-shadow */
-        0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    }
-
-    .flex-box {
-        display: flex;
-        flex-wrap: wrap;
-        margin: 10px 0px;
-    }
-
-        .flex-box > .flex-item {
-            flex: 1 1 250px;
-            text-align: center;
-        }
-
-    .form-group {
-        display: flex;
-        flex: 1;
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .flex-item input {
-        width: 90%; /* full width of the parent */
-        min-width: 40%;
-        box-sizing: border-box; /* includes padding in the width */
-        padding: 8px;
-        border-radius: 4px; /* spacing between inputs */
-    }
-
-    input, select {
-        border: 1px solid #dee2e6 !important;
-        font-weight: lighter;
-    }
-
-    select {
-        font-weight: lighter;
-    }
-
-    option {
-        font-weight: lighter;
-    }
-
-    .buttons-div {
-        display: flex;
-        justify-content: flex-end;
-        gap: 20px;
-    }
-
-    select {
-        width: 80%; /* full width of the parent */
-        min-width: 40%;
-        box-sizing: border-box; /* includes padding in the width */
-        padding: 8px;
-        border-radius: 4px; /* spacing between inputs */
-    }
-
-    .go {
-        background-color: rgb(37,99,235);
-        border-radius: 8px;
-        padding: 8px 20px;
-        color: white;
-    }
-
-    input:focus {
-        border: 1px solid rgb(37,99,235) !important;
-    }
-
-    select:focus {
-        border: 1px solid rgb(37,99,235) !important;
-    }
-
-    .flex-box1 {
-        display: flex;
-        justify-content: space-between;
-        width: 90%;
-        margin: 20px;
-    }
-
-        .flex-box1 button {
-            padding: 8px 20px;
-            margin: 5px;
-        }
-
-    .navigate button {
-        color: darkgray;
-    }
-
-    .navigate .active {
-        color: black;
-        border-bottom: 2px solid rgb(37,99,235);
-    }
-
-    table {
-        margin-top: 10px;
-        width: 100%;
-    }
-
-    .export {
-        background-color: none;
-        border: 2px solid #dee2e6;
-        border-radius: 8px;
-    }
-
-    thead {
-        background-color: rgb(233,239,253);
-        width: 100%;
-    }
-
-        thead th:first-child {
-            border-top-left-radius: 8px;
-            border-bottom-left-radius: 8px;
-        }
-
-        thead th:last-child {
-            border-top-right-radius: 8px;
-            border-bottom-right-radius: 8px;
-        }
-
-    th {
-        font-weight: 500;
-    }
-
-    .clear {
-        border: 2px solid #dee2e6 !important;
-        border-radius: 8px;
-        padding: 8px 20px;
-    }
-
-    .table2 th,
-    .table2 td {
-        width: 11.11%; /* 100% / 9 columns = ~11.11% */
-        word-wrap: break-word;
-        white-space: normal;
-        text-align: center;
-        padding: 10px 0;
-        vertical-align: middle;
-    }
-
-    .table1 th,
-    .table1 td {
-        padding: 10px 0;
-        width: 33.33%; /* 100% / 9 columns = ~11.11% */
-        word-wrap: break-word;
-        white-space: normal;
-        text-align: center;
-        vertical-align: middle;
-    }
-
-    tr {
-        border: none !important;
-    }
-
-    td {
-        padding: 15px;
-    }
-
-    .loader-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(255, 255, 255, 0.7);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-    }
-
-    .loader {
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid #3498db;
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        animation: spin 1s linear infinite;
-    }
-
-    @@keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-
-
-
-    @@media (max-width: 768px) {
-        .table-container {
-            overflow-x: auto;
-        }
-
-        .export {
-            padding: 4px 10px !important;
-        }
-
-        .page {
-            width: 80vw;
-        }
-
-        .items-center select {
-            width: 115px;
-        }
-
-        .go {
-            padding: 4px 10px !important;
-        }
-
-        .clear {
-            padding: 4px 10px !important;
-        }
-    }
-</style>
-@* for the loading effect like data tables ... *@
-<style>
-    .dt-loader {
-        display: inline-block;
-        position: relative;
-        width: 80px;
-        height: 20px;
-    }
-
-        .dt-loader div {
-            position: absolute;
-            top: 8px;
-            width: 13px;
-            height: 13px;
-            border-radius: 50%;
-            background: #2563eb;
-            animation-timing-function: cubic-bezier(0, 1, 1, 0);
-        }
-
-            .dt-loader div:nth-child(1) {
-                left: 8px;
-                animation: dt-anim1 0.6s infinite;
-            }
-
-            .dt-loader div:nth-child(2) {
-                left: 8px;
-                animation: dt-anim2 0.6s infinite;
-            }
-
-            .dt-loader div:nth-child(3) {
-                left: 32px;
-                animation: dt-anim2 0.6s infinite;
-            }
-
-            .dt-loader div:nth-child(4) {
-                left: 56px;
-                animation: dt-anim3 0.6s infinite;
-            }
-
-    @@keyframes dt-anim1 {
-        0% {
-            transform: scale(0);
-        }
-
-        100% {
-            transform: scale(1);
-        }
-    }
-
-    @@keyframes dt-anim2 {
-        0% {
-            transform: translateX(0);
-        }
-
-        100% {
-            transform: translateX(24px);
-        }
-    }
-
-    @@keyframes dt-anim3 {
-        0% {
-            transform: scale(1);
-        }
-
-        100% {
-            transform: scale(0);
-        }
-    }
-</style>
-<div class="page bg-gray-50">
-    @* <div class="custom-container aml-customer-bulk-upload-logs">
-        <div class="page-heading">
-            <div class="sas-card rounded-card br-20 mb-2 bg-blue head-section">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0 heading"><b>Customer Bulk Upload Logs</b></h4>
-                    <div class="menu-icon">
-                        <i class="lni lni-microsoft"></i>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Upload - WatchDog</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .dt-loader { position: relative; width: 80px; height: 20px; }
+        .dt-loader div { position: absolute; top: 8px; width: 13px; height: 13px; border-radius: 50%; background: #2563eb; animation-timing-function: cubic-bezier(0,1,1,0); }
+        .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+        .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+        @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+        @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+
+        th.sortable { cursor: pointer; position: relative; padding-right: 20px; }
+        th.sortable::after { content: "▲\A▼"; white-space: pre; font-size: 10px; position: absolute; right: 6px; top: 50%; transform: translateY(-50%); color: #bbb; line-height: 1; text-align: center; }
+        th.sortable.active.asc::after { content: "▲"; color: #000; }
+        th.sortable.active.desc::after { content: '\A▼'; color: #000; }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen text-slate-900">
+    <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+    </div>
+
+    <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
+        <div class="flex items-center gap-2 text-slate-500 text-xs mb-2">
+            <span class="text-slate-900 font-medium">Reports</span>
+            <i data-lucide="chevron-right" class="h-3 w-3"></i>
+            <span class="text-slate-900 font-medium">Customer Bulk Upload Logs</span>
+        </div>
+
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Customer Bulk Upload Logs</h1>
+            </div>
+            @* <div class="text-sm md:text-base text-right flex items-center gap-3">
+                <img  alt="Client Logo" width="50" class="rounded-sm shadow-sm border border-slate-200" />
+            </div> *@
+        </div>
+
+        <!-- Form for API Submission -->
+        <form id="dataLoadForm" role="form" asp-action="DataLoadReport" asp-controller="ClientCase"  class="form-horizontal" enctype="multipart/form-data" method="post" >
+        
+        <!-- Filters Section -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-sm font-bold text-slate-800 tracking-tight">Filters</h3>
+                <button type="button" onclick="clearFilters()" id="resetBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-4 rounded-md text-sm transition">
+                    Reset
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <!-- Start Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-slate-500">Start Date</label>
+                    <input type="text" id="startDate" name="FromDate" placeholder="dd/MM/yyyy" class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm" value="@(Model.FromDate.ToString("yyyy-MM-dd"))">
+                </div>
+
+                <!-- End Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-slate-500">End Date</label>
+                    <input type="text" id="endDate" name="ToDate" placeholder="dd/MM/yyyy" class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm" value="@(Model.ToDate.ToString("yyyy-MM-dd"))">
+                </div>
+
+                <!-- Match Type -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-slate-500">Match Type</label>
+                    <select id="MatchType" asp-for="MatchType" asp-items="@Model.MatchingTypeList" class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"></select>
+                </div>
+
+                <!-- Customer -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-slate-500">Customer</label>
+                    <input type="text" id="Customer" name="Customer" placeholder="Customer" value="@Model.Customer" class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                </div>
+            </div>
+
+            <div class="mt-5 flex items-center justify-end gap-3 w-full">
+                <!-- Submit Form button representing existing API behavior -->
+                <button type="submit" id="btnSearch" onclick="showLoader()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold h-10 px-5 rounded-md text-sm transition shadow-sm">
+                    Apply
+                </button>
+            </div>
+        </div>
+        </form>
+        <input id="hdnBatchId" type="hidden" />
+
+        <!-- Table UI -->
+        <div class="space-y-4">
+            
+            <div class="flex items-center gap-4 border-b border-slate-200 pb-2">
+                <button type="button" onclick="showTable('table1', this)" class="nav-btn font-semibold text-sm pb-2 border-b-2 border-blue-600 text-blue-600">File Details</button>
+                <button type="button" onclick="showTable('table2', this)" class="nav-btn font-semibold text-sm pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700">Customer Details</button>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 items-center w-full">
+                <!-- Search -->
+                <div class="relative flex-1 w-full">
+                    <i data-lucide="search" class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                    <input type="text" id="searchInput" placeholder="Search by File Name" onkeyup="filterTableActive()" 
+                           class="pl-10 h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 shadow-sm transition-all placeholder:text-slate-500">
+                </div>
+                @* <button onclick="filterTableActive()" id="searchButton" class="h-11 px-5 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm">
+                    Search
+                </button> *@
+                <form method="post" action="/ClientCase/GeneratePdf" id="pdfForm" class="hidden">
+                     <input type="hidden" name="BatchID" id="pdfBatchId" />
+                     <button type="submit" id="btnPdf"></button>
+                </form>
+                <button onclick="exportPdf()" id="exportBtn" style="display: none;" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-11 px-5 rounded-md text-sm transition">
+                    <i data-lucide="download" class="h-4 w-4"></i> Export PDF
+                </button>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <!-- Table 1: File Details -->
+                <div id="table1-container" class="overflow-x-auto">
+                    <table class="w-full text-sm text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-slate-500 bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 0)">File Name</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 1)">Uploaded on</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 2)">Uploaded By</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table1Body" class="divide-y divide-slate-100" style="font-size: 12px;">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Table 2: Customer Details -->
+                <div id="table2-container" class="overflow-x-auto hidden">
+                    <table class="w-full text-sm text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-slate-500 bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-4 py-4 font-semibold h-12 w-[50px] sortable" onclick="sortTable('table2', 0)">#</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 1)">Customer Id</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 2)">Customer Name</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 3)">Nationality</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 4)">Date Of Birth</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 5)">Matched</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 6)">Source</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 7)">Uid</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 8)">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table2Body" class="divide-y divide-slate-100" style="font-size: 12px;">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex items-center justify-between px-4 py-4 border-t border-slate-200 bg-white">
+                    <div class="flex items-center gap-2 text-sm">
+                        <select id="pageSize" class="h-8 rounded-md border border-slate-200 bg-white px-2 pr-7 text-sm" onchange="changePageSize()">
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <label class="text-slate-600 font-medium">Entries per page</label>
+                    </div>
+                    <div class="text-sm text-slate-500">
+                        Showing <span id="showingStart" class="font-medium text-slate-900">0</span> to <span id="showingEnd" class="font-medium text-slate-900">0</span> of <span id="totalCases" class="font-medium text-slate-900">0</span> cases
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="prevBtn" onclick="previousPage()" class="h-8 px-3 text-sm font-medium border border-slate-200 bg-white rounded-md text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50">
+                            Previous
+                        </button>
+                        <button id="nextBtn" onclick="nextPage()" class="h-8 px-3 text-sm font-medium border border-slate-200 bg-white rounded-md text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50">
+                            Next
+                        </button>
                     </div>
                 </div>
-                <div class="md:block">
-                    Client Logo
-                </div>
-            </div>
-        </div> *@
-    <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-white">
-        <div class="flex items-center justify-between w-full">
-            <!-- Title -->
-            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
-                Customer Bulk Upload Logs
-            </h2>
-
-            <!-- Right-side content -->
-            <div class="text-sm md:text-base text-right">
-                <img src="@Clientlogo" alt="Client Logo" width="50px" />
-            </div>
-        </div>
-    </nav>
-    <div class="cont1 relative">
-        <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
-            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
-        </div>
-        <div class="row">
-            <div class="col-md-12">
-                <div class="sas-card rounded-card mb-2 bg-blue">
-                    <div class="card-header">
-                        <form role="form" asp-controller="ClientCase" class="form-horizontal" enctype="multipart/form-data" method="post">
-                            <div class="card1">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0"><b>Filters</b></h6>
-                                </div>
-                                <div class="row flex-box">
-                                    <div class="col-md-6 flex-item">
-                                        <div class="form-group">
-                                            <label>Start Date:</label>
-                                            <input type="date" class="form-control br-50" asp-for="FromDate" data-inputmask-alias="datetime" id="dtStartDate1"
-                                                   data-inputmask-inputformat="dd/mm/yyyy" max="@DateTime.Now.ToString("yyyy-MM-dd")" data-mask="" inputmode="numeric">
-
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 flex-item">
-                                        <div class="form-group">
-                                            <label>End Date:</label>
-                                            <input type="date" id="dtEndDate" class="form-control br-50" asp-for="ToDate" max="@DateTime.Now.ToString("yyyy-MM-dd")" data-inputmask-alias="datetime" data-inputmask-inputformat="dd/mm/yyyy" data-mask="" inputmode="numeric">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-12 flex-item">
-                                        <div class="form-group">
-                                            <label for="exampleSelectRounded0">Match</label>
-                                            <select asp-for="MatchType" class="form-control" asp-items="@Model.MatchingTypeList" id="exampleSelectRounded0">
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row flex-box">
-                                    <div class="col-md-12 flex-item">
-                                        <div class="form-group">
-                                            <label for="txtCustomer">Customer</label>
-                                            <input type="text" asp-for="Customer" class="form-control br-50" placeholder="Customer" id="txtCustomer">
-                                        </div>
-                                        <!--<div class="mb-3">
-                                        <div class="row">-->
-                                        @*<<<<<<< HEAD*@
-                                        <!--<div class="col-5">
-
-                                        </div>-->
-                                        @*<div class="input-group-append">
-                                            <span class="input-group-text" id="basic-addon2" onclick="addCustomer()"><i class="fa fa-plus"></i></span>
-                                        </div>
-                                        =======*@
-                                        <!--<div class="col-5">
-                                            <input type="text" asp-for="Customer" class="form-control top-left-radius" placeholder="Customer Search" id="txtCustomer">
-                                        </div>
-                                        <div class="col-2 d-flex align-items-center">
-                                            <div class="input-group-append">
-                                                <span class="input-group-text sas-button br-50" id="basic-addon2" onclick="addCustomer()"><i class="fa fa-plus"></i></span>
-                                            </div>-->
-                                        @*<input type="hidden" asp-for="Customer" id="hdnCustomerList" />*@
-                                        <!--<select id='val' asp-for="Employees" multiple='multiple' style="display:none"></select>-->
-                                        @*>>>>>>> 23bd0bd8c82807929f148601d56805b5bc90f483*@
-                                        <!--</div>
-                                        </div>-->
-                                    </div>
-                                    <div class="flex-item"></div>
-                                    <div class="flex-item"></div>
-                                </div>
-
-
-                                <div id="chips" class="row m-3">
-                                </div>
-
-                                <div class="row justify-content-end">
-
-                                    <div class="ml-2">
-                                        <div class="btn-group">
-                                            <div class="d-flex justify-content-between align-items-center buttons-div">
-                                                <button type="submit" id="btnSearch" formaction="/etl/reports/dataload" onclick="$('#btnView').click();" class="sas-button p-8-25 color-white bg-color-2 go">
-                                                    Search
-                                                </button>
-                                                <button type="reset" id="btnReset" class="sas-button p-8-25 color-white bg-color-3 ml-2 mr-3 clear">Clear All</button>
-                                            </div>
-                                            @*<div class="d-flex justify-content-between align-items-center">
-                                                <button type="reset" id="btnReset" class="sas-button p-8-25 color-white bg-color-3 ml-2 mr-3">Clear All</button>
-                                            </div>*@
-                                        </div>
-
-                                        <div class="btn-group" style="display:none;">
-                                            <button id="btnPdf" type="submit" name="PDF">
-                                                PDF
-                                            </button>
-                                        </div>
-                                        <div class="btn-group" style="display:none;">
-                                            View
-                                            <button id="btnView" type="submit" name="View">
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </form>
-                        <input id="hdnBatchId" type="hidden" />
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="sas-card rounded-card mb-2 bg-blue card1">
-            <div class="flex-box1">
-                <div class="navigate">
-                    <button type="button" onclick="showTable('table1')" class="file active">File Details</button>
-                    <button type="button" onclick="showTable('table2')" class="customer">Customer Deatils</button>
-                </div>
-                <div class="row justify-content-start">
-                    <button type="button" onclick="$('#btnPdf').click();" class="sas-button p-8-25 bg-color-2 ml-3 export" style="display: none;">Export PDF <i class="fas fa-file-pdf ml-2"></i></button>
-                </div>
-            </div>
-
-            <div class="table-responsive table-container">
-                <div class="loader-container" style="display: none;">
-                    <div class="loader"></div>
-                </div>
-                <table class="table table-hover text-nowrap table1">
-                    <thead>
-                        <tr>
-                            <th>File Name</th>
-                            <th>Uploaded on</th>
-                            <th>Uploaded By</th>
-                            @*<th>DownLoad</th>*@
-                        </tr>
-                    </thead>
-                    <tbody id="filterTablebody">
-                        @if (Model.DataList != null)
-                        {
-                            @foreach (var item in Model.DataList)
-                            {
-                                <tr onclick="viewRecords(@item.Id); showTable('table2');">
-                                    <td>@item.FileName</td>
-                                    <td>@item.AddedOn</td>
-                                    <td>@item.AddedUser</td>
-                                    @*<td style="text-align:center;" onclick="downloadPdf()"><i class="fas fa-file-pdf"></i></td>*@
-                                </tr>
-                            }
-                        }
-                    </tbody>
-                </table>
-                <table id="tableCustomerDetail" class="table table-hover text-nowrap table2" style="display:none;">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>CustomerId</th>
-                            <th>CustomerName</th>
-                            <th>Nationality</th>
-                            <th>DateOfBirth</th>
-                            <th>Matched</th>
-                            <th>Source</th>
-                            <th>Uid</th>
-                            <th>Date</th>
-
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="SlNo"></td>
-
-                            <td class="CustomerId"></td>
-                            <td class="FullName"></td>
-                            <td class="Nationality"></td>
-                            <td class="DOB"></td>
-                            <td class="IsMatched"></td>
-                            <td class="Source"></td>
-                            <td class="UID"></td>
-                            <td class="Uploadedon"></td>
-                        </tr>
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>
-</div>
+</body>
+</html>
+
 <script type="text/javascript">
+    lucide.createIcons();
 
-    var customerList = [];
-    function addCustomer() {
-        var customer = $('#txtCustomer').val();
-        var control = '<div class="chip bg-success"><label id="customerchip">' + customer
-            + '</label><span class="closebtn" onclick="removeChip(this)">&times;</span></div>';
-        $('#chips').append(control);
-        customerList.push(customer);
-        $('#hdnCustomerList').val(customerList);
+    let rawData1 = @Html.Raw(JsonConvert.SerializeObject(Model.DataList ?? new List<EtlBatchModel>()));
+    
+    let rawData2 = [];
+    
+    let filteredData1 = [];
+    let filteredData2 = [];
+    
+    let currentPage = 1;
+    let size = 10;
+    
+    let activeTable = 'table1';
+    let sortCol = -1;
+    let sortAsc = true;
 
-        $('#txtCustomer').val('');
+    $(document).ready(function () {
+        const savedSize = localStorage.getItem('pageSize');
+        if (savedSize) {
+            size = parseInt(savedSize);
+            $('#pageSize').val(savedSize);
+        }
 
-        var x = document.getElementById("val");
-        var option = document.createElement("option");
-        option.text = document.getElementById("txtCustomer").value;
-        x.add(option);
+        flatpickr("#startDate", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", allowInput: true });
+        flatpickr("#endDate", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", allowInput: true });
 
+        loadData1();
+    });
+
+    function showLoader() {
+        $('#loader').removeClass('hidden');
     }
-    function removeChip(obj) {
-        obj.parentElement.style.display = 'none';
-        customerList.splice(customerList.indexOf($('#customerchip').text()), 1);
-        $('#hdnCustomerList').val(customerList);
+
+    function clearFilters() {
+        const today = new Date();
+        const lastYear = new Date();
+        lastYear.setFullYear(today.getFullYear() - 1);
+        
+        if (document.querySelector("#startDate")._flatpickr) {
+            document.querySelector("#startDate")._flatpickr.setDate(lastYear, true);
+        }
+        if (document.querySelector("#endDate")._flatpickr) {
+            document.querySelector("#endDate")._flatpickr.setDate(today, true);
+        }
+        $('#MatchType').val(1);
+        $('#Customer').val('');
+        $('#searchInput').val('');
+        
+        $('#dataLoadForm').submit();
     }
 
-    function viewRecords(batchId) {
-        $('#btnPdf').attr('formaction', '/ClientCase/GeneratePdf?BatchID=' + batchId);
-        $('#hdnBatchId').val(batchId);
-        //$('#btnView').attr('formaction', '/ClientCase/ViewCustomerData?BatchID=' + batchId);
-        $('#btnView').click();
+    /* Table 1 Data */
+    function loadData1() {
+        activeTable = 'table1';
+        let searchVal = $('#searchInput').val()?.toLowerCase() || '';
+        
+        filteredData1 = rawData1.filter(x => 
+            !searchVal || 
+            (x.FileName && x.FileName.toLowerCase().includes(searchVal)) ||
+            (x.AddedUser && x.AddedUser.toLowerCase().includes(searchVal))
+        );
+
+        if (sortCol >= 0) {
+            filteredData1.sort((a,b) => {
+                let v1 = sortCol === 0 ? a.FileName : sortCol === 1 ? a.AddedOn : a.AddedUser;
+                let v2 = sortCol === 0 ? b.FileName : sortCol === 1 ? b.AddedOn : b.AddedUser;
+                return sortAsc ? String(v1).localeCompare(String(v2)) : String(v2).localeCompare(String(v1));
+            });
+        }
+
+        renderTable();
     }
-    function downloadPdf() {
-        $('tr').click(function (event) {
-            event.stopPropagation();
+
+    /* Table 2 Data */
+    function loadData2() {
+        activeTable = 'table2';
+        let searchVal = $('#searchInput').val()?.toLowerCase() || '';
+        
+        filteredData2 = rawData2.filter(x => 
+            !searchVal || 
+            (x.customerId && String(x.customerId).toLowerCase().includes(searchVal)) ||
+            (x.firstName && String(x.firstName).toLowerCase().includes(searchVal)) ||
+            (x.lastName && String(x.lastName).toLowerCase().includes(searchVal))
+        );
+
+        if (sortCol >= 0) {
+            filteredData2.sort((a,b) => {
+                let keys = ['slno','customerId','firstName','nationality','dob','isMatched','source','uid','createdOnDB'];
+                let v1 = a[keys[sortCol]];
+                let v2 = b[keys[sortCol]];
+                return sortAsc ? String(v1).localeCompare(String(v2)) : String(v2).localeCompare(String(v1));
+            });
+        }
+
+        renderTable();
+    }
+
+    function formatDate(value) {
+        if (!value) return null;
+
+        // ✅ Already in yyyy-MM-dd
+        if (value.includes('-') && value.split('-')[0].length === 4) {
+            return value;
+        }
+
+        // ✅ Convert dd/MM/yyyy → yyyy-MM-dd
+        if (value.includes('/')) {
+            let parts = value.split('/');
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+
+        return null;
+    }
+        function formatDateTime(dateStr) {
+        if (!dateStr) return { date: '-', time: '-' };
+
+        const d = new Date(dateStr);
+
+        return {
+            date: d.toLocaleDateString('en-GB'), // 20/02/2026
+            time: d.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',   // ✅ added
+                hour12: true
+            }) // 06:43:15 PM
+        };
+    }
+
+    function filterTableActive() {
+        currentPage = 1;
+        if(activeTable === 'table1') loadData1();
+        else loadData2();
+    }
+
+    function renderTable() {
+        let activeData = activeTable === 'table1' ? filteredData1 : filteredData2;
+        let tbodyId = activeTable === 'table1' ? 'table1Body' : 'table2Body';
+        const tbody = document.getElementById(tbodyId);
+        
+        let startIdx = (currentPage - 1) * size;
+        let endIdx = Math.min(startIdx + size, activeData.length);
+        let pageData = activeData.slice(startIdx, endIdx);
+
+        if (!pageData.length) {
+            tbody.innerHTML = `<tr><td colspan="9" class="h-24 text-center"><div class="text-slate-500">No results found.</div></td></tr>`;
+        } else {
+            if (activeTable === 'table1') {
+                tbody.innerHTML = pageData.map(item => `
+                    <tr onclick="fetchCustomerData(${item.Id})" class="bg-white border-b border-slate-100 hover:bg-slate-50/50 cursor-pointer">
+                        <td class="px-4 py-4 font-medium text-slate-600">${item.FileName || '-'}</td>
+                            <td class="px-4 py-4">
+                                ${item.AddedOn ? (() => {
+                                    const added = formatDateTime(item.AddedOn);
+                                    return `
+                                        <div class="text-xs text-slate-700">
+                                            <div>${added?.date || '-'}</div>
+                                            <div class="ml-2">${added?.time.replace(/\s?(AM|PM)/i, '') || ''}</div>
+                                        </div>
+                                    `;
+                                })() : '-'}
+                            </td>
+                        <td class="px-4 py-4">${item.AddedUser || '-'}</td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = pageData.map((v, i) => `
+                    <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50">
+                        <td class="px-4 py-4 font-medium text-slate-600">${startIdx + i + 1}</td>
+                        <td class="px-4 py-4">${v.customerId || '-'}</td>
+                        <td class="px-4 py-4">${[v.firstName, v.middleName, v.lastName].filter(Boolean).join(' ') || '-'}</td>
+                        <td class="px-4 py-4">${v.nationality || '-'}</td>
+                        <td class="px-4 py-4">${(v.dob && v.dob.includes('0001')) ? "NA" : (v.dob ? v.dob.substr(0, v.dob.indexOf(' ')) : '-')}</td>
+                        <td class="px-4 py-4">${(v.isMatched == 1 || String(v.isMatched).toLowerCase() === 'true') ? '<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium bg-red-50 text-red-600 border-red-100">True</span>' : '<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium bg-green-50 text-green-600 border-green-100">False</span>'}</td>
+                        <td class="px-4 py-4">${v.source || '-'}</td>
+                        <td class="px-4 py-4">${v.uid || '-'}</td>
+                        <td class="px-4 py-4">${v.createdOnDB || '-'}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        updatePagination(activeData.length);
+    }
+
+    function sortTable(tbl, colIdx) {
+        if(colIdx === sortCol) {
+            sortAsc = !sortAsc;
+        } else {
+            sortCol = colIdx;
+            sortAsc = true;
+        }
+        
+        document.querySelectorAll(`#${tbl}-container th.sortable`).forEach((th, i) => {
+            th.classList.remove('active', 'asc', 'desc');
+            if (i === colIdx) {
+                th.classList.add('active', sortAsc ? 'asc' : 'desc');
+            }
         });
-        $('#btnPdf').click();
+        filterTableActive();
     }
-    $("#btnView").click(function (e) {
-        e.preventDefault();
-        $('#loader').show();
+
+    function updatePagination(totalRecords) {
+        const start = totalRecords === 0 ? 0 : (currentPage - 1) * size + 1;
+        const end = Math.min(currentPage * size, totalRecords);
+
+        $('#showingStart').text(start);
+        $('#showingEnd').text(end);
+        $('#totalCases').text(totalRecords);
+
+        $('#prevBtn').prop('disabled', currentPage === 1);
+        $('#nextBtn').prop('disabled', end >= totalRecords || totalRecords === 0);
+    }
+
+    function previousPage() { if (currentPage > 1) { currentPage--; renderTable(); } }
+    function nextPage() { currentPage++; renderTable(); }
+    
+    function changePageSize() {
+        size = parseInt($('#pageSize').val());
+        localStorage.setItem('pageSize', size);
+        currentPage = 1;
+        renderTable();
+    }
+
+    function showTable(tableId, btn) {
+        activeTable = tableId;
+        currentPage = 1;
+
+        $('.nav-btn').removeClass('border-blue-600 text-blue-600').addClass('border-transparent text-slate-500 hover:text-slate-700');
+        $(btn).removeClass('border-transparent text-slate-500 hover:text-slate-700').addClass('border-blue-600 text-blue-600');
+
+        $('#table1-container').toggleClass('hidden', tableId !== 'table1');
+        $('#table2-container').toggleClass('hidden', tableId !== 'table2');
+        
+        $('#searchInput').attr('placeholder', tableId === 'table1' ? "Search by File Name" : "Search by Customer Name/ID");
+        $('#searchInput').val('');
+        
+        if(tableId === 'table2' && $('#hdnBatchId').val()) {
+            $('#exportBtn').show();
+        } else {
+            $('#exportBtn').hide();
+        }
+
+        filterTableActive();
+    }
+
+    function fetchCustomerData(batchId) {
+        $('#hdnBatchId').val(batchId);
+        showLoader();
+
         $.ajax({
             type: "GET",
-            url: "/ClientCase/ViewCustomerData?BatchID=" + $('#hdnBatchId').val(),
+            url: "/ClientCase/ViewCustomerData?BatchID=" + batchId,
             success: function (result) {
-                $('.file').removeClass('active');             // Remove from File
-                $('.customer').addClass('active');
-
-                $("#tableCustomerDetail tbody").find("tr:gt(0)").remove();
-                $.each(result, function (i, v) {
-                    if (i == 0) {
-                        setDataOnRow($("#tableCustomerDetail tbody").find("tr").first(), v, i);
-                    } else {
-                        var clonnedRow = $($("#tableCustomerDetail tbody").find("tr").first()).clone();
-                        setDataOnRow(clonnedRow, v, i);
-                        $("#tableCustomerDetail tbody").append(clonnedRow);
-                    }
-                });
-
-                $('#loader').hide();
+                rawData2 = result || [];
+                const btn2 = document.querySelectorAll('.nav-btn')[1];
+                showTable('table2', btn2);
+                $('#loader').addClass('hidden');
+            },
+            error: function () {
+                $('#loader').addClass('hidden');
+                alert("Failed to load customer details");
             }
         });
-    });
-
-
-
-    function setDataOnRow(rowObject, v, i) {
-        $(rowObject).find(".SlNo").html(i + 1);
-        $(rowObject).find(".Nationality").html(v.nationality);
-        $(rowObject).find(".FullName").html([v.firstName, v.middleName, v.lastName].join(' '));
-        $(rowObject).find(".Source").html(v.source);
-        $(rowObject).find(".CustomerId").html(v.customerId);
-        $(rowObject).find(".Uploadedon").html(v.createdOnDB);
-        if (v.dob.substr(0, v.dob.indexOf(' ')).split('/')[2] == '0001')
-            $(rowObject).find(".DOB").html("NA");
-        else
-            $(rowObject).find(".DOB").html(v.dob.substr(0, v.dob.indexOf(' ')));
-        //$(rowObject).find(".DOB").html(v.dob.substr(0,v.dob.indexOf(' ')));
-        $(rowObject).find(".IsMatched").html(v.isMatched == 0 ? "False" : "True");
-        $(rowObject).find(".UID").html(v.uid);
     }
-    function showTable(tableClass) {
-        // Hide all tables with class 'table1' and 'table2'
-        const allTables = document.querySelectorAll('.table1, .table2');
-        allTables.forEach(tbl => tbl.style.display = 'none');
 
-        // Show the selected table by class name
-        const targetTables = document.getElementsByClassName(tableClass);
-
-        for (let i = 0; i < targetTables.length; i++) {
-            targetTables[i].style.display = 'table';
+    function exportPdf() {
+        const batchId = $('#hdnBatchId').val();
+        if(batchId) {
+            $('#pdfBatchId').val(batchId);
+            $('#btnPdf').click();
         }
     }
-    const buttons = document.querySelectorAll(".navigate button");
-    buttons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            buttons.forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            if (customerBtn.hasClass('active')) {
-
-                exportBtn.show();
-            } else {
-                exportBtn.hide();
-            }
-        });
-        const customerBtn = $('.navigate .customer');
-        const exportBtn = $('.export');
-        // Initially check if .customer button is active
-
-    });
-    $('.table1 tbody').on('click', 'tr', function () {
-        // Remove active from all nav buttons
-
-        $('.navigate button').removeClass('active');
-
-        // Add active to the customer button
-        $('.navigate .customer').addClass('active');
-
-        // Show the export button if customer button is active
-        if ($('.navigate .customer').hasClass('active')) {
-            $('.export').show();
-        } else {
-            $('.export').hide();
-        }
-    });
-
-
-
-</script>
-<script>
-    $("#btnReset").click(function () {
-        var date = new Date();
-        var enddate = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
-        $('#filterTablebody').empty();
-        $('#dtStartDate1').val(enddate);
-        $('#dtEndDate').val(enddate);
-        $('#exampleSelectRounded0').val(1);
-        $('#txtCustomer').val('');
-        $('#chips').html('');
-        $("#tableCustomerDetail tbody").remove();
-
-
-    });
 </script>
