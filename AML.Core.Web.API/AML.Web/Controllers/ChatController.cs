@@ -31,14 +31,30 @@ namespace AML.Web.Controllers
         {
             try
             {
-                var caseDetails = _customerCaseService.GetCaseFullDetailsByCustId(caseId);
+                CustomerCaseDTO caseDetails = null;
+
+                // 1. Try to treat as numeric CaseId first
+                if (int.TryParse(caseId, out int numericCaseId))
+                {
+                    caseDetails = _customerCaseService.GetCaseFullDetailsByCaseId(numericCaseId);
+                }
+
+                // 2. If not found or not numeric, treat as CustomerId (e.g. NAT32)
+                if (caseDetails == null)
+                {
+                    caseDetails = _customerCaseService.GetCaseFullDetailsByCustId(caseId);
+                }
+
                 if (caseDetails == null)
                 {
                     return NotFound(new { message = "Case not found" });
                 }
 
-                var shareholders = _customerCaseService.GetShareHoldersByCompanyCode(caseId);
-                var riskAssessment = _riskService.GetLastestRiskVersion(caseId, caseDetails.CustomerType);
+                // Use the correct internal ID (CustId) for subsequent service calls
+                string finalCustId = caseDetails.CustomerId;
+
+                var shareholders = _customerCaseService.GetShareHoldersByCompanyCode(finalCustId);
+                var riskAssessment = _riskService.GetLastestRiskVersion(finalCustId, caseDetails.CustomerType);
 
                 string statusMessage = "";
                 bool hasHits = false; // Simplified for simulation
@@ -59,17 +75,17 @@ namespace AML.Web.Controllers
                     }
                     else
                     {
-                        statusMessage = $"Case #{caseId} is under review. Shareholders verified with no critical hits.";
+                        statusMessage = $"Case #{finalCustId} is under review. Shareholders verified with no critical hits.";
                     }
                 }
                 else
                 {
-                    statusMessage = $"Case #{caseId} is currently in {caseDetails.CaseStatus} status. Risk Score: {caseDetails.RiskScore}.";
+                    statusMessage = $"Case #{finalCustId} is currently in {caseDetails.CaseStatus} status. Risk Score: {caseDetails.RiskScore}.";
                 }
 
                 return Ok(new
                 {
-                    caseId = caseId,
+                    caseId = finalCustId,
                     customerName = $"{caseDetails.FirstName} {caseDetails.LastName}",
                     status = statusMessage,
                     customerType = caseDetails.CustomerType == "I" ? "Individual" : "Corporate",

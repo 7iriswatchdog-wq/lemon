@@ -51,10 +51,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="data:,">
+    
+    <!-- Design Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     <script type="text/tailwindcss">
         tailwind.config = {
           theme: {
@@ -63,27 +66,11 @@
                 clifford: '#da373d',
               }
             }
-
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script type="text/tailwindcss">
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            clifford: '#da373d',
-
           }
         }
-      }
-    }
-    @@layer utilities {
-    }
-  </script>
+        @@layer utilities {
+        }
+    </script>
   <style>
     @@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&family=Outfit:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Varela+Round&display=swap');
     .donut-chart {
@@ -801,11 +788,28 @@
                     isOpen: false,
                     isTyping: false,
                     userInput: '',
+                    currentCaseId: null,
                     messages: [
                         { role: 'assistant', content: 'Hello! I am your Case Assistant. You can ask me about the status of any case by providing its ID.' }
                     ],
                     init() {
+                        this.extractContextId();
                         setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 100);
+                    },
+                    extractContextId() {
+                        // 1. Try URL (e.g. /case/Process/429)
+                        const urlMatch = window.location.pathname.match(/\/(?:Process|Details)\/([A-Z0-9]+)/i);
+                        if (urlMatch) {
+                            this.currentCaseId = urlMatch[1];
+                            return;
+                        }
+
+                        // 2. Try page elements (e.g. searching for "Customer ID" label's nearby text)
+                        const possibleIds = Array.from(document.querySelectorAll('td, span, div, p'))
+                            .filter(el => el.innerText && /^[A-Z]{3}[0-9]{3}$/i.test(el.innerText.trim()));
+                        if (possibleIds.length > 0) {
+                            this.currentCaseId = possibleIds[0].innerText.trim();
+                        }
                     },
                     toggleChat() {
                         this.isOpen = !this.isOpen;
@@ -823,10 +827,11 @@
                         this.isTyping = true;
                         this.scrollToBottom();
 
-                        // Logic to detect Case ID (simplified regex for #12345 or just digits)
-                        const caseIdMatch = userMsg.match(/#?(\d+)/);
-                        if (caseIdMatch) {
-                            const caseId = caseIdMatch[1];
+                        // Logic to detect Case ID
+                        let caseIdMatch = userMsg.match(/#([A-Z0-9]+)/i) || userMsg.match(/\b([A-Z]*[0-9][A-Z0-9]*)\b/i);
+                        let caseId = caseIdMatch ? caseIdMatch[1] : this.currentCaseId;
+
+                        if (caseId) {
                             try {
                                 const response = await fetch(`/api/Chat/status/${caseId}`);
                                 if (response.ok) {
