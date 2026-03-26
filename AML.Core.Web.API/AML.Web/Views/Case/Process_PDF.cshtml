@@ -41,7 +41,6 @@
 
         @@media print {
             .no-print { display: none !important; }
-            .page-break { page-break-before: always !important; }
         }
     </style>
 </head>
@@ -79,9 +78,9 @@
                     <div class="flex items-center gap-2 text-slate-500 text-[10px] mb-2">
                         <span>Due Diligence</span>
                         <i data-lucide="chevron-right" class="h-3 w-3"></i>
-                        <span class="text-slate-400 font-medium">Case Manger</span>
+                        <span class="text-slate-400 font-medium">Case Manager</span>
                     </div>
-                     <h1 class="text-2xl font-black text-slate-900 tracking-tight">Case Manger</h1> 
+                     <h1 class="text-2xl font-black text-slate-900 tracking-tight">Case Manager</h1> 
                     <div class="mt-2 flex items-center gap-4">
                         @* <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                             Official Audit Document
@@ -104,8 +103,8 @@
                     <h2 class="text-base font-bold text-slate-900 leading-none">Case Details</h2>
                 </div>
                 <div class="flex gap-4">
-                    @* <span class="text-[11px] font-bold text-blue-600 flex items-center gap-1 tracking-tight">View PDF</span>
-                    <span class="h-4 w-px bg-blue-300"></span> *@
+                    <!-- <span class="text-[11px] font-bold text-blue-600 flex items-center gap-1 tracking-tight">View PDF</span>
+                    <span class="h-4 w-px bg-blue-300"></span> -->
                     <span class="text-[11px] font-bold text-blue-600 flex items-center gap-1 tracking-tight">Download PDF</span>
                     <span class="h-4 w-px bg-blue-300"></span>
                     <span class="text-[11px] font-bold text-blue-600 tracking-tight">Upload Document</span>
@@ -157,6 +156,7 @@
                             <th class="px-3 py-3 font-bold">Nationality</th>
                             <th class="px-3 py-3 font-bold">DOB</th>
                             <th class="px-3 py-3 font-bold">Datasets</th>
+                            <th class="px-3 py-3 font-bold">Details</th>
                             <th class="px-3 py-3 font-bold">Search Type</th>
                             <th class="px-3 py-3 font-bold text-right">Search Remarks</th>
                         </tr>
@@ -176,6 +176,9 @@
                                         @if (datasets != null) { foreach (var ds in datasets) { <div class="mb-0.5">@ds.Trim()</div> } }
                                     </td>
                                     <td class="px-4 py-4 align-top">
+                                        <div class="h-7 px-3 border border-slate-200 text-slate-400 text-[9px] font-bold rounded flex items-center justify-center bg-white shadow-sm">Details</div>
+                                    </td>
+                                    <td class="px-4 py-4 align-top">
                                         @{ var decisions = item.searchTypes != null ? string.Join(", ", item.searchTypes) : "-"; }
                                         <span class="inline-flex px-2 py-1 rounded @GetStatusClass(decisions) text-[10px] font-bold">@decisions</span>
                                     </td>
@@ -185,7 +188,7 @@
                         }
                         else
                         {
-                            <tr><td colspan="7" class="px-4 py-12 text-center text-slate-400 italic font-medium">No search results found</td></tr>
+                            <tr><td colspan="8" class="px-4 py-12 text-center text-slate-400 italic font-medium">No search results found</td></tr>
                         }
                     </tbody>
                 </table>
@@ -194,7 +197,6 @@
 
         @if (Model.ShareholdersData != null && Model.ShareholdersData.Any())
         {
-            <div class="page-break"></div>
             <!-- Shareholders Card -->
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm mb-6">
                 <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-white">
@@ -265,7 +267,9 @@
                                         str.Append("</span></td>");
                                         
                                         // Column 5: Link
-                                        str.Append("<td class='px-4 py-3'></td>");
+                                        str.Append("<td class='px-4 py-3' style='text-align: right;'>");
+                                        str.Append("<span style='font-size: 10px; font-weight: 700; color: #2563eb;'>Process</span>");
+                                        str.Append("</td>");
                                         str.Append("</tr>");
 
                                         str.Append(RenderShareholderRows(allData, item.CustomerId, depth + 1).ToString());
@@ -359,7 +363,7 @@
                                     @comment.Comments
                                 </p>
                                 <span class="text-[10px] font-bold uppercase tracking-wide text-blue-600">
-                                    @comment.CreatedOn.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss")
+                                    @comment.CreatedOn.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss") GST
                                 </span>
                             </div>
                         </div>
@@ -389,35 +393,29 @@
                 </div>
             </div>
             
-            <div class="pt-6 border-t border-slate-100 flex items-center gap-3">
-                <div class="h-9 px-6 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-2 shadow-sm  tracking-widest">
-                    Submit to Senior Management
+            <div class="flex items-center justify-between pt-6 border-t border-slate-100 mt-6">
+                <div class="flex items-center gap-3">
+                    <div class="h-9 px-4 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-2 shadow-sm tracking-widest leading-none">
+                        Submit To Senior Management
+                    </div>
+                    <div class="h-9 px-4 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-2 shadow-sm tracking-widest leading-none">
+                        Whitelist
+                    </div>
+                    <div class="h-9 px-4 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-2 shadow-sm tracking-widest leading-none">
+                        Transfer
+                    </div>
+                    <div class="h-9 px-4 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-2 shadow-sm tracking-widest leading-none">
+                        Hold
+                    </div>
                 </div>
-                <div class="h-9 px-6 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-2 shadow-sm  tracking-widest">
-                    Hold
-                </div>
-                <div class="h-9 px-6 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-2 shadow-sm  tracking-widest ">
-                    Whitelist
-                </div>
-                <div class="h-9 px-6 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-2 shadow-sm  tracking-widest">
-                    Transfer
-                </div>
-                <div class="h-9 px-6 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-2 shadow-sm  tracking-widest">
-                    Hold
-                </div>
-
-                @if (Model.ActionRights != null && Model.ActionRights.ContainsKey("Approve") && Model.ActionRights["Approve"] == "true")
-                {
-                    <div class="h-9 px-8 bg-blue-600 text-white text-[10px] font-bold rounded-md flex items-center shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="h-9 px-8 bg-blue-600 text-white text-[10px] font-bold rounded-md flex items-center shadow-md leading-none">
                         Approve
                     </div>
-                }
-                @if (Model.ActionRights != null && Model.ActionRights.ContainsKey("Reject") && Model.ActionRights["Reject"] == "true")
-                {
-                    <div class="h-9 px-8 bg-red-600 text-white text-[10px] font-bold rounded-md flex items-center shadow-md">
+                    <div class="h-9 px-8 bg-red-600 text-white text-[10px] font-bold rounded-md flex items-center shadow-md leading-none">
                         Reject
                     </div>
-                }
+                </div>
             </div>
         </div>
     </div>

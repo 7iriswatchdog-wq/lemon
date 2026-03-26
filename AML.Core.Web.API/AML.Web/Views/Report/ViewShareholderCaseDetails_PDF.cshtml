@@ -29,7 +29,6 @@
             background-color: #f8fafc;
         }
         @@media print {
-            .page-break { page-break-before: always; }
             .no-print { display: none !important; }
         }
         .flex { display: flex !important; }
@@ -80,9 +79,20 @@
 
         <!-- Case Summary -->
         <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-            <div class="flex items-center gap-2 mb-5">
-                <div class="h-4 w-1 bg-blue-600 rounded-full"></div>
-                <h2 class="text-base font-bold text-slate-900 leading-none">Case Details</h2>
+            <div class="flex justify-between items-start mb-5">
+                <div class="flex items-center gap-2">
+                    <div class="h-4 w-1 bg-blue-600 rounded-full"></div>
+                    <h2 class="text-base font-bold text-slate-900 leading-none">Case Details</h2>
+                </div>
+                <div class="flex gap-4">
+                    <!-- <span class="text-[11px] font-bold text-blue-600 flex items-center gap-1 tracking-tight">View PDF</span>
+                    <span class="h-4 w-px bg-blue-300"></span> -->
+                    <span class="text-[11px] font-bold text-blue-600 flex items-center gap-1 tracking-tight">Download PDF</span>
+                    <span class="h-4 w-px bg-blue-300"></span>
+                    <span class="text-[11px] font-bold text-blue-600 tracking-tight">Upload Document</span>
+                    <span class="h-4 w-px bg-blue-300"></span>
+                    <span class="text-[11px] font-bold text-blue-600 flex items-center gap-1 tracking-tight">View Details <span class="text-[10px]">→</span></span>
+                </div>
             </div>
             <div class="grid grid-cols-4 gap-x-8 gap-y-6">
                 <div class="flex flex-col"><span class="text-slate-400">Customer ID</span><span class="text-[13px] font-medium text-slate-900">@Model.Case.CustomerId</span></div>
@@ -113,6 +123,9 @@
                                 <th class="px-4 py-3 border-b">Name</th>
                                 <th class="px-4 py-3 border-b">Score</th>
                                 <th class="px-4 py-3 border-b">Nationality</th>
+                                <th class="px-4 py-3 border-b">DOB</th>
+                                <th class="px-4 py-3 border-b">Datasets</th>
+                                <th class="px-4 py-3 border-b">Details</th>
                                 <th class="px-4 py-3 border-b">Search Type</th>
                                 <th class="px-4 py-3 border-b">Remarks</th>
                             </tr>
@@ -124,6 +137,14 @@
                                     <td class="px-4 py-3 font-bold not-italic">@item.matchname</td>
                                     <td class="px-4 py-3 not-italic">@item.matchscore</td>
                                     <td class="px-4 py-3 not-italic">@item.matchnationality</td>
+                                    <td class="px-4 py-3 not-italic">@item.matchdob</td>
+                                    <td class="px-4 py-3 not-italic">
+                                        @{ var dsArr = item.matchdatasets?.Split(','); }
+                                        @if (dsArr != null) { foreach (var ds in dsArr) { <div class="mb-0.5">@ds.Trim()</div> } }
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="h-6 px-2 border border-slate-200 text-slate-400 text-[8px] font-bold rounded flex items-center justify-center bg-white shadow-sm">Details</div>
+                                    </td>
                                     <td class="px-4 py-3">@(item.searchTypes != null ? string.Join(", ", item.searchTypes) : "")</td>
                                     <td class="px-4 py-3">@item.remarks</td>
                                 </tr>
@@ -152,7 +173,7 @@
                             <div class="p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
                                 <div class="flex justify-between items-start mb-2">
                                     <span class="text-[10px] font-bold text-blue-600">@history.CreatedUser</span>
-                                    <span class="text-[9px] text-slate-400">@history.CreatedOn.ToString("dd/MM/yyyy HH:mm")</span>
+                                    <span class="text-[9px] text-slate-400">@history.CreatedOn.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss") GST</span>
                                 </div>
                                 <div class="text-[10px] font-black border-b pb-1 mb-2">@history.MatchCategory</div>
                                 <p class="text-[10px] text-slate-600">@history.Comments</p>
@@ -189,6 +210,9 @@
                     </div>
                     <div class="h-9 px-4 border border-slate-200 text-slate-900 text-[10px] font-bold rounded-md flex items-center bg-white shadow-sm">
                         Whitelist
+                    </div>
+                    <div class="h-9 px-4 border border-slate-200 text-slate-900 text-[10px] font-bold rounded-md flex items-center bg-white shadow-sm">
+                        Transfer
                     </div>
                     <div class="h-9 px-4 border border-slate-200 text-slate-900 text-[10px] font-bold rounded-md flex items-center bg-white shadow-sm">
                         Hold
