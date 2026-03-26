@@ -974,14 +974,29 @@
                     return;
                 }
                 console.log(resp);
-                resp.forEach((m, idx) => {
-                    if (m.menu_Name === "Risk Assessmnet" || m.menu_Name === "User Management"  ) {
-                    return;
+                
+                // Add Chatbot Toggle manually at the beginning for visibility
+                const chatbotRight = resp.find(m => m.menu_Name === "AgenticChatBot");
+                if (chatbotRight) {
+                    const checkedStr = chatbotRight.isChecked ? 'checked' : '';
+                    container.append(`
+                        <div class="flex items-center space-x-2 p-2 bg-blue-50/50 rounded-lg border border-blue-100/50">
+                            <input type="checkbox" id="chkMenu_Chatbot" value="${chatbotRight.menu_Id}" 
+                                   class="client-right-checkbox h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" ${checkedStr}>
+                            <label for="chkMenu_Chatbot" class="text-sm text-blue-800 font-bold">Agentic ChatBot Assistant</label>
+                        </div>
+                    `);
                 }
+
+                resp.forEach((m, idx) => {
+                    // Skip if manually added or internal-only
+                    if (m.menu_Name === "Risk Assessmnet" || m.menu_Name === "User Management" || m.menu_Name === "AgenticChatBot") {
+                        return;
+                    }
                     const chkId = 'chkMenu_' + m.menu_Id;
                     const checkedStr = m.isChecked ? 'checked' : '';
                     container.append(`
-                        <div class="flex items-center space-x-2">
+                        <div class="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:bg-slate-50 transition-colors">
                             <input type="checkbox" id="${chkId}" value="${m.menu_Id}" class="client-right-checkbox h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" ${checkedStr}>
                             <label for="${chkId}" class="text-sm text-slate-700 font-medium">${m.menu_Name}</label>
                         </div>
