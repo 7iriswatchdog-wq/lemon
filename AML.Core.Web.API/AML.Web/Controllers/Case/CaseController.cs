@@ -217,6 +217,7 @@ namespace AML.Web.Controllers.Case
             
             var BranchId = _clientHandler.GetBranchId();
             var GroupId = _clientHandler.GetGroupId();
+            var clientId = _clientHandler.GetClientId();
             
             
              var userId = _clientHandler.GetUserId();
@@ -255,12 +256,12 @@ namespace AML.Web.Controllers.Case
             
             if (searchValue != "" && searchValue != null)
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, _UserGroupModel.Name));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, _UserGroupModel.Name, clientId));
 
             }
             else
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAll(userId, startDate, endDate, cust_type, matchScore,createdBy,caseStatus,riskLevel, _UserGroupModel.Name));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAll(userId, startDate, endDate, cust_type, matchScore,createdBy,caseStatus,riskLevel, _UserGroupModel.Name,clientId));
 
             }
                 int totalcount = abc.Count;
@@ -1292,6 +1293,9 @@ namespace AML.Web.Controllers.Case
 
                 CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(CaseId);
                 HttpContext.Session.SetString("CorporateId", _CustomerCaseDTO.CustomerId);
+                HttpContext.Session.SetString("CorporateCaseId", CaseId.ToString());
+
+                HttpContext.Session.SetString("ReturnUrl", HttpContext.Request.Path + HttpContext.Request.QueryString);
 
                 var dualMatchStatus = _customerCaseService.GetDualGoodsStatus(_CustomerCaseDTO.CustomerId);
                 model.DualGoodsMatchStatus = dualMatchStatus;
@@ -1902,7 +1906,13 @@ namespace AML.Web.Controllers.Case
                 var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
 
                 var corporateId = HttpContext.Session.GetString("CorporateId");
+                var corporatecaseId = HttpContext.Session.GetString("CorporateCaseId");
+                
                 TempData["CorporateId"] = corporateId;
+                TempData["CorporateCaseId"] = corporatecaseId;
+
+                var returnUrl = HttpContext.Session.GetString("ReturnUrl");
+                ViewBag.ReturnUrl = returnUrl;
 
                 model.Case = new CaseModel();
 
@@ -3631,6 +3641,7 @@ namespace AML.Web.Controllers.Case
         public JsonResult completedcasescustompagination(DataTableModel model, string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string caseStatusChange, string riskLevel)
         {
             var userId = _clientHandler.GetUserId();
+            var clientId = _clientHandler.GetClientId();
             List<CaseModel> abc = new List<CaseModel>();
             if (endDate == null)
             {
@@ -3662,12 +3673,12 @@ namespace AML.Web.Controllers.Case
             }
             if (searchValue != "" && searchValue != null)
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, clientId));
 
             }
             else
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel, clientId));
 
             }
             int totalcount = abc.Count;

@@ -308,7 +308,7 @@ namespace AML.Web
                 //    defaults: new { action= "login" });
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=Home}/{action=Index}/{id?}");
+                    pattern: "{controller=UserAccess}/{action=Login}/{id?}");
             });
 
             //            var cultures = new List<CultureInfo> {

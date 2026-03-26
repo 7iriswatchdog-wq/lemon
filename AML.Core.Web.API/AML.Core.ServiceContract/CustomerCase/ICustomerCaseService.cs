@@ -38,13 +38,13 @@ namespace AML.Core.ServiceContract.CustomerCase
 
         ServiceResponse<int> UpdateCase(int caseid,int userid);
         ServiceResponse<int> Delete(int Id);
-        List<CustomerCaseDTO> GetAll(int userId, string startDate, string endDate, string cust_type,string matchscore,int createdBy,int caseStatus,string riskLevel, string usergroupName);
+        List<CustomerCaseDTO> GetAll(int userId, string startDate, string endDate, string cust_type,string matchscore,int createdBy,int caseStatus,string riskLevel, string usergroupName,int clientId);
 
-        List<CustomerCaseDTO> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type, string matchscore, int createdBy, int caseStatus, string riskLevel);
+        List<CustomerCaseDTO> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type, string matchscore, int createdBy, int caseStatus, string riskLevel,int clientId);
 
-        List<CustomerCaseDTO> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string SearchValue, string matchscore, int createdBy, int caseStatus, string riskLevel);
+        List<CustomerCaseDTO> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string SearchValue, string matchscore, int createdBy, int caseStatus, string riskLevel, int clientId);
 
-        List<CustomerCaseDTO> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type,string SearchValue, string matchscore, int createdBy, int caseStatus, string riskLevel,string usergroupName);
+        List<CustomerCaseDTO> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type,string SearchValue, string matchscore, int createdBy, int caseStatus, string riskLevel,string usergroupName, int clientId);
         List<CustomerCaseDTO> GetAllSanctionDashboard(int clientid, string ctype);
         ServiceResponse<List<EtlBatchDTO>> DataLoadReport(ETLDataLoadReportDTO _ETLDataLoadReportDTO);
         ServiceResponse<List<CustomerCaseDTO>> DataLoadReportByBatch(int BatchId, int clientId);

@@ -38,9 +38,7 @@ namespace AML.Web.CustomFilters
             {
                 area = "",
                 controller = controllerName,
-                action = actionName,
-                returnUrl = Microsoft.AspNetCore.Http.Extensions.UriHelper.GetEncodedUrl(filterContext.HttpContext.Request)
-
+                action = actionName
             }));
         }
     }

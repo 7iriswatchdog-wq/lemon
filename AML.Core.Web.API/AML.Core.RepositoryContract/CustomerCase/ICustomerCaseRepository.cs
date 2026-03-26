@@ -37,13 +37,13 @@ namespace AML.Core.RepositoryContract.CustomerCase
         ServiceResponse<int> UpdateCase(int caseid,int userid);
         ServiceResponse<int> Delete(int Id);
         ServiceResponse<List<CustomerMasterDTO>> GetUnscreenedCustomers();
-        ServiceResponse<List<CustomerCaseDTO>> GetAll(int userId, string startDate, string endDate, string cust_type, string matchscore,int createdBy,int caseStatus,string riskLevel, string usergroupName);
+        ServiceResponse<List<CustomerCaseDTO>> GetAll(int userId, string startDate, string endDate, string cust_type, string matchscore,int createdBy,int caseStatus,string riskLevel, string usergroupName, int clientId);
 
-        ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type, string matchscore, int createdBy, int caseStatus, string riskLevel);
+        ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type, string matchscore, int createdBy, int caseStatus, string riskLevel, int clientId);
 
-        ServiceResponse<List<CustomerCaseDTO>> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue, string matchscore, int createdBy, int caseStatus, string riskLevel, string usergroupName);
+        ServiceResponse<List<CustomerCaseDTO>> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue, string matchscore, int createdBy, int caseStatus, string riskLevel, string usergroupName, int clientId);
 
-        ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue, string matchscore, int createdBy, int caseStatus, string riskLevel);
+        ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue, string matchscore, int createdBy, int caseStatus, string riskLevel, int clientId);
         ServiceResponse<List<CustomerCaseDTO>> GetAllSanctionDashboard(int clientid, string ctype);
         ServiceResponse<List<CustomerExcelDTO>> LoadCustomerCaseExcelData(string fileName,string CustomerType, int sheetNo = 1);
         ServiceResponse<List<CorporateExcelDTO>> LoadCorporateCaseExcelData(string fileName, int sheetNo = 1);

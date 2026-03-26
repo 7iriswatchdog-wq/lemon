@@ -65,6 +65,8 @@ namespace AML.Web.Controllers
             _commonService = commonService;
         }
 
+        [Route("Dashboard")]
+        //[Route("Home/Index")]
         public IActionResult Index()
         {
             int userId = Convert.ToInt32(HttpContext.Session.GetString("SessUserId"));

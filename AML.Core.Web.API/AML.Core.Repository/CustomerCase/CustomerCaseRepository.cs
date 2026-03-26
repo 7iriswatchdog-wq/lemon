@@ -31,7 +31,7 @@ namespace AML.Core.Repository.CustomerCase
         private readonly Logger log = LogManager.GetCurrentClassLogger();
         public CustomerCaseRepository(IConfiguration configuration, IHttpContextAccessor context) : base(configuration, context)
         { }
-        public ServiceResponse<List<CustomerCaseDTO>> GetAll(int userId, string startDate, string endDate, string cust_type, string matchScore,int createdBy,int caseStatus,string riskLevel, string usergroupName)
+        public ServiceResponse<List<CustomerCaseDTO>> GetAll(int userId, string startDate, string endDate, string cust_type, string matchScore,int createdBy,int caseStatus,string riskLevel, string usergroupName, int clientId)
         {
             ServiceResponse<List<CustomerCaseDTO>> serviceResponse = new ServiceResponse<List<CustomerCaseDTO>>();
             try
@@ -62,6 +62,7 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("p_createdBy",createdBy);
                 parameters.Add("c_status", caseStatus);
                 parameters.Add("p_riskLevel", riskLevel);
+                parameters.Add("p_clientId", clientId);
                 //parameters.Add("p_caseChangeStatus", caseStatusChange);
                 if (usergroupName == "Senior Management")
                 {
@@ -83,7 +84,7 @@ namespace AML.Core.Repository.CustomerCase
             return serviceResponse;
         }
 
-        public ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type, string matchScore, int createdBy, int caseStatus, string riskLevel)
+        public ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type, string matchScore, int createdBy, int caseStatus, string riskLevel, int clientId)
         {
             ServiceResponse<List<CustomerCaseDTO>> serviceResponse = new ServiceResponse<List<CustomerCaseDTO>>();
             try
@@ -113,6 +114,7 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("p_createdBy", createdBy);
                 parameters.Add("c_status", caseStatus);
                 parameters.Add("p_riskLevel", riskLevel);
+                parameters.Add("p_clientId", clientId);
                 //parameters.Add("p_caseChangeStatus", caseStatusChange);
                 serviceResponse.Result = Get<CustomerCaseDTO>("get_all_completed_customercase", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Customer cases fetched successfully.";
@@ -126,7 +128,7 @@ namespace AML.Core.Repository.CustomerCase
             return serviceResponse;
         }
 
-        public ServiceResponse<List<CustomerCaseDTO>> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue, string matchScore, int createdBy, int caseStatus, string riskLevel, string usergroupName)
+        public ServiceResponse<List<CustomerCaseDTO>> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue, string matchScore, int createdBy, int caseStatus, string riskLevel, string usergroupName,int clientId)
         {
             ServiceResponse<List<CustomerCaseDTO>> serviceResponse = new ServiceResponse<List<CustomerCaseDTO>>();
             try
@@ -159,6 +161,7 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("p_riskLevel", riskLevel);
                 //parameters.Add("p_caseChangeStatus", caseStatusChange);
                 parameters.Add("@p_usergroupname", usergroupName);
+                parameters.Add("p_clientId", clientId);
                 serviceResponse.Result = Get<CustomerCaseDTO>("get_all_customercase_by_searchvalue", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Customer cases fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
@@ -171,7 +174,7 @@ namespace AML.Core.Repository.CustomerCase
             return serviceResponse;
         }
 
-        public ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue, string matchScore, int createdBy, int caseStatus, string riskLevel)
+        public ServiceResponse<List<CustomerCaseDTO>> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue, string matchScore, int createdBy, int caseStatus, string riskLevel, int clientId)
         {
             ServiceResponse<List<CustomerCaseDTO>> serviceResponse = new ServiceResponse<List<CustomerCaseDTO>>();
             try
@@ -202,6 +205,7 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("p_createdBy", createdBy);
                 parameters.Add("c_status", caseStatus);
                 parameters.Add("p_riskLevel", riskLevel);
+                parameters.Add("p_clientId", clientId);
                 //parameters.Add("p_caseChangeStatus", caseStatusChange);
                 serviceResponse.Result = Get<CustomerCaseDTO>("get_all_completed_by_searchvalue", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Customer cases fetched successfully.";

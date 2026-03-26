@@ -565,25 +565,25 @@ namespace AML.Core.Service.CustomerCase
             return _CustomerCaseRepository.GetCreatedByAndUpdateByNameFromId(createdById, updatedById).Result;
 
         }
-        public List<CustomerCaseDTO> GetAll(int userId, string startDate, string endDate, string cust_type, string matchscore, int createdBy,int caseStatus,string riskLevel,  string usergroupName)
+        public List<CustomerCaseDTO> GetAll(int userId, string startDate, string endDate, string cust_type, string matchscore, int createdBy,int caseStatus,string riskLevel,  string usergroupName,int clientId)
         {
             //Perform business requirements here
-            return _CustomerCaseRepository.GetAll(userId, startDate, endDate, cust_type, matchscore, createdBy, caseStatus, riskLevel, usergroupName).Result;
+            return _CustomerCaseRepository.GetAll(userId, startDate, endDate, cust_type, matchscore, createdBy, caseStatus, riskLevel, usergroupName, clientId).Result;
         }
-        public List<CustomerCaseDTO> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type, string matchscore, int createdBy, int caseStatus, string riskLevel)
+        public List<CustomerCaseDTO> GetAllCompletedCases(int userId, string startDate, string endDate, string cust_type, string matchscore, int createdBy, int caseStatus, string riskLevel, int clientId)
         {
             //Perform business requirements here
-            return _CustomerCaseRepository.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchscore, createdBy, caseStatus, riskLevel).Result;
+            return _CustomerCaseRepository.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchscore, createdBy, caseStatus, riskLevel,clientId).Result;
         }
-        public List<CustomerCaseDTO> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type,string searchValue, string matchscore, int createdBy, int caseStatus, string riskLevel, string usergroupName)
+        public List<CustomerCaseDTO> GetAllBySearchValue(int userId, string startDate, string endDate, string cust_type,string searchValue, string matchscore, int createdBy, int caseStatus, string riskLevel, string usergroupName, int clientId)
         {
             //Perform business requirements here
-            return _CustomerCaseRepository.GetAllBySearchValue(userId, startDate, endDate, cust_type,searchValue, matchscore, createdBy, caseStatus, riskLevel, usergroupName).Result;
+            return _CustomerCaseRepository.GetAllBySearchValue(userId, startDate, endDate, cust_type,searchValue, matchscore, createdBy, caseStatus, riskLevel, usergroupName,clientId).Result;
         }
-        public List<CustomerCaseDTO> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue, string matchscore, int createdBy, int caseStatus, string riskLevel)
+        public List<CustomerCaseDTO> GetAllCompletedBySearchValue(int userId, string startDate, string endDate, string cust_type, string searchValue, string matchscore, int createdBy, int caseStatus, string riskLevel, int clientId)
         {
             //Perform business requirements here
-            return _CustomerCaseRepository.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchscore, createdBy, caseStatus, riskLevel).Result;
+            return _CustomerCaseRepository.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchscore, createdBy, caseStatus, riskLevel,clientId).Result;
         }
 
         public List<CustomerCaseDTO> GetAllSanctionDashboard(int clientId , string ctype)

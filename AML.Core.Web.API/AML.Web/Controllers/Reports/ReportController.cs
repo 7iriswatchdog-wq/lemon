@@ -1211,7 +1211,7 @@ public IActionResult CustomerList(DataTableModel model,
             var BranchId = _clientHandler.GetBranchId();
             var GroupId = _clientHandler.GetGroupId();
 
-
+            
             var userId = _clientHandler.GetUserId();
 
 
@@ -1689,7 +1689,7 @@ public IActionResult CustomerList(DataTableModel model,
         {
             var BranchId = _clientHandler.GetBranchId();
             var GroupId = _clientHandler.GetGroupId();
-
+            var clientId = _clientHandler.GetClientId();
 
             var userId = _clientHandler.GetUserId();
 
@@ -1731,12 +1731,12 @@ public IActionResult CustomerList(DataTableModel model,
             List<CaseModel> abc = new List<CaseModel>();
             if (searchValue != "" && searchValue != null)
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, _UserGroupModel.Name));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, _UserGroupModel.Name, clientId));
 
             }
             else
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAll(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel, _UserGroupModel.Name));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAll(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel, _UserGroupModel.Name, clientId));
 
             }
             //if (searchValue != "" && searchValue != null)
@@ -2103,7 +2103,7 @@ public IActionResult CustomerList(DataTableModel model,
                     var items = from CaseStatus d in Enum.GetValues(typeof(CaseStatus))
                                 select new { Id = (int)d, Name = d.ToString() };
                     model.CaseStatusList = new SelectList(items, "Id", "Name");
-                    var clientId = _clientHandler.GetClientId();
+                    
                     IEnumerable<SelectListItem> userList = from s in _mapper.Map<List<UserModel>>(_userService.GetAll(clientId))
                                                            select new SelectListItem
                                                            {
@@ -2121,7 +2121,7 @@ public IActionResult CustomerList(DataTableModel model,
         {
             var BranchId = _clientHandler.GetBranchId();
             var GroupId = _clientHandler.GetGroupId();
-
+            var clientId = _clientHandler.GetClientId();
 
             var userId = _clientHandler.GetUserId();
             List<CaseModel> abc = new List<CaseModel>();
@@ -2161,12 +2161,12 @@ public IActionResult CustomerList(DataTableModel model,
             }
             if (searchValue != "" && searchValue != null)
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, clientId));
 
             }
             else
             {
-                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel));
+                abc = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel, clientId));
 
             }
             //List<CaseReportListModel> abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCompletedCaseReportList(new CaseReportRequestDTO()
@@ -2509,7 +2509,7 @@ public IActionResult CustomerList(DataTableModel model,
                     var items = from CaseStatus d in Enum.GetValues(typeof(CaseStatus))
                                 select new { Id = (int)d, Name = d.ToString() };
                     model.CaseStatusList = new SelectList(items, "Id", "Name");
-                    var clientId = _clientHandler.GetClientId();
+                    
                     IEnumerable<SelectListItem> userList = from s in _mapper.Map<List<UserModel>>(_userService.GetAll(clientId))
                                                            select new SelectListItem
                                                            {
@@ -2988,6 +2988,9 @@ public IActionResult CustomerList(DataTableModel model,
             var createddated = model.Case.CreatedOn;
             string dobText;
 
+            HttpContext.Session.SetString("CorporateId", _CustomerCaseDTO.CustomerId);
+            HttpContext.Session.SetString("ReturnUrl", HttpContext.Request.Path + HttpContext.Request.QueryString);
+
             if (string.IsNullOrWhiteSpace(dob) || dob == "1/1/0001 12:00:00 AM")
             {
                 dobText = "NA";
@@ -3273,6 +3276,9 @@ public IActionResult CustomerList(DataTableModel model,
             var dob = model.Case.DOB;
             var createddated = model.Case.CreatedOn;
             string dobText;
+
+            var returnUrl = HttpContext.Session.GetString("ReturnUrl");
+            ViewBag.ReturnUrl = returnUrl;
 
             if (string.IsNullOrWhiteSpace(dob) || dob == "1/1/0001 12:00:00 AM")
             {

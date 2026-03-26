@@ -90,10 +90,17 @@ namespace AML.Web.Controllers.User
             _fileUploader = fileUploader;
         }
         //[AllowAnonymous]
-        [Route("auth/login")]
         [HttpGet]
         public IActionResult Login()
         {
+            if (HttpContext.Session.GetString(StaticResource.sessUserId).IsNotNullOrEmpty() 
+                && HttpContext.Session.GetString(StaticResource.sessRoleId).IsNotNullOrEmpty() 
+                && HttpContext.Session.GetString(StaticResource.sessUserId).ParseInt() > 0 
+                && HttpContext.Session.GetString(StaticResource.sessRoleId).ParseInt() > 0)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
             UserModel _UserModel = new UserModel();
             _UserModel.Clients = new SelectList(_customerCaseService.GetAllClients(), "ClientId", "ClientName");
             ViewData["Success"] = "";
@@ -101,7 +108,7 @@ namespace AML.Web.Controllers.User
             return View(_UserModel);
         }
         //[AllowAnonymous]
-        [HttpPost("auth/login")]
+        [HttpPost]
         public IActionResult Login(UserModel _UserModel)
         {
             if (_UserModel == null || string.IsNullOrEmpty(_UserModel.UserName))
