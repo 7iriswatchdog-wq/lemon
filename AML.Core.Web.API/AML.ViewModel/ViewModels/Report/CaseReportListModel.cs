@@ -28,7 +28,9 @@ namespace AML.ViewModel.ViewModels.Report
         public string CreatedOn { get; set; }
 
         public string UpdatedOn { get; set; }
-        
+
+        public string UpdatedOnDB { get; set; }
+
 
         public string Match { get; set; }
         public string IsMatched { get; set; }
@@ -136,6 +138,11 @@ namespace AML.ViewModel.ViewModels.Report
 
 
         public string Corporate_final_risk_sum { get; set; }
+
+        public string Individual_Risk_Override { get; set; }
+
+
+        public string Corporate_Risk_Override { get; set; }
 
         public string CaseChangeStatus { get; set; }
 
