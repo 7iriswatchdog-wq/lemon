@@ -81,7 +81,9 @@ namespace AML.Web.Controllers
                 {
                     if (riskAssessment != null && riskAssessment.Any())
                     {
-                        responseMessage = $"The latest risk assessment for Case #{finalCustId} has been successfully retrieved. It is currently being processed with a risk score of {caseDetails.RiskScore}. Please ensure all risk parameters are reviewed.";
+                        var latestRisk = riskAssessment.FirstOrDefault();
+                        string riskDisplayScore = latestRisk?.FinalScore ?? caseDetails.RiskScore.ToString();
+                        responseMessage = $"The latest risk assessment for Case #{finalCustId} has been successfully retrieved. It is currently being processed with a risk score of {riskDisplayScore}. Please ensure all risk parameters are reviewed.";
                     }
                     else
                     {
@@ -100,7 +102,9 @@ namespace AML.Web.Controllers
                     }
                     else
                     {
-                        responseMessage = $"Case #{finalCustId} is currently in {caseDetails.CaseStatus} status with an overall risk score of {caseDetails.RiskScore}. All major assessments are currently under review.";
+                        var latestRisk = riskAssessment?.FirstOrDefault();
+                        string riskDisplayScore = latestRisk?.FinalScore ?? caseDetails.RiskScore.ToString();
+                        responseMessage = $"Case #{finalCustId} is currently in {caseDetails.CaseStatus} status with an overall risk score of {riskDisplayScore}. All major assessments are currently under review.";
                     }
                 }
 
