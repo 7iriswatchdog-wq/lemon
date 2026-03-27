@@ -52,7 +52,6 @@ namespace AML.Core.Repository.Report
                 DynamicParameters parameters = new DynamicParameters();
                     parameters.Add("@c_from", Convert.ToDateTime(requestModel.StartDate));
                     parameters.Add("@c_to", Convert.ToDateTime(requestModel.EndDate));
-                    parameters.Add("@c_status", Convert.ToInt32(requestModel.Status));
                     parameters.Add("@c_clientId", requestModel.ClientId);
                     parameters.Add("@cust_type", (requestModel.Cust_type));
                     parameters.Add("p_matchfrom", matchFrom, DbType.Int32);
