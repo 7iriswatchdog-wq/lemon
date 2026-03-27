@@ -720,6 +720,7 @@
 
             <!-- Chat Popup -->
             <div x-show="isOpen" 
+                 x-on:click.outside="isOpen = false"
                  style="display: none;"
                  x-transition:enter="transition ease-out duration-300 transform"
                  x-transition:enter-start="opacity-0 translate-y-4 scale-95"
@@ -730,19 +731,27 @@
                  class="absolute bottom-20 right-0 w-[400px] h-[550px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
                 
                 <!-- Header -->
-                <div class="p-4 bg-blue-600 text-white flex items-center justify-between">
+                <div class="p-4 bg-blue-600 text-white flex justify-between items-center rounded-t-2xl shadow-lg border-b border-primary/20">
                     <div class="flex items-center gap-3">
-                        <div class="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
-                            <i data-lucide="bot" class="h-5 w-5"></i>
+                        <div class="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                            <i data-lucide="bot" class="w-5 h-5 text-white"></i>
                         </div>
                         <div>
-                            <h3 class="text-sm font-bold leading-none">Case Assistant</h3>
-                            <span class="text-[10px] opacity-80">Agentic RAG Mode</span>
+                            <h3 class="font-bold text-lg tracking-tight">Case Assistant</h3>
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                                <span class="text-xs text-white/80 font-medium">Online & Ready</span>
+                            </div>
                         </div>
                     </div>
-                    <button @@click="toggleChat()" class="text-white/80 hover:text-white transition-colors">
-                        <i data-lucide="minus" class="h-5 w-5"></i>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button @@click="resetChat" class="p-2 hover:bg-white/20 rounded-full transition-all duration-300 group" title="Reset Chat">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5 text-white group-hover:rotate-[-45deg] transition-transform"></i>
+                        </button>
+                        <button @@click="toggleChat" class="p-2 hover:bg-white/20 rounded-full transition-all duration-300" title="Close">
+                            <i data-lucide="minus" class="w-5 h-5 text-white"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Messages -->
@@ -756,6 +765,21 @@
                             </div>
                         </div>
                     </template>
+
+                    <!-- Predefined Questions -->
+                    <div x-show="showOptions" class="space-y-2 pt-2">
+                        <template x-for="q in predefinedQuestions">
+                            <button @@click="selectQuestion(q)" 
+                                    class="block w-full text-left p-3 text-xs bg-white border border-blue-100 text-blue-600 rounded-xl hover:bg-blue-50 transition-all shadow-sm">
+                                <span x-text="q"></span>
+                            </button>
+                        </template>
+                        <button @@click="showInput = true; showOptions = false" 
+                                class="block w-full text-left p-3 text-xs bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all border border-transparent">
+                            Other Option / Ask custom question...
+                        </button>
+                    </div>
+
                     <div x-show="isTyping" class="flex justify-start">
                         <div class="bg-white border border-slate-200 p-3 rounded-2xl shadow-sm flex gap-1">
                             <span class="h-1.5 w-1.5 bg-slate-400 rounded-full animate-bounce"></span>
@@ -766,7 +790,7 @@
                 </div>
 
                 <!-- Input Area -->
-                <div class="p-4 bg-white border-t border-slate-100">
+                <div x-show="showInput" x-cloak class="p-4 bg-white border-t border-slate-100">
                     <div class="relative flex items-center">
                         <input @@keydown.enter="sendMessage()" 
                                x-model="userInput"
@@ -788,9 +812,17 @@
                     isOpen: false,
                     isTyping: false,
                     userInput: '',
+                    showInput: false,
+                    showOptions: true,
                     currentCaseId: null,
+                    pendingQueryType: null,
+                    predefinedQuestions: [
+                        'Would you like to know the status?',
+                        'Would you like to know the potential hit?',
+                        'Would you like to know the risk assessment details?'
+                    ],
                     messages: [
-                        { role: 'assistant', content: 'Hello! I am your Case Assistant. You can ask me about the status of any case by providing its ID.' }
+                        { role: 'assistant', content: 'Hello! I am your Case Assistant. How can I help you today?' }
                     ],
                     init() {
                         this.extractContextId();
@@ -811,6 +843,37 @@
                             this.currentCaseId = possibleIds[0].innerText.trim();
                         }
                     },
+                    selectQuestion(q) {
+                        let type = '';
+                        if (q.includes('status')) type = 'status';
+                        if (q.includes('hit')) type = 'hit';
+                        if (q.includes('risk')) type = 'risk';
+                        
+                        this.messages.push({ role: 'user', content: q });
+                        
+                        if (this.currentCaseId) {
+                            this.userInput = q; // For regex logic in sendMessage
+                            this.sendMessage(type, true); // Added 'skipPush' flag
+                            this.showInput = true;
+                            this.showOptions = false;
+                        } else {
+                            this.messages.push({ role: 'assistant', content: "To answer that, I need a Case ID. Please provide it (e.g., #12345)." });
+                            this.pendingQueryType = type;
+                            this.showInput = true;
+                            this.showOptions = false;
+                        }
+                    },
+                    resetChat() {
+                        this.messages = [
+                            { role: 'assistant', content: 'Hello! I am your Case Assistant. How can I help you today?' }
+                        ];
+                        this.showOptions = true;
+                        this.showInput = false;
+                        this.pendingQueryType = null;
+                        this.userInput = '';
+                        this.currentCaseId = null; // Clear persisting context
+                        this.scrollToBottom();
+                    },
                     toggleChat() {
                         this.isOpen = !this.isOpen;
                         if (this.isOpen) {
@@ -818,11 +881,13 @@
                             this.scrollToBottom();
                         }
                     },
-                    async sendMessage() {
+                    async sendMessage(queryType = null, skipPush = false) {
                         if (!this.userInput.trim()) return;
 
                         const userMsg = this.userInput;
-                        this.messages.push({ role: 'user', content: userMsg });
+                        if (!skipPush) {
+                            this.messages.push({ role: 'user', content: userMsg });
+                        }
                         this.userInput = '';
                         this.isTyping = true;
                         this.scrollToBottom();
@@ -830,13 +895,21 @@
                         // Logic to detect Case ID
                         let caseIdMatch = userMsg.match(/#([A-Z0-9]+)/i) || userMsg.match(/\b([A-Z]*[0-9][A-Z0-9]*)\b/i);
                         let caseId = caseIdMatch ? caseIdMatch[1] : this.currentCaseId;
+                        let typeToUse = queryType || this.pendingQueryType;
+
+                        // Persist the detected ID for follow-ups
+                        if (caseIdMatch) {
+                            this.currentCaseId = caseId;
+                        }
 
                         if (caseId) {
                             try {
-                                const response = await fetch(`/api/Chat/status/${caseId}`);
+                                const url = typeToUse ? `/api/Chat/status/${caseId}?queryType=${typeToUse}` : `/api/Chat/status/${caseId}`;
+                                const response = await fetch(url);
                                 if (response.ok) {
                                     const data = await response.json();
-                                    this.messages.push({ role: 'assistant', content: `Processing Case #${caseId}: ${data.status}` });
+                                    this.messages.push({ role: 'assistant', content: data.status });
+                                    this.pendingQueryType = null; // Clear after successful response
                                 } else {
                                     this.messages.push({ role: 'assistant', content: `I couldn't find details for Case #${caseId}. Please ensure the ID is correct.` });
                                 }
@@ -844,12 +917,12 @@
                                 this.messages.push({ role: 'assistant', content: "I'm having trouble connecting to the data source right now." });
                             }
                         } else {
-                            // General conversational logic
+                            // Default response if no Case ID found or question can't be answered contextually
                             setTimeout(() => {
-                                this.messages.push({ role: 'assistant', content: "Please provide a Case ID (e.g., #12345) to get a status update or specific guidance." });
+                                this.messages.push({ role: 'assistant', content: "I'm sorry, I can only provide status and hit details when a Case ID is provided. Please provide a Case ID (e.g., #12345) or navigate to a case page." });
                                 this.isTyping = false;
                                 this.scrollToBottom();
-                            }, 1000);
+                            }, 800);
                         }
                         
                         this.isTyping = false;
