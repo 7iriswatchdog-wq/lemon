@@ -1,9 +1,12 @@
 using AML.Core.Common.StaticResource;
 using AML.Core.ServiceContract.CustomerCase;
 using AML.Core.ServiceContract.Risk;
+using AML.Core.ServiceContract.CaseAssignment;
+using AML.Core.ServiceContract.User;
 using AML.ViewModel.ViewModels.CustomerCase;
 using AML.DTO.DTO.CustomerCase;
 using AML.DTO.DTO.Risk;
+using AML.DTO.DTO.CaseAssignment;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -19,11 +22,18 @@ namespace AML.Web.Controllers
     {
         private readonly ICustomerCaseService _customerCaseService;
         private readonly IRiskService _riskService;
+        private readonly ICaseAssignmentService _caseAssignmentService;
+        private readonly IUserService _userService;
 
-        public ChatController(ICustomerCaseService customerCaseService, IRiskService riskService)
+        public ChatController(ICustomerCaseService customerCaseService, 
+            IRiskService riskService, 
+            ICaseAssignmentService caseAssignmentService,
+            IUserService userService)
         {
             _customerCaseService = customerCaseService;
             _riskService = riskService;
+            _caseAssignmentService = caseAssignmentService;
+            _userService = userService;
         }
 
         [HttpGet("status/{caseId}")]
@@ -92,19 +102,58 @@ namespace AML.Web.Controllers
                 }
                 else // Default to Status logic
                 {
+                    string statusDescription = "";
+                    int statusInt = caseDetails.Status;
+
+                    switch (statusInt)
+                    {
+                        case 0:
+                            statusDescription = "Pending";
+                            break;
+                        case 2:
+                            statusDescription = "Approved";
+                            break;
+                        case 3:
+                            statusDescription = "Rejected";
+                            break;
+                        case 4:
+                            var assignments = _caseAssignmentService.GetAll()
+                                .Where(a => a.CaseId == caseDetails.Id)
+                                .OrderByDescending(a => a.CreatedOn)
+                                .FirstOrDefault();
+                            
+                            string seniorMgmtName = "Senior Management";
+                            if (assignments != null)
+                            {
+                                var user = _userService.GetDetails(assignments.UserId);
+                                if (user != null)
+                                {
+                                    seniorMgmtName = $"{user.FName} {user.LName}";
+                                }
+                            }
+                            statusDescription = $"Pending with Senior Management [{seniorMgmtName}]";
+                            break;
+                        case 5:
+                            statusDescription = "Auto";
+                            break;
+                        case 6:
+                            statusDescription = "Pending (Created from Daily Scheduler)";
+                            break;
+                        default:
+                            statusDescription = caseDetails.CaseStatus ?? "Unknown";
+                            break;
+                    }
+
+                    var latestRisk = riskAssessment?.FirstOrDefault();
+                    string riskDisplayScore = latestRisk?.FinalScore ?? caseDetails.RiskScore.ToString();
+
                     if ((shareholders == null || !shareholders.Any()) && (riskAssessment == null || !riskAssessment.Any()))
                     {
-                        responseMessage = "You have an incomplete risk assessment for this case. Please complete the risk assessment and shareholder details to get a proper overall risk score and proceed further.";
-                    }
-                    else if (shareholders != null && shareholders.Any() && (riskAssessment == null || !riskAssessment.Any()))
-                    {
-                        responseMessage = "The case has shareholders listed, but the risk assessment is still pending. Please complete the risk assessment to finalize the case status.";
+                        responseMessage = $"Case #{finalCustId} is currently in {statusDescription} status. However, it looks like the risk assessment and shareholder details are incomplete. Please complete these sections to proceed.";
                     }
                     else
                     {
-                        var latestRisk = riskAssessment?.FirstOrDefault();
-                        string riskDisplayScore = latestRisk?.FinalScore ?? caseDetails.RiskScore.ToString();
-                        responseMessage = $"Case #{finalCustId} is currently in {caseDetails.CaseStatus} status with an overall risk score of {riskDisplayScore}. All major assessments are currently under review.";
+                        responseMessage = $"Case #{finalCustId} is currently {statusDescription} with an overall risk score of {riskDisplayScore}. The assessment is based on the latest available data.";
                     }
                 }
 
