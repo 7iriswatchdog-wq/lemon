@@ -5447,6 +5447,35 @@ function validateIdNumber($form, isSubmit = false) {
                                 }
                             }
 
+                                        function deleteShareholder(id) {
+                            if (!id) return;
+
+                            // let self = this; // capture Alpine component context
+                            // let companyCode = self.companyCode || $('#CompanyCode').val();
+                            // if (!companyCode) return;
+
+                            // Call backend API to delete shareholder
+                            $.ajax({
+                                url: '/corporate/DeleteShareholder',
+                                type: 'POST',
+                                data: { id: id },
+                                success: function(deleteResult) {
+                                    if (deleteResult === true || deleteResult === "true") {
+                                        toastr.success("Deleted Successfully");
+
+                                        // Fetch the latest pending shareholders
+                                                window.dispatchEvent(new Event('load-pending-shareholders'));
+
+                                    } else {
+                                        toastr.error("Failed to delete shareholder");
+                                    }
+                                },
+                                error: function(xhr) {
+                                    toastr.error("Error deleting shareholder");
+                                    console.error(xhr.responseText);
+                                }
+                            });
+                        }
                                            $(document).ready(function() {
                         $('.shareholder-tab').click(function() {
                             var newType = $(this).data('type');
@@ -5613,6 +5642,7 @@ document.querySelectorAll('.shareholder-tab').forEach(btn => {
             //         }
             //     });
             // }
+
 
                         function initDatePicker(selector, defaultDate, options = {}) {
 

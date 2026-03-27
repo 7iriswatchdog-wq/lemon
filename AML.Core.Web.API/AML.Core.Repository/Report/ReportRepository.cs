@@ -52,7 +52,6 @@ namespace AML.Core.Repository.Report
                 DynamicParameters parameters = new DynamicParameters();
                     parameters.Add("@c_from", Convert.ToDateTime(requestModel.StartDate));
                     parameters.Add("@c_to", Convert.ToDateTime(requestModel.EndDate));
-                    parameters.Add("@c_status", Convert.ToInt32(requestModel.Status));
                     parameters.Add("@c_clientId", requestModel.ClientId);
                     parameters.Add("@cust_type", (requestModel.Cust_type));
                     parameters.Add("p_matchfrom", matchFrom, DbType.Int32);
@@ -63,6 +62,51 @@ namespace AML.Core.Repository.Report
                 serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_report", parameters, commandType: CommandType.StoredProcedure).ToList();
                     serviceResponse.Message = "CustomerCase details fetched successfully.";
                     serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
+        public ServiceResponse<List<CaseReportListDTO>> GetCaseReportListBySearch(CaseReportRequestDTO requestModel)
+        {
+            ServiceResponse<List<CaseReportListDTO>> serviceResponse = new ServiceResponse<List<CaseReportListDTO>>();
+            try
+            {
+                //var userID = String.IsNullOrEmpty(requestModel.User) ? "0" : requestModel.User;
+                //var UpdatedByUserId = String.IsNullOrEmpty(requestModel.UpdatedByUserId) ? "0" : requestModel.UpdatedByUserId;
+                int? matchFrom = null;
+                int? matchTo = null;
+
+                if (!string.IsNullOrWhiteSpace(requestModel.matchscore))
+                {
+                    var parts = requestModel.matchscore.Split('-');
+
+                    if (parts.Length == 2 &&
+                        int.TryParse(parts[0], out int from) &&
+                        int.TryParse(parts[1], out int to))
+                    {
+                        matchFrom = from;
+                        matchTo = to;
+                    }
+                }
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@c_from", Convert.ToDateTime(requestModel.StartDate));
+                parameters.Add("@c_to", Convert.ToDateTime(requestModel.EndDate));
+                parameters.Add("@c_status", Convert.ToInt32(requestModel.Status));
+                parameters.Add("@c_clientId", requestModel.ClientId);
+                parameters.Add("@cust_type", (requestModel.Cust_type));
+                parameters.Add("p_matchfrom", matchFrom, DbType.Int32);
+                parameters.Add("p_matchto", matchTo, DbType.Int32);
+                parameters.Add("p_createdBy", requestModel.createdBy);
+                parameters.Add("c_status", requestModel.caseStatus);
+                parameters.Add("p_riskLevel", requestModel.riskLevel);
+                parameters.Add("p_searchvalue", requestModel.SearchValue);
+                serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_report_by_searchvalue", parameters, commandType: CommandType.StoredProcedure).ToList();
+                serviceResponse.Message = "CustomerCase details fetched successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
             }
             catch (Exception ex)
             {

@@ -10,6 +10,8 @@ namespace AML.Core.RepositoryContract.Report
     {
         ServiceResponse<List<CaseReportListDTO>> GetCaseReportList(CaseReportRequestDTO requestModel);
 
+        ServiceResponse<List<CaseReportListDTO>> GetCaseReportListBySearch(CaseReportRequestDTO requestModel);
+
         ServiceResponse<List<CaseReportListDTO>> GetCaseManagementReportList(CaseReportRequestDTO requestModel);
 
         ServiceResponse<List<CaseReportListDTO>> GetCaseManagementSearchValueReportList(CaseReportRequestDTO requestModel);

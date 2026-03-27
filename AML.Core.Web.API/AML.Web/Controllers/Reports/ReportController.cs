@@ -1245,17 +1245,21 @@ public IActionResult CustomerList(DataTableModel model,
 
             if (searchValue != "" && searchValue != null)
             {
-                //abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetAllCaseReportList(new CaseReportRequestDTO()
-                //{
-                //    User = userID,
-                //    StartDate = startDate,
-                //    EndDate = endDate,
-                //    Status = status,
-                //    Cust_type = cust_type,
-                //    UpdatedByUserId = updatedByUserID,
-                //    ClientId = _clientHandler.GetClientId(),
-                //    SearchValue = searchValue
-                //}));
+                abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportListBySearch(new CaseReportRequestDTO
+                {
+                    //User = userID,
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    caseStatus = caseStatus,
+                    Cust_type = cust_type,
+                    // UpdatedByUserId = updatedByUserID,
+                    ClientId = _clientHandler.GetClientId(),
+                    SearchValue = searchValue,
+                    User = createdBy.ToString(),
+                    matchscore = matchScore,
+                    riskLevel = riskLevel
+
+                }));
             }
             else
             {
@@ -1268,7 +1272,6 @@ public IActionResult CustomerList(DataTableModel model,
                     Cust_type = cust_type,
                    // UpdatedByUserId = updatedByUserID,
                     ClientId = _clientHandler.GetClientId(),
-                    SearchValue = searchValue,
                     User= createdBy.ToString(),
                     matchscore=matchScore,
                     riskLevel=riskLevel
