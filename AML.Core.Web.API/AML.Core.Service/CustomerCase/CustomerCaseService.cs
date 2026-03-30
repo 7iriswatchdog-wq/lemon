@@ -75,6 +75,7 @@ namespace AML.Core.Service.CustomerCase
             _lovMasterService = lovMasterService;
             _riskService = riskService;
             _caseCommentService = caseCommentService;
+            _mapper = mapper;
         }
         public string Create(CustomerCaseDTO _CustomerCaseDT, bool returnId = false)
         {

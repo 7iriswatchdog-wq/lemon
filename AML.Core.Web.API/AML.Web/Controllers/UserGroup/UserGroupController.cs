@@ -48,6 +48,7 @@ namespace AML.Web.Controllers.UserGroup
         public ActionResult Index(int? clientId)
         {
             ViewBag.ClientId = clientId ?? _clientHandler.GetClientId();
+            TempData["ClientId"] = clientId ?? _clientHandler.GetClientId();
             return View();
         }
         [HttpPost("usergroup/custompagination")]
@@ -154,7 +155,9 @@ namespace AML.Web.Controllers.UserGroup
         [HttpGet("usergroup/edit/{id}")]
         public ActionResult Edit(int id)
         {
+            int clientId = (int)TempData["ClientId"];
             UserGroupModel _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(id));
+            _UserGroupModel.ClientId = clientId;
             return View("Create", _UserGroupModel);
         }
 

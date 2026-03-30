@@ -61,6 +61,7 @@ using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Drawing.Wordprocessing;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Wordprocessing;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.collection;
@@ -89,8 +90,11 @@ using static AML.DTO.DTO.FreeSource.BlackListMongoDTO;
 using static AML.DTO.DTO.FreeSource.CaseLogsMongoDTO;
 using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
 using ApiResultModel = AML.DTO.DTO.CustomerCase.ApiResultModel;
+using Document = iTextSharp.text.Document;
 using Font = iTextSharp.text.Font;
 using Formatting = Newtonsoft.Json.Formatting;
+using PageSize = iTextSharp.text.PageSize;
+using Paragraph = iTextSharp.text.Paragraph;
 
 namespace AML.Web.Controllers.Case
 {
@@ -1911,8 +1915,12 @@ namespace AML.Web.Controllers.Case
                 TempData["CorporateId"] = corporateId;
                 TempData["CorporateCaseId"] = corporatecaseId;
 
+                
+
                 var returnUrl = HttpContext.Session.GetString("ReturnUrl");
                 ViewBag.ReturnUrl = returnUrl;
+
+                HttpContext.Session.SetString("ShareholderReturnUrl", HttpContext.Request.Path + HttpContext.Request.QueryString);
 
                 model.Case = new CaseModel();
 
@@ -2352,13 +2360,25 @@ namespace AML.Web.Controllers.Case
 
         [HttpGet]
         [Route("Case/process/Details")]
-        public async Task<ActionResult> GetDetailsApi(string id, string category, int CaseId,string Type,string Resourcesid)
+        public async Task<ActionResult> GetDetailsApi(string id, string category, int CaseId,string Type,string Resourcesid ,string screenType)
         {
 
             UsersModel umodel = new UsersModel();
             BusinessModel bmodel = new BusinessModel();
             CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(CaseId);
             string url;
+            var returnUrl = "";
+            if (screenType == "shareholder")
+            {
+                returnUrl = HttpContext.Session.GetString("ShareholderReturnUrl");
+            }
+            else
+            {
+                returnUrl = HttpContext.Session.GetString("ReturnUrl");
+            }
+
+
+            ViewBag.ReturnUrl = returnUrl;
 
             //TokenRS token = AMLUtility.CreateC6Token("users/authenticate", baseC6URL, "kycdigi");
             TokenRS token =  AMLUtility.CreateC6Token("users/authenticate", baseC6URL, _c6Username);
@@ -3540,7 +3560,7 @@ namespace AML.Web.Controllers.Case
 
         [HttpGet]
         [Route("/case/GetDetails")]
-        public async Task<ActionResult> GetDetails(int caseId, int index)
+        public async Task<ActionResult> GetDetails(int caseId, int index,string type )
         {
             CaseProcessModel model = new CaseProcessModel();
             model.Case = new CaseModel();
@@ -3549,7 +3569,20 @@ namespace AML.Web.Controllers.Case
 
             CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(caseId);
             model.Case = _mapper.Map<CaseModel>(_CustomerCaseDTO);
+            var returnUrl="";
+            if (type == "shareholder")
+            {
+                 returnUrl = HttpContext.Session.GetString("ShareholderReturnUrl");
+            }
+            else
+            {
+                returnUrl = HttpContext.Session.GetString("ReturnUrl");
+            }
 
+
+                ViewBag.ReturnUrl = returnUrl;
+            
+            
             List<CaseDocumentDTO> caseDocumentbyId = _caseDocumentService.GetCaseDocumentByCaseId(caseId);
             model.CaseDocuments = _mapper.Map<List<CaseDocumentModel>>(caseDocumentbyId);
 
