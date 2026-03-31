@@ -2330,7 +2330,7 @@ hasSearched: false,
                                                     <div class="space-y-2.5">
                                                         <label class="text-[13px] font-bold text-slate-700">ID Issue Date</label>
                                                         <div class="relative">
-                                                            <input type="date" id="issuedate"
+                                                            <input type="date" id="issueDate"
                                                                    class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10" asp-for="IdIssueDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
                                                         </div>
                                                     </div>
@@ -4506,7 +4506,7 @@ function validateIdNumber($form, isSubmit = false) {
                         loading: false,
                         fileName: "",
                         errorMessage: "",
-                                    uploadVisible: true,
+                        uploadVisible: true,
                    
                         async uploadFile(event) {
 
@@ -4532,14 +4532,15 @@ function validateIdNumber($form, isSubmit = false) {
 
                             try {
 
-                                let response = await fetch("/api/ocr/upload", {
-                                    method: "POST",
-                                    body: formData
-                                });
+                            console.log("[OCR] Starting file upload...");
+                            let response = await fetch("/api/ocr/upload", {
+                                method: "POST",
+                                body: formData
+                            });
+                            console.log("[OCR] Server response status:", response.status);
 
-                                         let result = await response.json();
-
-                                         console.log(result);
+                            let result = await response.json();
+                            console.log("[OCR] Parsed result:", result);
 
                            // Validate result has either an extracted property or is the JSON object itself
                            if (!result || (!result.extracted && !result.firstname && !result.document_number)){
@@ -4571,9 +4572,18 @@ function validateIdNumber($form, isSubmit = false) {
                             this.uploadVisible = false;
 
                             let form = document.getElementById("myOCRForm");
+                            console.log("[OCR] Form element found:", !!form);
 
                             /* Null-safe setter — silently skips if the field doesn't exist in this form */
-                            const setVal = (id, val) => { const el = form.querySelector(id); if (el) el.value = val ?? ""; };
+                            const setVal = (id, val) => {
+                                const el = form.querySelector(id);
+                                if (el) {
+                                    console.log(`[OCR] Setting ${id} to:`, val);
+                                    el.value = val ?? "";
+                                } else {
+                                    console.warn(`[OCR] Element ${id} not found in myOCRForm`);
+                                }
+                            };
 
                             /* Sanitize: model sometimes returns the string "null" instead of JSON null */
                             Object.keys(mrzData).forEach(k => { if (mrzData[k] === "null" || mrzData[k] === "NULL") mrzData[k] = null; });
@@ -4614,6 +4624,7 @@ function validateIdNumber($form, isSubmit = false) {
                             const iso3Aliases = {
                                 'SLK': 'LKA', // Sri Lanka (wrong model output)
                                 'SRI': 'LKA', // Sri Lanka (abbreviated)
+                                'LKA': 'LKA', // Sri Lanka (ensure it stays LKA)
                                 'UAE': 'ARE', // United Arab Emirates
                                 'KSA': 'SAU', // Saudi Arabia
                                 'UK':  'GBR', // United Kingdom
@@ -4625,11 +4636,13 @@ function validateIdNumber($form, isSubmit = false) {
                                 'GER': 'DEU', // Germany
                                 'HOL': 'NLD', // Netherlands
                                 'SPA': 'ESP', // Spain
+                                'PAK': 'PAK', // Pakistan
                             };
                             let nationalityCode = (mrzData.nationality || "").trim().toUpperCase();
                             nationalityCode = iso3Aliases[nationalityCode] || nationalityCode;
 
                                     if (nationalityCode) {
+                                        console.log("[OCR] Resolving nationality for code:", nationalityCode);
                                         let natSelect = form.querySelector("#nationality");
                                         if (natSelect) {
                                             let matched = false;
@@ -4659,11 +4672,29 @@ function validateIdNumber($form, isSubmit = false) {
                                             }
 
                                             if (!matched) {
+                                                console.log("[OCR] No local match found for nationality. Falling back to server...");
                                                 // Last resort: ask the server with the 3-letter code
                                                 fetch(`/Case/GetCountryNameByIso?isoCode=${nationalityCode}`)
                                                     .then(r => r.json())
                                                     .then(name => {
                                                         if (name) {
+                                                            console.log("[OCR] Server suggested nationality:", name);
+                                                            // SANITY CHECK: If code is LKA and server returns ALGERIA, it's a known bug in the DB
+                                                            const resolvedName = (name || "").trim().toUpperCase();
+                                                            if (nationalityCode === "LKA" && resolvedName === "ALGERIA") {
+                                                                console.warn("Caught incorrect server mapping: LKA -> ALGERIA. Attempting manual SRI LANKA match.");
+                                                                // Try to find SRI LANKA in the options anyway
+                                                                let matchFound = false;
+                                                                for (let opt of natSelect.options) {
+                                                                    if (opt.text.toUpperCase().includes("SRI LANKA")) {
+                                                                        natSelect.value = opt.value;
+                                                                        console.log("[OCR] Manually matched SRI LANKA option:", opt.value);
+                                                                        matchFound = true;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                                return; // Stop here, don't set to ALGERIA
+                                                            }
                                                             natSelect.value = name;
                                                             console.log("Nationality (server) set to:", name);
                                                         } else {
@@ -4671,7 +4702,10 @@ function validateIdNumber($form, isSubmit = false) {
                                                             natSelect.value = "";
                                                         }
                                                     })
-                                                    .catch(() => { natSelect.value = ""; });
+                                                    .catch(err => {
+                                                        console.error("[OCR] Server nationality lookup failed:", err);
+                                                        natSelect.value = "";
+                                                    });
                                             } else {
                                                 console.log("Nationality set to:", natSelect.value);
                                             }
@@ -4680,9 +4714,27 @@ function validateIdNumber($form, isSubmit = false) {
                             /* Dates - use flatpickr setDate when available, fallback to .value */
                             setFlatpickrDate("#DOB", mrzData.dob);
                             setFlatpickrDate("#expirydate", mrzData.expiry_date);
-                            setFlatpickrDate("#issuedate", mrzData.issue_date);
+                            setFlatpickrDate("#issueDate", mrzData.issue_date); // Note: CamelCase ID in main form
+
+                            /* Occupation/Profession */
+                            if (mrzData.profession) {
+                                console.log("[OCR] Mapping profession:", mrzData.profession);
+                                // Match profession text against options in ddlOccupation
+                                let occSelect = form.querySelector("#ddlOccupation");
+                                if (occSelect) {
+                                    let prof = mrzData.profession.toUpperCase();
+                                    for (let opt of occSelect.options) {
+                                        if (opt.text.toUpperCase() === prof || opt.text.toUpperCase().includes(prof)) {
+                                            console.log("[OCR] Matched profession option:", opt.text);
+                                            occSelect.value = opt.value;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
 
                             /* Final UI updates */
+                            console.log("[OCR] Extraction hydration complete.");
                             this.loading = false;
                             this.scrollToForm();
 
@@ -4747,21 +4799,47 @@ function validateIdNumber($form, isSubmit = false) {
                 }
             }
 
-            // Set a date field — scoped to myOCRForm to avoid duplicate-ID conflicts with hidden form sections
+            // Set a date field — scoped to myOCRForm or myForm to avoid duplicate-ID conflicts
             function setFlatpickrDate(selector, dateValue) {
-                const scope = document.getElementById("myOCRForm") || document;
-                const el = scope.querySelector(selector);
-                if (!el) { console.warn('setFlatpickrDate: element not found in myOCRForm', selector); return; }
-                if (!dateValue) { try { if (el._flatpickr) el._flatpickr.clear(); else el.value = ""; } catch(e) {} return; }
-                if (el._flatpickr) {
+                const scopeIds = ["myOCRForm", "myForm"];
+                let el = null;
+                
+                for (let id of scopeIds) {
+                    const scope = document.getElementById(id);
+                    if (scope) {
+                        el = scope.querySelector(selector);
+                        if (el) {
+                            console.log(`[OCR] Using scope ${id} for selector ${selector}`);
+                            break;
+                        }
+                    }
+                }
+
+                if (!el) {
+                    // Global fallback
+                    el = document.querySelector(selector);
+                }
+
+                if (!el) { 
+                    console.warn('setFlatpickrDate: element not found for selector', selector); 
+                    return; 
+                }
+
+                if (!dateValue) { 
+                    try { if (el._flatpickr) el._flatpickr.clear(); else el.value = ""; } catch(e) {} 
+                    return; 
+                }
+
+                if (el._flatpickr && typeof el._flatpickr.setDate === 'function') {
                     try {
-                        el._flatpickr.setDate(dateValue, false, "Y-m-d"); // false = don't trigger onChange/calendar open
+                        // Use the API with a slight delay to ensure the calendar is fully initialized if needed
+                        el._flatpickr.setDate(dateValue, false, "Y-m-d"); 
                         console.log(`setFlatpickrDate: set ${selector} →`, dateValue);
                     } catch(e) {
-                        // Fallback: set value directly on the alt input if flatpickr internal render fails
+                        // Fallback: set value directly on the alt input if flatpickr internal render fails (e.g. index error)
                         if (el._flatpickr.altInput) el._flatpickr.altInput.value = dateValue;
                         else el.value = dateValue;
-                        console.warn(`setFlatpickrDate fallback for ${selector}:`, e.message);
+                        console.warn(`setFlatpickrDate fallback for ${selector} due to internal error:`, e.message);
                     }
                 } else {
                     el.value = dateValue;
