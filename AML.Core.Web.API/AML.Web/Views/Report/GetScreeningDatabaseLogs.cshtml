@@ -1,4 +1,4 @@
-﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
 @using Microsoft.AspNetCore.Http
 @using Newtonsoft.Json;
 @inject IHttpContextAccessor HttpContextAccessor
@@ -38,9 +38,7 @@
             font-family: 'Inter', sans-serif;
         }
     </style>
-    <div id="loadingCaseDetails" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
-        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
-    </div>
+    
 
     <style>
         .dt-loader {
@@ -145,6 +143,12 @@
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-900">
+    <div id="loadingCaseDetails"
+         class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-[9999] hidden">
+        <div class="dt-loader">
+            <div></div><div></div><div></div><div></div>
+        </div>
+    </div>
     <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
         <div class="flex items-center gap-2 text-slate-500 text-xs mb-2">
             <span class="text-slate-900 font-medium">Reports</span>
@@ -445,7 +449,7 @@
 
     function exportTableToCSV(filename) {
         // We will fetch all data from backend for export to get the complete dataset
-        $('#loader').removeClass('hidden').addClass('flex');
+        $("#loadingCaseDetails").removeClass("hidden");
         $.ajax({
             url: '/Report/ScreeningDatabaseReportCustompagination',
             type: 'POST',
@@ -491,7 +495,7 @@
                 document.body.removeChild(downloadLink);
             },
             complete: function() {
-                $('#loader').addClass('hidden').removeClass('flex');
+                $("#loadingCaseDetails").addClass("hidden");
             }
         });
     }
@@ -513,7 +517,7 @@
 
     function loadData() {
         
-        $('#loader').removeClass('hidden').addClass('flex');
+        $("#loadingCaseDetails").removeClass("hidden");
         $.ajax({
             url: '/Report/ScreeningDatabaseReportCustompagination',
             type: 'POST',
@@ -540,7 +544,7 @@
                 updatePagination();
             },
             complete: function () {
-                $('#loader').addClass('hidden').removeClass('flex');
+                $("#loadingCaseDetails").addClass("hidden");
             },
             error: function (xhr) {
                 $('#clientsTableBody').empty().append('<tr><td colspan="4" class="h-24 text-center text-red-500">Something went wrong</td></tr>');
@@ -641,107 +645,41 @@
 
     });
    
-      // <td class="px-6 py-4">
-      //                       <!-- Updated (only if exists) -->
-      //                       ${updated ? `
-      //                           <div class="text-xs text-slate-700">
-      //                               <div>${updated?.date || '-'}</div>
-      //                               // <div class="ml-2">
-      //                               //     ${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}
-      //                               // </div>
-      //                           </div>
-      //                       ` : ''}
-      //                   </td>
+    function clearFilters() {
+
+            const today = new Date();
+            const lastYear = new Date();
+            lastYear.setFullYear(today.getFullYear() - 1);
+
+            function formatDate(date) {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                return `${dd}/${mm}/${yyyy}`;
+            }
+
+            // Reset values with defaults
+                 if (document.querySelector("#startDate")._flatpickr) {
+                document.querySelector("#startDate")._flatpickr.setDate(lastYear, true);
+            }
+
+            if (document.querySelector("#endDate")._flatpickr) {
+                document.querySelector("#endDate")._flatpickr.setDate(today, true);
+            }
+        
+
+        // Show filter icon again
+        
+
+        //checkFilterValues();
+
+        loadData();
+
+      
+
+    }
+     
 </script>
 
 
-@* <script type="text/javascript">
-    $(document).ready(function () {
 
-        LoadTable();
-
-    });
-    function LoadTable() {
-        $('#filterTable').DataTable({
-            "serverSide": true, "processing": true,
-            order: [[0, 'desc']],
-            ajax: {
-                url: '/Report/',
-                type: 'POST',
-                 complete: function (data) {
-                    console.log(data);
-                    wait = false;
-                },
-                data: function (d) {
-                     d.startDate = $('#dtStartDate').val(),
-                     d.endDate = $('#dtEndDate').val()
-                }
-                //success:function(data){
-
-                //    console.log(data);
-                //}
-            },
-            columns: [
-                    {
-                      data: "",
-                      render: function (data, type, row) {
-                        if (data) {
-                            return data.split(' ')[0] // if ISO string like "2025-05-13T00:00:00"
-                          // or use: return data.substring(0, 10);
-                        }
-                        return "";
-                      }
-                    },
-                    { data: "" },
-                    { data: "" },
-                    { data: "" }
-
-            ],
-            destroy: true
-
-        });
-    }
-
-    function ExportList(isPDF) {
-        $.ajax({
-            type: "GET",
-            url: "/Report/ScreeningDatabaseLogsExportReport/",
-            data: {
-                startDate: $('#dtStartDate').val(), // < note use of 'this' here
-                endDate: $("#dtEndDate").val(),
-                IsPDF: isPDF
-            },
-            success: function (data) {
-
-                window.location = '/Report/ScreeningDatabaseLogsExportReport?startDate=' + $('#dtStartDate').val() + '&endDate=' + $("#dtEndDate").val() + '&IsPDF=' + isPDF;
-            },
-            error: function (result) {
-                alert('error');
-            }
-        });
-    }
-
-    $("#btnReset").click(function () {
-        var date = new Date();
-        var day = date.getDate();
-        var month = date.getMonth() + 1;
-        var year = date.getFullYear();
-        if (month < 10) month = "0" + month;
-        if (day < 10) day = "0" + day;
-        var today = year + "-" + month + "-" + day;
-        var ddate = new Date(date.setDate(date.getDate() - 7));
-        var day1 = ddate.getDate();
-        var month1 = ddate.getMonth() + 1;
-        var year1 = ddate.getFullYear();
-        if (month1 < 10) month1 = "0" + month1;
-        if (day1 < 10) day1 = "0" + day1;
-        var stdate = year1 + "-" + month1 + "-" + day1;
-        $('#dtStartDate').val(stdate);
-        $('#dtEndDate').val(today);
-        $('#caseStatusID').val(10);
-        $('#userID').val(0);
-        $('#customertype').val(0);
-        $('#UpdatedByUserID').val(0);
-        LoadTable();
-    });
-</script> *@
