@@ -1255,7 +1255,7 @@ public IActionResult CustomerList(DataTableModel model,
                     // UpdatedByUserId = updatedByUserID,
                     ClientId = _clientHandler.GetClientId(),
                     SearchValue = searchValue,
-                    User = createdBy.ToString(),
+                    createdBy = createdBy,
                     matchscore = matchScore,
                     riskLevel = riskLevel
 
@@ -1272,7 +1272,7 @@ public IActionResult CustomerList(DataTableModel model,
                     Cust_type = cust_type,
                    // UpdatedByUserId = updatedByUserID,
                     ClientId = _clientHandler.GetClientId(),
-                    User= createdBy.ToString(),
+                    createdBy= createdBy,
                     matchscore=matchScore,
                     riskLevel=riskLevel
 
@@ -5064,7 +5064,7 @@ public IActionResult CustomerList(DataTableModel model,
 
         }
         public JsonResult ScreeningDatabaseReportCustompagination(DataTableModel model,string startDate,string endDate,int orderColumn = 0,string orderDirection = "desc")
-        {
+       {
             try
             {
                 List<ScreeningDatabaseLogsModel> abc = _mapper.Map<List<ScreeningDatabaseLogsModel>>(
