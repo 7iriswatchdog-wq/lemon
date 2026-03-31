@@ -28,10 +28,14 @@ namespace AML.Web.Controllers.Ocr
         private readonly IConfiguration _configuration;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<OcrController> _logger;
+        private string endpointId = string.Empty;
+        private string apiKey = string.Empty;
 
         public OcrController(IConfiguration configuration, IHttpClientFactory httpClientFactory, ILogger<OcrController> logger)
         {
             _configuration = configuration;
+            endpointId = configuration.GetSection("RunPod").GetSection("EndpointId").Value;
+            apiKey = configuration.GetSection("RunPod").GetSection("ApiKey").Value;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
         }
@@ -142,8 +146,7 @@ namespace AML.Web.Controllers.Ocr
 
         private async Task<object> CallRunPodOpenAiApi(List<string> base64Images)
         {
-            var endpointId = _configuration["RunPod:EndpointId"];
-            var apiKey = _configuration["RunPod:ApiKey"];
+            
 
             if (string.IsNullOrEmpty(endpointId) || string.IsNullOrEmpty(apiKey))
             {

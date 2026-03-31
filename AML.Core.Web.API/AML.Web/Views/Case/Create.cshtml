@@ -2304,8 +2304,11 @@ hasSearched: false,
                                                             Date of
                                                             Birth
                                                         </label>
-                                                        <input type="date" id="DOB"
-                                                               class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10" asp-for="DOB" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                        <input type="text" id="DOB" asp-for="DOB" placeholder="DD/MM/YYYY"
+                                                               value="@Model.DOB"
+                                                               class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium">
+                                                        @* <input type="text" id="DOB"
+                                                               class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10" asp-for="DOB" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"> *@
                                                     </div>
 
                                                     <div class="space-y-2.5">
@@ -2330,15 +2333,17 @@ hasSearched: false,
                                                     <div class="space-y-2.5">
                                                         <label class="text-[13px] font-bold text-slate-700">ID Issue Date</label>
                                                         <div class="relative">
-                                                            <input type="date" id="issuedate"
-                                                                   class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10" asp-for="IdIssueDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                            <input type="text" id="issueDate" asp-for="IdIssueDate" placeholder="DD/MM/YYYY"
+                                                                   value="@Model.IdIssueDate"
+                                                                   class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium">
                                                         </div>
                                                     </div>
 
                                                     <div class="space-y-2.5">
                                                         <label class="text-[13px] font-bold text-slate-700">ID Expiry Date</label>
-                                                        <input type="date" id="expirydate"
-                                                               class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10" asp-for="IdExpiryDate" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                                                        <input type="text" id="expirydate" asp-for="IdExpiryDate" placeholder="DD/MM/YYYY"
+                                                           value="@Model.IdExpiryDate"
+                                                           class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium">
                                                     </div>
                                                     <div class="space-y-2.5">
                                                         <label class="text-[13px] font-bold text-slate-700">Gender</label>
@@ -4668,9 +4673,9 @@ function validateIdNumber($form, isSubmit = false) {
                                         }
                                     }
                             /* Dates - use flatpickr setDate when available, fallback to .value */
-                            setFlatpickrDate("#DOB", mrzData.dob);
-                            setFlatpickrDate("#expirydate", mrzData.expiry_date);
-                            setFlatpickrDate("#issueDate", mrzData.issue_date);
+                            setFlatpickrDateFromForm(form, "#DOB", mrzData.dob);
+                            setFlatpickrDateFromForm(form, "#expirydate", mrzData.expiry_date);
+                            setFlatpickrDateFromForm(form, "#issueDate", mrzData.issue_date);
 
                             /* Final UI updates */
                             this.loading = false;
@@ -4738,19 +4743,48 @@ function validateIdNumber($form, isSubmit = false) {
             }
 
             // Directly look up the flatpickr instance by selector and call setDate
-            function setFlatpickrDate(selector, dateValue) {
-                const el = document.querySelector(selector);
-                if (!el) { console.warn('setFlatpickrDate: element not found', selector); return; }
-                if (!dateValue) { if (el._flatpickr) el._flatpickr.clear(); return; }
-                if (el._flatpickr) {
-                    el._flatpickr.setDate(dateValue, true, "Y-m-d");
-                    console.log(`setFlatpickrDate: set ${selector} →`, dateValue);
-                } else {
-                    // Plain text input fallback
-                    el.value = dateValue;
-                    console.log(`setFlatpickrDate (plain): set ${selector} →`, dateValue);
+            function setFlatpickrDateFromForm(form, selector, dateValue) {
+                    const el = form.querySelector(selector);
+                    if (!el) return;
+
+                    if (!dateValue) {
+                        if (el._flatpickr) el._flatpickr.clear();
+                        return;
+                    }
+
+                    const formattedDate = normalizeDate(dateValue);
+
+                    if (el._flatpickr) {
+                        el._flatpickr.setDate(formattedDate, true);
+                    } else {
+                        el.value = formattedDate; // fallback
+                    }
                 }
-            }
+function normalizeDate(dateStr) {
+    if (!dateStr) return null;
+
+    if (dateStr.includes('-')) return dateStr;
+
+    if (dateStr.includes('/')) {
+        let [dd, mm, yyyy] = dateStr.split('/');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    return dateStr;
+}
+            // function setFlatpickrDate(selector, dateValue) {
+            //     const el = document.querySelector(selector);
+            //     if (!el) { console.warn('setFlatpickrDate: element not found', selector); return; }
+            //     if (!dateValue) { if (el._flatpickr) el._flatpickr.clear(); return; }
+            //     if (el._flatpickr) {
+            //         el._flatpickr.setDate(dateValue, true, "Y-m-d");
+            //         console.log(`setFlatpickrDate: set ${selector} →`, dateValue);
+            //     } else {
+            //         // Plain text input fallback
+            //         el.value = dateValue;
+            //         console.log(`setFlatpickrDate (plain): set ${selector} →`, dateValue);
+            //     }
+            // }
 
 
                         function clearOCRForm() {
