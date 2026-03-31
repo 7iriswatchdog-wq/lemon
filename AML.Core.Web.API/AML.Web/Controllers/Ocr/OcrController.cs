@@ -156,30 +156,98 @@ namespace AML.Web.Controllers.Ocr
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
-            var systemPrompt = "Analyze this identification document and extract data into a JSON object. " +
-    "FIELDS: firstname, middlename, lastname, dob, document_number, issue_date, expiry_date, gender, nationality, profession, profession_type, employer_name, isGolden." +
-    "\nIMPORTANT RULES:\n" +
-    "1. All fields in the FIELDS list MUST be present in the output JSON. If a value is not found on the document, set its value to `null`.\n" +
-    "2. document_number: Look for the clear visual label 'Passport No', 'ID Number', or 'Document No'. Do NOT use the starts of MRZ lines (e.g., P<IND or similar) as the document number.\n" +
-    "3. firstname: Extract the given name(s) or prename. If the document displays a single full name (e.g., 'JOHN DOE'), place it entirely in this field (e.g., 'JOHN DOE') and set 'middlename' and 'lastname' to `null`. If the name is clearly separated (e.g., 'JOHN MICHAEL DOE'), extract 'JOHN'. If a name has repeated words (e.g., 'JOHN JOHN DOE'), strictly keep all repeated words as they appear.\n" +
-    "4. middlename: Extract any middle name(s). If not present, set to `null`.\n" +
-    "5. lastname: Extract the surname(s). If not present or if the `firstname` field contains the single full name, set to `null`.\n" +
-    "6. Formatting: Dates as YYYY-MM-DD, e.g., '1990-01-01'. Gender as M/F. Nationality as 3-letter code, e.g., 'IND'.\n" +
-    "7. EXAMPLES:\n" +
-    "   - For document_number: 'C1234567' (e.g., from 'Passport No C1234567')\n" +
-    "   - For firstname: 'JOHN' (e.g., from 'Given Names: JOHN MICHAEL', or 'Full Name: JANE DOE' -> 'JANE DOE')\n" +
-    "   - For middlename: 'MICHAEL' (e.g., from 'Given Names: JOHN MICHAEL') or null\n" +
-    "   - For lastname: 'DOE' (e.g., from 'Surname: DOE') or null\n" +
-    "   - For dob: '1990-01-01' (e.g., from 'Date of Birth 01/01/1990')\n" +
-    "   - For issue_date: '2020-03-15' (e.g., from 'Date of Issue 15 MAR 2020')\n" +
-    "   - For expiry_date: '2030-03-15' (e.g., from 'Date of Expiry 15 MAR 2030')\n" +
-    "   - For gender: 'M' (e.g., from 'Sex: M')\n" +
-    "   - For nationality: 'LKA' (e.g., from 'Nationality Sri Lanks')\n" +
-    "   - For profession: 'Sales Officer' (e.g., from 'Employment or Profession or Work or Occupation/')\n" +
-    "   - For profession_type: Strictly one from the following options - 'Salaried in private sector', 'Salaried in public sector', 'Self employed', 'Freelance', 'Non Salaried (Dependent)' or null\n" +
-    "   - For employer_name: 'Google' (e.g., from 'Employer: Google') or null\n" +
-    "   - For isGolden: 'Yes' if 'Golden' is explicitly mentioned on the document, otherwise 'No'. Strictly not null - only 'Yes' or 'No'\n" +
-    "Return ONLY the JSON object and no other text or markdown.";
+            var systemPrompt =
+    "You are a document data extraction engine. Analyze the provided identification document image(s) and extract the requested fields into a single JSON object.\n\n" +
+    "The document may be from ANY country and may be any document type: passport, national ID card, Emirates ID, residence permit (Iqama, Cédula, etc.), driving licence, labour card, or similar.\n\n" +
+    "OUTPUT FIELDS (all must be present):\n" +
+    "  firstname, middlename, lastname, dob, document_number, issue_date, expiry_date, gender, nationality, profession, profession_type, employer_name, isGolden\n\n" +
+
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "RULE 1 — COMPLETENESS\n" +
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "Every field in OUTPUT FIELDS MUST appear in the JSON. If a value is absent or unreadable, set it to null. Never omit a key.\n\n" +
+
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "RULE 2 — NO HALLUCINATION (CRITICAL)\n" +
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "Extract ONLY values that are EXPLICITLY and VISIBLY printed on the document.\n" +
+    "  ✗ Do NOT infer, assume, translate, or guess any value.\n" +
+    "  ✗ Do NOT use MRZ lines (the machine-readable zone at the bottom, e.g. P<INDRAVINDRAN<<RAMYA<<<) as the source for any field except as a cross-check for nationality.\n" +
+    "  ✗ If a field does not appear on the document, return null.\n\n" +
+
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "RULE 3 — DOCUMENT NUMBER\n" +
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "Read from a clearly labeled field such as: 'Passport No', 'ID Number', 'Document No', 'Card No', 'Residence No', 'File No', 'رقم الهوية', 'رقم جواز السفر'.\n" +
+    "Do NOT extract barcode values or MRZ alphanumeric sequences as the document number.\n\n" +
+
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "RULE 4 — NAME EXTRACTION\n" +
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "Names may appear in different structures across countries and languages. Follow these guidelines:\n\n" +
+    "  a) firstname: Extract the given name / prename / first name. Labels include 'Given Name(s)', 'First Name', 'Prenom', 'Vorname', 'Nombre', 'الاسم الأول', etc.\n" +
+    "  b) lastname: Extract the surname / family name. Labels include 'Surname', 'Family Name', 'Last Name', 'Nom', 'اللقب', 'الاسم الأخير', etc.\n" +
+    "  c) middlename: Extract the middle name if clearly and separately labeled. If no middle name label exists, set to null.\n\n" +
+    "  SPECIAL CASES:\n" +
+    "  • If the document shows a single unseparated full name with no separate surname label (e.g. 'Full Name: JOHN MICHAEL DOE'), place the entire value in firstname and set lastname and middlename to null.\n" +
+    "  • DUPLICATE WORDS: If a name contains repeated words exactly as printed (e.g. 'JOHN JOHN DOE', 'MUHAMMAD MUHAMMAD ALI'), preserve ALL repeated words exactly as they appear. Do NOT remove or deduplicate them.\n" +
+    "  • Arabic documents: The name order is typically: Given name → Father's name → Grandfather's name → Family name. Map accordingly unless the document uses explicit English-style labels.\n" +
+    "  • Hyphenated or compound names: Keep hyphens and spacing as printed.\n\n" +
+
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "RULE 5 — DATES\n" +
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "Format ALL dates as YYYY-MM-DD. Read only from clearly labeled date fields:\n" +
+    "  - dob: 'Date of Birth', 'تاريخ الميلاد', 'D.O.B', 'Birthdate', 'Né(e) le', etc.\n" +
+    "  - issue_date: 'Date of Issue', 'تاريخ الإصدار', 'Issued', 'Valid From', etc.\n" +
+    "  - expiry_date: 'Date of Expiry', 'Valid Until', 'Expiry', 'تاريخ الانتهاء', 'Expires', etc.\n\n" +
+
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "RULE 6 — GENDER & NATIONALITY\n" +
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "  - gender: Return 'M' or 'F' only. The label may say 'Sex', 'Gender', 'الجنس', 'M/F' etc.\n" +
+    "  - nationality: Return the 3-letter ISO 3166-1 alpha-3 country code (e.g. 'IND', 'PAK', 'ARE', 'GBR', 'USA', 'PHL', 'EGY'). If the document shows the full country name (e.g. 'INDIAN', 'PAKISTANI', 'BRITISH'), convert it to the correct 3-letter code.\n\n" +
+
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "RULE 7 — PROFESSION, PROFESSION TYPE & EMPLOYER\n" +
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "  profession:\n" +
+    "    Extract ONLY if the document has an explicit field labeled: 'Profession', 'Occupation', 'Job Title', 'Designation', 'Employment', 'المهنة', 'الوظيفة', etc.\n" +
+    "    Documents that commonly carry this field: Emirates ID, GCC residence permits, Saudi Iqama, labour cards, work permits.\n" +
+    "    Standard passports do NOT carry profession — return null unless the label is visibly present.\n\n" +
+    "  profession_type:\n" +
+    "    Must be STRICTLY one of: 'Salaried in private sector' | 'Salaried in public sector' | 'Self employed' | 'Freelance' | 'Non Salaried (Dependent)' — or null.\n" +
+    "    Determination priority:\n" +
+    "    ① Explicitly stated on the document → use the closest matching value from the list above.\n" +
+    "    ② Not stated, but employer_name is known → INFER:\n" +
+    "         Government / Ministry / Police / Military / Municipality / Public Hospital / Public University → 'Salaried in public sector'\n" +
+    "         Private company (LLC, Ltd, Inc, Corp, FZCO, Trading, Consultants, Brokers, Group) → 'Salaried in private sector'\n" +
+    "         Own practice (independent Doctor, Lawyer, Architect, Consultant) → 'Self employed'\n" +
+    "         Profession label = 'Freelancer' / 'Freelance' → 'Freelance'\n" +
+    "         Student / Housewife / Dependent / Retired / Unemployed → 'Non Salaried (Dependent)'\n" +
+    "    ③ Insufficient context → null.\n\n" +
+    "  employer_name:\n" +
+    "    Extract ONLY from a field explicitly labeled: 'Employer', 'Employer Name', 'Company', 'Sponsored by', 'Organisation', 'صاحب العمل', 'جهة العمل'.\n" +
+    "    ⚠️ CRITICAL: These are NOT employer fields — never use them as employer_name:\n" +
+    "       'Place of Issue' / 'Issued at' / 'Place of Birth' / 'مكان الإصدار' / 'مكان الميلاد'\n" +
+    "       City names (Mumbai, Cochin, Dubai, Riyadh, London) appearing under place fields.\n" +
+    "    Return null if no explicit employer label is found.\n\n" +
+
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "RULE 8 — GOLDEN VISA\n" +
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "Set isGolden to 'Yes' ONLY if the text 'Golden' or 'Golden Visa' is explicitly printed on the document. Otherwise always 'No'. This field must NEVER be null.\n\n" +
+
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "WORKED EXAMPLES\n" +
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "Indian passport: firstname='RAMYA', lastname='RAVINDRAN', middlename=null, nationality='IND', employer_name=null (COCHIN is Place of Issue — not employer), profession=null, profession_type=null\n" +
+    "UAE Emirates ID (private employer): profession='OPERATIONS MANAGER', employer_name='LUXFOLIO MORTGAGE BROKERS L.L.C', profession_type='Salaried in private sector'\n" +
+    "UAE Emirates ID (ministry): employer_name='MINISTRY OF HEALTH', profession_type='Salaried in public sector'\n" +
+    "Duplicate name: document shows 'JOHN JOHN DOE' → firstname='JOHN JOHN', lastname='DOE' (do NOT reduce to 'JOHN')\n" +
+    "Single-block name: document shows only 'JUAN DELA CRUZ' with no separate surname → firstname='JUAN DELA CRUZ', lastname=null, middlename=null\n\n" +
+
+    "Return ONLY the raw JSON object. No markdown, no explanation, no code fences.";
 
             var messages = new List<object>
             {
