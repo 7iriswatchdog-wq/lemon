@@ -205,8 +205,19 @@ namespace AML.Web.Controllers.Ocr
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
     "RULE 6 — GENDER & NATIONALITY\n" +
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-    "  - gender: Return 'M' or 'F' only. The label may say 'Sex', 'Gender', 'الجنس', 'M/F' etc.\n" +
-    "  - nationality: Return the 3-letter ISO 3166-1 alpha-3 country code (e.g. 'IND', 'PAK', 'ARE', 'GBR', 'USA', 'PHL', 'EGY'). If the document shows the full country name (e.g. 'INDIAN', 'PAKISTANI', 'BRITISH'), convert it to the correct 3-letter code.\n\n" +
+    "  - gender: Return ONLY 'M' or 'F'. The label may say 'Sex', 'Gender', 'الجنس', 'Sexo', etc.\n" +
+    "  - nationality: ALWAYS return the correct 3-letter ISO 3166-1 alpha-3 code.\n" +
+    "    If the document shows a nationality adjective or non-standard code, convert it:\n" +
+    "    ✗ NEVER return non-standard codes like 'SLK', 'UAE', 'KSA', 'UK', 'SRI' — these are WRONG.\n" +
+    "    Correct reference table for common documents:\n" +
+    "      INDIAN / IND → IND       SRI LANKAN / SRILANKAN → LKA   PAKISTANI / PAK → PAK\n" +
+    "      FILIPINO / FIL → PHL     BENGALI / BANGLADESHI → BGD      NEPALI → NPL\n" +
+    "      EMIRATI / UAE / ARB → ARE  SAUDI / KSA → SAU              EGYPTIAN / EGY → EGY\n" +
+    "      BRITISH / UK / GBR → GBR  AMERICAN / USA → USA            CHINESE → CHN\n" +
+    "      GERMAN → DEU              FRENCH → FRA                    SPANISH → ESP\n" +
+    "      JORDANIAN → JOR           LEBANESE → LBN                  SYRIAN → SYR\n" +
+    "      ETHIOPIAN → ETH           NIGERIAN → NGA                  KENYAN → KEN\n" +
+    "      INDONESIAN → IDN          MALAYSIAN → MYS                 THAI → THA\n\n" +
 
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
     "RULE 7 — PROFESSION, PROFESSION TYPE & EMPLOYER\n" +

@@ -424,8 +424,8 @@ hasSearched: false,
                                 <i data-lucide="check" class="w-5 h-5 text-blue-600 absolute top-4 right-4"
                                    x-show="selectedMethod === 'parties'"></i>
                             </div>
-                            @if (allowedModules.Contains(18))
-                            {
+                            @* @if (allowedModules.Contains(18))
+                            { *@
                                 <!-- OCR Card -->
                                 <div @@click="selectedMethod = 'ocr'; showResults = false"
                                      class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-4 group h-[104px]"
@@ -445,7 +445,7 @@ hasSearched: false,
                                     <i data-lucide="check" class="w-5 h-5 text-blue-600 absolute top-4 right-4"
                                        x-show="selectedMethod === 'ocr'"></i>
                                 </div>
-                                }
+                                @* } *@
 
                             <!-- Bulk Card -->
                             <div @@click="selectedMethod = 'bulk'; showResults = false"
@@ -4572,36 +4572,29 @@ function validateIdNumber($form, isSubmit = false) {
 
                             let form = document.getElementById("myOCRForm");
 
+                            /* Null-safe setter — silently skips if the field doesn't exist in this form */
+                            const setVal = (id, val) => { const el = form.querySelector(id); if (el) el.value = val ?? ""; };
+
+                            /* Sanitize: model sometimes returns the string "null" instead of JSON null */
+                            Object.keys(mrzData).forEach(k => { if (mrzData[k] === "null" || mrzData[k] === "NULL") mrzData[k] = null; });
+
                             /* =========================
-                               FIELD MAPPING (FIXED)
+                               FIELD MAPPING
                                ========================= */
-                           
-                            let nameInput = form.querySelector("#fullName");
 
-                                let fullName = [
-                                    mrzData.firstname,
-                                    mrzData.middlename,
-                                    mrzData.lastname
-                                ].filter(Boolean).join(" ");
+                            let fullName = [mrzData.firstname, mrzData.middlename, mrzData.lastname].filter(Boolean).join(" ");
+                            setVal("#fullName", fullName);
 
-                                nameInput.value = fullName;
-                            //toggleDuplicateBtn(nameInput);
+                            setVal("#employer", mrzData.employer_name);
+                            setVal("#goldenVisa", mrzData.isGolden ?? "No");
 
-                            //form.querySelector("#fullName").value = mrzData.full_name || "";
+                            let documentNumber = mrzData.document_number || "";
+                            setVal("#txtIdNumber", documentNumber);
 
-
-                            form.querySelector("#employer").value = mrzData.employer_name || "";
-
-                            form.querySelector("#goldenVisa").value = mrzData.isGolden || "";
-
-                                        let documentNumber = mrzData.document_number || "";
-
-                                form.querySelector("#txtIdNumber").value = documentNumber;
-
-                                /* Residence Status Logic */
-                                if (documentNumber.startsWith("784-")) {
-                                     form.querySelector("#ddlResidenceStatus").value = "UNITED ARAB EMIRATES";
-                                }
+                            /* Residence Status Logic */
+                            if (documentNumber.startsWith("784-")) {
+                                setVal("#ddlResidenceStatus", "UNITED ARAB EMIRATES");
+                            }
 
                             /* Gender */
                             let genderValue = (mrzData.gender || "").toUpperCase();
@@ -4617,7 +4610,24 @@ function validateIdNumber($form, isSubmit = false) {
                             }
 
                             /* Nationality - match 3-letter ISO code against loaded select options */
-                                        let nationalityCode = (mrzData.nationality || "").trim().toUpperCase();
+                            /* ISO3 alias map: correct common model mistakes before matching */
+                            const iso3Aliases = {
+                                'SLK': 'LKA', // Sri Lanka (wrong model output)
+                                'SRI': 'LKA', // Sri Lanka (abbreviated)
+                                'UAE': 'ARE', // United Arab Emirates
+                                'KSA': 'SAU', // Saudi Arabia
+                                'UK':  'GBR', // United Kingdom
+                                'BRI': 'GBR', // British
+                                'CHN': 'CHN', // China (correct, keep)
+                                'DOR': 'DOM', // Dominican Republic
+                                'NEP': 'NPL', // Nepal
+                                'SWI': 'CHE', // Switzerland
+                                'GER': 'DEU', // Germany
+                                'HOL': 'NLD', // Netherlands
+                                'SPA': 'ESP', // Spain
+                            };
+                            let nationalityCode = (mrzData.nationality || "").trim().toUpperCase();
+                            nationalityCode = iso3Aliases[nationalityCode] || nationalityCode;
 
                                     if (nationalityCode) {
                                         let natSelect = form.querySelector("#nationality");
@@ -4670,7 +4680,7 @@ function validateIdNumber($form, isSubmit = false) {
                             /* Dates - use flatpickr setDate when available, fallback to .value */
                             setFlatpickrDate("#DOB", mrzData.dob);
                             setFlatpickrDate("#expirydate", mrzData.expiry_date);
-                            setFlatpickrDate("#issueDate", mrzData.issue_date);
+                            setFlatpickrDate("#issuedate", mrzData.issue_date);
 
                             /* Final UI updates */
                             this.loading = false;
@@ -4737,16 +4747,23 @@ function validateIdNumber($form, isSubmit = false) {
                 }
             }
 
-            // Directly look up the flatpickr instance by selector and call setDate
+            // Set a date field — scoped to myOCRForm to avoid duplicate-ID conflicts with hidden form sections
             function setFlatpickrDate(selector, dateValue) {
-                const el = document.querySelector(selector);
-                if (!el) { console.warn('setFlatpickrDate: element not found', selector); return; }
-                if (!dateValue) { if (el._flatpickr) el._flatpickr.clear(); return; }
+                const scope = document.getElementById("myOCRForm") || document;
+                const el = scope.querySelector(selector);
+                if (!el) { console.warn('setFlatpickrDate: element not found in myOCRForm', selector); return; }
+                if (!dateValue) { try { if (el._flatpickr) el._flatpickr.clear(); else el.value = ""; } catch(e) {} return; }
                 if (el._flatpickr) {
-                    el._flatpickr.setDate(dateValue, true, "Y-m-d");
-                    console.log(`setFlatpickrDate: set ${selector} →`, dateValue);
+                    try {
+                        el._flatpickr.setDate(dateValue, false, "Y-m-d"); // false = don't trigger onChange/calendar open
+                        console.log(`setFlatpickrDate: set ${selector} →`, dateValue);
+                    } catch(e) {
+                        // Fallback: set value directly on the alt input if flatpickr internal render fails
+                        if (el._flatpickr.altInput) el._flatpickr.altInput.value = dateValue;
+                        else el.value = dateValue;
+                        console.warn(`setFlatpickrDate fallback for ${selector}:`, e.message);
+                    }
                 } else {
-                    // Plain text input fallback
                     el.value = dateValue;
                     console.log(`setFlatpickrDate (plain): set ${selector} →`, dateValue);
                 }
