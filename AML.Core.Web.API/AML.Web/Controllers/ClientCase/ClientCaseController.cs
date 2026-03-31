@@ -24,6 +24,7 @@ using AML.Web.Helper;
 using AutoMapper;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
@@ -65,10 +66,11 @@ namespace AML.Web.Controllers.ClientCase
         private string culture = CultureInfo.CurrentCulture.Name;
         private IKycService _kycService;
         private ICountryService _countryService;
+        private readonly IWebHostEnvironment _env;
         public ClientCaseController(IMapper mapper,
             IToastNotification toastNotification, IHttpClientHandler clientHandler, IConfiguration configuration, IKycService kycService, ICountryService countryService,
             ICustomerCaseService customerCaseService, IViewRenderService viewRenderService, IExportDataService exportService, ICommonService commonService, ICustomerScreeningService CustomerScreeningService,
-            IFileUploader fileUploader, RiskAPIController riskAPIController)
+            IFileUploader fileUploader, RiskAPIController riskAPIController, IWebHostEnvironment env)
         {
             _mapper = mapper;
             _toastNotification = toastNotification;
@@ -89,6 +91,7 @@ namespace AML.Web.Controllers.ClientCase
             baseC6URL = clientDetails?.C6BaseUrl;
             _kycService = kycService;
             _countryService = countryService;
+            _env = env;
             //base6URL = configuration.GetSection("C6BaseApiUrl").GetSection("BaseUrl").Value;
             //baseC6URL = configuration.GetSection("C6BaseApiUrl").GetSection("BaseUrl").Value;
             //_c6Username = _configuration.GetSection("C6BaseApiUrl:Username").Value;
@@ -259,7 +262,7 @@ namespace AML.Web.Controllers.ClientCase
                                         }
                                         else
                                         {
-                                            excelDetails.ScreeningStatus = "Approved";
+                                            excelDetails.ScreeningStatus = "Auto";
                                             //_toastNotification.AddInfoToastMessage(string.Concat("Customer Approved for ", excelDetails.LastName, ". \n"));
                                             //resultString = string.Concat(resultString, "Customer Approved for ", x.FirstName, " ", x.LastName, ". \n");
                                         }
@@ -318,7 +321,7 @@ namespace AML.Web.Controllers.ClientCase
                                     }
                                     else
                                     {
-                                        excelDetails.ScreeningStatus = "Approved";
+                                        excelDetails.ScreeningStatus = "Auto";
                                         //_toastNotification.AddInfoToastMessage(string.Concat("Customer Approved for ", x.LastName, ". \n"));
                                         //resultString = string.Concat(resultString, "Customer Approved for ", x.FirstName, " ", x.LastName, ". \n");
                                     }
@@ -328,9 +331,9 @@ namespace AML.Web.Controllers.ClientCase
 
 
                                     //To check if risk assessment is enabled for the client.
-                                    var results = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(_documentUploadModel.ClientId));
-                                    if (results != null)
-                                    {
+                                    //var results = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(_documentUploadModel.ClientId));
+                                    //if (results != null)
+                                    ////{
                                         var str1 = _kycService.GetRiskLovId(_mapper.Map<KycIndividualDTO>(excelDetails), corpModel, "I", culture, _documentUploadModel.ClientId);
                                         if (str1.Result == null)
                                         {
@@ -340,7 +343,7 @@ namespace AML.Web.Controllers.ClientCase
                                             _toastNotification.AddWarningToastMessage("Unable to calculate risk due to insufficient data.");
                                             return View("Create", "Case");
                                         }
-                                        var spStr1 = str1.Result.Split('�');
+                                        var spStr1 = str1.Result.Split('Ø');
                                         var proflovId = spStr1[0];
                                         var natlovId = spStr1[1];
                                         var reslovId = spStr1[5];
@@ -357,7 +360,7 @@ namespace AML.Web.Controllers.ClientCase
                                             _toastNotification.AddWarningToastMessage("Unable to calculate risk due to insufficient data.");
                                             return View("Create", "Case");
                                         }
-                                        var spStr = str.Result.Split('�');
+                                        var spStr = str.Result.Split('Ø');
                                         var profId = spStr[0];
                                         var natId = spStr[1];
                                         var resId = spStr[5];
@@ -482,7 +485,7 @@ namespace AML.Web.Controllers.ClientCase
 
                                         Console.WriteLine($"Risk assessment result: {JsonConvert.SerializeObject(riskModel, Formatting.Indented)}");
 
-                                    }
+                                    //}
                                 
                                 
                             }
@@ -602,12 +605,14 @@ namespace AML.Web.Controllers.ClientCase
                                         bool isOkToProceed = _commonService.CustomerScreeningCallOnlySanction(apiResultModel, excelDetails.Id, baseURL, base6URL, _documentUploadModel, "CORPORATE", body, checkThreshold);
                                         if (!isOkToProceed)
                                         {
-                                            _toastNotification.AddWarningToastMessage(string.Concat("Customer blocked, Case created for ", excelDetails.EntityName, ". \n"));
+                                            excelDetails.ScreeningStatus = "Pending";
+                                            //_toastNotification.AddWarningToastMessage(string.Concat("Customer blocked, Case created for ", excelDetails.EntityName, ". \n"));
                                             //resultString = string.Concat(resultString, "Customer blocked, Case created for ", x.FirstName, " ", x.LastName, ". \n");
                                         }
                                         else
                                         {
-                                            _toastNotification.AddInfoToastMessage(string.Concat("Customer Approved for ", excelDetails.EntityName, ". \n"));
+                                            excelDetails.ScreeningStatus = "Auto";
+                                            //_toastNotification.AddInfoToastMessage(string.Concat("Customer Approved for ", excelDetails.EntityName, ". \n"));
                                             //resultString = string.Concat(resultString, "Customer Approved for ", x.FirstName, " ", x.LastName, ". \n");
                                         }
                                     }
@@ -634,7 +639,7 @@ namespace AML.Web.Controllers.ClientCase
                                     }
                                     else
                                     {
-                                        excelDetails.ScreeningStatus = "Approved";
+                                        excelDetails.ScreeningStatus = "Auto";
                                         //_toastNotification.AddInfoToastMessage(string.Concat("Customer Approved for ", x.LastName, ". \n"));
                                         //resultString = string.Concat(resultString, "Customer Approved for ", x.FirstName, " ", x.LastName, ". \n");
                                     }
@@ -642,10 +647,10 @@ namespace AML.Web.Controllers.ClientCase
                                     CorporateKycDTO corpModel = new CorporateKycDTO();
 
                                     //To check if risk assessment is enabled for the client.
-                                    var result = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(_documentUploadModel.ClientId));
+                                    //var result = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(_documentUploadModel.ClientId));
 
-                                    if (result != null)
-                                    {
+                                    //if (result != null)
+                                    //{
                                         Console.WriteLine("Generate risk");
 
 
@@ -660,7 +665,7 @@ namespace AML.Web.Controllers.ClientCase
                                             _toastNotification.AddWarningToastMessage("Unable to calculate risk due to insufficient data.");
                                             return RedirectToAction("Create", "Case");
                                         }
-                                        var spStr1 = str1.Result.Split('�');
+                                        var spStr1 = str1.Result.Split('Ø');
                                         var entlovId = spStr1[2];
                                         var buslovId = spStr1[4];
                                         var incorplovId = spStr1[3];
@@ -684,7 +689,7 @@ namespace AML.Web.Controllers.ClientCase
                                             _toastNotification.AddWarningToastMessage("Unable to calculate risk due to insufficient data.");
                                             return RedirectToAction("Create", "Case");
                                         }
-                                        var spStr = str.Result.Split('�');
+                                        var spStr = str.Result.Split('Ø');
                                         var entId = spStr[2];
                                         var busId = spStr[4];
                                         var incorpId = spStr[3];
@@ -894,7 +899,7 @@ namespace AML.Web.Controllers.ClientCase
                                             Console.WriteLine($"generated risk for customer: {JsonConvert.SerializeObject(riskModel, Formatting.Indented)}");
                                             Console.WriteLine($"Finished generating risk for customer: {JsonConvert.SerializeObject(riskResult, Formatting.Indented)}");
                                         }
-                                    }
+                                    //}
 
 
                                 
@@ -1338,7 +1343,7 @@ namespace AML.Web.Controllers.ClientCase
 
             if (type == "I")
             {
-                filePath = Path.Combine(Directory.GetCurrentDirectory(),
+                filePath = Path.Combine(_env.ContentRootPath,
                                         "Files",
                                         "Data-Customer Bulk upload Sample.xlsx");
 
@@ -1346,7 +1351,7 @@ namespace AML.Web.Controllers.ClientCase
             }
             else
             {
-                filePath = Path.Combine(Directory.GetCurrentDirectory(),
+                filePath = Path.Combine(_env.ContentRootPath,
                                         "Files",
                                         "Data-Corporate Bulk upload Sample.xlsx");
 
@@ -1407,8 +1412,14 @@ namespace AML.Web.Controllers.ClientCase
 
                     var professionList = profession.Select(x => x.Value).ToList();
 
+                    Console.WriteLine("Profession count: " + professionList.Count);
+                    Console.WriteLine("Resident count: " + residentStatusesList.Count);
+                    Console.WriteLine("Product count: " + productTypeList.Count);
+                    Console.WriteLine("Delivery count: " + deliveryChannelsList.Count);
+                    Console.WriteLine("Mode Of  count: " + modeOfPaymentList.Count);
+
                     AddDropdown(package, worksheet, "I2:I51", professionList, "DropdownData", 2);
-                    AddDropdown(package, worksheet, "J2:J51", residentStatusesList, "DropdownData", 3);
+                    AddDropdown(package, worksheet, "J2:J51", NationalitiesList, "DropdownData", 3);
                     AddDropdown(package, worksheet, "K2:K51", productTypeList, "DropdownData", 4);
                     AddDropdown(package, worksheet, "L2:L51", deliveryChannelsList, "DropdownData", 5);
                     AddDropdown(package, worksheet, "M2:M51", modeOfPaymentList, "DropdownData", 6);
@@ -1448,23 +1459,30 @@ namespace AML.Web.Controllers.ClientCase
                      fileName);
             }
         }
-
-
-        private void AddDropdown(ExcelPackage package,ExcelWorksheet worksheet,string cellRange,List<string> values,string hiddenSheetName,int hiddenColumn)
+        private void AddDropdown(ExcelPackage package, ExcelWorksheet worksheet,
+    string cellRange, List<string> values, string hiddenSheetName, int hiddenColumn)
         {
-            // Create or get hidden sheet
+            values = values
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct()
+                .ToList();
+
+            if (!values.Any()) return;
+
             var hiddenSheet = package.Workbook.Worksheets[hiddenSheetName]
                               ?? package.Workbook.Worksheets.Add(hiddenSheetName);
 
             hiddenSheet.Hidden = eWorkSheetHidden.VeryHidden;
 
-            // Add values into hidden sheet column
+            // ✅ Clear old data
+            hiddenSheet.Cells[1, hiddenColumn, 500, hiddenColumn].Clear();
+
             for (int i = 0; i < values.Count; i++)
             {
                 hiddenSheet.Cells[i + 1, hiddenColumn].Value = values[i];
             }
 
-            // Create validation
             var validation = worksheet.DataValidations.AddListValidation(cellRange);
 
             string columnLetter = GetExcelColumnLetter(hiddenColumn);
@@ -1475,6 +1493,32 @@ namespace AML.Web.Controllers.ClientCase
             validation.ShowErrorMessage = true;
             validation.Error = "Please select value from dropdown";
         }
+
+        //private void AddDropdown(ExcelPackage package,ExcelWorksheet worksheet,string cellRange,List<string> values,string hiddenSheetName,int hiddenColumn)
+        //{
+        //    // Create or get hidden sheet
+        //    var hiddenSheet = package.Workbook.Worksheets[hiddenSheetName]
+        //                      ?? package.Workbook.Worksheets.Add(hiddenSheetName);
+
+        //    hiddenSheet.Hidden = eWorkSheetHidden.VeryHidden;
+
+        //    // Add values into hidden sheet column
+        //    for (int i = 0; i < values.Count; i++)
+        //    {
+        //        hiddenSheet.Cells[i + 1, hiddenColumn].Value = values[i];
+        //    }
+
+        //    // Create validation
+        //    var validation = worksheet.DataValidations.AddListValidation(cellRange);
+
+        //    string columnLetter = GetExcelColumnLetter(hiddenColumn);
+
+        //    validation.Formula.ExcelFormula =
+        //        $"{hiddenSheetName}!${columnLetter}$1:${columnLetter}${values.Count}";
+
+        //    validation.ShowErrorMessage = true;
+        //    validation.Error = "Please select value from dropdown";
+        //}
         private string GetExcelColumnLetter(int columnNumber)
         {
             int dividend = columnNumber;

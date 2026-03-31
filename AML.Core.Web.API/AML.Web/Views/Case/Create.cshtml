@@ -2781,8 +2781,76 @@ hasSearched: false,
 
             </div>
         </div> *@
+        <div x-data="{ isExcelUploadModalOpen: @Model.ShowExcelUploadModal.ToString().ToLower() }" x-show="isExcelUploadModalOpen"
+     x-cloak
+     id="isExcelUploadModalOpen"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+     x-transition>
 
-        <div x-data="{ isExcelUploadModalOpen: @Model.ShowExcelUploadModal.ToString().ToLower() }" id="isExcelUploadModalOpen"
+    <!-- Modal -->
+    <div @@click.away="closeUploadModalOpen()"
+         class="bg-white rounded-xl shadow-xl w-full max-w-7xl">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b">
+
+            <h2 class="text-lg font-semibold text-gray-800">
+                Upload Details
+            </h2>
+
+            <button @@click="closeUploadModalOpen()"
+                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm">
+                Close
+            </button>
+
+        </div>
+
+        <!-- Table -->
+                <div class="max-h-[400px] overflow-y-auto pb-6">
+
+            <table class="w-full text-sm text-left">
+
+                <thead class="bg-gray-100 text-gray-600 sticky top-0">
+                    <tr>
+                        <th class="px-6 py-3">Customer ID</th>
+                        <th class="px-6 py-3">Full Name</th>
+                        <th class="px-6 py-3">Country</th>
+                        <th class="px-6 py-3">DOB</th>
+                        <th class="px-6 py-3">Status</th>
+                    </tr>
+                </thead>
+
+                <tbody id="uploadexcelBody" class="divide-y">
+
+                    @foreach (var row in Model.ExcelUploadedData)
+                    {
+                        <tr>
+
+                            <td class="px-6 py-3">@row.CustomerID</td>
+                            <td class="px-6 py-3">@row.LastName</td>
+                            <td class="px-6 py-3">@row.Nationality</td>
+                            <td class="px-6 py-3">@row.DOB</td>   
+                            <td class="px-6 py-3">
+                                        <span class="flex w-full items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold
+                                            @(row.ScreeningStatus == "Pending"
+                                                          ? "bg-yellow-100 text-yellow-800"
+                                                          : "bg-green-100 text-green-800")">
+                                        @row.ScreeningStatus
+                                    </span>
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+</div>
+        @* <div x-data="{ isExcelUploadModalOpen: @Model.ShowExcelUploadModal.ToString().ToLower() }" id="isExcelUploadModalOpen"
              x-show="isExcelUploadModalOpen"
              x-cloak
              class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md transition-all duration-200"
@@ -2827,7 +2895,7 @@ hasSearched: false,
                                     
                                     
                                     @* //<th class="px-6 py-4">Action</th> *@
-                                </tr>
+                               @*  </tr>
                             </thead>
 
                             <tbody id="uploadexcelBody" class="divide-y divide-slate-50">
@@ -2850,7 +2918,7 @@ hasSearched: false,
                 </div>
 
             </div>
-        </div>
+        </div> *@
 
     @* <div x-show="isDuplicateModalOpen" x-cloak id="isDuplicateModalOpen"
          class="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
@@ -3939,9 +4007,10 @@ function validateIdNumber($form, isSubmit = false) {
                                     const t = text.toLowerCase().trim();
 
                                     if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
-                                    if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
+                                    if (t.includes('approved')) return 'bg-green-700 text-white';     // dark green
+                                    if (t.includes('auto')) return 'bg-green-100 text-green-800'; 
                                     //if (t.includes('auto')) return     'bg-amber-100 text-amber-800';
-                                    if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
+                                    //if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
                                     if (t.includes('transfer')) return 'bg-green-100 text-green-800';
                                     if (t.includes('rejected')) return 'bg-red-100 text-red-800';
 
@@ -3997,7 +4066,11 @@ function validateIdNumber($form, isSubmit = false) {
 
                                 let createdDate = new Date(item.createdOn);
                                 const created = formatDateTime(item.createdOn);
+                                               const isShareholder = !(item.type === 'Individual' || item.type === 'Corporate');
 
+            const processUrl = isShareholder
+                ? `/report/ViewShareholderCaseDetails?id=${item.customerId}&type=1`
+                : `/report/ViewIndividualCaseDetail?id=${item.customerId}&type=${item.customerType}`;
                                     let row = `
                                   <tr class="hover:bg-slate-50/50 transition-colors">
                                     <td class="px-6 py-6 font-bold text-slate-900">${item.customerId}</td>
@@ -4026,7 +4099,8 @@ function validateIdNumber($form, isSubmit = false) {
                                     </td>
 
                                     <td class="px-6 py-6">
-                                                    <a href="/report/ViewIndividualCaseDetail?id=${item.customerId}&type=${item.customerType}"
+                                      <a href="${processUrl}"
+                                                  onclick="${isShareholder ? `setShareholderViewFlag()` : ``}"
                                            target="_blank"
                                            rel="noopener noreferrer"
                                            class="text-blue-600 font-extrabold hover:underline">
@@ -5815,7 +5889,9 @@ document.querySelectorAll('.shareholder-tab').forEach(btn => {
                                     static: true
                                 });
             }
-
+                        function setShareholderViewFlag() {
+                localStorage.setItem("hideBackButton", "true");
+            }
             
         </script>
 </body>

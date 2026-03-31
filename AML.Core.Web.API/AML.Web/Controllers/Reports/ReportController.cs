@@ -1879,7 +1879,7 @@ public IActionResult CustomerList(DataTableModel model,
                              {
                                  CustomerId = res.CustomerID,
                                  CreationDate = Convert.ToDateTime(res.CreatedOn).ToString("dd/MM/yyyy HH:mm:ss"),
-                                 UpdationDate = Convert.ToDateTime(res.UpdatedOnDB).ToString("dd/MM/yyyy HH:mm:ss"),
+                                 UpdationDate = Convert.ToDateTime(res.UpdatedOn).ToString("dd/MM/yyyy HH:mm:ss"),
                                  CustomerType = res.CustomerType == "I" ? "Individual" : "Corporate",
                                  CustomerName = res.FirstName + " " + res.LastName,
                                  CaseStatusChangeReason = res.CaseChangeStatus,
@@ -3743,6 +3743,8 @@ public IActionResult CustomerList(DataTableModel model,
 
             var returnUrl = HttpContext.Session.GetString("ReturnUrl");
             ViewBag.ReturnUrl = returnUrl;
+
+            HttpContext.Session.SetString("ShareholderReturnUrl", HttpContext.Request.Path + HttpContext.Request.QueryString);
 
             if (string.IsNullOrWhiteSpace(dob) || dob == "1/1/0001 12:00:00 AM")
             {
