@@ -86,11 +86,7 @@ namespace AML.Web.Controllers.Ocr
 
                 _logger.LogInformation($"[OCR] Calling RunPod API with {base64Images.Count} images...");
                 var extractedData = await CallRunPodOpenAiApi(base64Images);
-<<<<<<< HEAD
                 Console.WriteLine(JsonConvert.SerializeObject(extractedData, Formatting.Indented));
-=======
-                _logger.LogInformation("[OCR] Successfully received extraction result.");
->>>>>>> 2677cfc92ab8cca49cda6f13b76a5d905b216946
                 return Ok(extractedData);
             }
             catch (Exception ex)
@@ -160,11 +156,8 @@ namespace AML.Web.Controllers.Ocr
 
         private async Task<object> CallRunPodOpenAiApi(List<string> base64Images)
         {
-<<<<<<< HEAD
-=======
             var endpointId = _configuration["RunPod:EndpointId"];
             var apiKey = _configuration["RunPod:ApiKey"];
->>>>>>> 2677cfc92ab8cca49cda6f13b76a5d905b216946
 
             Console.WriteLine($"endpointId: {endpointId}");
             Console.WriteLine($"apiKey: {apiKey}");

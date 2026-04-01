@@ -81,19 +81,21 @@ namespace AML.Web.Controllers
             ViewBag.corporatecustomertype = CorporateScreeningCount;
           
             var indvidualcount = _reportService.GetRiskCount(1, clientId);
-            ViewBag.indvidualval = indvidualcount[0].total_count;
+            var indCountObj = indvidualcount?.FirstOrDefault();
+            ViewBag.indvidualval = indCountObj?.total_count ?? 0;
           
 
 			var corporatecount = _reportService.GetRiskCount(2, clientId);
-            ViewBag.corporateval = corporatecount[0].total_count;
+            var corpCountObj = corporatecount?.FirstOrDefault();
+            ViewBag.corporateval = corpCountObj?.total_count ?? 0;
             //var bankcount = _reportService.GetRiskCount(3, clientId);
             //ViewBag.bankval = bankcount[0].total_count;
             //var vendorcount = _reportService.GetRiskCount(4, clientId);
             //ViewBag.vendorval = vendorcount[0].total_count;
 
-            ViewBag.totalhighrisk = indvidualcount[0].high_risk_count + corporatecount[0].high_risk_count;
-            ViewBag.totallowrisk= indvidualcount[0].low_risk_count + corporatecount[0].low_risk_count;
-            ViewBag.totalmediumrisk = indvidualcount[0].medium_risk_count + corporatecount[0].medium_risk_count;
+            ViewBag.totalhighrisk = (indCountObj?.high_risk_count ?? 0) + (corpCountObj?.high_risk_count ?? 0);
+            ViewBag.totallowrisk= (indCountObj?.low_risk_count ?? 0) + (corpCountObj?.low_risk_count ?? 0);
+            ViewBag.totalmediumrisk = (indCountObj?.medium_risk_count ?? 0) + (corpCountObj?.medium_risk_count ?? 0);
             //for chartdata
 
             var Apprcount = _reportService.GetCustomerCaseCount(2, clientId);
@@ -118,7 +120,7 @@ namespace AML.Web.Controllers
 
             ViewBag.totalcount = totalcount;
 
-            var totalriskcount = indvidualcount[0].total_count + corporatecount[0].total_count;
+            var totalriskcount = (indCountObj?.total_count ?? 0) + (corpCountObj?.total_count ?? 0);
 
 
             ViewBag.Unclassifiedriskcount = totalcount - totalriskcount;
