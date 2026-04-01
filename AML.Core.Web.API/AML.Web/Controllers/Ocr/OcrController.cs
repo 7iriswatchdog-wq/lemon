@@ -18,6 +18,8 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace AML.Web.Controllers.Ocr
 {
@@ -83,6 +85,7 @@ namespace AML.Web.Controllers.Ocr
                 }
 
                 var extractedData = await CallRunPodOpenAiApi(base64Images);
+                Console.WriteLine(JsonConvert.SerializeObject(extractedData, Formatting.Indented));
                 return Ok(extractedData);
             }
             catch (Exception ex)
@@ -146,10 +149,16 @@ namespace AML.Web.Controllers.Ocr
 
         private async Task<object> CallRunPodOpenAiApi(List<string> base64Images)
         {
-            
 
+            Console.WriteLine($"endpointId: {endpointId}");
+            Console.WriteLine($"apiKey: {apiKey}");
+            Console.WriteLine("endpointId: " + endpointId);
+            Console.WriteLine("apiKey: " + apiKey);
+            Console.WriteLine("endpointId: {0}", endpointId);
+            Console.WriteLine("apiKey: {0}", apiKey);
             if (string.IsNullOrEmpty(endpointId) || string.IsNullOrEmpty(apiKey))
             {
+                Console.WriteLine("RunPod EndpointId or ApiKey is not configured.");
                 throw new InvalidOperationException("RunPod EndpointId or ApiKey is not configured.");
             }
 
