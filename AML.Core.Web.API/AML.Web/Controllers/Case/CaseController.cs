@@ -961,9 +961,9 @@ namespace AML.Web.Controllers.Case
                             CorporateKycDTO corpModel = new CorporateKycDTO();
                            
                             //To check if risk assessment is enabled for the client.
-                            //var results = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(model.ClientId));
-                            //if (results != null)
-                            //{
+                            var results = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(model.ClientId));
+                            if (results != null)
+                            {
                                 var str1 = _kycService.GetRiskLovId(_mapper.Map<KycIndividualDTO>(model), corpModel, "I", culture, model.ClientId);
                                 if (str1.Result == null)
                                 {
@@ -1109,7 +1109,7 @@ namespace AML.Web.Controllers.Case
 
                                 Console.WriteLine($"Risk assessment result: {JsonConvert.SerializeObject(riskModel, Formatting.Indented)}");
                                 return View(model);
-                            //}
+                            }
                             //return RedirectToAction("Create");
                         }
                         catch (Exception ex)

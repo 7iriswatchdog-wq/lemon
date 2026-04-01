@@ -30,14 +30,10 @@ namespace AML.Web.Controllers.Ocr
         private readonly IConfiguration _configuration;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<OcrController> _logger;
-        private string endpointId = string.Empty;
-        private string apiKey = string.Empty;
 
         public OcrController(IConfiguration configuration, IHttpClientFactory httpClientFactory, ILogger<OcrController> logger)
         {
             _configuration = configuration;
-            endpointId = configuration.GetSection("RunPod").GetSection("EndpointId").Value;
-            apiKey = configuration.GetSection("RunPod").GetSection("ApiKey").Value;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
         }
@@ -53,12 +49,15 @@ namespace AML.Web.Controllers.Ocr
             try
             {
                 var base64Images = new List<string>();
+                _logger.LogInformation($"[OCR] Starting upload for {files.Count} file(s)");
 
                 foreach (var file in files)
                 {
                     if (file.Length == 0) continue;
 
                     var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                    _logger.LogInformation($"[OCR] Processing file: {file.FileName} ({extension}, {file.Length} bytes)");
+                    
                     using var ms = new MemoryStream();
                     await file.CopyToAsync(ms);
                     ms.Position = 0;
@@ -66,6 +65,7 @@ namespace AML.Web.Controllers.Ocr
                     if (extension == ".pdf")
                     {
                         var pdfBase64List = ProcessPdf(ms.ToArray());
+                        _logger.LogInformation($"[OCR] PDF converted to {pdfBase64List.Count} image(s)");
                         base64Images.AddRange(pdfBase64List);
                     }
                     else if (extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".webp")
@@ -75,7 +75,7 @@ namespace AML.Web.Controllers.Ocr
                     }
                     else
                     {
-                        _logger.LogWarning($"Unsupported file format: {extension}");
+                        _logger.LogWarning($"[OCR] Unsupported file format: {extension}");
                     }
                 }
 
@@ -84,14 +84,25 @@ namespace AML.Web.Controllers.Ocr
                     return BadRequest(new { error = "No valid images or PDFs found to process." });
                 }
 
+                _logger.LogInformation($"[OCR] Calling RunPod API with {base64Images.Count} images...");
                 var extractedData = await CallRunPodOpenAiApi(base64Images);
+<<<<<<< HEAD
                 Console.WriteLine(JsonConvert.SerializeObject(extractedData, Formatting.Indented));
+=======
+                _logger.LogInformation("[OCR] Successfully received extraction result.");
+>>>>>>> 2677cfc92ab8cca49cda6f13b76a5d905b216946
                 return Ok(extractedData);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing OCR upload");
-                return StatusCode(500, new { error = "Internal server error during OCR processing." });
+                return StatusCode(500, new 
+                { 
+                    error = "Internal server error during OCR processing.",
+                    exception = ex.Message,
+                    stackTrace = ex.StackTrace,
+                    innerException = ex.InnerException?.Message
+                });
             }
         }
 
@@ -149,6 +160,11 @@ namespace AML.Web.Controllers.Ocr
 
         private async Task<object> CallRunPodOpenAiApi(List<string> base64Images)
         {
+<<<<<<< HEAD
+=======
+            var endpointId = _configuration["RunPod:EndpointId"];
+            var apiKey = _configuration["RunPod:ApiKey"];
+>>>>>>> 2677cfc92ab8cca49cda6f13b76a5d905b216946
 
             Console.WriteLine($"endpointId: {endpointId}");
             Console.WriteLine($"apiKey: {apiKey}");
@@ -217,8 +233,20 @@ namespace AML.Web.Controllers.Ocr
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
     "RULE 6 — GENDER & NATIONALITY\n" +
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-    "  - gender: Return 'M' or 'F' only. The label may say 'Sex', 'Gender', 'الجنس', 'M/F' etc.\n" +
-    "  - nationality: Return the 3-letter ISO 3166-1 alpha-3 country code (e.g. 'IND', 'PAK', 'ARE', 'GBR', 'USA', 'PHL', 'EGY'). If the document shows the full country name (e.g. 'INDIAN', 'PAKISTANI', 'BRITISH'), convert it to the correct 3-letter code.\n\n" +
+    "  - gender: Return ONLY 'M' or 'F'. The label may say 'Sex', 'Gender', 'الجنس', 'Sexo', etc.\n" +
+    "  - nationality: ALWAYS return the correct 3-letter ISO 3166-1 alpha-3 code.\n" +
+    "    If the document shows a nationality adjective or non-standard code, convert it:\n" +
+    "    ✗ IMPORTANT: NEVER return non-standard or hallucinated codes like 'SLK', 'UAE', 'KSA', 'UK', 'SRI'. These are WRONG.\n" +
+    "    ✗ SRI LANKA SPECIAL RULE: Standard SRI LANKAN documents must ALWAYS map to 'LKA'. Never 'SRI', never 'SLK'.\n" +
+    "    Correct reference table for common documents:\n" +
+    "      INDIAN / IND → IND       SRI LANKAN / SRI / SLK → LKA   PAKISTANI / PAK → PAK\n" +
+    "      FILIPINO / FIL → PHL     BENGALI / BANGLADESHI → BGD      NEPALI → NPL\n" +
+    "      EMIRATI / UAE / ARB → ARE  SAUDI / KSA → SAU              EGYPTIAN / EGY → EGY\n" +
+    "      BRITISH / UK / GBR → GBR  AMERICAN / USA → USA            CHINESE → CHN\n" +
+    "      GERMAN → DEU              FRENCH → FRA                    SPANISH → ESP\n" +
+    "      JORDANIAN → JOR           LEBANESE → LBN                  SYRIAN → SYR\n" +
+    "      ETHIOPIAN → ETH           NIGERIAN → NGA                  KENYAN → KEN\n" +
+    "      INDONESIAN → IDN          MALAYSIAN → MYS                 THAI → THA\n\n" +
 
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
     "RULE 7 — PROFESSION, PROFESSION TYPE & EMPLOYER\n" +
@@ -291,12 +319,22 @@ namespace AML.Web.Controllers.Ocr
             };
 
             var jsonPayload = JsonSerializer.Serialize(payload);
+            _logger.LogInformation($"[OCR] RunPod Request Payload Size: {jsonPayload.Length} bytes");
+            _logger.LogInformation($"[OCR] Model: {payload.model}, Max Tokens: {payload.max_tokens}");
+            
             var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
             var response = await client.PostAsync(baseUrl, content);
-            response.EnsureSuccessStatusCode();
+            _logger.LogInformation($"[OCR] RunPod Response Status: {response.StatusCode}");
 
             var responseJson = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation($"[OCR] Raw RunPod Response Body: {responseJson}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception($"RunPod API Error ({response.StatusCode}): {responseJson}");
+            }
+
             using var document = JsonDocument.Parse(responseJson);
 
             var rawMessage = document.RootElement
@@ -311,10 +349,13 @@ namespace AML.Web.Controllers.Ocr
 
             try
             {
-                return JsonSerializer.Deserialize<object>(cleanJson);
+                var result = JsonSerializer.Deserialize<object>(cleanJson);
+                _logger.LogInformation("[OCR] JSON parsed successfully.");
+                return result;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"[OCR] Failed to parse cleaned JSON. Raw cleaned content: {cleanJson}");
                 // Fallback: return the raw cleaned string if it fails to parse as an object
                 return new { raw_output = cleanJson };
             }
