@@ -24,5 +24,6 @@ namespace AML.ViewModel.ViewModels.ProliferationFinance
         public System.Collections.Generic.List<AML.DTO.DTO.ProliferationFinance.UAEControlListDTO> MatchedChemicals { get; set; } = new System.Collections.Generic.List<AML.DTO.DTO.ProliferationFinance.UAEControlListDTO>();
         public System.Collections.Generic.List<AML.DTO.DTO.ProliferationFinance.PFSearchResultsMongoDTO.PF_Hit> MongoHits { get; set; } = new System.Collections.Generic.List<AML.DTO.DTO.ProliferationFinance.PFSearchResultsMongoDTO.PF_Hit>();
         public System.Collections.Generic.List<AML.DTO.DTO.CaseComment.CaseCommentDTO> Comments { get; set; } = new System.Collections.Generic.List<AML.DTO.DTO.CaseComment.CaseCommentDTO>();
+        public string UserGroupName { get; set; }
     }
 }

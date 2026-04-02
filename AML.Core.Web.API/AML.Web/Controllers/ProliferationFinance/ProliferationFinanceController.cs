@@ -77,7 +77,7 @@ namespace AML.Web.Controllers.ProliferationFinance
             IHttpClientHandler clientHandler,
              IKycService kycService,
             IMapper mapper,
-            IToastNotification toastNotification, RiskAPIController riskAPIController, ILovMasterService lovMasterService, IRiskService RiskService)
+            IToastNotification toastNotification, RiskAPIController riskAPIController, ILovMasterService lovMasterService, IRiskService RiskService, IUserGroupService userGroupService)
         {
             _proliferationFinanceService = proliferationFinanceService;
             _httpContextAccessor = httpContextAccessor;
@@ -93,6 +93,7 @@ namespace AML.Web.Controllers.ProliferationFinance
             _riskAPIController = riskAPIController;
             _lovMasterService = lovMasterService;
             _riskService = RiskService;
+            _UserGroupService = userGroupService;
         }
 
         public IActionResult CaseCreation()
@@ -128,6 +129,14 @@ namespace AML.Web.Controllers.ProliferationFinance
 
                     if (!string.IsNullOrEmpty(status) && status != "0")
                         data = data.FindAll(x => x.Status == status);
+
+                    // Filter out cases submitted to senior management for regular users
+                    var GroupId = _clientHandler.GetGroupId();
+                    var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+                    if (_UserGroupModel.Name != "Senior Management")
+                    {
+                        data = data.FindAll(x => x.Status != "Submit to Senior Management");
+                    }
 
                     return Json(new { success = true, data = data });
                 }
@@ -369,6 +378,10 @@ namespace AML.Web.Controllers.ProliferationFinance
                     model.MongoHits = mongoData.Hits;
                 }
 
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+                model.UserGroupName = _UserGroupModel.Name;
+
                 model.Comments = _caseCommentService.GetAllByCase(id);
 
                 return View(model);
@@ -453,6 +466,10 @@ namespace AML.Web.Controllers.ProliferationFinance
                     model.MongoHits = mongoData.Hits;
                 }
 
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+                model.UserGroupName = _UserGroupModel.Name;
+
                 model.Comments = _caseCommentService.GetAllByCase(id);
 
                 return View("Process_PDF", model);
@@ -524,8 +541,10 @@ namespace AML.Web.Controllers.ProliferationFinance
                     model.SearchHitDetails = string.Join("\n\n", uniqueSnippets);
                 }
 
-                var mongoData = _proliferationFinanceService.GetMongoSearchResults(id);
-                if (mongoData != null) model.MongoHits = mongoData.Hits;
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+                model.UserGroupName = _UserGroupModel.Name;
+
                 model.Comments = _caseCommentService.GetAllByCase(id);
 
                 string html = await _viewRenderService.RenderToStringAsync("ProliferationFinance/Process_PDF", model);
@@ -1093,7 +1112,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
 
-                            var spStr1 = str1.Result.Split('Ø');
+                            var spStr1 = str1.Result.Split('Ã˜');
                             var entlovId = spStr1[2];
                             var buslovId = spStr1[4];
                             var incorplovId = spStr1[3];
@@ -1114,7 +1133,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                             {
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
-                            var spStr = str.Result.Split('Ø');
+                            var spStr = str.Result.Split('Ã˜');
                             var entId = spStr[2];
                             var busId = spStr[4];
                             var incorpId = spStr[3];
