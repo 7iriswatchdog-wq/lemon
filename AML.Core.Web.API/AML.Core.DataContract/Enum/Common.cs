@@ -58,9 +58,11 @@ namespace AML.Core.DataContract.Enum
         Pending = 0,
         PendingCaseCreatedFromDailyScheduler = 6,
         PendingWithSeniorManagement=4,
+        WhiteListed = 7,
         Approved = 2,
         Rejected = 3,
         Auto = 5,
+        
     }
     public enum CompletedCaseStatus
     {

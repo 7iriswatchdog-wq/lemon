@@ -961,9 +961,9 @@ namespace AML.Web.Controllers.Case
                             CorporateKycDTO corpModel = new CorporateKycDTO();
                            
                             //To check if risk assessment is enabled for the client.
-                            var results = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(model.ClientId));
-                            if (results != null)
-                            {
+                            //var results = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(model.ClientId));
+                            //if (results != null)
+                            //{
                                 var str1 = _kycService.GetRiskLovId(_mapper.Map<KycIndividualDTO>(model), corpModel, "I", culture, model.ClientId);
                                 if (str1.Result == null)
                                 {
@@ -1109,7 +1109,7 @@ namespace AML.Web.Controllers.Case
 
                                 Console.WriteLine($"Risk assessment result: {JsonConvert.SerializeObject(riskModel, Formatting.Indented)}");
                                 return View(model);
-                            }
+                            //}
                             //return RedirectToAction("Create");
                         }
                         catch (Exception ex)
@@ -2778,10 +2778,15 @@ namespace AML.Web.Controllers.Case
 
                         if (!string.IsNullOrWhiteSpace(row.matchtype))
                         {
-                            var type1 = row.matchtype.ToUpper();
+                            var type1 = row.matchtype?.ToUpper() ?? string.Empty;
 
-                            if (type1.Contains("OFAC"))
-                                hasOFAC = true;
+                            // Group 1
+                            var sanctionTypes = new List<string> { "UN", "OFAC", "UAE IEC LIST", "BL", "CBWL", "INTERNAL" };
+                            if (sanctionTypes.Any(t => type1.Contains(t)))
+                            
+                                hasOFAC = true;   // You can rename this to hasSanction if needed
+                            
+                            
 
                             if (type1.Contains("KYC6"))
                                 hasKYC6 = true;
@@ -2874,6 +2879,36 @@ namespace AML.Web.Controllers.Case
                     {
 
                         rowtype = row.matchcategory;
+                        if (row.searchTypes == null || !row.searchTypes.Any())
+                            continue;
+
+                        bool hasNone = row.searchTypes.Contains("None");
+
+                        // If only None selected → treat as no selection
+                        if (hasNone && row.searchTypes.Count == 1)
+                            continue;
+
+                        // Remove None if mixed with others
+                        if (hasNone)
+                        {
+                            row.searchTypes = row.searchTypes
+                                .Where(x => x != "None")
+                                .ToList();
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(row.matchtype))
+                        {
+                            var type1 = row.matchtype.ToUpper();
+
+                            var sanctionTypes = new List<string> { "UN", "OFAC", "UAE IEC LIST", "BL", "CBWL", "INTERNAL" };
+                            if (sanctionTypes.Any(t => type1.Contains(t)))
+
+                                hasOFAC = true;   // You can rename this to hasSanction if needed
+
+
+                            if (type1.Contains("KYC6"))
+                                hasKYC6 = true;
+                        }
 
                         if (hasKYC6 && row.searchTypes.Contains("Domestic PEP"))
                         {
@@ -2979,9 +3014,9 @@ namespace AML.Web.Controllers.Case
                 if (rowtype == "INDIVIDUAL")
                 {
 
-                    var results = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(clientid));
-                    if (results != null)
-                    {
+                    //var results = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(clientid));
+                    //if (results != null)
+                    //{
                         var str1 = _kycService.GetRiskLovId(_mapper.Map<KycIndividualDTO>(model1), corpModel, "I", culture, clientid);
                         if (str1.Result == null)
                         {
@@ -3206,7 +3241,7 @@ namespace AML.Web.Controllers.Case
                         var xyz = riskResult;
 
 
-                    }
+                    //}
 
                 }
                 else
@@ -3518,7 +3553,7 @@ namespace AML.Web.Controllers.Case
                             var riskType18 = new RiskTypeListModel();
                             riskType18.Id = Convert.ToString(UAEORUNSClovId);
                             var riskItem18 = new RiskItemListModel();
-                            riskItem18.Id = UAEORUNSClovId.ToString();
+                            riskItem18.Id = UAEORUNSCId.ToString();
                             var riskItemList18 = new List<RiskItemListModel>();
                             riskItemList18.Add(riskItem18);
                             riskType18.RiskItemList = riskItemList18;

@@ -996,6 +996,8 @@ namespace AML.Web.Controllers.ProliferationFinance
                 var userId = _clientHandler.GetUserId();
                 if (request == null || request.CaseId == 0) return Json(new { success = false, message = "Invalid request" });
                 dynamic modelrisk = null;
+                int Id = _customerCaseService.GetCaseId(request.corporateId);
+                CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(Id);
                 foreach (var hit in request.Hits)
                 {
                     if (hit.Decision != "")
@@ -1003,84 +1005,87 @@ namespace AML.Web.Controllers.ProliferationFinance
                         _proliferationFinanceService.UpdateMongoHitDecision(request.CaseId, hit.Index, hit.Decision, hit.Remarks);
 
                         CorporateKycDTO corpModel = new CorporateKycDTO();
+                        KycIndividualDTO imodel = new KycIndividualDTO();
                         RiskModel _riskmodel = new RiskModel();
-                        int riskid = _riskService.GetRiskIdByCustomercode(request.corporateId, "C").Result;
-                        if (riskid != 0)
+                        if (_CustomerCaseDTO.CustomerType == "C")
                         {
-
-                            _riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("C", 1, 0, 0, clientId);
-
-
-                            modelrisk = _mapper.Map<RiskCorpCustomerModel>(_riskService.GetRiskDetailsOfCorporate(riskid).Result);
-
-                            MapRiskValues(_riskmodel.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
-
-                            foreach (var category in _riskmodel.RiskTypeCategoryDTO)
+                            int riskid = _riskService.GetRiskIdByCustomercode(request.corporateId, _CustomerCaseDTO.CustomerType).Result;
+                            if (riskid != 0)
                             {
-                                foreach (var riskType in category.RiskTypes)
+
+                                _riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("C", 1, 0, 0, clientId);
+
+
+                                modelrisk = _mapper.Map<RiskCorpCustomerModel>(_riskService.GetRiskDetailsOfCorporate(riskid).Result);
+
+                                MapRiskValues(_riskmodel.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
+
+                                foreach (var category in _riskmodel.RiskTypeCategoryDTO)
                                 {
-                                    if (!string.IsNullOrEmpty(riskType.ItemTxt))
+                                    foreach (var riskType in category.RiskTypes)
                                     {
-                                        switch (riskType.RiskType?.ToLower()) // or riskType.Code (better if available)
+                                        if (!string.IsNullOrEmpty(riskType.ItemTxt))
                                         {
-                                            case "legal status of the entity ":
-                                                corpModel.EntityTypeTxt = riskType.ItemTxt;
-                                                break;
+                                            switch (riskType.RiskType?.ToLower()) // or riskType.Code (better if available)
+                                            {
+                                                case "legal status of the entity ":
+                                                    corpModel.EntityTypeTxt = riskType.ItemTxt;
+                                                    break;
 
-                                            case "nature of business":
-                                                corpModel.BusinessType = riskType.ItemTxt;
-                                                break;
+                                                case "nature of business":
+                                                    corpModel.BusinessType = riskType.ItemTxt;
+                                                    break;
 
-                                            case "country of incorporation":
-                                                corpModel.PlaceofIncorporation = riskType.ItemTxt;
-                                                break;
+                                                case "country of incorporation":
+                                                    corpModel.PlaceofIncorporation = riskType.ItemTxt;
+                                                    break;
 
-                                            case "does the company have any subsidiary, affiliate, branch or group/holding company in fatf listed high risk monitored jurisdiction?":
-                                                corpModel.FATF = riskType.ItemTxt;
-                                                break;
+                                                case "does the company have any subsidiary, affiliate, branch or group/holding company in fatf listed high risk monitored jurisdiction?":
+                                                    corpModel.FATF = riskType.ItemTxt;
+                                                    break;
 
-                                            case "product":
-                                                corpModel.ProductName = riskType.ItemTxt;
-                                                break;
+                                                case "product":
+                                                    corpModel.ProductName = riskType.ItemTxt;
+                                                    break;
 
-                                            case "if more than one product(put the riskiest product)":
-                                                corpModel.HighestRiskProduct = riskType.ItemTxt;
-                                                break;
+                                                case "if more than one product(put the riskiest product)":
+                                                    corpModel.HighestRiskProduct = riskType.ItemTxt;
+                                                    break;
 
-                                            case "delivery channel":
-                                                corpModel.DeliveryChannelName = riskType.ItemTxt;
-                                                break;
+                                                case "delivery channel":
+                                                    corpModel.DeliveryChannelName = riskType.ItemTxt;
+                                                    break;
 
-                                            case "mode of payment":
-                                                corpModel.Modeofpayment = riskType.ItemTxt;
-                                                break;
+                                                case "mode of payment":
+                                                    corpModel.Modeofpayment = riskType.ItemTxt;
+                                                    break;
 
-                                            default:
-                                                // Optional: log unmatched value
-                                                break;
+                                                default:
+                                                    // Optional: log unmatched value
+                                                    break;
+                                            }
                                         }
                                     }
                                 }
+
+                            }
+                            if (hit.Decision == "True Match" || hit.Decision == "Potential Hits")
+                            {
+                                corpModel.DualUseGoods = "Yes";
+                            }
+                            else
+                            {
+                                corpModel.DualUseGoods = "No";
                             }
 
-                        }
-                        if (hit.Decision == "True Match" || hit.Decision == "Potential Hits")
-                        {
-                            corpModel.DualUseGoods = "Yes";
-                        }
-                        else
-                        {
-                            corpModel.DualUseGoods = "No";
-                        }
+                            //var result = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(clientId));
 
-                        var result = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(clientId));
-
-                        if (result != null)
-                        {
+                            //if (result != null)
+                            //{
                             Console.WriteLine("Generate risk");
 
 
-                            KycIndividualDTO imodel = new KycIndividualDTO();
+                            
                             //model.IsPeP = isPep;
                             var str1 = _kycService.GetRiskLovId(imodel, _mapper.Map<CorporateKycDTO>(corpModel), "C", culture, clientId);
                             if (str1.Result == null)
@@ -1311,15 +1316,324 @@ namespace AML.Web.Controllers.ProliferationFinance
                             var riskResult = _riskAPIController.KycRiskAssessment(riskModel);
                             var xyz = riskResult;
 
+                            //}
+                        }
+                        else
+                        {
+                            int riskid = _riskService.GetRiskIdByCustomercode(request.corporateId, _CustomerCaseDTO.CustomerType).Result;
+                            if (riskid != 0)
+                            {
+
+                                _riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("I", 1, 0, 0, clientId);
+
+
+                                modelrisk = _mapper.Map<RiskModel>(_riskService.GetRiskDetailsOfIndividual(riskid).Result);
+
+                                MapRiskValues(_riskmodel.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
+
+                                foreach (var category in _riskmodel.RiskTypeCategoryDTO)
+                                {
+                                    foreach (var riskType in category.RiskTypes)
+                                    {
+                                        if (!string.IsNullOrEmpty(riskType.ItemTxt))
+                                        {
+                                            switch (riskType.RiskType?.ToLower()) // or riskType.Code (better if available)
+                                            {
+                                                case "profession":
+                                                    imodel.OccupatinTypeTxt = riskType.ItemTxt;
+                                                    break;
+                                                case "residence country":
+                                                    imodel.ResidenceStatus = riskType.ItemTxt;
+                                                    break;
+                                                case "nationality":
+                                                    imodel.Nationality = riskType.ItemTxt;
+                                                    break;
+                                                case "Second Nationality (if applicable)":
+                                                    imodel.Nationality = riskType.ItemTxt;
+                                                    break;
+                                                case "product, service & activity":
+                                                    imodel.ProductName = riskType.ItemTxt;
+                                                    break;
+                                                case "if more than one product(put the riskiest product)":
+                                                    imodel.HighestRiskProduct = riskType.ItemTxt;
+                                                    break;
+                                                case "delivery channel":
+                                                    imodel.DeliveryChannelName = riskType.ItemTxt;
+                                                    break;
+
+                                                case "mode of payment":
+                                                    imodel.ModeOfPayment = riskType.ItemTxt;
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                }
+
+                            }
+                            if (hit.Decision == "True Match" || hit.Decision == "Potential Hits")
+                            {
+                                imodel.DualUseGoods = "Yes";
+                            }
+                            else
+                            {
+                                imodel.DualUseGoods = "No";
+                            }
+
+                            //var result = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(clientId));
+
+                            //if (result != null)
+                            //{
+                            Console.WriteLine("Generate risk");
+
+
+
+                            //model.IsPeP = isPep;
+                            var str1 = _kycService.GetRiskLovId(_mapper.Map<KycIndividualDTO>(imodel), corpModel, "I", culture, clientId);
+                            if (str1.Result == null)
+                            {
+                                
+                                return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
+
+                            }
+                            var spStr1 = str1.Result.Split('Ø');
+                            var proflovId = spStr1[0];
+                            var natlovId = spStr1[1];
+                            var reslovId = spStr1[5];
+                            //var IspeplovId = spStr1[13];
+                            var IndprodlovId = spStr1[13];
+                            var InddelilovId = spStr1[14];
+                            var IndmodeofpaymentlovId = spStr1[15];
+                            var domesticpeplovId = spStr1[17];
+                            var foreignlovId = spStr1[19];
+                            var redflagslovId = spStr1[21];
+                            var sanctionlovId = spStr1[23];
+                            var UAEORUNSClovId = spStr1[25];
+                            var highestriskproductlovId = spStr1[28];
+                            var veryhighnetworkIdlovId = spStr1[30];
+                            var dualusegoodslovId = spStr1[33];
+
+                            var str = _kycService.GetRiskTypeId(_mapper.Map<KycIndividualDTO>(imodel), corpModel, "I", culture,clientId);
+                            if (str.Result == null)
+                            {
+                                
+                                return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
+                            }
+                            var spStr = str.Result.Split('Ø');
+                            var profId = spStr[0];
+                            var natId = spStr[1];
+                            var resId = spStr[5];
+                            //var IspepId = spStr[13];
+                            var IndprodId = spStr[13];
+                            var InddeliId = spStr[14];
+                            var Indmodeofpaymentid = spStr[15];
+                            var domesticpepId = spStr[17];
+                            var foreignId = spStr[19];
+                            var redflagsId = spStr[21];
+                            var sanctionId = spStr[23];
+                            var UAEORUNSCId = spStr[25];
+                            var highestriskproductId = spStr[28];
+                            var veryhighnetworkId = spStr[30];
+                            var dualusegoodsId = spStr[33];
+                            RiskAPIRequestModel riskModel = new RiskAPIRequestModel();
+
+                            riskModel.CustomerId = request.corporateId;
+                            riskModel.CustomerName = _CustomerCaseDTO.FirstName;
+
+
+                            riskModel.ClientId = _clientHandler.GetClientId();
+                            riskModel.CreatedBy = _clientHandler.GetUserId();
+                            if (_CustomerCaseDTO.Nationality == "0")
+                            {
+                                riskModel.MainNationality = "";
+                            }
+                            else
+                            {
+                                riskModel.MainNationality = _CustomerCaseDTO.Nationality;
+                            }
+                            riskModel.RiskCategory = "I";
+
+                            var riskTypeList = new List<RiskTypeListModel>();
+
+                            //for profession start
+                            if (profId != "0")
+                            {
+                                var riskType4 = new RiskTypeListModel();
+                                riskType4.Id = Convert.ToString(proflovId);
+                                var riskItem4 = new RiskItemListModel();
+                                riskItem4.Id = profId.ToString();//Convert.ToString(1);
+                                var riskItemList4 = new List<RiskItemListModel>();
+                                riskItemList4.Add(riskItem4);
+                                riskType4.RiskItemList = riskItemList4;
+                                riskTypeList.Add(riskType4);
+                            }
+                            //for profession end
+                            //for residence start
+                            if (resId != "0")
+                            {
+                                var riskType5 = new RiskTypeListModel();
+                                riskType5.Id = Convert.ToString(reslovId);
+                                var riskItem5 = new RiskItemListModel();
+                                riskItem5.Id = resId.ToString();//Convert.ToString(1);
+                                var riskItemList5 = new List<RiskItemListModel>();
+                                riskItemList5.Add(riskItem5);
+                                riskType5.RiskItemList = riskItemList5;
+                                riskTypeList.Add(riskType5);
+                            }
+                            //for residence end
+                            //for nationality start
+                            if (natId != "0")
+                            {
+                                var riskType3 = new RiskTypeListModel();
+                                riskType3.Id = Convert.ToString(natlovId);
+                                var riskItem3 = new RiskItemListModel();
+                                riskItem3.Id = natId.ToString();
+                                var riskItemList3 = new List<RiskItemListModel>();
+                                riskItemList3.Add(riskItem3);
+                                riskType3.RiskItemList = riskItemList3;
+                                riskTypeList.Add(riskType3);
+                            }
+                            //for nationality end
+                            //for product start
+                            if (IndprodId != "0")
+                            {
+                                var riskType6 = new RiskTypeListModel();
+                                riskType6.Id = Convert.ToString(IndprodlovId);
+                                var riskItem6 = new RiskItemListModel();
+                                riskItem6.Id = IndprodId.ToString();//Convert.ToString(1);
+                                var riskItemList6 = new List<RiskItemListModel>();
+                                riskItemList6.Add(riskItem6);
+                                riskType6.RiskItemList = riskItemList6;
+                                riskTypeList.Add(riskType6);
+                            }
+                            //for product end
+                            //for delivery channel start
+                            if (InddeliId != "0")
+                            {
+                                var riskType7 = new RiskTypeListModel();
+                                riskType7.Id = Convert.ToString(InddelilovId);
+                                var riskItem7 = new RiskItemListModel();
+                                riskItem7.Id = InddeliId.ToString();//Convert.ToString(1);
+                                var riskItemList7 = new List<RiskItemListModel>();
+                                riskItemList7.Add(riskItem7);
+                                riskType7.RiskItemList = riskItemList7;
+                                riskTypeList.Add(riskType7);
+                            }
+                            //for delivery channel end
+                            //for pep start
+                            if (domesticpepId != "0")
+                            {
+                                var riskType1 = new RiskTypeListModel();
+                                riskType1.Id = Convert.ToString(domesticpeplovId);
+                                var riskItem1 = new RiskItemListModel();
+                                riskItem1.Id = domesticpepId.ToString();
+                                var riskItemList1 = new List<RiskItemListModel>();
+                                riskItemList1.Add(riskItem1);
+                                riskType1.RiskItemList = riskItemList1;
+                                riskTypeList.Add(riskType1);
+                            }
+                            //for pep end
+                            //for foreignId start
+                            if (foreignId != "0")
+                            {
+                                var riskType2 = new RiskTypeListModel();
+                                riskType2.Id = Convert.ToString(foreignlovId);
+                                var riskItem2 = new RiskItemListModel();
+                                riskItem2.Id = foreignId.ToString();
+                                var riskItemList2 = new List<RiskItemListModel>();
+                                riskItemList2.Add(riskItem2);
+                                riskType2.RiskItemList = riskItemList2;
+                                riskTypeList.Add(riskType2);
+                            }
+                            //for foreign pep end
+                            //for redflags start
+                            if (redflagsId != "0")
+                            {
+                                var riskType9 = new RiskTypeListModel();
+                                riskType9.Id = Convert.ToString(redflagslovId);
+                                var riskItem9 = new RiskItemListModel();
+                                riskItem9.Id = redflagsId.ToString();
+                                var riskItemList9 = new List<RiskItemListModel>();
+                                riskItemList9.Add(riskItem9);
+                                riskType9.RiskItemList = riskItemList9;
+                                riskTypeList.Add(riskType9);
+                            }
+                            //for red flags end
+                            //for very high metwork Individual start
+                            if (veryhighnetworkId != "0")
+                            {
+                                var riskType10 = new RiskTypeListModel();
+                                riskType10.Id = Convert.ToString(veryhighnetworkIdlovId);
+                                var riskItem10 = new RiskItemListModel();
+                                riskItem10.Id = veryhighnetworkId.ToString();
+                                var riskItemList10 = new List<RiskItemListModel>();
+                                riskItemList10.Add(riskItem10);
+                                riskType10.RiskItemList = riskItemList10;
+                                riskTypeList.Add(riskType10);
+                            }
+                            //for very high metwork Individual end
+                            //for other sanction start
+                            if (sanctionId != "0")
+                            {
+                                var riskType11 = new RiskTypeListModel();
+                                riskType11.Id = Convert.ToString(sanctionlovId);
+                                var riskItem11 = new RiskItemListModel();
+                                riskItem11.Id = sanctionId.ToString();
+                                var riskItemList11 = new List<RiskItemListModel>();
+                                riskItemList11.Add(riskItem11);
+                                riskType11.RiskItemList = riskItemList11;
+                                riskTypeList.Add(riskType11);
+                            }
+                            //for other sanction end
+                            //for UaeUnsc start
+                            if (UAEORUNSCId != "0")
+                            {
+                                var riskType12 = new RiskTypeListModel();
+                                riskType12.Id = Convert.ToString(UAEORUNSClovId);
+                                var riskItem12 = new RiskItemListModel();
+                                riskItem12.Id = UAEORUNSCId.ToString();
+                                var riskItemList12 = new List<RiskItemListModel>();
+                                riskItemList12.Add(riskItem12);
+                                riskType12.RiskItemList = riskItemList12;
+                                riskTypeList.Add(riskType12);
+                            }
+                            //for pep end
+                            if (Indmodeofpaymentid != "0")
+                            {
+                                var riskType8 = new RiskTypeListModel();
+                                riskType8.Id = Convert.ToString(IndmodeofpaymentlovId);
+                                var riskItem8 = new RiskItemListModel();
+                                riskItem8.Id = Indmodeofpaymentid.ToString();//Convert.ToString(1);
+                                var riskItemList8 = new List<RiskItemListModel>();
+                                riskItemList8.Add(riskItem8);
+                                riskType8.RiskItemList = riskItemList8;
+                                riskTypeList.Add(riskType8);
+                            }
+
+                            if (dualusegoodsId != "0")
+                            {
+                                var riskType13 = new RiskTypeListModel();
+                                riskType13.Id = Convert.ToString(dualusegoodslovId);
+                                var riskItem13 = new RiskItemListModel();
+                                riskItem13.Id = dualusegoodsId.ToString();//Convert.ToString(1);
+                                var riskItemList13 = new List<RiskItemListModel>();
+                                riskItemList13.Add(riskItem13);
+                                riskType13.RiskItemList = riskItemList13;
+                                riskTypeList.Add(riskType13);
+                            }
+
+
+                            riskModel.RiskTypeList = riskTypeList;
+                            var riskResult = _riskAPIController.KycRiskAssessment(riskModel);
+                            var xyz = riskResult;
+
                         }
                     }
+                    
 
 
                     
                 }
-                int Id = _customerCaseService.GetCaseId(request.corporateId);
-
-                CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(Id);
+                
 
                 int previousStatus = _CustomerCaseDTO.Status;
 
