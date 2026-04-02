@@ -851,7 +851,7 @@
                         <input @@keydown.enter="sendMessage()" 
                                x-model="userInput"
                                type="text" 
-                               placeholder="Ask about a case... (e.g. #12345)"
+                               :placeholder="getPlaceholder()"
                                class="w-full pl-4 pr-12 py-3 bg-slate-100 border-none rounded-xl text-xs focus:ring-2 focus:ring-blue-500 transition-all outline-none">
                         <button @@click="sendMessage()" 
                                 class="absolute right-2 h-8 w-8 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700 transition-all shadow-md">
@@ -905,35 +905,43 @@
                              setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 50);
                         }
                         this.scrollToBottom();
-                    },
-                    detectModule() {
+                    },                    detectModule() {
                         const path = window.location.pathname.toLowerCase();
-                        if (path === '/' || path.includes('/home')) this.currentModule = 'Dashboard';
-                        else if (path.includes('/case/create') || path.includes('/corporate/corporatescreening')) this.currentModule = 'Screening';
-                        else if (path.includes('/proliferationfinance')) this.currentModule = 'PF';
-                        else if (path.includes('/report')) this.currentModule = 'Reports';
-                        else if (path.includes('/adminmanagement') || path.includes('/user')) this.currentModule = 'Admin';
+                        if (path === '/' || path.includes('/home') || path.includes('/dashboard')) this.currentModule = 'Dashboard';
+                        else if (path.includes('/case/create') || path.includes('/corporate/corporatescreening')) this.currentModule = 'Case Creation';
+                        else if (path.includes('/case')) this.currentModule = 'Due Diligence';
+                        else if (path.includes('/proliferationfinance')) this.currentModule = 'PF Creation';
+                        else if (path.includes('/report') || path.includes('/completedcaseindex')) this.currentModule = 'Reports';
+                        else if (path.includes('/adminmanagement') || path.includes('/user') || path.includes('/admin')) this.currentModule = 'Admin';
                         else if (path.includes('/process') || path.includes('/details')) this.currentModule = 'Process';
                         else this.currentModule = 'General';
                     },
+                    getPlaceholder() {
+                        if (this.currentModule === 'Dashboard') return "Ask about global stats...";
+                        if (this.currentModule === 'Process') return "Ask about this case...";
+                        return "Ask a question... (e.g. #12345)";
+                    },
                     updateQuestions() {
                         const mappings = {
-                            'Dashboard': ['How many high-risk cases are pending?', 'Is the daily scheduler currently running?', 'Show me a summary of cases by status'],
-                            'Screening': ['What are mandatory KYC fields?', 'How is risk score calculated?', 'Documents required for Individual screening?'],
-                            'PF': ['How do I review hits for a PF case?', 'How to escalate to Senior Management?', 'What does Whitelist mean?'],
-                            'Reports': ['How to export Case Process PDF?', 'Where are screening database logs?', 'Can I see rejected cases report?'],
-                            'Admin': ['How to create a new user group?', 'How to assign client rights?', 'Manage system roles and permissions'],
-                            'Process': ['What is the status of this case?', 'Is there a pending hit review?', 'What is the final risk score breakdown?'],
-                            'General': ['How to create a new case?', 'Help with login and permissions', 'What is Lemon WatchDog?']
+                            'Dashboard': ['How many high-risk cases are pending?', 'Show me status breakdown for today', 'What is the current customer count?'],
+                            'Due Diligence': ['How to filter cases?', 'What does PEP/SAN/UN mean?', 'How to select a case for review?'],
+                            'Case Creation': ['Mandatory fields guide', 'Individual vs. Corporate differences', 'How to upload OCR/Bulk?'],
+                            'PF Creation': ['How to search by goods?', 'What is a Dual-Use item?', 'How to review hits for chemicals?'],
+                            'Reports': ['How to export Completed Cases?', 'Show me case status distribution', 'Can I search by date range?'],
+                            'Admin': ['How to create a new user group?', 'Help with client permissions', 'Configure screening thresholds'],
+                            'Process': ['What is the status of this case?', 'Explain the risk score components', 'Is there any pending hit review?'],
+                            'General': ['How to get started?', 'Help with login and sessions', 'Contact system administrator']
                         };
                         this.predefinedQuestions = mappings[this.currentModule] || mappings['General'];
                     },
+
                     extractContextId() {
                         const urlMatch = window.location.pathname.match(/\/(?:Process|Details)\/([A-Z0-9]+)/i);
-                        if (urlMatch) { this.currentCaseId = urlMatch[1]; return; }
-                        const possibleIds = Array.from(document.querySelectorAll('td, span, div, p'))
-                            .filter(el => el.innerText && /^[A-Z]{3}[0-9]{3}$/i.test(el.innerText.trim()));
-                        if (possibleIds.length > 0) this.currentCaseId = possibleIds[0].innerText.trim();
+                        if (urlMatch) { 
+                            this.currentCaseId = urlMatch[1]; 
+                        } else {
+                            this.currentCaseId = null;
+                        }
                     },
 
                     loadConversation(item) {
@@ -977,26 +985,21 @@
                                 if(window.lucide) lucide.createIcons();
                             }, 2000);
                         });
-                    },
-                    selectQuestion(q) {
+                    },                     selectQuestion(q) {
                         let type = '';
                         if (q.includes('status')) type = 'status';
-                        if (q.includes('hit')) type = 'hit';
-                        if (q.includes('risk')) type = 'risk';
+                        if (q.includes('risk') || q.includes('score')) type = 'risk';
+                        
                         this.messages.push({ role: 'user', content: q, isComplete: true });
-                        if (this.currentCaseId) {
-                            this.userInput = q;
-                            this.sendMessage(type, true);
-                            this.showInput = true;
-                            this.showOptions = false;
-                        } else {
-                            this.messages.push({ role: 'assistant', content: "To answer that, I need a Case ID. Please provide it (e.g., #12345).", isComplete: true });
-                            this.pendingQueryType = type;
-                            this.showInput = true;
-                            this.showOptions = false;
-                        }
+                        
+                        // Predefined questions always bypass the Case ID requirement as they are informational
+                        this.userInput = q;
+                        this.sendMessage(type, true);
+                        this.showInput = true;
+                        this.showOptions = false;
                         this.saveToStorage();
                     },
+
                     resetChat() {
                         this.archiveCurrentChat();
                         this.messages = [
@@ -1032,10 +1035,32 @@
                         this.scrollToBottom();
 
                         let caseIdMatch = userMsg.match(/#([A-Z0-9]+)/i) || userMsg.match(/\b([A-Z]*[0-9][A-Z0-9]*)\b/i);
-                        let caseId = caseIdMatch ? caseIdMatch[1] : (queryType ? this.currentCaseId : (this.currentCaseId || null));
-                        const isGeneral = !caseId || (!caseIdMatch && !queryType && !userMsg.includes('#'));
+                        let typeToUse = queryType || this.pendingQueryType;
+                        let caseId = caseIdMatch ? caseIdMatch[1] : (typeToUse ? this.currentCaseId : (this.currentCaseId || null));
+                        
+                        // Intercept manual queries that require a Case ID when none is present
+                        if (!caseId && !caseIdMatch && !typeToUse) {
+                            const caseKeywords = ['status', 'hit', 'risk', 'score', 'case', 'reject', 'approve', 'diligence'];
+                            const isCaseQuery = caseKeywords.some(keyword => userMsg.toLowerCase().includes(keyword));
+                            
+                            if (isCaseQuery && this.currentModule !== 'Dashboard' && this.currentModule !== 'Admin') {
+                                setTimeout(() => {
+                                    this.messages.push({ role: 'assistant', content: "To answer that specifically, I need a Case ID. Please provide it (e.g., #12345).", isComplete: true });
+                                    this.pendingQueryType = userMsg; // Store the query to execute later
+                                    this.isTyping = false;
+                                    this.scrollToBottom();
+                                    this.saveToStorage();
+                                }, 500);
+                                return;
+                            }
+                        }
 
-                        if (caseIdMatch) this.currentCaseId = caseId;
+                        if (caseIdMatch) {
+                            this.currentCaseId = caseId;
+                            this.pendingQueryType = null; // Clear it once used
+                        }
+
+                        const isGeneral = !caseId || (!caseIdMatch && !typeToUse && !userMsg.includes('#'));
 
                         // Prepare History (only role and content)
                         const history = (this.messages || [])
@@ -1046,7 +1071,7 @@
                         try {
                             const url = isGeneral 
                                 ? `/api/Chat/stream/general?prompt=${encodeURIComponent(userMsg)}&module=${this.currentModule}&isNewChat=${isFirstMessage}`
-                                : `/api/Chat/stream/${caseId}?queryType=${queryType || ""}&isNewChat=${isFirstMessage}`;
+                                : `/api/Chat/stream/${caseId}?queryType=${encodeURIComponent(typeToUse || "")}&isNewChat=${isFirstMessage}`;
                                     
                             const response = await fetch(url, {
                                 method: 'POST',
@@ -1085,14 +1110,6 @@
                             this.messages.push({ role: 'assistant', content: "Error connecting to AI service.", isComplete: true });
                         }
 
-                        } else {
-                            setTimeout(() => {
-                                this.messages.push({ role: 'assistant', content: "I need a Case ID (e.g., #12345) to provide specific details.", isComplete: true });
-                                this.isTyping = false;
-                                this.scrollToBottom();
-                            }, 500);
-                        }
-                        
                         this.isTyping = false;
                         this.scrollToBottom();
                         setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 50);

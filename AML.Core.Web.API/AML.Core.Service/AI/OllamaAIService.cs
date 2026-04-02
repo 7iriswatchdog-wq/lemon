@@ -35,8 +35,8 @@ Your goal is to provide intelligent, professional, and business-focused summarie
 ### CRITICAL RULES:
 1. **NO STATUS CODES**: NEVER show numeric status codes (e.g., 'Status Code 0', 'Code 2') to the user. Instead, use the descriptive name (e.g., 'Pending', 'Approved').
 2. **NO TECHNICAL OUTPUT**: Do not show JSON, SQL, or programming code snippets.
-3. **RICH FORMATTING**: Use **standard Markdown**. Use `### Header` for sections, `**bold**` for key terms, and `* bullet points`. **NEVER** use long strings of dashes (e.g., `-------`) as separators.
-4. **SPACING**: You MUST use **double newlines** (`\n\n`) between paragraphs and sections. This is critical for the Markdown renderer to correctly display your response without clumping.
+3. **RICH FORMATTING**: Use **standard Markdown**. Use `### Header` for sections, and `**bold**` for key terms. When listing recommendations, steps, or multiple items, you MUST format them as a bulleted list (`- item`) or numbered list (`1. item`), rather than individual paragraphs. **NEVER** use long strings of dashes (e.g., `-------`) as separators.
+4. **SPACING**: You MUST use **double newlines** (`\n\n`) between paragraphs. When creating lists, ensure a newline separates the list from the preceding paragraph.
 5. **SECURITY**: Only answer based on the provided context. If a user asks for data not in the context, politely refuse.
 
 ### Business Process Reference (DO NOT SHOW CODES IN RESPONSE):
@@ -51,8 +51,11 @@ Your goal is to provide intelligent, professional, and business-focused summarie
 {context}
 
 ### Response Guidelines:
+- **BILINGUAL EXPERTISE**: If you encounter Arabic snippets from UAE Cabinet Decision 156 (Proliferation Finance), provide a professional English summary of the finding.
+- **ACTIONABLE NEXT STEPS**: For any 'Potential Match' or high-risk finding, advise the user to escalate the case to **Senior Management (Status 4)** for final review using the 'Move to Senior Management' button in the UI.
 - Be concise and focus on what actions are needed next.
-- If context is missing, suggest what the user should complete in the UI.";
+- If context is missing, suggest what the user should complete in the UI.
+- Always prioritize the provided [SYSTEM KNOWLEDGE BASE] for procedural rules.";
         }
 
         public async Task<string> GetIntelligentReplyAsync(string prompt, string context)
@@ -159,7 +162,7 @@ Your goal is to provide intelligent, professional, and business-focused summarie
             {
                 model = _modelName,
                 prompt = sbPrompt.ToString(),
-                system = "You are a helpful system assistant for Lemon WatchDog. Use Markdown with sections and bolding.",
+                system = "You are a professional AML/KYC System Expert for 'Lemon WatchDog'. Answer all questions using only the provided User Context and System Knowledge Base. For Arabic PF hits (Cabinet Decision 156), provide an English translation and summary. Advise Status 4 (Senior Management) escalation for all potential hits. Use Markdown with clear sections, bold terms, and bulleted lists. NO technical jargon or status codes.",
                 stream = true
             };
             var json = JsonSerializer.Serialize(requestBody);
@@ -215,35 +218,31 @@ Your goal is to provide intelligent, professional, and business-focused summarie
         private string GetSystemManual()
         {
             return @"
-Lemon WatchDog System Manual:
+[SYSTEM EXPERT HANDBOOK: LEMON WATCHDOG]
 
-1. Dashboard:
-- Overview of all case statuses.
-- Case Statuses: Pending (0), Approved (2), Rejected (3), Senior Mgmt (4), Auto (5), Daily Scheduler (6).
-- High Risk cases require immediate attention.
+1. DASHBOARD & MONITORING:
+- TRACKING: Monitor case statuses: Pending (0), Approved (2), Rejected (3), Senior Management (4), Auto (5), and Daily Scheduler (6).
+- HIGH RISK: Match scores > 80 are flagged as High Risk.
+- SCHEDULER: Background engine that automatically rescreens cases daily.
 
-2. Screening & KYC:
-- Modules for 'Individual' and 'Corporate' creation.
-- Mandatory fields: Name, ID/Company Code, Nationality/Country, Address.
-- Risk Scoring: Automatically calculated based on assessment versions. High scores trigger 'Pending' status.
-- Hit Handling: If a match is found during search, the case status becomes 'Pending'.
+2. SCREENING & CASE CREATION:
+- MANDATORY FIELDS (*): Full Name, Nationality, Gender, Date of Birth, ID Number, ID Type.
+- INPUT OPTIONS: Manual entry, OCR image extraction, and Bulk Excel upload.
+- LISTS: Cases are screened against PEP (Politically Exposed), SAN (Sanctions), UN, and UAE Local lists.
 
-3. Proliferation Finance (PF):
-- Search against global sanction and watchlists (MongoDB).
-- Findings: Potential hits must be reviewed.
-- Escalation: Findings can be submitted to Senior Management for further investigation.
-- Decisions: Whitelist (Approval bypass), Approved, Reject, Hold.
+3. PROLIFERATION FINANCE (PF):
+- LEGAL COMPLIANCE: Cabinet Decision No. 156 of 2025 regarding dual-use items.
+- SEARCHING: Supports Chemical/HS Code search and intelligent PDF keyword searching in official legislation.
+- HIT REVIEW: Decisions include 'No Match', 'Potential Match', or 'Confirmed Hit'.
 
-4. Reports:
-- Case Reports: Detailed PDF summaries of process and findings.
-- Screening Logs: Audit trail of all database searches and results.
-- Exporting: Use the PDF export buttons on Case/Details pages.
+4. ADMIN & SECURITY:
+- USER GROUPS: Admin, Compliance/Reviewer, and View-Only.
+- RIGHTS: Permissions are Add, Edit, Delete, or View per menu.
+- CLIENT RIGHTS: Feature flags (e.g., OCR/PF) defined per Client ID.
 
-5. Admin Management:
-- User Management: Create and edit users.
-- User Groups: Manage permissions by grouping users (e.g., Senior Management, Compliance).
-- Client Rights: Assign which clients/banks a user group can manage.
-- Security: Access is strictly controlled by ClientId and Group rights.
+5. REPORTS & AUDIT:
+- AUDIT TRAIL: Every event is logged in the system's Audit Trail (ScreeningLogs table).
+- EVIDENCE: Use 'Export' to generate a Case Process PDF for compliance records.
 ";
         }
     }

@@ -143,7 +143,8 @@ namespace AML.Web.Controllers
                     dynamicData = GetDashboardStats();
                 }
 
-                string moduleContext = $"{module}. {dynamicData}";
+                string knowledgeBase = GetModuleKnowledge(module);
+                string moduleContext = $"{module} context. {dynamicData}\n\n[SYSTEM KNOWLEDGE BASE]: {knowledgeBase}";
 
                 await foreach (var part in _aiService.GetGeneralReplyStreamAsync(prompt, moduleContext, history, isNewChat))
                 {
@@ -162,7 +163,6 @@ namespace AML.Web.Controllers
              var sessionClientIdStr = HttpContext.Session.GetString("SessClientId");
              if (int.TryParse(sessionClientIdStr, out int sessionClientId))
              {
-                 // Fetch real-time counts from the database for the given client
                  var allCases = _customerCaseService.GetAllSanctionDashboard(sessionClientId, "");
                  
                  int pending = allCases.Count(c => c.Status == 0);
@@ -172,9 +172,56 @@ namespace AML.Web.Controllers
                  int auto = allCases.Count(c => c.Status == 5);
                  int scheduler = allCases.Count(c => c.Status == 6);
 
-                 return $"[LIVE DASHBOARD SUMMARY]: Pending: {pending}, Approved: {approved}, Rejected: {rejected}, In Senior Management: {seniorMgmt}, Auto: {auto}, Daily Scheduler: {scheduler}. Total Cases: {allCases.Count}. Use these numbers if the user asks about system state.";
+                 var highRiskCount = allCases.Count(c => c.CustomerScreenMatchScore > 80);
+                 var topHighRiskList = string.Join(", ", allCases.Where(c => c.CustomerScreenMatchScore > 80).OrderByDescending(c => c.CustomerScreenMatchScore).Take(5).Select(c => $"#{c.CustomerId} {c.FirstName} {c.LastName} ({c.CustomerScreenMatchScore}%)"));
+
+                 return $"[LIVE DASHBOARD SUMMARY]: Pending: {pending}, Approved: {approved}, Rejected: {rejected}, In Senior Management: {seniorMgmt}, Auto: {auto}, Daily Scheduler: {scheduler}. High Risk Count: {highRiskCount}. TOP CASES: {topHighRiskList}. Total Cases: {allCases.Count}.";
              }
              return "Unable to retrieve real-time dashboard statistics at this moment.";
+        }
+
+        private string GetModuleKnowledge(string module)
+        {
+            return module switch
+            {
+                "Dashboard" => @"[HANDBOOK: DASHBOARD]: 
+1. STATUS MONITORING: Track cases across 'Pending' (Status 0), 'Approved' (Status 2), 'Rejected' (Status 3), and 'Daily Scheduler' (Status 6).
+2. HIGH RISK ALERT: System classifies a match as High Risk if the Score exceeds 80.
+3. SCHEDULER: The system's background engine automatically rescreens existing cases against updated sanction lists daily.",
+                
+                "Due Diligence" | "Case Creation" => @"[HANDBOOK: SCREENING & CREATION]:
+1. MANDATORY FIELDS: Full Name*, Nationality*, Gender*, Date of Birth*, ID Number*, and ID Type*. (* Indicates required for list screening).
+2. INPUT METHODS: 
+   - Manual: Core data entry for immediate screening.
+   - OCR Upload: Extracts text from Passport or ID card images.
+   - Bulk Upload: Uses a system Excel template for high-volume ingestion.
+3. RISK CATEGORIES: Individuals are screened against PEP (Politically Exposed), SAN (Sanctions/OFAC/EU), UN (United Nations), and UAE Local lists. 
+4. MATCH SCORE: A percentage (0-100%) indicating how closely the input name matches a listed sanction record.",
+
+                "PF Creation" => @"[HANDBOOK: PROLIFERATION FINANCE]:
+1. LEGAL BASIS: Screening is performed against 'UAE Cabinet Decision No. 156 of 2025' regarding dual-use items and chemical weapons.
+2. SEARCH LAYERS:
+   - Layer 1 (Database): Direct match against HS Codes, CAS Numbers, and Chemical Names.
+   - Layer 2 (PDF Search): Intelligent keyword search within official legislation PDFs (Decision 156).
+3. HIT REVIEW: All hits must be categorized as 'No Match', 'Potential Match', or 'Confirmed Hit'. Decision and Remarks are mandatory for each finding.",
+
+                "Admin" => @"[HANDBOOK: ADMINISTRATION]:
+1. USER GROUPS: Permissions are grouped into 'Admin', 'Compliance/Reviewer', and 'View-Only'.
+2. PERMISSION MATRIX: Rights are defined as View, Add, Edit, or Delete per system menu.
+3. CLIENT RIGHTS: Global system toggles for the Client ID that enable/disable specific modules like OCR or PF.",
+
+                "Reports" => @"[HANDBOOK: REPORTS & AUDIT]:
+1. COMPLETED CASES: Archive of all finalized screenings.
+2. EVIDENCE: The 'Export' button generates a Case Process PDF, which is the official audit trail for compliance.
+3. AUDIT LOGS: Every action (login, search, decision, or export) is logged in the system's Audit Trail (ScreeningLogs table).",
+
+                "Process" => @"[HANDBOOK: RISK & DECISION]:
+1. RISK CALCULATION: The final Risk Level (Low/Medium/High) is a weighted sum of categories: Country Risk (Sanctioned vs Non-Sanctioned), Occupation (PEPs), and Product/Service types.
+2. OVERRIDE: Authorized users can manually adjust the Risk Level if they provide a justified business reason.
+3. ESCALATION: High-risk or suspicious findings should be sent to 'Senior Management' (Status 4) for final sign-off.",
+
+                _ => "General AML/KYC guidance for the Lemon WatchDog system."
+            };
         }
 
         private async Task WriteStreamMatch(System.IO.Stream stream, string text)
