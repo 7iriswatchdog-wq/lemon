@@ -14,8 +14,6 @@ namespace AML.Core.Service.AI
     public class OllamaAIService : BaseService, IAIService
     {
         private readonly HttpClient _httpClient;
-        private readonly string _ollamaUrl;
-        private readonly string _modelName;
         private readonly string _modelName;
 
         public OllamaAIService(IConfiguration configuration) : base(configuration)
@@ -87,8 +85,14 @@ Your goal is to provide intelligent, professional, and business-focused summarie
             }
         }
 
-        public async IAsyncEnumerable<string> GetIntelligentReplyStreamAsync(string prompt, string context, List<ChatMessageDTO> history = null)
+        public async IAsyncEnumerable<string> GetIntelligentReplyStreamAsync(string prompt, string context, List<ChatMessageDTO> history = null, bool isNewChat = false)
         {
+            if (isNewChat)
+            {
+                string title = await GenerateTitleAsync(prompt);
+                yield return $"[TITLE]: {title}";
+            }
+
             var sbPrompt = new StringBuilder();
             if (history != null)
             {
@@ -130,8 +134,14 @@ Your goal is to provide intelligent, professional, and business-focused summarie
             }
         }
 
-        public async IAsyncEnumerable<string> GetGeneralReplyStreamAsync(string prompt, string moduleContext, List<ChatMessageDTO> history = null)
+        public async IAsyncEnumerable<string> GetGeneralReplyStreamAsync(string prompt, string moduleContext, List<ChatMessageDTO> history = null, bool isNewChat = false)
         {
+            if (isNewChat)
+            {
+                string title = await GenerateTitleAsync(prompt);
+                yield return $"[TITLE]: {title}";
+            }
+
             string systemKnowledge = GetSystemManual();
             var sbPrompt = new StringBuilder();
             sbPrompt.Append($"User Context: Currently on {moduleContext}\nSystem Knowledge Base: {systemKnowledge}\n\n");
@@ -173,6 +183,33 @@ Your goal is to provide intelligent, professional, and business-focused summarie
                     yield return part.GetString();
                 }
             }
+        }
+
+        private async Task<string> GenerateTitleAsync(string prompt)
+        {
+            try
+            {
+                var requestBody = new
+                {
+                    model = _modelName,
+                    prompt = $"Generate a 4-5 word catchy title for this conversation based on this user question: '{prompt}'. Return ONLY the title, no quotes or intro.",
+                    system = "You are a helpful assistant. Be concise and professional.",
+                    stream = false
+                };
+
+                var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync("api/generate", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonResponse = await response.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(jsonResponse);
+                    string rawTitle = doc.RootElement.GetProperty("response").GetString();
+                    return rawTitle.Trim().Trim('"').Trim('.');
+                }
+            }
+            catch { }
+            return "New Conversation";
         }
 
         private string GetSystemManual()

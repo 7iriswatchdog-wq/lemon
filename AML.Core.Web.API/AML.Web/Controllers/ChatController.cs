@@ -90,7 +90,7 @@ namespace AML.Web.Controllers
         }
 
         [HttpPost("stream/{caseId}")]
-        public async Task StreamStatus(string caseId, [FromBody] List<ChatMessageDTO> history, [FromQuery] string queryType = null)
+        public async Task StreamStatus(string caseId, [FromBody] List<ChatMessageDTO> history, [FromQuery] string queryType = null, [FromQuery] bool isNewChat = false)
         {
             Response.ContentType = "text/event-stream";
             var responseStream = Response.Body;
@@ -117,7 +117,7 @@ namespace AML.Web.Controllers
 
                 var contextData = GetContextData(caseDetails, queryType);
                 
-                await foreach (var part in _aiService.GetIntelligentReplyStreamAsync(contextData.UserPrompt, contextData.Context, history))
+                await foreach (var part in _aiService.GetIntelligentReplyStreamAsync(contextData.UserPrompt, contextData.Context, history, isNewChat))
                 {
                     await WriteStreamMatch(responseStream, part);
                     await responseStream.FlushAsync();
@@ -130,7 +130,7 @@ namespace AML.Web.Controllers
         }
 
         [HttpPost("stream/general")]
-        public async Task StreamGeneral([FromBody] List<ChatMessageDTO> history, [FromQuery] string prompt, [FromQuery] string module = "General")
+        public async Task StreamGeneral([FromBody] List<ChatMessageDTO> history, [FromQuery] string prompt, [FromQuery] string module = "General", [FromQuery] bool isNewChat = false)
         {
             Response.ContentType = "text/event-stream";
             var responseStream = Response.Body;
@@ -145,7 +145,7 @@ namespace AML.Web.Controllers
 
                 string moduleContext = $"{module}. {dynamicData}";
 
-                await foreach (var part in _aiService.GetGeneralReplyStreamAsync(prompt, moduleContext, history))
+                await foreach (var part in _aiService.GetGeneralReplyStreamAsync(prompt, moduleContext, history, isNewChat))
                 {
                     await WriteStreamMatch(responseStream, part);
                     await responseStream.FlushAsync();
@@ -162,16 +162,19 @@ namespace AML.Web.Controllers
              var sessionClientIdStr = HttpContext.Session.GetString("SessClientId");
              if (int.TryParse(sessionClientIdStr, out int sessionClientId))
              {
-                 // Fetch all cases for this client for the last 30 days (as a sample proxy for Dashboard stats)
-                 var allCases = _customerCaseService.GetCasebyApprovedStatus(sessionClientId); // This is just one sample method
-                 // Assuming we want a general count of the current state:
-                 int pending = 0; int approved = 0; int rejected = 0; int scheduler = 0; int sm = 0;
+                 // Fetch real-time counts from the database for the given client
+                 var allCases = _customerCaseService.GetAllSanctionDashboard(sessionClientId, "");
                  
-                 // Fallback to GetAll if needed, but for now let's simulate the report
-                 // In a real system, we'd call a specific Dashboard service method.
-                 return $"[LIVE SYSTEM DATA]: Total Active Cases: {allCases.Count}. (Note: This is a real-time summary of the cases in the database for ClientId {sessionClientId})";
+                 int pending = allCases.Count(c => c.Status == 0);
+                 int approved = allCases.Count(c => c.Status == 2);
+                 int rejected = allCases.Count(c => c.Status == 3);
+                 int seniorMgmt = allCases.Count(c => c.Status == 4);
+                 int auto = allCases.Count(c => c.Status == 5);
+                 int scheduler = allCases.Count(c => c.Status == 6);
+
+                 return $"[LIVE DASHBOARD SUMMARY]: Pending: {pending}, Approved: {approved}, Rejected: {rejected}, In Senior Management: {seniorMgmt}, Auto: {auto}, Daily Scheduler: {scheduler}. Total Cases: {allCases.Count}. Use these numbers if the user asks about system state.";
              }
-             return "";
+             return "Unable to retrieve real-time dashboard statistics at this moment.";
         }
 
         private async Task WriteStreamMatch(System.IO.Stream stream, string text)
