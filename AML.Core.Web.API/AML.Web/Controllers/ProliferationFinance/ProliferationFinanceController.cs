@@ -130,6 +130,14 @@ namespace AML.Web.Controllers.ProliferationFinance
                     if (!string.IsNullOrEmpty(status) && status != "0")
                         data = data.FindAll(x => x.Status == status);
 
+                    // Filter out cases submitted to senior management for regular users
+                    var GroupId = _clientHandler.GetGroupId();
+                    var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+                    if (_UserGroupModel.Name != "Senior Management")
+                    {
+                        data = data.FindAll(x => x.Status != "Submit to Senior Management");
+                    }
+
                     return Json(new { success = true, data = data });
                 }
                 return Json(new { success = false, message = "Failed to fetch cases." });
