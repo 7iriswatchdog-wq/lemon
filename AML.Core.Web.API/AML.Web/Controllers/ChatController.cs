@@ -124,6 +124,26 @@ namespace AML.Web.Controllers
             }
             catch (Exception ex)
             {
+                await WriteStreamMatch(responseStream, "It appears you do not have the necessary authorization to view the details for Case #" + caseId + ". Access is restricted to authorized users within your client group.");
+            }
+        }
+
+        [HttpGet("stream/general")]
+        public async Task StreamGeneral([FromQuery] string prompt, [FromQuery] string module = "General")
+        {
+            Response.ContentType = "text/event-stream";
+            var responseStream = Response.Body;
+
+            try
+            {
+                await foreach (var part in _aiService.GetGeneralReplyStreamAsync(prompt, module))
+                {
+                    await WriteStreamMatch(responseStream, part);
+                    await responseStream.FlushAsync();
+                }
+            }
+            catch (Exception ex)
+            {
                 await WriteStreamMatch(responseStream, $"Error: {ex.Message}");
             }
         }

@@ -14,5 +14,10 @@ namespace AML.Core.ServiceContract.AI
         /// Streams an intelligent AI reply word-by-word.
         /// </summary>
         IAsyncEnumerable<string> GetIntelligentReplyStreamAsync(string prompt, string context);
+
+        /// <summary>
+        /// Streams a general AI reply about system knowledge.
+        /// </summary>
+        IAsyncEnumerable<string> GetGeneralReplyStreamAsync(string prompt, string moduleContext);
     }
 }

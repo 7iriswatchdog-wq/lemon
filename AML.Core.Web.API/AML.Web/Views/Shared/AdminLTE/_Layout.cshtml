@@ -822,18 +822,67 @@
                     showInput: false,
                     showOptions: true,
                     currentCaseId: null,
+                    currentModule: 'General',
                     pendingQueryType: null,
-                    predefinedQuestions: [
-                        'Would you like to know the status?',
-                        'Would you like to know the potential hit?',
-                        'Would you like to know the risk assessment details?'
-                    ],
+                    predefinedQuestions: [],
                     messages: [
-                        { role: 'assistant', content: 'Hello! I am your Case Assistant. How can I help you today?' }
+                        { role: 'assistant', content: 'Hello! I am your Case Assistant. How can I help you today?', isComplete: true }
                     ],
                     init() {
+                        this.detectModule();
                         this.extractContextId();
+                        this.updateQuestions();
                         setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 100);
+                    },
+                    detectModule() {
+                        const path = window.location.pathname.toLowerCase();
+                        if (path === '/' || path.includes('/home')) this.currentModule = 'Dashboard';
+                        else if (path.includes('/case/create') || path.includes('/corporate/corporatescreening')) this.currentModule = 'Screening';
+                        else if (path.includes('/proliferationfinance')) this.currentModule = 'PF';
+                        else if (path.includes('/report')) this.currentModule = 'Reports';
+                        else if (path.includes('/adminmanagement') || path.includes('/user')) this.currentModule = 'Admin';
+                        else if (path.includes('/process') || path.includes('/details')) this.currentModule = 'Process';
+                        else this.currentModule = 'General';
+                    },
+                    updateQuestions() {
+                        const mappings = {
+                            'Dashboard': [
+                                'How many high-risk cases are pending?',
+                                'Is the daily scheduler currently running?',
+                                'Show me a summary of cases by status'
+                            ],
+                            'Screening': [
+                                'What are mandatory KYC fields?',
+                                'How is risk score calculated?',
+                                'Documents required for Individual screening?'
+                            ],
+                            'PF': [
+                                'How do I review hits for a PF case?',
+                                'How to escalate to Senior Management?',
+                                'What does Whitelist mean?'
+                            ],
+                            'Reports': [
+                                'How to export Case Process PDF?',
+                                'Where are screening database logs?',
+                                'Can I see rejected cases report?'
+                            ],
+                            'Admin': [
+                                'How to create a new user group?',
+                                'How to assign client rights?',
+                                'Manage system roles and permissions'
+                            ],
+                            'Process': [
+                                'What is the status of this case?',
+                                'Is there a pending hit review?',
+                                'What is the final risk score breakdown?'
+                            ],
+                            'General': [
+                                'How to create a new case?',
+                                'Help with login and permissions',
+                                'What is Lemon WatchDog?'
+                            ]
+                        };
+                        this.predefinedQuestions = mappings[this.currentModule] || mappings['General'];
                     },
                     extractContextId() {
                         // 1. Try URL (e.g. /case/Process/429)
@@ -900,15 +949,21 @@
                         this.scrollToBottom();
 
                         let caseIdMatch = userMsg.match(/#([A-Z0-9]+)/i) || userMsg.match(/\b([A-Z]*[0-9][A-Z0-9]*)\b/i);
-                        let caseId = caseIdMatch ? caseIdMatch[1] : this.currentCaseId;
                         let typeToUse = queryType || this.pendingQueryType;
+                        let caseId = caseIdMatch ? caseIdMatch[1] : (typeToUse ? this.currentCaseId : null);
 
                         if (caseIdMatch) this.currentCaseId = caseId;
 
-                        if (caseId) {
-                            try {
-                                const url = typeToUse ? `/api/Chat/stream/${caseId}?queryType=${typeToUse}` : `/api/Chat/stream/${caseId}`;
-                                const response = await fetch(url);
+                        const isGeneral = !caseId || (!caseIdMatch && !typeToUse && !userMsg.includes('#'));
+                        
+                        try {
+                            const url = isGeneral 
+                                ? `/api/Chat/stream/general?prompt=${encodeURIComponent(userMsg)}&module=${this.currentModule}`
+                                : (typeToUse 
+                                    ? `/api/Chat/stream/${caseId}?queryType=${typeToUse}` 
+                                    : `/api/Chat/stream/${caseId}`);
+                                    
+                            const response = await fetch(url);
                                 
                                 if (!response.ok) throw new Error("Network response was not ok");
                                 

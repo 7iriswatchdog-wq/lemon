@@ -13,6 +13,8 @@ namespace AML.Core.Service.AI
     public class OllamaAIService : BaseService, IAIService
     {
         private readonly HttpClient _httpClient;
+        private readonly string _ollamaUrl;
+        private readonly string _modelName;
         private readonly string _modelName;
 
         public OllamaAIService(IConfiguration configuration) : base(configuration)
@@ -121,6 +123,83 @@ Your goal is to provide intelligent, professional, and business-focused summarie
                     break;
                 }
             }
+        public async IAsyncEnumerable<string> GetGeneralReplyStreamAsync(string prompt, string moduleContext)
+        {
+            string systemKnowledge = GetSystemManual();
+            string finalPrompt = $@"
+User is currently on the following module: {moduleContext}
+
+System Knowledge Base:
+{systemKnowledge}
+
+User Question: {prompt}
+
+Please provide a helpful, concise guide or answer based on the system knowledge and the current module. Use Markdown formatting.
+";
+            var requestBody = new
+            {
+                model = _modelName,
+                prompt = finalPrompt,
+                system = "You are a helpful system assistant for Lemon WatchDog. Use Markdown with sections and bolding.",
+                stream = true
+            };
+
+            var json = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, "api/generate") { Content = content };
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var reader = new StreamReader(stream);
+
+            while (!reader.EndOfStream)
+            {
+                var line = await reader.ReadLineAsync();
+                if (string.IsNullOrWhiteSpace(line)) continue;
+
+                using var doc = JsonDocument.Parse(line);
+                if (doc.RootElement.TryGetProperty("response", out var part))
+                {
+                    yield return part.GetString();
+                }
+            }
+        }
+
+        private string GetSystemManual()
+        {
+            return @"
+Lemon WatchDog System Manual:
+
+1. Dashboard:
+- Overview of all case statuses.
+- Case Statuses: Pending (0), Approved (2), Rejected (3), Senior Mgmt (4), Auto (5), Daily Scheduler (6).
+- High Risk cases require immediate attention.
+
+2. Screening & KYC:
+- Modules for 'Individual' and 'Corporate' creation.
+- Mandatory fields: Name, ID/Company Code, Nationality/Country, Address.
+- Risk Scoring: Automatically calculated based on assessment versions. High scores trigger 'Pending' status.
+- Hit Handling: If a match is found during search, the case status becomes 'Pending'.
+
+3. Proliferation Finance (PF):
+- Search against global sanction and watchlists (MongoDB).
+- Findings: Potential hits must be reviewed.
+- Escalation: Findings can be submitted to Senior Management for further investigation.
+- Decisions: Whitelist (Approval bypass), Approved, Reject, Hold.
+
+4. Reports:
+- Case Reports: Detailed PDF summaries of process and findings.
+- Screening Logs: Audit trail of all database searches and results.
+- Exporting: Use the PDF export buttons on Case/Details pages.
+
+5. Admin Management:
+- User Management: Create and edit users.
+- User Groups: Manage permissions by grouping users (e.g., Senior Management, Compliance).
+- Client Rights: Assign which clients/banks a user group can manage.
+- Security: Access is strictly controlled by ClientId and Group rights.
+";
         }
     }
 }
