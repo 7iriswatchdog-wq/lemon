@@ -1,3 +1,6 @@
+using AML.Core.ServiceContract.AI;
+using AML.DTO.DTO.AI;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5,8 +8,6 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AML.Core.ServiceContract.AI;
-using Microsoft.Extensions.Configuration;
 
 namespace AML.Core.Service.AI
 {
@@ -86,12 +87,22 @@ Your goal is to provide intelligent, professional, and business-focused summarie
             }
         }
 
-        public async IAsyncEnumerable<string> GetIntelligentReplyStreamAsync(string prompt, string context)
+        public async IAsyncEnumerable<string> GetIntelligentReplyStreamAsync(string prompt, string context, List<ChatMessageDTO> history = null)
         {
+            var sbPrompt = new StringBuilder();
+            if (history != null)
+            {
+                foreach (var msg in history)
+                {
+                    sbPrompt.Append($"<|{msg.Role}|>\n{msg.Content}\n\n");
+                }
+            }
+            sbPrompt.Append($"<|user|>\n{prompt}\n\n<|assistant|>\n");
+
             var requestBody = new
             {
                 model = _modelName,
-                prompt = prompt,
+                prompt = sbPrompt.ToString(),
                 system = GetSystemPrompt(context),
                 stream = true
             };
@@ -101,7 +112,6 @@ Your goal is to provide intelligent, professional, and business-focused summarie
 
             using var request = new HttpRequestMessage(HttpMethod.Post, "api/generate") { Content = content };
             using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            
             response.EnsureSuccessStatusCode();
 
             using var stream = await response.Content.ReadAsStreamAsync();
@@ -117,33 +127,31 @@ Your goal is to provide intelligent, professional, and business-focused summarie
                 {
                     yield return part.GetString();
                 }
-
-                if (doc.RootElement.TryGetProperty("done", out var done) && done.GetBoolean())
-                {
-                    break;
-                }
             }
-        public async IAsyncEnumerable<string> GetGeneralReplyStreamAsync(string prompt, string moduleContext)
+        }
+
+        public async IAsyncEnumerable<string> GetGeneralReplyStreamAsync(string prompt, string moduleContext, List<ChatMessageDTO> history = null)
         {
             string systemKnowledge = GetSystemManual();
-            string finalPrompt = $@"
-User is currently on the following module: {moduleContext}
+            var sbPrompt = new StringBuilder();
+            sbPrompt.Append($"User Context: Currently on {moduleContext}\nSystem Knowledge Base: {systemKnowledge}\n\n");
 
-System Knowledge Base:
-{systemKnowledge}
+            if (history != null)
+            {
+                foreach (var msg in history)
+                {
+                    sbPrompt.Append($"<|{msg.Role}|>\n{msg.Content}\n\n");
+                }
+            }
+            sbPrompt.Append($"<|user|>\n{prompt}\n\n<|assistant|>\n");
 
-User Question: {prompt}
-
-Please provide a helpful, concise guide or answer based on the system knowledge and the current module. Use Markdown formatting.
-";
             var requestBody = new
             {
                 model = _modelName,
-                prompt = finalPrompt,
+                prompt = sbPrompt.ToString(),
                 system = "You are a helpful system assistant for Lemon WatchDog. Use Markdown with sections and bolding.",
                 stream = true
             };
-
             var json = JsonSerializer.Serialize(requestBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 

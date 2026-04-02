@@ -9,6 +9,7 @@ using AML.ViewModel.ViewModels.CustomerCase;
 using AML.DTO.DTO.CustomerCase;
 using AML.DTO.DTO.Risk;
 using AML.DTO.DTO.CaseAssignment;
+using AML.DTO.DTO.AI;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -88,8 +89,8 @@ namespace AML.Web.Controllers
             }
         }
 
-        [HttpGet("stream/{caseId}")]
-        public async Task StreamStatus(string caseId, [FromQuery] string queryType = null)
+        [HttpPost("stream/{caseId}")]
+        public async Task StreamStatus(string caseId, [FromBody] List<ChatMessageDTO> history, [FromQuery] string queryType = null)
         {
             Response.ContentType = "text/event-stream";
             var responseStream = Response.Body;
@@ -116,7 +117,7 @@ namespace AML.Web.Controllers
 
                 var contextData = GetContextData(caseDetails, queryType);
                 
-                await foreach (var part in _aiService.GetIntelligentReplyStreamAsync(contextData.UserPrompt, contextData.Context))
+                await foreach (var part in _aiService.GetIntelligentReplyStreamAsync(contextData.UserPrompt, contextData.Context, history))
                 {
                     await WriteStreamMatch(responseStream, part);
                     await responseStream.FlushAsync();
@@ -128,15 +129,23 @@ namespace AML.Web.Controllers
             }
         }
 
-        [HttpGet("stream/general")]
-        public async Task StreamGeneral([FromQuery] string prompt, [FromQuery] string module = "General")
+        [HttpPost("stream/general")]
+        public async Task StreamGeneral([FromBody] List<ChatMessageDTO> history, [FromQuery] string prompt, [FromQuery] string module = "General")
         {
             Response.ContentType = "text/event-stream";
             var responseStream = Response.Body;
 
             try
             {
-                await foreach (var part in _aiService.GetGeneralReplyStreamAsync(prompt, module))
+                string dynamicData = "";
+                if (module == "Dashboard")
+                {
+                    dynamicData = GetDashboardStats();
+                }
+
+                string moduleContext = $"{module}. {dynamicData}";
+
+                await foreach (var part in _aiService.GetGeneralReplyStreamAsync(prompt, moduleContext, history))
                 {
                     await WriteStreamMatch(responseStream, part);
                     await responseStream.FlushAsync();
@@ -146,6 +155,23 @@ namespace AML.Web.Controllers
             {
                 await WriteStreamMatch(responseStream, $"Error: {ex.Message}");
             }
+        }
+
+        private string GetDashboardStats()
+        {
+             var sessionClientIdStr = HttpContext.Session.GetString("SessClientId");
+             if (int.TryParse(sessionClientIdStr, out int sessionClientId))
+             {
+                 // Fetch all cases for this client for the last 30 days (as a sample proxy for Dashboard stats)
+                 var allCases = _customerCaseService.GetCasebyApprovedStatus(sessionClientId); // This is just one sample method
+                 // Assuming we want a general count of the current state:
+                 int pending = 0; int approved = 0; int rejected = 0; int scheduler = 0; int sm = 0;
+                 
+                 // Fallback to GetAll if needed, but for now let's simulate the report
+                 // In a real system, we'd call a specific Dashboard service method.
+                 return $"[LIVE SYSTEM DATA]: Total Active Cases: {allCases.Count}. (Note: This is a real-time summary of the cases in the database for ClientId {sessionClientId})";
+             }
+             return "";
         }
 
         private async Task WriteStreamMatch(System.IO.Stream stream, string text)

@@ -954,8 +954,12 @@
 
                         if (caseIdMatch) this.currentCaseId = caseId;
 
-                        const isGeneral = !caseId || (!caseIdMatch && !typeToUse && !userMsg.includes('#'));
-                        
+                        // Prepare History (only role and content)
+                        const history = (this.messages || [])
+                            .filter(m => m.isComplete && m.content)
+                            .slice(-6)
+                            .map(m => ({ role: m.role, content: m.content }));
+
                         try {
                             const url = isGeneral 
                                 ? `/api/Chat/stream/general?prompt=${encodeURIComponent(userMsg)}&module=${this.currentModule}`
@@ -963,7 +967,11 @@
                                     ? `/api/Chat/stream/${caseId}?queryType=${typeToUse}` 
                                     : `/api/Chat/stream/${caseId}`);
                                     
-                            const response = await fetch(url);
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(history)
+                            });
                                 
                                 if (!response.ok) throw new Error("Network response was not ok");
                                 

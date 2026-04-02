@@ -1,3 +1,4 @@
+using AML.DTO.DTO.AI;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -11,13 +12,13 @@ namespace AML.Core.ServiceContract.AI
         Task<string> GetIntelligentReplyAsync(string prompt, string context);
 
         /// <summary>
-        /// Streams an intelligent AI reply word-by-word.
+        /// Streams an intelligent AI reply word-by-word with conversation history.
         /// </summary>
-        IAsyncEnumerable<string> GetIntelligentReplyStreamAsync(string prompt, string context);
+        IAsyncEnumerable<string> GetIntelligentReplyStreamAsync(string prompt, string context, List<ChatMessageDTO> history = null);
 
         /// <summary>
-        /// Streams a general AI reply about system knowledge.
+        /// Streams a general AI reply about system knowledge with conversation history.
         /// </summary>
-        IAsyncEnumerable<string> GetGeneralReplyStreamAsync(string prompt, string moduleContext);
+        IAsyncEnumerable<string> GetGeneralReplyStreamAsync(string prompt, string moduleContext, List<ChatMessageDTO> history = null);
     }
 }
