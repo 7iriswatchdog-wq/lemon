@@ -165,6 +165,8 @@ using AML.Core.RepositoryContract.ProliferationFinance;
 using AML.Core.ServiceContract.ProliferationFinance;
 using AML.Core.Repository.ProliferationFinance;
 using AML.Core.Service.ProliferationFinance;
+using AML.Core.ServiceContract.AI;
+using AML.Core.Service.AI;
 
 namespace AML.Web
 {
@@ -390,6 +392,7 @@ namespace AML.Web
             services.AddTransient<ITransactionMonitorService, TransactionMonitorService>();
             services.AddTransient<ITransactionScreeningService, TransactionScreeningService>();
             services.AddTransient<IEWRAService, EWRAService>();
+            services.AddTransient<IAIService, OllamaAIService>();
 
             //services.AddScoped<IBaseRepository, BaseRepository>();
             services.AddScoped<IUserGroupRightRepository, UserGroupRightRepository>();

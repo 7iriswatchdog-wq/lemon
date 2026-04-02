@@ -7,7 +7,6 @@
 @*@using AML.Web.Helpers;*@
 @using static AML.Web.Helpers.NavigationIndicatorHelper;
 @using Microsoft.AspNetCore.Http
-@using Microsoft.AspNetCore.Http
 @using AML.Core.ServiceContract.UserAccess
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IUserGroupRightService _userGroupRightService
@@ -57,6 +56,7 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <script type="text/tailwindcss">
         tailwind.config = {
@@ -131,6 +131,13 @@
   }
 }
 
+        .prose-chat h1, .prose-chat h2, .prose-chat h3 { font-weight: bold; margin: 8px 0 4px 0; font-size: 0.9rem; color: #1e293b; }
+        .prose-chat p { margin-bottom: 12px; line-height: 1.5; }
+        .prose-chat ul { list-style-type: disc; padding-left: 20px; margin: 8px 0; }
+        .prose-chat li { margin-bottom: 4px; }
+        .prose-chat strong { font-weight: 800; color: #020617; }
+        .prose-chat em { font-style: italic; color: #334155; }
+        .prose-chat br { content: " "; display: block; margin: 8px 0; }
   </style>
   <script defer>
       let list=[];
@@ -759,9 +766,9 @@
                     <template x-for="msg in messages">
                         <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
                             <div :class="msg.role === 'user' ? 'bg-blue-600 text-white text-xs' : 'bg-white border border-slate-200 text-slate-800 text-xs'"
-                                 class="max-w-[85%] p-3 rounded-2xl shadow-sm leading-relaxed">
-                                <p x-text="msg.content"></p>
-                                <span x-show="msg.role === 'assistant'" class="block mt-2 text-[9px] opacity-50 font-bold uppercase tracking-wider text-slate-400">Source: Case Context</span>
+                                 class="max-w-[85%] p-3 rounded-2xl shadow-sm leading-relaxed prose-chat">
+                                <div x-html="renderMessage(msg.content)"></div>
+                                <span x-show="msg.role === 'assistant' && msg.isComplete" class="block mt-2 text-[9px] opacity-50 font-bold uppercase tracking-wider text-slate-400">Source: Case Context</span>
                             </div>
                         </div>
                     </template>
@@ -882,9 +889,9 @@
                         }
                     },
                     async sendMessage(queryType = null, skipPush = false) {
-                        if (!this.userInput.trim()) return;
+                        if (!this.userInput.trim() && !queryType) return;
 
-                        const userMsg = this.userInput;
+                        const userMsg = this.userInput || (queryType ? `Tell me about the ${queryType}.` : "");
                         if (!skipPush) {
                             this.messages.push({ role: 'user', content: userMsg });
                         }
@@ -892,42 +899,74 @@
                         this.isTyping = true;
                         this.scrollToBottom();
 
-                        // Logic to detect Case ID
                         let caseIdMatch = userMsg.match(/#([A-Z0-9]+)/i) || userMsg.match(/\b([A-Z]*[0-9][A-Z0-9]*)\b/i);
                         let caseId = caseIdMatch ? caseIdMatch[1] : this.currentCaseId;
                         let typeToUse = queryType || this.pendingQueryType;
 
-                        // Persist the detected ID for follow-ups
-                        if (caseIdMatch) {
-                            this.currentCaseId = caseId;
-                        }
+                        if (caseIdMatch) this.currentCaseId = caseId;
 
                         if (caseId) {
                             try {
-                                const url = typeToUse ? `/api/Chat/status/${caseId}?queryType=${typeToUse}` : `/api/Chat/status/${caseId}`;
+                                const url = typeToUse ? `/api/Chat/stream/${caseId}?queryType=${typeToUse}` : `/api/Chat/stream/${caseId}`;
                                 const response = await fetch(url);
-                                if (response.ok) {
-                                    const data = await response.json();
-                                    this.messages.push({ role: 'assistant', content: data.status });
-                                    this.pendingQueryType = null; // Clear after successful response
-                                } else {
-                                    this.messages.push({ role: 'assistant', content: `I couldn't find details for Case #${caseId}. Please ensure the ID is correct.` });
+                                
+                                if (!response.ok) throw new Error("Network response was not ok");
+                                
+                                const reader = response.body.getReader();
+                                const decoder = new TextDecoder();
+                                
+                                // Add initial empty assistant message
+                                const assistantMsgIndex = this.messages.push({ 
+                                    role: 'assistant', 
+                                    content: '', 
+                                    isComplete: false 
+                                }) - 1;
+                                
+                                this.isTyping = false; // Hide bounce once streaming starts
+
+                                while (true) {
+                                    const { value, done } = await reader.read();
+                                    if (done) break;
+                                    
+                                    const chunk = decoder.decode(value);
+                                    const lines = chunk.split('\n');
+                                    
+                                    for (const line of lines) {
+                                        if (line.startsWith('data: ')) {
+                                            try {
+                                                const data = JSON.parse(line.substring(6));
+                                                this.messages[assistantMsgIndex].content += data.t;
+                                                this.scrollToBottom();
+                                            } catch (e) { console.error("JSON parse error in stream", e); }
+                                        }
+                                    }
                                 }
+                                this.messages[assistantMsgIndex].isComplete = true;
+                                this.pendingQueryType = null;
                             } catch (e) {
-                                this.messages.push({ role: 'assistant', content: "I'm having trouble connecting to the data source right now." });
+                                this.isTyping = false;
+                                this.messages.push({ role: 'assistant', content: "I'm having trouble connecting to the data source right now.", isComplete: true });
                             }
                         } else {
-                            // Default response if no Case ID found or question can't be answered contextually
                             setTimeout(() => {
-                                this.messages.push({ role: 'assistant', content: "I'm sorry, I can only provide status and hit details when a Case ID is provided. Please provide a Case ID (e.g., #12345) or navigate to a case page." });
+                                this.messages.push({ role: 'assistant', content: "I need a Case ID (e.g., #12345) to provide specific details.", isComplete: true });
                                 this.isTyping = false;
                                 this.scrollToBottom();
-                            }, 800);
+                            }, 500);
                         }
                         
                         this.isTyping = false;
                         this.scrollToBottom();
                         setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 50);
+                    },
+                    renderMessage(content) {
+                        if (!content) return "";
+                        // Configure marked to handle single line breaks
+                        marked.setOptions({
+                            breaks: true,
+                            gfm: true
+                        });
+                        return marked.parse(content);
                     },
                     scrollToBottom() {
                         setTimeout(() => {
