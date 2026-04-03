@@ -10,6 +10,7 @@ using AML.DTO.DTO.CustomerCase;
 using AML.DTO.DTO.Risk;
 using AML.DTO.DTO.CaseAssignment;
 using AML.DTO.DTO.AI;
+using AML.DTO.DTO.ProliferationFinance;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -172,8 +173,8 @@ namespace AML.Web.Controllers
                  int auto = allCases.Count(c => c.Status == 5);
                  int scheduler = allCases.Count(c => c.Status == 6);
 
-                 var highRiskCount = allCases.Count(c => c.CustomerScreenMatchScore > 80);
-                 var topHighRiskList = string.Join(", ", allCases.Where(c => c.CustomerScreenMatchScore > 80).OrderByDescending(c => c.CustomerScreenMatchScore).Take(5).Select(c => $"#{c.CustomerId} {c.FirstName} {c.LastName} ({c.CustomerScreenMatchScore}%)"));
+                 var highRiskCount = allCases.Count(c => c.MatchScore > 80);
+                 var topHighRiskList = string.Join(", ", allCases.Where(c => c.MatchScore > 80).OrderByDescending(c => c.MatchScore).Take(5).Select(c => $"#{c.CustomerId} {c.FirstName} {c.LastName} ({c.MatchScore}%)"));
 
                  return $"[LIVE DASHBOARD SUMMARY]: Pending: {pending}, Approved: {approved}, Rejected: {rejected}, In Senior Management: {seniorMgmt}, Auto: {auto}, Daily Scheduler: {scheduler}. High Risk Count: {highRiskCount}. TOP CASES: {topHighRiskList}. Total Cases: {allCases.Count}.";
              }
@@ -189,39 +190,74 @@ namespace AML.Web.Controllers
 2. HIGH RISK ALERT: System classifies a match as High Risk if the Score exceeds 80.
 3. SCHEDULER: The system's background engine automatically rescreens existing cases against updated sanction lists daily.",
                 
-                "Due Diligence" | "Case Creation" => @"[HANDBOOK: SCREENING & CREATION]:
-1. MANDATORY FIELDS: Full Name*, Nationality*, Gender*, Date of Birth*, ID Number*, and ID Type*. (* Indicates required for list screening).
-2. INPUT METHODS: 
-   - Manual: Core data entry for immediate screening.
-   - OCR Upload: Extracts text from Passport or ID card images.
-   - Bulk Upload: Uses a system Excel template for high-volume ingestion.
-3. RISK CATEGORIES: Individuals are screened against PEP (Politically Exposed), SAN (Sanctions/OFAC/EU), UN (United Nations), and UAE Local lists. 
-4. MATCH SCORE: A percentage (0-100%) indicating how closely the input name matches a listed sanction record.",
-
-                "PF Creation" => @"[HANDBOOK: PROLIFERATION FINANCE]:
-1. LEGAL BASIS: Screening is performed against 'UAE Cabinet Decision No. 156 of 2025' regarding dual-use items and chemical weapons.
-2. SEARCH LAYERS:
-   - Layer 1 (Database): Direct match against HS Codes, CAS Numbers, and Chemical Names.
-   - Layer 2 (PDF Search): Intelligent keyword search within official legislation PDFs (Decision 156).
-3. HIT REVIEW: All hits must be categorized as 'No Match', 'Potential Match', or 'Confirmed Hit'. Decision and Remarks are mandatory for each finding.",
-
-                "Admin" => @"[HANDBOOK: ADMINISTRATION]:
-1. USER GROUPS: Permissions are grouped into 'Admin', 'Compliance/Reviewer', and 'View-Only'.
-2. PERMISSION MATRIX: Rights are defined as View, Add, Edit, or Delete per system menu.
-3. CLIENT RIGHTS: Global system toggles for the Client ID that enable/disable specific modules like OCR or PF.",
-
-                "Reports" => @"[HANDBOOK: REPORTS & AUDIT]:
-1. COMPLETED CASES: Archive of all finalized screenings.
-2. EVIDENCE: The 'Export' button generates a Case Process PDF, which is the official audit trail for compliance.
-3. AUDIT LOGS: Every action (login, search, decision, or export) is logged in the system's Audit Trail (ScreeningLogs table).",
-
-                "Process" => @"[HANDBOOK: RISK & DECISION]:
-1. RISK CALCULATION: The final Risk Level (Low/Medium/High) is a weighted sum of categories: Country Risk (Sanctioned vs Non-Sanctioned), Occupation (PEPs), and Product/Service types.
-2. OVERRIDE: Authorized users can manually adjust the Risk Level if they provide a justified business reason.
-3. ESCALATION: High-risk or suspicious findings should be sent to 'Senior Management' (Status 4) for final sign-off.",
-
+                "PF Creation" => GetPFKnowledge(),
+                "Due Diligence" or "Case Creation" => GetDueDiligenceKnowledge(),
+                "Reports" => GetReportsKnowledge(),
+                "Admin" => GetAdminKnowledge(),
+                "Process" => GetRiskProcessKnowledge(),
                 _ => "General AML/KYC guidance for the Lemon WatchDog system."
             };
+        }
+
+        private string GetAdminKnowledge()
+        {
+            var clients = _customerCaseService.GetAllAdminClients();
+            var activeCount = clients.Count(c => c.isActive == 1);
+            var blockedCount = clients.Count(c => c.isActive == 0);
+            var topClients = string.Join(", ", clients.Take(10).Select(c => $"{c.ClientName} ({c.Prefix})"));
+
+            return $@"[LIVE ADMIN SQL REGISTRY]: 
+- Total Clients: {clients.Count}
+- Active: {activeCount}
+- Blocked/Inactive: {blockedCount}
+- Top 10 Clients (by ID): {topClients}
+
+[HANDBOOK: ADMINISTRATION]:
+1. USER GROUPS: Permissions are grouped into 'Admin', 'Compliance/Reviewer', and 'View-Only'.
+2. PERMISSION MATRIX: Rights are defined as View, Add, Edit, or Delete per system menu.
+3. CLIENT RIGHTS: Global system toggles for the Client ID that enable/disable specific modules like OCR or PF.";
+        }
+
+        private string GetPFKnowledge()
+        {
+            var cases = _proliferationFinanceService.GetAllCases()?.Result ?? new List<ProliferationFinanceCaseDTO>();
+            var recentHits = cases.Where(c => c.CreatedOn >= DateTime.Now.AddDays(-7)).Count();
+            
+            return $@"[LIVE PROLIFERATION MONGODB LEDGER]: 
+- Total PF Cases: {cases.Count}
+- Hits in the last 7 days: {recentHits}
+[HANDBOOK: PROLIFERATION FINANCE]:
+1. LEGAL BASIS: Screening is performed against 'UAE Cabinet Decision No. 156 of 2025' regarding dual-use items and chemical weapons.
+2. DATABASE ACCESS: Real-time matched results are retrieved from the system's **MongoDB Proliferation Ledger**.
+3. SEARCH LAYERS: SQL HS/CAS Database & PDF Intelligent Keyword Search.";
+        }
+
+        private string GetDueDiligenceKnowledge()
+        {
+            var unscreenedCount = _customerCaseService.GetUnscreenedCustomers()?.Count ?? 0;
+            return $@"[LIVE DUE DILIGENCE SQL QUEUE]: 
+- Customers Pending Screening: {unscreenedCount}
+[HANDBOOK: SCREENING & CREATION]:
+1. MANDATORY FIELDS: Full Name, Nationality, Gender, Date of Birth, ID Number.
+2. RISK CATEGORIES: PEP (Politically Exposed), SAN (Sanctions), UN, and UAE Local lists.";
+        }
+
+        private string GetReportsKnowledge()
+        {
+            // Fetch for current client - passing dummy params for count check
+            var completed = _customerCaseService.GetAllCompletedCases(0, null, null, null, null, 0, 0, null, 0);
+            return $@"[LIVE REPORTS ARCHIVE]: 
+- Total Completed Cases (Audit-Ready): {completed?.Count ?? 0}
+[HANDBOOK: REPORTS & AUDIT]:
+1. EVIDENCE: The 'Export' button generates a Case Process PDF (official audit trail).
+2. AUDIT LOGS: Every action is logged in the system's ScreeningLogs table.";
+        }
+
+        private string GetRiskProcessKnowledge()
+        {
+            return @"[HANDBOOK: RISK & DECISION]:
+1. RISK CALCULATION: Weighted sum of Country Risk, Occupation (PEPs), and Product/Service types.
+2. ESCALATION: High-risk findings should be sent to 'Senior Management' for final sign-off.";
         }
 
         private async Task WriteStreamMatch(System.IO.Stream stream, string text)
