@@ -86,7 +86,7 @@ namespace AML.DTO.DTO.Kyc
 
         public string HighNetworkIndividual { get; set; }
 
-
+        public string DualUseGoods { get; set; }
 
 
 

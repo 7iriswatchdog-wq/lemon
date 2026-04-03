@@ -1243,10 +1243,10 @@ namespace AML.Web.Controllers.Corporate
                                     CorporateKycDTO corpModel = new CorporateKycDTO();
 
                                     //To check if risk assessment is enabled for the client.
-                                    var result = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(clientId));
+                                    //var result = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(clientId));
 
-                                    if (result != null)
-                                    {
+                                    //if (result != null)
+                                    //{
                                         Console.WriteLine("Generate risk");
 
 
@@ -1490,7 +1490,7 @@ namespace AML.Web.Controllers.Corporate
                                             var xyz = riskResult;
                                             Console.WriteLine($"generated risk for customer: {JsonConvert.SerializeObject(riskModel, Formatting.Indented)}");
                                             Console.WriteLine($"Finished generating risk for customer: {JsonConvert.SerializeObject(riskResult, Formatting.Indented)}");
-                                        }
+                                        //}
                                     }
                                 }
 

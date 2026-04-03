@@ -219,6 +219,7 @@ namespace AML.Core.Repository.Kyc
                 parameters.Add("p_indhighnetworkindividual", kycIndividual.HighNetworkIndividual != null && kycIndividual.HighNetworkIndividual != "0" ? kycIndividual.HighNetworkIndividual : "");
                 parameters.Add("p_corphighnetworkindividual", kycCorporate.HighNetworkIndividual != null && kycCorporate.HighNetworkIndividual != "0" ? kycCorporate.HighNetworkIndividual : "");
                 parameters.Add("p_dualusegoods", kycCorporate.DualUseGoods != null && kycCorporate.DualUseGoods != "0" ? kycCorporate.DualUseGoods : "");
+                parameters.Add("p_inddualusegoods", kycIndividual.DualUseGoods != null && kycIndividual.DualUseGoods != "0" ? kycIndividual.DualUseGoods : "");
                 parameters.Add("p_type", Type);
                 serviceResponse.Result = (string)ExecuteScalar("get_risk_type_id_kyc", parameters, commandType: CommandType.StoredProcedure) ?? null;
                 serviceResponse.Message = "Individual KYC risk type id fetched successfully";
@@ -343,6 +344,7 @@ namespace AML.Core.Repository.Kyc
                 parameters.Add("p_indhighnetworkindividual", kycIndividual.HighNetworkIndividual != null && kycIndividual.HighNetworkIndividual != "0" ? kycIndividual.HighNetworkIndividual : "");
                 parameters.Add("p_corphighnetworkindividual", kycCorporate.HighNetworkIndividual != null && kycCorporate.HighNetworkIndividual != "0" ? kycCorporate.HighNetworkIndividual : "");
                 parameters.Add("p_dualusegoods", kycCorporate.DualUseGoods != null && kycCorporate.DualUseGoods != "0" ? kycCorporate.DualUseGoods : "");
+                parameters.Add("p_inddualusegoods", kycIndividual.DualUseGoods != null && kycIndividual.DualUseGoods != "0" ? kycIndividual.DualUseGoods : "");
 
                 parameters.Add("p_type", Type);
                 serviceResponse.Result = (string)ExecuteScalar("get_risk_lov_id_kyc", parameters, commandType: CommandType.StoredProcedure) ?? null;

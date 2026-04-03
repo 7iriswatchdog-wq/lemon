@@ -59,7 +59,15 @@ namespace AML.Core.Repository.Report
                     parameters.Add("p_createdBy", requestModel.createdBy);
                     parameters.Add("c_status", requestModel.caseStatus);
                     parameters.Add("p_riskLevel", requestModel.riskLevel);
-                serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_report", parameters, commandType: CommandType.StoredProcedure).ToList();
+                    if (requestModel.caseStatus == 7)
+                    {
+                        parameters.Add("p_searchvalue", requestModel.SearchValue);
+                        serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_whitelist_report", parameters, commandType: CommandType.StoredProcedure).ToList();
+                    }
+                    else
+                    {
+                        serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_report", parameters, commandType: CommandType.StoredProcedure).ToList();
+                    }
                     serviceResponse.Message = "CustomerCase details fetched successfully.";
                     serviceResponse.Status = StaticResource.SuccessStatusCode;
             }
@@ -104,7 +112,14 @@ namespace AML.Core.Repository.Report
                 parameters.Add("c_status", requestModel.caseStatus);
                 parameters.Add("p_riskLevel", requestModel.riskLevel);
                 parameters.Add("p_searchvalue", requestModel.SearchValue);
-                serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_report_by_searchvalue", parameters, commandType: CommandType.StoredProcedure).ToList();
+                if (requestModel.caseStatus == 7)
+                {
+                    serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_whitelist_report", parameters, commandType: CommandType.StoredProcedure).ToList();
+                }
+                else
+                {
+                    serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_report_by_searchvalue", parameters, commandType: CommandType.StoredProcedure).ToList();
+                }
                 serviceResponse.Message = "CustomerCase details fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
             }
