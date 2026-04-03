@@ -189,7 +189,7 @@ namespace AML.Web.Controllers
 2. HIGH RISK ALERT: System classifies a match as High Risk if the Score exceeds 80.
 3. SCHEDULER: The system's background engine automatically rescreens existing cases against updated sanction lists daily.",
                 
-                "Due Diligence" | "Case Creation" => @"[HANDBOOK: SCREENING & CREATION]:
+                "Due Diligence" or "Case Creation" => @"[HANDBOOK: SCREENING & CREATION]:
 1. MANDATORY FIELDS: Full Name*, Nationality*, Gender*, Date of Birth*, ID Number*, and ID Type*. (* Indicates required for list screening).
 2. INPUT METHODS: 
    - Manual: Core data entry for immediate screening.

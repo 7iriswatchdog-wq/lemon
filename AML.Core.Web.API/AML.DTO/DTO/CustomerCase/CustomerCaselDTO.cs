@@ -516,6 +516,8 @@ namespace AML.DTO.DTO.CustomerCase
         [Column("goldenvisa")]
 
         public string GoldenVisa { get; set; }
+        [Column("customer_screen_match_score")]
+        public int CustomerScreenMatchScore { get; set; }
 
         public string onb_cust_ref_id { get; set; }
 

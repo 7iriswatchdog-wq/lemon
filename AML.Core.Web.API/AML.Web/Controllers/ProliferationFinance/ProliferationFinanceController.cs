@@ -1112,7 +1112,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
 
-                            var spStr1 = str1.Result.Split('Ã˜');
+                            var spStr1 = str1.Result.Split('Ø');
                             var entlovId = spStr1[2];
                             var buslovId = spStr1[4];
                             var incorplovId = spStr1[3];
@@ -1133,7 +1133,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                             {
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
-                            var spStr = str.Result.Split('Ã˜');
+                            var spStr = str.Result.Split('Ø');
                             var entId = spStr[2];
                             var busId = spStr[4];
                             var incorpId = spStr[3];
