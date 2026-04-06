@@ -62,6 +62,38 @@ namespace AML.Web.Controllers
         {
             try
             {
+                // Handle predefined questions directly or when no caseId is provided
+                if (queryType == "predefined" || string.IsNullOrWhiteSpace(caseId) || caseId == "undefined")
+                {
+                    // Check if the caseId is provided
+                    if (string.IsNullOrWhiteSpace(caseId) || caseId == "undefined")
+                    {
+                        return Ok(new
+                        {
+                            caseId = "N/A",
+                            customerName = "N/A",
+                            status = "Please provide the Case ID to check the status.",
+                            originalStatus = "Predefined response",
+                            customerType = "N/A",
+                            createdOn = "N/A",
+                            queryType = queryType
+                        });
+                    }
+                    else
+                    {
+                        return Ok(new
+                        {
+                            caseId = caseId,
+                            customerName = "N/A",
+                            status = "The case status is currently under review. Please check back later for updates.",
+                            originalStatus = "Predefined response",
+                            customerType = "N/A",
+                            createdOn = "N/A",
+                            queryType = queryType
+                        });
+                    }
+                }
+
                 // Input validation
                 if (string.IsNullOrWhiteSpace(caseId) || caseId.Length > 50)
                 {
@@ -110,6 +142,13 @@ namespace AML.Web.Controllers
 
             try
             {
+                // Handle case where no caseId is provided
+                if (string.IsNullOrWhiteSpace(caseId) || caseId == "undefined")
+                {
+                    await WriteStreamMatch(responseStream, "Please provide the Case ID to check the status.");
+                    return;
+                }
+
                 CustomerCaseDTO caseDetails = _chatDataService.GetCaseDetails(caseId);
                 if (caseDetails == null)
                 {

@@ -932,12 +932,12 @@
                     updateQuestions() {
                         const mappings = {
                             'Dashboard': ['How many high-risk cases are pending?', 'Show me status breakdown for today', 'What is the current customer count?'],
-                            'Due Diligence': ['How to filter cases?', 'What does PEP/SAN/UN mean?', 'How to select a case for review?'],
+                            'Due Diligence': ['What is the status of the case?', 'What should I do next?', 'What was the case history?'],
                             'Case Creation': ['Mandatory fields guide', 'Individual vs. Corporate differences', 'How to upload OCR/Bulk?'],
                             'PF Creation': ['How to search by goods?', 'What is a Dual-Use item?', 'How to review hits for chemicals?'],
                             'Reports': ['How to export Completed Cases?', 'Show me case status distribution', 'Can I search by date range?'],
                             'Admin': ['How to create a new user group?', 'Help with client permissions', 'Configure screening thresholds'],
-                            'Process': ['What is the status of this case?', 'Explain the risk score components', 'Is there any pending hit review?'],
+                            'Process': ['What is the status of the case?', 'What should I do next?', 'What was the case history?'],
                             'General': ['How to get started?', 'Help with login and sessions', 'Contact system administrator']
                         };
                         this.predefinedQuestions = mappings[this.currentModule] || mappings['General'];
@@ -1002,9 +1002,13 @@
                         
                         this.messages.push({ role: 'user', content: q, isComplete: true });
                         
+                        // Extract Case ID from the user's input
+                        let caseIdMatch = q.match(/#([A-Z0-9]+)/i) || q.match(/\b([A-Z]*[0-9][A-Z0-9]*)\b/i);
+                        let caseId = caseIdMatch ? caseIdMatch[1] : null;
+                        
                         // Predefined questions always bypass the Case ID requirement as they are informational
                         this.userInput = q;
-                        this.sendMessage(type, true);
+                        this.sendMessage('predefined', true);
                         this.showInput = true;
                         this.showOptions = false;
                         this.saveToStorage();
@@ -1072,6 +1076,11 @@
                             this.pendingQueryType = null; // Clear it once used
                         }
 
+                        // For predefined questions, use the extracted caseId or prompt the user
+                        if (queryType === 'predefined') {
+                            caseId = caseId || 'undefined';
+                        }
+
                         const isGeneral = !caseId || (!caseIdMatch && !typeToUse && !userMsg.includes('#'));
 
                         // Prepare History (only role and content)
@@ -1081,21 +1090,32 @@
                             .map(m => ({ role: m.role, content: m.content }));
 
                         try {
-                            const url = isGeneral 
+                            const url = queryType === 'predefined'
+                                ? `/api/Chat/status/${caseId}?queryType=predefined`
+                                : isGeneral 
                                 ? `/api/Chat/stream/general?prompt=${encodeURIComponent(userMsg)}&module=${this.currentModule}&isNewChat=${isFirstMessage}`
                                 : `/api/Chat/stream/${caseId}?queryType=${encodeURIComponent(typeToUse || "")}&isNewChat=${isFirstMessage}`;
                                     
                             const response = await fetch(url, {
-                                method: 'POST',
+                                method: queryType === 'predefined' ? 'GET' : 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(history)
+                                body: queryType === 'predefined' ? undefined : JSON.stringify(history)
                             });
                                 
                             if (!response.ok) {
                                 this.stopThinkingAnimation();
                                 throw new Error("Network error");
                             }
-                            const reader = response.body.getReader();
+
+                            if (queryType === 'predefined') {
+                                const data = await response.json();
+                                const assistantMsgIndex = this.messages.push({ role: 'assistant', content: data.status, isComplete: true }) - 1;
+                                this.isTyping = false;
+                                this.stopThinkingAnimation();
+                                this.saveToStorage();
+                                this.scrollToBottom();
+                            } else {
+                                const reader = response.body.getReader();
                             const decoder = new TextDecoder();
                             const assistantMsgIndex = this.messages.push({ role: 'assistant', content: '', isComplete: false }) - 1;
                             this.isTyping = false;
@@ -1121,9 +1141,14 @@
                             }
                             this.messages[assistantMsgIndex].isComplete = true;
                             this.saveToStorage();
+                            }
                         } catch (e) {
                             this.isTyping = false;
-                            this.messages.push({ role: 'assistant', content: "Error connecting to AI service.", isComplete: true });
+                            if (queryType === 'predefined') {
+                                this.messages.push({ role: 'assistant', content: "Error connecting to the service.", isComplete: true });
+                            } else {
+                                this.messages.push({ role: 'assistant', content: "Error connecting to AI service.", isComplete: true });
+                            }
                         }
 
                         this.isTyping = false;
