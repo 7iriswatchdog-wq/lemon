@@ -65,6 +65,7 @@ namespace AML.Web.Controllers.User
         ICommonService _commonService;
         string c6BaseURL = string.Empty;
         private ICustomerCaseService _customerCaseService;
+        private readonly AML.Web.Services.ChatHistoryService _chatHistoryService;
 
         const string sessUsername = "";
         const string sessId = "";
@@ -73,7 +74,7 @@ namespace AML.Web.Controllers.User
         public UserAccessController(AML.Core.ServiceContract.UserAccess.IAuthenticationService authenticationService,
         IToastNotification toastNotification, IModuleService moduleService, ICommonService commonService,
         IFunctionalityService functionalityService, IUserGroupRightService userGroupRightService,
-        IUserGroupService userGroupService, IMapper mapper, IHttpClientHandler clientHandler, IConfiguration configuration, ICustomerCaseService customerCaseService, IFileUploader fileUploader)
+        IUserGroupService userGroupService, IMapper mapper, IHttpClientHandler clientHandler, IConfiguration configuration, ICustomerCaseService customerCaseService, IFileUploader fileUploader, AML.Web.Services.ChatHistoryService chatHistoryService)
         {
             _authenticationService = authenticationService;
             _moduleService = moduleService;
@@ -81,6 +82,7 @@ namespace AML.Web.Controllers.User
             _userGroupRightService = userGroupRightService;
             _userGroupService = userGroupService;
             _configuration = configuration;
+            _chatHistoryService = chatHistoryService;
             _mapper = mapper;
             _toastNotification = toastNotification;
             _clientHandler = clientHandler;
@@ -208,6 +210,9 @@ namespace AML.Web.Controllers.User
         [HttpGet("auth/logout")]
         public IActionResult Logout()
         {
+            // Clear chat history before logging out
+            _chatHistoryService.ClearAllUserChatHistory();
+            
             _clientHandler.SetStringSession(StaticResource.sessUserId, "0");
             _clientHandler.SetStringSession(StaticResource.sessBranchId, "0");
             _clientHandler.SetStringSession(StaticResource.sessRoleId, "0");

@@ -15,6 +15,7 @@ namespace AML.Core.Service.AI
     {
         private readonly HttpClient _httpClient;
         private readonly string _modelName;
+        private readonly int _maxContextLength;
 
         public OllamaAIService(IConfiguration configuration) : base(configuration)
         {
@@ -24,10 +25,55 @@ namespace AML.Core.Service.AI
                 Timeout = TimeSpan.FromMinutes(2)
             };
             _modelName = configuration["AI:ModelName"] ?? "llama3.1:8b";
+            _maxContextLength = int.TryParse(configuration["AI:ContextLength"], out int contextLength) ? contextLength : 8000;
+        }
+
+        private string TruncateContext(string context)
+        {
+            if (string.IsNullOrEmpty(context) || context.Length <= _maxContextLength)
+            {
+                return context;
+            }
+            
+            // Truncate to max context length, trying to find a reasonable breaking point
+            int truncateLength = Math.Min(_maxContextLength, context.Length);
+            string truncated = context.Substring(0, truncateLength);
+            
+            // Try to find the last complete sentence or line break
+            int lastNewline = truncated.LastIndexOf('\n');
+            if (lastNewline > 0 && lastNewline > truncateLength - 100)
+            {
+                truncated = truncated.Substring(0, lastNewline);
+            }
+            
+            return truncated + "\n\n[Context truncated due to length limitations]";
+        }
+
+        private string TruncatePrompt(StringBuilder sbPrompt)
+        {
+            string fullPrompt = sbPrompt.ToString();
+            if (fullPrompt.Length <= _maxContextLength)
+            {
+                return fullPrompt;
+            }
+            
+            // Truncate to max context length, trying to preserve recent history
+            int truncateLength = Math.Min(_maxContextLength, fullPrompt.Length);
+            string truncated = fullPrompt.Substring(fullPrompt.Length - truncateLength);
+            
+            // Find the first complete message from the beginning
+            int firstMessageStart = truncated.IndexOf("<|");
+            if (firstMessageStart > 0)
+            {
+                truncated = truncated.Substring(firstMessageStart);
+            }
+            
+            return "[Earlier conversation truncated]\n\n" + truncated;
         }
 
         private string GetSystemPrompt(string context)
         {
+            string truncatedContext = TruncateContext(context);
             return $@"
 You are an intelligent AML/KYC assistant for the 'Lemon WatchDog' system.
 Your goal is to provide intelligent, professional, and business-focused summaries based on the provided context.
@@ -48,6 +94,7 @@ Your goal is to provide intelligent, professional, and business-focused summarie
 - Senior Management: Escalated for human review.
 - Auto: Automated system run.
 - Whitelist: Excluded from scheduler and automatically approved.
+- Daily Scheduler: Case is in the daily rescreening queue (do NOT say being processed by the system's scheduler).
 
 ### Current Case Context:
 {context}
@@ -108,10 +155,13 @@ Your goal is to provide intelligent, professional, and business-focused summarie
             }
             sbPrompt.Append($"<|user|>\n{prompt}\n\n<|assistant|>\n");
 
+            // Truncate prompt if it exceeds context length
+            string finalPrompt = TruncatePrompt(sbPrompt);
+
             var requestBody = new
             {
                 model = _modelName,
-                prompt = sbPrompt.ToString(),
+                prompt = finalPrompt,
                 system = GetSystemPrompt(context),
                 stream = true
             };
@@ -160,10 +210,13 @@ Your goal is to provide intelligent, professional, and business-focused summarie
             }
             sbPrompt.Append($"<|user|>\n{prompt}\n\n<|assistant|>\n");
 
+            // Truncate prompt if it exceeds context length
+            string finalPrompt = TruncatePrompt(sbPrompt);
+
             var requestBody = new
             {
                 model = _modelName,
-                prompt = sbPrompt.ToString(),
+                prompt = finalPrompt,
                 system = "You are a professional AML/KYC System Expert for 'Lemon WatchDog'. Answer all questions using only the provided User Context and System Knowledge Base. DATA INTEGRITY: NEVER invent fake IDs (like ARAB1234) or records. MODULE BOUNDARY: If in 'Admin', focus only on organization/user settings; do not provide PF or screening advice without a specific Case ID. For Arabic PF hits (Cabinet Decision 156), provide an English translation and summary. Advise 'Senior Management' escalation for all potential hits. Use Markdown with clear sections, bold terms, and bulleted lists. ABSOLUTELY NO numeric status codes (0-6) allowed.",
                 stream = true
             };
@@ -226,6 +279,7 @@ Your goal is to provide intelligent, professional, and business-focused summarie
 - TRACKING: Monitor case statuses: Pending (0), Approved (2), Rejected (3), Senior Management (4), Auto (5), and Daily Scheduler (6).
 - HIGH RISK: Match scores > 80 are flagged as High Risk.
 - SCHEDULER: Background engine that automatically rescreens cases daily.
+- DAILY SCHEDULER STATUS: Indicates the case is queued for daily rescreening (avoid saying 'being processed by the system's scheduler').
 
 2. SCREENING & CASE CREATION:
 - MANDATORY FIELDS (*): Full Name, Nationality, Gender, Date of Birth, ID Number, ID Type.

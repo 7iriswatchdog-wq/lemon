@@ -10,6 +10,7 @@ using AML.Core.Repository.Department;
 using AML.Core.Repository.Designation;
 using AML.Core.Repository.DigiApiUser;
 using AML.Core.Repository.EtlBatch;
+using AML.Web.Services;
 
 using AML.Core.Repository.FreeSource;
 using AML.Core.Repository.IdentityType;
@@ -393,6 +394,8 @@ namespace AML.Web
             services.AddTransient<ITransactionScreeningService, TransactionScreeningService>();
             services.AddTransient<IEWRAService, EWRAService>();
             services.AddTransient<IAIService, OllamaAIService>();
+            services.AddTransient<ChatDataService, ChatDataService>();
+            services.AddTransient<ChatHistoryService, ChatHistoryService>();
 
             //services.AddScoped<IBaseRepository, BaseRepository>();
             services.AddScoped<IUserGroupRightRepository, UserGroupRightRepository>();
