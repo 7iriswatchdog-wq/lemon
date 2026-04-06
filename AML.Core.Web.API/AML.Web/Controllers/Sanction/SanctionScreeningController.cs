@@ -2,29 +2,34 @@
 using AML.Core.Common.StaticResource;
 using AML.Core.DataContract.Enum;
 using AML.Core.Repository;
+using AML.Core.Service.CustomerCategory;
 using AML.Core.ServiceContract.Country;
+using AML.Core.ServiceContract.CustomerCase;
+using AML.Core.ServiceContract.CustomerCatogory;
 using AML.Core.ServiceContract.CustomerScreening;
 using AML.Core.ServiceContract.Sanction;
 using AML.DTO.DTO.CustomerScreening;
+using AML.DTO.DTO.Report;
 using AML.ViewModel.ViewModels.Country;
+using AML.ViewModel.ViewModels.CustomerCase;
+using AML.ViewModel.ViewModels.CustomerCategory;
 using AML.ViewModel.ViewModels.Report;
 using AML.ViewModel.ViewModels.Sanction;
+using AML.ViewModel.ViewModels.User;
 using AML.Web.CustomFilters;
 using AML.Web.Helper;
 using AutoMapper;
-using iTextSharp.text.pdf;
 using iTextSharp.text;
+using iTextSharp.text.pdf;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-
-using System.IO;
-using AML.ViewModel.ViewModels.User;
-using AML.Core.ServiceContract.CustomerCase;
 
 namespace AML.Web.Controllers.Sanction
 {
@@ -40,8 +45,9 @@ namespace AML.Web.Controllers.Sanction
         private IExportDataService _exportService;
         private ICustomerScreeningService _customerScreeningService;
         private ICustomerCaseService _customerCaseService;
+        private ICustomerCategoryService _customerCategoryService;
         private int clientId = 0;
-        public SanctionScreeningController(IMapper mapper, ICountryService countryService, IScreeningService screeningService, IHttpClientHandler clientHandler, IViewRenderService viewRenderService, IExportDataService exportService, ICustomerScreeningService customerScreeningService, ICustomerCaseService customerCaseService)
+        public SanctionScreeningController(IMapper mapper, ICountryService countryService, IScreeningService screeningService, IHttpClientHandler clientHandler, IViewRenderService viewRenderService, IExportDataService exportService, ICustomerScreeningService customerScreeningService, ICustomerCaseService customerCaseService, ICustomerCategoryService customerCategoryService)
         {
             _mapper = mapper;
             _countryService = countryService;
@@ -52,10 +58,18 @@ namespace AML.Web.Controllers.Sanction
             _customerScreeningService = customerScreeningService;
             _customerCaseService = customerCaseService;
             clientId = clientHandler.GetClientId();
+            _customerCategoryService = customerCategoryService;
         }
         public IActionResult Index()
         {
             ScreeningSearchModel model = new ScreeningSearchModel();
+            model.CustomerCategories = new SelectList(
+   _mapper.Map<List<CustomerCategoryModel>>(_customerCategoryService.GetAll().Result)
+       .Where(x => x.Name == "INDIVIDUAL" || x.Name == "CORPORATE")
+       .ToList(),
+   "Code",
+   "Name"
+);
             model.SelectionProperties = new[] { "Exact Match", "Partial Match", "Phonetic Match" };
             model.Nationalities = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)), "Name", "Name");
             return View(model);
@@ -65,7 +79,9 @@ namespace AML.Web.Controllers.Sanction
         public IActionResult SearchList(ScreeningSearchModel model)
         {
             string response = string.Empty;
-            var searchType = "F";//changing from P to F as in front end no options showing
+
+            model.clientId = _clientHandler.GetClientId();
+            var searchType = "E";//changing from P to F as in front end no options showing
             if (model.SelectionProperty != null)
             {
                 var selection = String.Concat(model.SelectionProperty.Where(c => !Char.IsWhiteSpace(c))).ToLower();
@@ -79,45 +95,60 @@ namespace AML.Web.Controllers.Sanction
 
             string data = _clientHandler.PostAsync(new DTO.DTO.Sanction.ScreeningSearchDTO
             {
-                customerdob = model.DOB.ParseDBDate("dd MMM yyyy", "01 jan 1970"),
+                customerdob = model.DOB,
                 customerfullname = model.Name,
                 customernationality = model.Nationality,
-                searchtype = searchType
+                searchtype = searchType,
+                customertype=model.customerType
             }, ScreeningService.BACKLIST_SCREENING).Result;
             List<ApiResultModel> apiResultModel = new List<ApiResultModel>();
             if (!string.IsNullOrEmpty(data))
             {
                  apiResultModel = JsonConvert.DeserializeObject<List<ApiResultModel>>(data);
-                response = AMLUtility.FormatJsonToPlainText(data);
-                model.DataList = apiResultModel;
-                dynamic mdob;
-                try
-                {
-                    mdob = Convert.ToDateTime(apiResultModel[0].matchdob);
-                }
-                catch
-                {
-                    mdob = Convert.ToDateTime(DateTime.Now);
-                }
-                //Insert Logs
-                _customerScreeningService.InsertSanctionScreeningLogs(new DTO.DTO.Sanction.SanctionScreeningLogDTO {
-                    CustomerName = model.Name,
-                    Nationality = model.Nationality,
-                    DOB = Convert.ToDateTime(model.DOB),
-                    SearchType = searchType,
-                    MatchName = apiResultModel[0].matchname,
-                    MatchScore = Convert.ToInt32(apiResultModel[0].matchscore),
-                    MatchUID = apiResultModel[0].matchuid,
-                    MatchCategory = apiResultModel[0].matchcategory,
-                    MatchType = apiResultModel[0].matchtype,
-                    MatchNationality = apiResultModel[0].nationality,
-                    MatchIDNum = apiResultModel[0].matchidnumber,
-                    MatchDOB = mdob,
-                    CreatedBy = _clientHandler.GetUserId(),
-                    ClientId = _clientHandler.GetClientId()
-            });
+                    response = AMLUtility.FormatJsonToPlainText(data);
+                    model.DataList = apiResultModel;
+                    dynamic mdob;
+                    try
+                    {
+                        mdob = Convert.ToDateTime(apiResultModel[0].matchdob);
+                    }
+                    catch
+                    {
+                        mdob = Convert.ToDateTime(DateTime.Now);
+                    }
+                    //Insert Logs
+                    _customerScreeningService.InsertSanctionScreeningLogs(new DTO.DTO.Sanction.SanctionScreeningLogDTO {
+                        CustomerName = model.Name,
+                        Nationality = model.Nationality,
+                        DOB = Convert.ToDateTime(model.DOB),
+                        SearchType = searchType,
+                        CustomerType=model.customerType,
+                        MatchName = apiResultModel[0].matchname,
+                        MatchScore = Convert.ToInt32(apiResultModel[0].matchscore),
+                        MatchUID = apiResultModel[0].matchuid,
+                        MatchCategory = apiResultModel[0].matchcategory,
+                        MatchType = apiResultModel[0].matchtype,
+                        MatchNationality = apiResultModel[0].matchnationality,
+                        MatchIDNum = apiResultModel[0].matchidnumber,
+                        MatchDOB = mdob,
+                        CreatedBy = _clientHandler.GetUserId(),
+                        ClientId = _clientHandler.GetClientId()
+                });
             }
+            
+            model.SearchLogs = _mapper.Map<List<SanctionScreeningLogModel>>(_customerScreeningService.GetSanctionScreeningLogs(model.Name,model.Nationality,model.DOB,model.customerType,clientId));
+
+            model.CaseLogs = _mapper.Map<List<CaseModel>>(_customerScreeningService.GetCaseLogs(model.Name, model.Nationality, model.DOB, model.customerType, clientId));
+
+
             model.Nationalities = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)), "Name", "Name");
+            model.CustomerCategories = new SelectList(
+              _mapper.Map<List<CustomerCategoryModel>>(_customerCategoryService.GetAll().Result)
+                  .Where(x => x.Name == "INDIVIDUAL" || x.Name == "CORPORATE")
+                  .ToList(),
+              "Code",
+              "Name"
+            );
             return View("Index",model);
         }
 
@@ -359,7 +390,7 @@ namespace AML.Web.Controllers.Sanction
                         table.AddCell(new Phrase(apiResultModel[i].matchuid, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                         table.AddCell(new Phrase(apiResultModel[i].matchcategory.ToString(), new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                         table.AddCell(new Phrase(apiResultModel[i].matchtype, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-                        table.AddCell(new Phrase(apiResultModel[i].nationality, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                        table.AddCell(new Phrase(apiResultModel[i].matchnationality, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                         table.AddCell(new Phrase(apiResultModel[i].matchidnumber, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                         table.AddCell(new Phrase(apiResultModel[i].matchdob, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
 

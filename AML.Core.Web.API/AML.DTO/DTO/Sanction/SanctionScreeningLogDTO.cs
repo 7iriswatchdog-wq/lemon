@@ -13,6 +13,8 @@ namespace AML.DTO.DTO.Sanction
         public string CustomerName { get; set; }
         [Column("nationality")]
         public string Nationality { get; set; }
+        [Column("cust_type")]
+        public string CustomerType { get; set; }
         [Column("dateofbirth")]
         public DateTime DOB { get; set; }
         [Column("search_type")]
@@ -40,5 +42,7 @@ namespace AML.DTO.DTO.Sanction
         [Column("op_rec_count")]
         public int RecordCount { get; set; }
         public int ClientId { get; set; }
+        [Column("created_user")]
+        public string CreatedUser { get; set; }
     }
 }

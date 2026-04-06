@@ -6,528 +6,178 @@
     Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
     var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
 }
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
-    .page {
-        width: 100%;
-        overflow-x: hidden;
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
+    body {
+        font-family: 'Inter', sans-serif;
     }
 
-    .head-section {
-        display: flex;
-        justify-content: space-between; /* Better than flex-start + auto margin */
-        align-items: center;
-        width: 100%;
-        height: 72px;
-        overflow-x: hidden;
-        padding: 0 16px; /* Add horizontal padding if needed */
-        box-sizing: border-box;
-        background-color: white !important;
-        border: 1px solid #dee2e6;
-    }
-
-    .flex-box {
-        display: flex;
-        width: 100%;
-        justify-content: space-between;
-        flex-wrap: wrap;
-    }
-
-    .flex-box1 {
-        display: flex;
-        width: 70%;
-        justify-content: flex-end;
-        margin: 10px 0px;
-    }
-
-    .card1 {
-        max-width: 100%; /* Ensures it never overflows parent */
-        border-radius: 8px;
-        overflow: hidden; /* Contains all child elements */
-        background-color: white !important;
-        margin: 30px 30px;
-        padding: 20px;
-    }
-
-    .export {
-        background-color: none;
-        border: 2px solid #dee2e6;
-        border-radius: 8px;
-        padding: 8px 20px;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-
-    thead {
-        background-color: rgb(233,239,253);
-        width: 100%;
-    }
-
-    th {
-        padding: 15px 0px;
-        font-weight: 500;
-    }
-
-    tr {
-        text-align: center;
-    }
-
-    thead th:first-child {
-        border-top-left-radius: 8px;
-        border-bottom-left-radius: 8px;
-    }
-
-    thead th:last-child {
-        border-top-right-radius: 8px;
-        border-bottom-right-radius: 8px;
-    }
-
-    heading {
-        font-size: 1.25rem;
-    }
-
-    input {
-        border: 1px solid #dee2e6 !important;
-        font-weight: lighter; /* full width of the parent */
-        min-width: 40%;
-        box-sizing: border-box; /* includes padding in the width */
-        padding: 8px;
-        border-radius: 8px !important;
-    }
-
-        input:focus {
-            border: 1px solid rgb(37,99,235) !important;
-        }
-
-    select:focus {
-        border: 1px solid rgb(37,99,235) !important;
-    }
-
-    th, td {
-        width: calc(100% / 4);
-        word-wrap: break-word;
-        text-align: center;
-    }
-
-    .pagination-container {
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
-        align-items: center;
-    }
-
-        .pagination-container select {
-            width: 100px;
-        }
-
-    .loader-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(255, 255, 255, 0.7);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-    }
-
-    .loader {
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid #3498db;
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        animation: spin 1s linear infinite;
-    }
-
-    @@keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-
-    @@media (max-width: 768px) {
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        .export {
-            margin: 10px;
-        }
-
-        .flex-box {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .flex-box1 {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .export {
-            width: 60%;
-            padding: 0px 0px;
-            text-align: center;
-            padding: 4px 10px;
-        }
-
-        .page {
-            width: 80vw;
-        }
-
-        .items-center select {
-            width: 115px;
-        }
-    }
-
-    th.sort-asc i.fa-sort {
-        color: #000 !important;
-    }
-
-    th.sort-desc i.fa-sort {
-        color: #000 !important;
-    }
-
-    th.sort-asc i.fa-sort:before {
-        content: "\f0de"; /* arrow up */
-    }
-
-    th.sort-desc i.fa-sort:before {
-        content: "\f0dd"; /* arrow down */
-    }
-
-    tr {
-        border: none !important;
-    }
-
-    td {
-        padding: 15px;
-    }
-
-</style>
-<style>
     .dt-loader {
-        display: inline-block;
         position: relative;
         width: 80px;
         height: 20px;
     }
 
-        .dt-loader div {
-            position: absolute;
-            top: 8px;
-            width: 13px;
-            height: 13px;
-            border-radius: 50%;
-            background: #2563eb;
-            animation-timing-function: cubic-bezier(0, 1, 1, 0);
-        }
-
-            .dt-loader div:nth-child(1) {
-                left: 8px;
-                animation: dt-anim1 0.6s infinite;
-            }
-
-            .dt-loader div:nth-child(2) {
-                left: 8px;
-                animation: dt-anim2 0.6s infinite;
-            }
-
-            .dt-loader div:nth-child(3) {
-                left: 32px;
-                animation: dt-anim2 0.6s infinite;
-            }
-
-            .dt-loader div:nth-child(4) {
-                left: 56px;
-                animation: dt-anim3 0.6s infinite;
-            }
-
-    @@keyframes dt-anim1 {
-        0% {
-            transform: scale(0);
-        }
-
-        100% {
-            transform: scale(1);
-        }
+    .dt-loader div {
+        position: absolute;
+        top: 8px;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: #2563eb;
+        animation-timing-function: cubic-bezier(0,1,1,0);
     }
 
-    @@keyframes dt-anim2 {
-        0% {
-            transform: translateX(0);
-        }
+    .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+    .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+    .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+    .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
 
-        100% {
-            transform: translateX(24px);
-        }
+    @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+    @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+    @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+
+    th.sortable {
+        cursor: pointer;
+        position: relative;
+        padding-right: 20px;
     }
 
-    @@keyframes dt-anim3 {
-        0% {
-            transform: scale(1);
-        }
-
-        100% {
-            transform: scale(0);
-        }
+    th.sortable::after {
+        content: "▲\A▼";
+        white-space: pre;
+        font-size: 10px;
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #bbb;
+        line-height: 1;
+        text-align: center;
     }
+
+    th.sortable.active.asc::after { content: "▲"; color: #2563eb; }
+    th.sortable.active.desc::after { content: '\A▼'; color: #2563eb; }
 </style>
-<script src="~/plugins/jquery/jquery.min.js"></script>
-<div class="page bg-gray-50">
-    <div class="custom-container aml-casereport">
-        @* <div class="page-heading">
-     <div class="sas-card rounded-card br-20 mb-2 bg-blue head-section">
-         <div class="d-flex justify-content-between align-items-center">
-             <h4 class="mb-0"><b>Ongoing Monitoring Screening Logs</b></h4>
-             <div class="menu-icon">
-                 <i class="lni lni-microsoft"></i>
-             </div>
-         </div>
-         <div class="md:block">
-            <img src="@Clientlogo" alt="Client Logo" width="50px" />
-         </div>
-     </div>
-    </div> *@
-        <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-white">
-            <div class="flex items-center justify-between w-full">
-                <!-- Title -->
-                <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
-                    Ongoing Monitoring Screening Logs
-                </h2>
 
-                <!-- Right-side content -->
-                <div class="text-sm md:text-base text-right">
-                    <img src="@Clientlogo" alt="Client Logo" width="50px" />
-                </div>
-            </div>
-        </nav>
-        <div class="sas-card rounded-card mb-2 bg-blue card1 relative">
-            <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
-                <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
-            </div>
-            <div class="d-flex justify-content-between align-items-center flex-box">
-                <div class="flex-item">
-                    <h6 class="mb-0"><b>Ongoing Monitoring Scheduler Logs</b></h6>
-                </div>
-                <div class="flex-item flex-box1">
-                    <input type="text" placeholder="Search anything..." class="search" />
-                    <button type="button" onclick="ExportList(false);" class="sas-button p-8-25 bg-color-1 ml-3 justify-content-end export">Export CSV<i class="fas fa-file-excel-o ml-2"></i></button>
-                </div>
-            </div>
-            <div class="d-flex justify-content-between align-items-center mt-5">
-                <div>
+<div id="loader" class="fixed inset-0 bg-white bg-opacity-75 items-center justify-center z-50 hidden">
+    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+</div>
 
-                    <div class="table-responsive">
+<div class="bg-slate-50 min-h-screen text-slate-900">
+    <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Ongoing Monitoring Screening Logs</h1>
+                <p class="text-slate-500 text-sm mt-1">Ongoing Monitoring Scheduler Logs</p>
+            </div>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <img src="@Clientlogo" alt="Client Logo" class="h-10 w-auto" />
+            </div>
+        </div>
 
-                        <table id="filterTable" class="table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th onclick="sortTable(0)">Source <i class="fa fa-sort"></i></th>
-                                    <th onclick="sortTable(1)">Total Hits <i class="fa fa-sort"></i></th>
-                                    <th onclick="sortTable(2)">Total Records <i class="fa fa-sort"></i></th>
-                                    <th onclick="sortTable(3)">Uploaded On <i class="fa fa-sort"></i></th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 bg-white items-center justify-center">
-                            </tbody>
-                        </table>
+        <!-- Table Section -->
+        <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row gap-4 items-center w-full">
+                <!-- Search wrapper -->
+                <div class="relative flex-1 w-full">
+                    <i data-lucide="search" class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                    <input type="text"
+                           id="searchInput"
+                           placeholder="Search anything..."
+                           class="pl-10 h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm
+                                  ring-offset-white focus-visible:outline-none focus-visible:ring-2
+                                  focus-visible:ring-blue-500/20 focus-visible:border-blue-500
+                                  shadow-sm transition-all placeholder:text-slate-500">
+                </div>
+                <!-- Export Option -->
+                <button onclick="ExportList(false);" class="h-11 px-6 inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-md transition-colors border border-slate-200">
+                    <i data-lucide="download" class="h-4 w-4"></i>
+                    Export CSV
+                </button>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-slate-500 uppercase bg-slate-50/50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(0, this)">Source</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(1, this)">Total Hits</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(2, this)">Total Records</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(3, this)">Uploaded On</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filterTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-6 py-4 bg-slate-50/50 border-t border-slate-200 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Show</label>
+                            <select id="pageSize" onchange="changePageSize()"
+                                    class="h-8 w-20 rounded-md border border-slate-200 bg-white pl-3 pr-8 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                        </div>
+                        <div class="h-4 w-px bg-slate-200"></div>
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            Showing <span id="showingStart" class="text-slate-900">0</span> - <span id="showingEnd" class="text-slate-900">0</span> 
+                            <span class="mx-1 text-slate-300">of</span> 
+                            <span id="totalRecords" class="text-slate-900">0</span>
+                        </div>
                     </div>
-                    @* <div class="pagination-container d-flex justify-content-between mt-4 flex-wrap gap-2">
-                        <div class="rows-per-page mr-4 mb-2">
-                            <label for="rowsPerPage" class="mr-2 text-sm">Show rows:</label>
-                            <select id="rowsPerPage" class="rounded border px-2 py-1 text-sm">
-                                <option value="5">5 items</option>
-                                <option value="10" selected>10 items</option>
-                                <option value="25">25 items</option>
-                                <option value="50">50 items</option>
-                            </select>
-                        </div>
-                        <div class="pagination-buttons flex flex-wrap gap-2 mb-2"></div>
-                    </div> *@
-                    <div class="pagination-container mt-4 flex flex-col sm:flex-row sm:justify-between gap-2">
 
-                        <!-- Rows per page -->
-                        <div class="rows-per-page mb-2 sm:mb-0">
-                            <label for="rowsPerPage" class="mr-2 text-sm">Show rows:</label>
-                            <select id="rowsPerPage" class="rounded border px-2 py-1 text-sm">
-                                <option value="5">5 items</option>
-                                <option value="10" selected>10 items</option>
-                                <option value="25">25 items</option>
-                                <option value="50">50 items</option>
-                            </select>
-                        </div>
-
-                        <!-- Pagination -->
-                        <div class="pagination-buttons w-full flex flex-col sm:flex-row justify-center gap-2"></div>
-
+                    <div class="flex items-center gap-2">
+                        <button id="prevBtn" onclick="previousPage()"
+                                class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                            <i data-lucide="chevron-left" class="h-3.5 w-3.5"></i>
+                            Previous
+                        </button>
+                        <div id="pagination-buttons" class="flex gap-1"></div>
+                        <button id="nextBtn" onclick="nextPage()"
+                                class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                            Next
+                            <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 <script type="text/javascript">
-
-
-    let pageSize = parseInt($('#rowsPerPage').val()) || 10;
+    let pageSize = parseInt($('#pageSize').val()) || 10;
     let currentPage = 1;
     let totalPages = 1;
-    let draw = 1;
-    let allData;
-    let currentSortColumn = 0; // Default sort by Source
-    let currentSortDirection = 'asc'; // Default sort direction
-        function sortTable(columnIndex) {
-        // Reset all sort icons
-        $('#filterTable th').removeClass('sort-asc sort-desc');
-        $('#filterTable th i.fa-sort').css('color', '#ccc');
+    let totalRecords = 0;
+    let drawCounter = 1;
+    let allData = [];
+    let currentSortColumn = 0; 
+    let currentSortDirection = 'asc'; 
 
-        // If clicking the same column, toggle direction
-        if (currentSortColumn === columnIndex) {
-            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            // New column, default to ascending
-            currentSortColumn = columnIndex;
-            currentSortDirection = 'asc';
-        }
-
-        // Update the sort icon for the current column
-        const $header = $('#filterTable th').eq(columnIndex);
-        $header.addClass(`sort-${currentSortDirection}`);
-        $header.find('i.fa-sort').css('color', '#2563eb');
-
-        // Reload the data with new sorting
-        fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
-    }
     $(document).ready(function () {
+        lucide.createIcons();
         fetchData('', 1);
-        function fetchData(searchValue = '', page = 1) {
-            $('#loader').show();
-            pageSize = parseInt($('#rowsPerPage').val()) || 10;
-            const start = (page - 1) * pageSize;
 
-            $.ajax({
-                url: '/Report/OngoingmonitoringSchedulerLog',
-                type: 'POST',
-                headers: {
-                    'RequestVerificationToken': $('meta[name="csrf-token"]').attr('content')
-                },
-                data: {
-                    draw: draw++,
-                    start: start,
-                    length: pageSize,
-                    search: { value: searchValue },
-                    orderColumn: currentSortColumn, // Add this
-            orderDirection: currentSortDirection
-                },
-                success: function (resp) {
-                    const rows = resp.data || [];
-                    const totalRecords = resp.recordsFiltered || 0;
-                    allData = resp.allRows;
-                    totalPages = Math.max(1, Math.ceil((totalRecords * 1.0) / pageSize));
-
-                    renderTable(rows);
-                    renderPager(page);
-
-                },
-                error: function (xhr) {
-                    console.error('Error fetching data:', xhr.statusText);
-                },
-                complete: function () {
-                    $('#loader').hide();
-                }
-            });
-        }
-
-        function renderTable(rows) {
-            const $tbody = $('#filterTable tbody').empty();
-
-            if (!rows.length) {
-                $tbody.append('<tr><td colspan="4" class="text-center py-4">No data available</td></tr>');
-                return;
-            }
-
-            rows.forEach(item => {
-                $tbody.append(`<tr>
-                <td>${item.source || ''}</td>
-                <td>${item.totalHits || ''}</td>
-                <td>${item.totalRecords || ''}</td>
-                <td>${formatDate(item.createdOn) || ''}</td>
-            </tr>`);
-            });
-        }
-
-        function renderPager(page) {
-            const $pagerButtons = $('.pagination-buttons').empty();
-            if (totalPages <= 1) return;
-
-            const btn = (lbl, pg, disabled, active) =>
-                `<button class="px-3 py-1 border rounded
-                ${active ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'}
-                ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}
-                data-page="${pg}" ${disabled ? 'disabled' : ''}>
-                ${lbl}
-            </button>`;
-
-            $pagerButtons.append(btn('First', 1, page === 1));
-            $pagerButtons.append(btn('Previous', page - 1, page === 1));
-
-            const maxVisible = 5;
-            let start = Math.max(1, page - Math.floor(maxVisible / 2));
-            let end = start + maxVisible - 1;
-
-            if (end > totalPages) {
-                end = totalPages;
-                start = Math.max(1, end - maxVisible + 1);
-            }
-
-            for (let i = start; i <= end; i++) {
-                $pagerButtons.append(btn(i, i, false, i === page));
-            }
-
-            $pagerButtons.append(btn('Next', page + 1, page === totalPages));
-            $pagerButtons.append(btn('Last', totalPages, page === totalPages));
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-GB') + ' ' + date.toLocaleTimeString();
-        }
-
-        $('#rowsPerPage').on('change', () => {
-            currentPage = 1;
-            fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
-        });
-
-
-
-        $('.pagination-container').on('click', '.pagination-buttons button', function () {
-            const pg = parseInt($(this).data('page'));
-            if (!isNaN(pg) && pg >= 1 && pg <= totalPages) {
-                currentPage = pg;
-                fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
-            }
-        });
-        $('.search').on('input', function () {
+        $('#searchInput').on('input', function () {
             const keyword = $(this).val().toLowerCase();
-
-            filteredData = allData.filter(item =>
+            
+            let filteredData = allData.filter(item =>
                 (item.source || '').toLowerCase().includes(keyword) ||
                 (item.totalHits + '').includes(keyword) ||
                 (item.totalRecords + '').includes(keyword) ||
@@ -535,36 +185,193 @@
             );
 
             currentPage = 1;
-            totalPages = Math.ceil(filteredData.length / pageSize);
-            $('#loader').show();
+            totalRecords = filteredData.length;
+            totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+            
+            $('#loader').removeClass('hidden').addClass('flex');
             setTimeout(() => {
                 renderTable(filteredData.slice(0, pageSize));
-                renderPager(currentPage);
-                $('#loader').hide();
+                updatePagination();
+                $('#loader').addClass('hidden').removeClass('flex');
             }, 100);
         });
-
     });
 
+    function fetchData(searchValue = '', page = 1) {
+        $('#loader').removeClass('hidden').addClass('flex');
+        pageSize = parseInt($('#pageSize').val()) || 10;
+        const start = (page - 1) * pageSize;
 
-    function ExportList(isPDF) {
-        $('#loader').show();
         $.ajax({
-            type: "GET",
-            url: "/Report/SchedulerLogsExportReport/",
+            url: '/Report/OngoingmonitoringSchedulerLog',
+            type: 'POST',
+            headers: {
+                'RequestVerificationToken': $('meta[name="csrf-token"]').attr('content')
+            },
             data: {
-                IsPDF: isPDF
+                draw: drawCounter++,
+                start: start,
+                length: pageSize,
+                search: { value: searchValue },
+                orderColumn: currentSortColumn,
+                orderDirection: currentSortDirection
             },
-            success: function (data) {
+            success: function (resp) {
+                const rows = resp.data || [];
+                totalRecords = resp.recordsFiltered || 0;
+                allData = resp.allRows || [];
+                totalPages = Math.max(1, Math.ceil((totalRecords * 1.0) / pageSize));
 
-                window.location = '/Report/SchedulerLogsExportReport?IsPDF=' + isPDF;
+                renderTable(rows);
+                updatePagination();
             },
-            error: function (result) {
-                alert('error');
+            error: function (xhr) {
+                console.error('Error fetching data:', xhr.statusText);
             },
             complete: function () {
-                $('#loader').hide();
+                $('#loader').addClass('hidden').removeClass('flex');
             }
         });
     }
-</script>
+
+    function renderTable(rows) {
+        const tbody = $('#filterTableBody').empty();
+
+        if (!rows || rows.length === 0) {
+            tbody.append('<tr><td colspan="4" class="h-24 text-center text-slate-500">No data available</td></tr>');
+            return;
+        }
+
+        rows.forEach(item => {
+            tbody.append(`
+                <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                    <td class="px-6 py-4 text-center text-slate-600 font-medium">${item.source || ''}</td>
+                    <td class="px-6 py-4 text-center text-slate-600">${item.totalHits || ''}</td>
+                    <td class="px-6 py-4 text-center text-slate-600">${item.totalRecords || ''}</td>
+                    <td class="px-6 py-4 text-center text-slate-600">${formatDate(item.createdOn) || ''}</td>
+                </tr>
+            `);
+        });
+    }
+
+    function updatePagination() {
+        const start = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+        const end = Math.min(currentPage * pageSize, totalRecords);
+
+        $('#showingStart').text(start);
+        $('#showingEnd').text(end);
+        $('#totalRecords').text(totalRecords);
+
+        $('#prevBtn').prop('disabled', currentPage === 1);
+        $('#nextBtn').prop('disabled', end >= totalRecords);
+
+        const $pagerButtons = $('#pagination-buttons').empty();
+        if (totalPages > 1) {
+            const maxVisible = 5;
+            let pStart = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let pEnd = pStart + maxVisible - 1;
+
+            if (pEnd > totalPages) {
+                pEnd = totalPages;
+                pStart = Math.max(1, pEnd - maxVisible + 1);
+            }
+
+            for (let i = pStart; i <= pEnd; i++) {
+                const isActive = i === currentPage;
+                const btnClass = isActive 
+                    ? 'h-8 w-8 flex items-center justify-center rounded-md bg-blue-600 text-white font-bold shadow-sm'
+                    : 'h-8 w-8 flex items-center justify-center rounded-md bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium transition-colors';
+                
+                $pagerButtons.append(`<button onclick="goToPage(${i})" class="${btnClass}">${i}</button>`);
+            }
+        }
+    }
+
+    function goToPage(page) {
+        if (page >= 1 && page <= totalPages) {
+            currentPage = page;
+            const searchValue = $('#searchInput').val();
+            if (searchValue) {
+                const keyword = searchValue.toLowerCase();
+                let filteredData = allData.filter(item =>
+                    (item.source || '').toLowerCase().includes(keyword) ||
+                    (item.totalHits + '').includes(keyword) ||
+                    (item.totalRecords + '').includes(keyword) ||
+                    (formatDate(item.createdOn) || '').toLowerCase().includes(keyword)
+                );
+                const start = (page - 1) * pageSize;
+                renderTable(filteredData.slice(start, start + pageSize));
+                updatePagination();
+            } else {
+                fetchData('', currentPage);
+            }
+        }
+    }
+
+    function previousPage() {
+        if (currentPage > 1) goToPage(currentPage - 1);
+    }
+
+    function nextPage() {
+        if (currentPage < totalPages) goToPage(currentPage + 1);
+    }
+
+    function changePageSize() {
+        pageSize = parseInt($('#pageSize').val());
+        currentPage = 1;
+        const searchValue = $('#searchInput').val();
+        
+        if (searchValue) {
+            const keyword = searchValue.toLowerCase();
+            let filteredData = allData.filter(item =>
+                (item.source || '').toLowerCase().includes(keyword) ||
+                (item.totalHits + '').includes(keyword) ||
+                (item.totalRecords + '').includes(keyword) ||
+                (formatDate(item.createdOn) || '').toLowerCase().includes(keyword)
+            );
+            totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+            renderTable(filteredData.slice(0, pageSize));
+            updatePagination();
+        } else {
+            fetchData('', currentPage);
+        }
+    }
+
+    function sortTable(columnIndex, element) {
+        $('.sortable').removeClass('active asc desc');
+        if (currentSortColumn === columnIndex) {
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortColumn = columnIndex;
+            currentSortDirection = 'asc';
+        }
+        $(element).addClass('active ' + currentSortDirection);
+
+        const searchValue = $('#searchInput').val();
+        fetchData(searchValue, 1);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-GB') + ' ' + date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function ExportList(isPDF) {
+        $('#loader').removeClass('hidden').addClass('flex');
+        $.ajax({
+            type: "GET",
+            url: "/Report/SchedulerLogsExportReport/",
+            data: { IsPDF: isPDF },
+            success: function () {
+                window.location = '/Report/SchedulerLogsExportReport?IsPDF=' + isPDF;
+            },
+            error: function () {
+                alert('error');
+            },
+            complete: function () {
+                $('#loader').addClass('hidden').removeClass('flex');
+            }
+        });
+    }
+</script>pt>
