@@ -393,7 +393,7 @@ namespace AML.Web
             services.AddTransient<ITransactionMonitorService, TransactionMonitorService>();
             services.AddTransient<ITransactionScreeningService, TransactionScreeningService>();
             services.AddTransient<IEWRAService, EWRAService>();
-            services.AddTransient<IAIService, OllamaAIService>();
+            services.AddTransient<IAIService, MockAIService>();
             services.AddTransient<ChatDataService, ChatDataService>();
             services.AddTransient<ChatHistoryService, ChatHistoryService>();
 
