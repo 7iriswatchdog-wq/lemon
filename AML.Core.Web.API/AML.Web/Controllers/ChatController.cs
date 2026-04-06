@@ -320,12 +320,12 @@ namespace AML.Web.Controllers
             var cases = _chatDataService.GetAllPFCases();
             var recentHits = cases.Where(c => c.CreatedOn >= DateTime.Now.AddDays(-7)).Count();
             
-            return $@"[LIVE PROLIFERATION MONGODB LEDGER]: 
+            return $@"[LIVE PROLIFERATION LEDGER]: 
 - Total PF Cases: {cases.Count}
 - Hits in the last 7 days: {recentHits}
 [HANDBOOK: PROLIFERATION FINANCE]:
 1. LEGAL BASIS: Screening is performed against 'UAE Cabinet Decision No. 156 of 2025' regarding dual-use items and chemical weapons.
-2. DATABASE ACCESS: Real-time matched results are retrieved from the system's **MongoDB Proliferation Ledger**.
+2. DATABASE ACCESS: Real-time matched results are retrieved from the system's proliferation ledger.
 3. SEARCH LAYERS: SQL HS/CAS Database & PDF Intelligent Keyword Search.";
         }
 
@@ -431,8 +431,8 @@ Shareholders:
 Latest Risk Assessment History:
 {string.Join("\n", riskAssessment?.Select(r => $"- {r.AssessmentVersion}: {r.RiskType} ({r.FinalScore})") ?? new[] { "None" })}
 
-MongoDB Search Result Findings:
-{string.Join("\n", searchHits.Select(h => $"- Match: {h.MatchedName}, Decision: {h.Decision}, Remark: {h.Remarks}") ?? new[] { "No proliferation finance matches found in Mongo" })}
+Search Result Findings:
+{string.Join("\n", searchHits.Select(h => $"- Match: {h.MatchedName}, Decision: {h.Decision}, Remark: {h.Remarks}") ?? new[] { "No proliferation finance matches found" })}
 ";
 
             string userPrompt = string.IsNullOrEmpty(queryType) ? "Summarize the status and pending actions." : $"Summarize the {queryType} details.";
@@ -518,8 +518,8 @@ Shareholders:
 Latest Risk Assessment History:
 {string.Join("\n", riskAssessment?.Select(r => $"- {r.AssessmentVersion}: {r.RiskType} ({r.FinalScore})") ?? new[] { "None" })}
 
-MongoDB Search Result Findings:
-{string.Join("\n", searchHits.Select(h => $"- Match: {h.MatchedName}, Decision: {h.Decision}, Remark: {h.Remarks}") ?? new[] { "No proliferation finance matches found in Mongo" })}
+Search Result Findings:
+{string.Join("\n", searchHits.Select(h => $"- Match: {h.MatchedName}, Decision: {h.Decision}, Remark: {h.Remarks}") ?? new[] { "No proliferation finance matches found" })}
 ";
 
             string userPrompt = string.IsNullOrEmpty(queryType) ? "Summarize the status and pending actions." : $"Summarize the {queryType} details.";

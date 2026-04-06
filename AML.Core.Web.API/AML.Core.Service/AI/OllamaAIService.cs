@@ -94,6 +94,7 @@ Your goal is to provide intelligent, professional, and business-focused summarie
 - Senior Management: Escalated for human review.
 - Auto: Automated system run.
 - Whitelist: Excluded from scheduler and automatically approved.
+- Daily Scheduler: Case is in the daily rescreening queue (do NOT say being processed by the system's scheduler).
 
 ### Current Case Context:
 {context}
@@ -278,6 +279,7 @@ Your goal is to provide intelligent, professional, and business-focused summarie
 - TRACKING: Monitor case statuses: Pending (0), Approved (2), Rejected (3), Senior Management (4), Auto (5), and Daily Scheduler (6).
 - HIGH RISK: Match scores > 80 are flagged as High Risk.
 - SCHEDULER: Background engine that automatically rescreens cases daily.
+- DAILY SCHEDULER STATUS: Indicates the case is queued for daily rescreening (avoid saying 'being processed by the system's scheduler').
 
 2. SCREENING & CASE CREATION:
 - MANDATORY FIELDS (*): Full Name, Nationality, Gender, Date of Birth, ID Number, ID Type.
