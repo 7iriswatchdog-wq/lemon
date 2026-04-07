@@ -11,7 +11,7 @@ namespace AML.Web.Controllers.Reports
         [Column("datasets")]
         public string Datasets { get; set; }
 
-        [Column("detla")]
+        [Column("delta")]
         public string Delta { get; set; }
         
         [Column("humiliated")]

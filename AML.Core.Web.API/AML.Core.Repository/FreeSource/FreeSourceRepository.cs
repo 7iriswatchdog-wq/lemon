@@ -451,7 +451,15 @@ namespace AML.Core.Repository.FreeSource
         {
             try
             {
+                // Convert the input date to both formats for matching
                 var dateString = createdDate;
+                
+                // Try to parse the input date and convert to dd/MM/yyyy format
+                if (DateTime.TryParse(dateString, out DateTime parsedDate))
+                {
+                    // Format as dd/MM/yyyy for matching
+                    dateString = parsedDate.ToString("dd/MM/yyyy");
+                }
 
                 var filter = Builders<NAMELIST>.Filter.Regex(
                     x => x.CREATEDON,
