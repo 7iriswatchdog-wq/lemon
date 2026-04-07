@@ -2828,14 +2828,20 @@
             allowRiskSubmit = false;
         }
 
+        // function confirmRiskAndSubmit() {
+        //     allowRiskSubmit = true;
+
+        //     $('#saveriskassementModel')
+        //         .removeClass('flex')
+        //         .addClass('hidden');
+
+        //     $('#loadingeffect').show();
+        //     document.getElementById('riskassessmentform').submit();
+        // }
+
         function confirmRiskAndSubmit() {
-            allowRiskSubmit = true;
-
-            $('#saveriskassementModel')
-                .removeClass('flex')
-                .addClass('hidden');
-
             $('#loadingeffect').show();
+            insertUploadComment("Risk Parameters Has been Updated", "Risk Assessment");
             document.getElementById('riskassessmentform').submit();
         }
 
@@ -2845,16 +2851,21 @@
 
         function saveRiskAssessment() {
 
-            debugger;
+            // debugger;
 
-            $('#loadingeffect').show();
-             insertUploadComment("Risk Parameters Has been Updated","Risk Assessment");
+            // $('#loadingeffect').show();
+            // insertUploadComment("Risk Parameters Has been Updated","Risk Assessment");
             // updateComments();
 
-            const selected = document.querySelector('.versionRadio:checked');
+            // const selected = document.querySelector('.versionRadio:checked');
 
+            // if (!selected) {
+            //     $('#loadingeffect').hide();
+            //     return true;
+            // }
+
+            const selected = document.querySelector('.versionRadio:checked');
             if (!selected) {
-                $('#loadingeffect').hide();
                 return true;
             }
 
@@ -3307,27 +3318,66 @@
 
 
                    //     dataType: "json",
-                   success: function (response) {
+                //    success: function (response) {
 
-                                       //alert(riskUpdated);
-                                   if (riskUpdated) {
+                //                        //alert(riskUpdated);
+                //                    if (riskUpdated) {
 
-                                       //alert("true");
+                //                        //alert("true");
 
-                                                        insertUploadComment("Remarks Has Been Update In The Search Result", "Search Result");
-                                                        insertUploadComment("Risk Parameters Has been Updated", "Risk Assessment(By Search Results)");
+                //                                         insertUploadComment("Remarks Has Been Update In The Search Result", "Search Result");
+                //                                         insertUploadComment("Risk Parameters Has been Updated", "Risk Assessment(By Search Results)");
                                             
-                                        } else {
+                //                         } else {
 
-                                            //alert("false");
-                                            insertUploadComment("Remarks Has Been Update In The Search Result", "Search Result");
-                                        }
+                //                             //alert("false");
+                //                             insertUploadComment("Remarks Has Been Update In The Search Result", "Search Result");
+                //                         }
                        
-                             $('#loadingeffect').hide();
-                       toastr.success(response);
-                               location.reload();
+                //              $('#loadingeffect').hide();
+                //        toastr.success(response);
+                //                location.reload();
 
-                   }
+                //    }
+                success: function (response) {
+                    let commentMessage = "Remarks Has Been Update In The Search Result";
+                    let searchTypeUpdated = false;
+                    let searchRemarksUpdated = false;
+
+                    // Check if search types were updated
+                    $("#APITable TBODY TR").each(function (index) {
+                        if ($(`#search-hidden-${index} input[type='hidden']`).length > 0) {
+                            searchTypeUpdated = true;
+                        }
+                    });
+
+                    // Check if remarks were updated
+                    $("#APITable TBODY TR").each(function (index) {
+                        if (document.getElementById(`DataList_${index}__remarks`).value !== "") {
+                            searchRemarksUpdated = true;
+                        }
+                    });
+
+                    // Set appropriate message
+                    if (searchTypeUpdated && searchRemarksUpdated) {
+                        commentMessage = "Both Search Type and Search Remarks Has Been Update In The Search Result";
+                    } else if (searchTypeUpdated) {
+                        commentMessage = "Search Type Has Been Update In The Search Result";
+                    } else if (searchRemarksUpdated) {
+                        commentMessage = "Search Remarks Has Been Update In The Search Result";
+                    }
+
+                    if (riskUpdated) {
+                        insertUploadComment(commentMessage, "Search Result");
+                        insertUploadComment("Risk Parameters Has been Updated", "Risk Assessment(By Search Results)");
+                    } else {
+                        insertUploadComment(commentMessage, "Search Result");
+                    }
+
+                    $('#loadingeffect').hide();
+                    toastr.success(response);
+                    location.reload();
+                }
                });
            }
 
