@@ -1,6 +1,7 @@
 using AML.Core.DataContract.Enum;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
+using System.Collections.Generic;
 
 namespace AML.ViewModel.ViewModels.Report
 {
@@ -29,6 +30,11 @@ namespace AML.ViewModel.ViewModels.Report
         public string pep { get; set; }
 
         public string IdStatus { get; set; }
+
+        // Dataset Update Logs specific properties
+        public List<string> IndividualNames { get; set; } = new List<string>();
+        public List<string> CorporateNames { get; set; } = new List<string>();
+        public DateTime ClientContractStartDate { get; set; }
 
     }
     public class ReportInternalWatchListLogModel

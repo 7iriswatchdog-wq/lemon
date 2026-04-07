@@ -5212,6 +5212,59 @@ public IActionResult CustomerList(DataTableModel model,
         //    });
         //}
 
+        [HttpGet("Report/GetDatasetUpdateLogs")]
+        public IActionResult GetDatasetUpdateLogs()
+        {
+            var model = new ReportLogSearchModel();
+            model.StartDate = System.DateTime.Now.AddDays(-7);
+            model.EndDate = System.DateTime.Now;
+
+            // Get client ID from session
+            var clientId = HttpContext.Session.GetString("sessClientId")?.ParseInt() ?? 0;
+
+            // Get client contract start date (using client created date)
+            DateTime clientContractStartDate = DateTime.MinValue;
+            if (clientId > 0)
+            {
+                var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
+                if (clientDetails != null && clientDetails.CreatedOn.HasValue)
+                {
+                    clientContractStartDate = clientDetails.CreatedOn.Value;
+                }
+            }
+
+            // Get Individual and Corporate names by matching inserted date and created on date
+            if (clientId > 0)
+            {
+                // Get all customers for this client
+                var customers = _customerMasterService.GetDetailsBySearch("", "", clientId);
+                
+                // Collect Individual and Corporate names
+                foreach (var customer in customers)
+                {
+                    if (customer.CustomerType.Equals("Individual", StringComparison.OrdinalIgnoreCase))
+                    {
+                        model.IndividualNames.Add($"{customer.FirstName} {customer.LastName}".Trim());
+                    }
+                    else if (customer.CustomerType.Equals("Corporate", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // For corporates, use CustomerId as the name/identifier
+                        // Format: "CustomerId (ReferenceID)" if ReferenceID is available
+                        string corporateName = customer.CustomerId;
+                        if (!string.IsNullOrEmpty(customer.CustomerReferenceID))
+                        {
+                            corporateName += $" ({customer.CustomerReferenceID})";
+                        }
+                        model.CorporateNames.Add(corporateName);
+                    }
+                }
+            }
+
+            model.ClientContractStartDate = clientContractStartDate;
+
+            return View(model);
+        }
+
         public JsonResult DatasetUpdateLogsCustompagination(DataTableModel model, string startDate, string endDate, string datasets, int orderColumn = 0, string orderDirection = "desc")
         {
             try
@@ -5223,6 +5276,37 @@ public IActionResult CustomerList(DataTableModel model,
                         EndDate = endDate,
                         Datasets = datasets
                     }));
+
+                // Get client ID from session
+                var clientId = HttpContext.Session.GetString("sessClientId")?.ParseInt() ?? 0;
+
+                // Get client contract start date and filter data
+                if (clientId > 0)
+                {
+                    var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
+                    if (clientDetails != null && clientDetails.CreatedOn.HasValue)
+                    {
+                        DateTime clientContractStartDate = clientDetails.CreatedOn.Value;
+                        
+                        // Filter out records before the client's contract start date
+                        abc = abc.Where(log => 
+                            { 
+                                if (string.IsNullOrEmpty(log.UpdatedDate))
+                                    return false;
+                                
+                                try
+                                {
+                                    DateTime logDate = DateTime.Parse(log.UpdatedDate);
+                                    return logDate >= clientContractStartDate;
+                                }
+                                catch
+                                {
+                                    return false; // If date parsing fails, exclude the record
+                                }
+                            }
+                        ).ToList();
+                    }
+                }
 
                 // Search
                 if (!string.IsNullOrEmpty(model.search?.value))
