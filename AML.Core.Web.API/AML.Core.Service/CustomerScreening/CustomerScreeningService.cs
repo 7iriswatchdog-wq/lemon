@@ -1,6 +1,7 @@
 using AML.Core.Common.StaticResource;
 using AML.Core.RepositoryContract.CustomerScreening;
 using AML.Core.ServiceContract.CustomerScreening;
+using AML.DTO.DTO.CustomerCase;
 using AML.DTO.DTO.CustomerScreening;
 using AML.DTO.DTO.Sanction;
 using Microsoft.AspNetCore.Hosting;
@@ -33,6 +34,15 @@ namespace AML.Core.Service.CustomerScreening
         public List<SanctionScreeningLogDTO> GetAllByDate(string startDate, string endDate,int clientId)
         {
             return _CustomerScreeningRepositoryRepository.GetAllByDate(startDate, endDate,clientId).Result;
+        }
+        public List<SanctionScreeningLogDTO> GetSanctionScreeningLogs(string Name, string Nationality, string DOB, string customerType, int ClientId)
+        {
+            return _CustomerScreeningRepositoryRepository.GetSanctionScreeningLogs(Name, Nationality,DOB,customerType,ClientId).Result;
+        }
+
+        public List<CustomerCaseDTO> GetCaseLogs(string Name, string Nationality, string DOB, string customerType, int ClientId)
+        {
+            return _CustomerScreeningRepositoryRepository.GetCaseLogs(Name, Nationality, DOB, customerType, ClientId).Result;
         }
     }
 }

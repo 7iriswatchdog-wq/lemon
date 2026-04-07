@@ -1,4 +1,5 @@
 using AML.Core.Common.StaticResource;
+using AML.DTO.DTO.CustomerCase;
 using AML.DTO.DTO.CustomerScreening;
 using AML.DTO.DTO.Sanction;
 using System.Collections.Generic;
@@ -19,5 +20,10 @@ namespace AML.Core.ServiceContract.CustomerScreening
 
         int InsertSanctionScreeningLogs(SanctionScreeningLogDTO model);
         List<SanctionScreeningLogDTO> GetAllByDate(string startDate, string endDate,int clientId);
+
+        List<SanctionScreeningLogDTO> GetSanctionScreeningLogs(string Name,string Nationality,string DOB,string customerType,int ClientId);
+
+
+        List<CustomerCaseDTO> GetCaseLogs(string Name, string Nationality, string DOB, string customerType, int ClientId);
     }
 }

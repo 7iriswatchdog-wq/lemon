@@ -213,6 +213,9 @@ namespace AML.Web.Mappings
 
             CreateMap<SanctionScreeningModel, SanctionScreeningLogDTO>();
             CreateMap<SanctionScreeningLogDTO, SanctionScreeningModel>();
+
+            CreateMap<SanctionScreeningLogModel, SanctionScreeningLogDTO>();
+            CreateMap<SanctionScreeningLogDTO, SanctionScreeningLogModel>();
             CreateMap<CustomerMasterDTO, CustomerMasterModel>();
             CreateMap<CustomerMasterModel, CustomerMasterDTO>();
 
