@@ -29,6 +29,7 @@ namespace AML.Core.RepositoryContract.Report
         ServiceResponse<List<CaseReportListDTO>> GetCustomerReportList(ReportLogSearchModel requestModel);
         ServiceResponse<List<UploadLogsListDTO>> GetUploadLogstList();
         ServiceResponse<List<DigiSchedulerLogsDTO>> GetDigiSchedulerList(int clientId);
+        ServiceResponse<List<DigiSchedulerLogsDTO>> GetDigiSchedulerList(int clientId, string startDate, string endDate);
         ServiceResponse<List<RiskDashboardDTO>> GetRiskCount(int category,int clientId);
         ServiceResponse<List<CaseReportListDTO>> GetKycReportList(CaseReportRequestDTO requestModel);
 

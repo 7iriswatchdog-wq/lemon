@@ -30,6 +30,7 @@ namespace AML.Core.ServiceContract.Report
         int GetClientCountReportList(CaseReportRequestDTO model);
         List<UploadLogsListDTO> GetUploadLogstList();
         List<DigiSchedulerLogsDTO> GetDigiSchedulerList(int clientId); 
+        List<DigiSchedulerLogsDTO> GetDigiSchedulerList(int clientId, string startDate, string endDate);
         List<RiskDashboardDTO> GetRiskCount(int status,int clientId);
         List<CaseReportListDTO> GetKycReportList(CaseReportRequestDTO model);
         List<CaseReportListDTO> GetLatestDate(int clientid);

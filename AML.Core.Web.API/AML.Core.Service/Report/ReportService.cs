@@ -87,6 +87,11 @@ namespace AML.Core.Service.Report
         {
             return _reportRepository.GetDigiSchedulerList(clientId).Result;
         }
+
+        public List<DigiSchedulerLogsDTO> GetDigiSchedulerList(int clientId, string startDate, string endDate)
+        {
+            return _reportRepository.GetDigiSchedulerList(clientId, startDate, endDate).Result;
+        }
         public List<CaseReportListDTO> GetKycReportList(CaseReportRequestDTO model)
         {
             //Perform business requirements here
