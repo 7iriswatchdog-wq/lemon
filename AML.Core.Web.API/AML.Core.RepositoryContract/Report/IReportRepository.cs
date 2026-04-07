@@ -37,5 +37,6 @@ namespace AML.Core.RepositoryContract.Report
         ServiceResponse<int> GetClientCountReportList(CaseReportRequestDTO requestModel);
 
         ServiceResponse<List<ScreeningDatabaseLogDTO>> GetScreeningDatabaseLogs(CaseReportRequestDTO model);
+        ServiceResponse<List<DatasetUpdateLogDTO>> GetDatasetUpdateLogs(CaseReportRequestDTO model);
     }
 }

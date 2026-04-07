@@ -35,5 +35,6 @@ namespace AML.Core.ServiceContract.Report
         List<CaseReportListDTO> GetLatestDate(int clientid);
 
         List<ScreeningDatabaseLogDTO> GetScreeningDatabaseLogs(CaseReportRequestDTO model);
+        List<DatasetUpdateLogDTO> GetDatasetUpdateLogs(CaseReportRequestDTO model);
     }
 }

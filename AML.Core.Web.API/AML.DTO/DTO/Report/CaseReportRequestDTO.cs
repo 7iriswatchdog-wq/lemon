@@ -51,7 +51,7 @@ namespace AML.DTO.DTO.Report
         public string riskLevel { get; set; }
         
         public string usergroupName { get; set; }
-
+        public string Datasets { get; set; }
 
         public string SchedulerTrackerId { get; set; }
 

@@ -47,8 +47,8 @@ namespace AML.Core.Service.Report
         }
         public List<CaseReportListDTO> GetCasePreviousWeekReportList(CaseReportRequestDTO model)
         {
-            //Perform business requirements here
-            return _reportRepository.GetCasePreviousWeekReportList(model).Result;
+Â Â Â Â Â Â Â Â Â Â Â  //Perform business requirements here
+Â Â Â Â Â Â Â Â Â Â Â  return _reportRepository.GetCasePreviousWeekReportList(model).Result;
         }
         public List<CaseReportListDTO> GetLatestDate(int clientid)
         {
@@ -100,6 +100,10 @@ namespace AML.Core.Service.Report
         public List<ScreeningDatabaseLogDTO> GetScreeningDatabaseLogs(CaseReportRequestDTO model)
         {
             return _reportRepository.GetScreeningDatabaseLogs(model).Result;
+        }
+        public List<DatasetUpdateLogDTO> GetDatasetUpdateLogs(CaseReportRequestDTO model)
+        {
+            return _reportRepository.GetDatasetUpdateLogs(model).Result;
         }
     }
 }
