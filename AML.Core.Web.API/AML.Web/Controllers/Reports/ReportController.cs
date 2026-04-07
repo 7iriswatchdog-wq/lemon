@@ -619,22 +619,26 @@ public IActionResult CustomerList(DataTableModel model,
             return View();
         }
         [HttpPost("Report/OngoingmonitoringSchedulerLog")]
-        public IActionResult OngoingmonitoringSchedulerLog(DataTableModel model)
+        public IActionResult OngoingmonitoringSchedulerLog(DataTableModel model, string startDate = null, string endDate = null)
         {
             var clientId = _clientHandler.GetClientId();
-            List<DigiSchedulerLogModel> abc = _mapper.Map<List<DigiSchedulerLogModel>>(_reportService.GetDigiSchedulerList(clientId));
-            //if (!string.IsNullOrEmpty(model.search.value))
-            //{
-            //    abc = abc.Where(m => m.Source.ToLower().Contains(model.search.value.ToLower())).ToList();
-            //}
-
-        //    var data = Sort(abc, model.columns[model.order[0].column].data ?? "createdOn", model.order[0].dir ?? "desc")
-
-        //.Skip(model.start)
-
-        //.Take(model.length)
-
-        //.ToList();
+            List<DigiSchedulerLogModel> abc;
+            
+            // Use date-filtered method if dates are provided, otherwise use the original method
+            if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate))
+            {
+                abc = _mapper.Map<List<DigiSchedulerLogModel>>(_reportService.GetDigiSchedulerList(clientId, startDate, endDate));
+            }
+            else
+            {
+                abc = _mapper.Map<List<DigiSchedulerLogModel>>(_reportService.GetDigiSchedulerList(clientId));
+            }
+            
+            // Apply search filtering if search value is provided
+            if (!string.IsNullOrEmpty(model.search?.value))
+            {
+                abc = abc.Where(m => m.Source.ToLower().Contains(model.search.value.ToLower())).ToList();
+            }
 
             var data = abc.Skip(model.start).Take(model.length).ToList();
 
@@ -5013,17 +5017,23 @@ public IActionResult CustomerList(DataTableModel model,
 
 
         [HttpGet("Report/SchedulerLogsExportReport")]
-        public async Task<IActionResult> SchedulerLogsExportReport(bool isPDF)
+        public async Task<IActionResult> SchedulerLogsExportReport(bool isPDF, string startDate = null, string endDate = null)
         {
 
 
 
             var clientId = _clientHandler.GetClientId();
-
-
-
+            List<DigiSchedulerLogModel> abc;
             
-                List<DigiSchedulerLogModel> abc = _mapper.Map<List<DigiSchedulerLogModel>>(_reportService.GetDigiSchedulerList(clientId));
+            // Use date-filtered method if dates are provided, otherwise use the original method
+            if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate))
+            {
+                abc = _mapper.Map<List<DigiSchedulerLogModel>>(_reportService.GetDigiSchedulerList(clientId, startDate, endDate));
+            }
+            else
+            {
+                abc = _mapper.Map<List<DigiSchedulerLogModel>>(_reportService.GetDigiSchedulerList(clientId));
+            }
                 
                
                 

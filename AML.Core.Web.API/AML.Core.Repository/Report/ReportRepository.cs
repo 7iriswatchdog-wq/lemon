@@ -472,6 +472,27 @@ namespace AML.Core.Repository.Report
             }
             return serviceResponse;
         }
+
+        public ServiceResponse<List<DigiSchedulerLogsDTO>> GetDigiSchedulerList(int clientId, string startDate, string endDate)
+        {
+            ServiceResponse<List<DigiSchedulerLogsDTO>> serviceResponse = new ServiceResponse<List<DigiSchedulerLogsDTO>>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_clientId", clientId);
+                parameters.Add("@p_startDate", startDate);
+                parameters.Add("@p_endDate", endDate);
+                serviceResponse.Result = Get<DigiSchedulerLogsDTO>("get_all_digischeduler_logs", parameters, commandType: CommandType.StoredProcedure).ToList();
+                serviceResponse.Message = "Scheduler log details fetched successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
         public ServiceResponse<List<CaseReportListDTO>> GetKycReportList(CaseReportRequestDTO requestModel)
         {
             ServiceResponse<List<CaseReportListDTO>> serviceResponse = new ServiceResponse<List<CaseReportListDTO>>();
