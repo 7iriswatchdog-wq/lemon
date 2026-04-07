@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AML.Web.Controllers.Reports
@@ -10,7 +11,7 @@ namespace AML.Web.Controllers.Reports
         [Column("datasets")]
         public string Datasets { get; set; }
 
-        [Column("delta")]
+        [Column("detla")]
         public string Delta { get; set; }
         
         [Column("humiliated")]
@@ -19,7 +20,7 @@ namespace AML.Web.Controllers.Reports
         [Column("action")]
         public string Action { get; set; }
         
-        [Column("updateddate")]
-        public string UpdatedDate { get; set; }
+        [Column("createdon")]
+        public DateTime UpdatedDate { get; set; }
     }
 }

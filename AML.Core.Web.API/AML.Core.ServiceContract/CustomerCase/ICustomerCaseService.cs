@@ -91,6 +91,8 @@ namespace AML.Core.ServiceContract.CustomerCase
 
         ServiceResponse<int> InsertScreeninglogs(ScreeinglogsModel model);
 
+        ServiceResponse<int> InsertDatasetsScreeninglogs(DataSetsScreeinglogsModel model);
+
         //test 
 
 

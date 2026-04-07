@@ -974,6 +974,21 @@ namespace AML.Web.Controllers
 
         }
 
+        [HttpPost("DataSetsScreeningLogs")]
+        public IActionResult DataSetsScreeningLogs([FromBody] DataSetsScreeinglogsModel model)
+        {
+
+            var response = _customerCaseService.InsertDatasetsScreeninglogs(model);
+
+            return Ok(new
+            {
+                status = 200,
+                Message = "Record has been inserted successfully",
+
+            });
+
+        }
+
 
         [HttpGet("PendingFromSchedulerScreening")]
         //    [JwtAuthorize]

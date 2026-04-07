@@ -85,6 +85,8 @@ namespace AML.Core.RepositoryContract.CustomerCase
         ServiceResponse<bool> GetRiskCategoryStatus(string culture, int ClientId, string CustomerType);
         ServiceResponse<int> InsertScreeninglogs(ScreeinglogsModel model);
 
+        ServiceResponse<int> InsertDatasetsScreeninglogs(DataSetsScreeinglogsModel model);
+
         Task<ServiceResponse<List<ClientMasterDTO>>> GetAllClientsAsync();
 
         Task<ServiceResponse<List<CustomerCaseDTO>>> GetApprovedListAsync(int clientId);

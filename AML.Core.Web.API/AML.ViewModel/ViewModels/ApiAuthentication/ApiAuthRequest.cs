@@ -34,4 +34,18 @@ namespace AML.ViewModel.ViewModels.ApiAuthentication
 
     }
 
+    public class DataSetsScreeinglogsModel
+    {
+        public int Id { get; set; }
+        
+        public string Datasets { get; set; }
+        
+        public string Detla { get; set; }
+
+        public string Humiliated { get; set; }
+        
+        public DateTime CreatedOn { get; set; }
+
+    }
+
 }
