@@ -5277,6 +5277,18 @@ public IActionResult CustomerList(DataTableModel model,
             return View(model);
         }
 
+
+        [HttpGet("Report/DatasetUpdateLogs")]
+        public IActionResult GetDatasetUpdateLogs(int type, string schedulerTrackerId, string option)
+        {
+            
+            var model = new ReportLogSearchModel();
+            model.StartDate = System.DateTime.Now.AddYears(-1);
+            //model.StartDate = System.DateTime.Now.AddDays(-7);
+            model.EndDate = System.DateTime.Now;
+            
+            return View(model);
+        }
         public JsonResult DatasetUpdateLogsCustompagination(DataTableModel model, string startDate, string endDate, string datasets, int orderColumn = 0, string orderDirection = "desc")
         {
             try
