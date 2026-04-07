@@ -480,6 +480,12 @@ namespace AML.Web.Mappings
             CreateMap<ScreeningDatabaseLogsModel, ScreeningDatabaseLogDTO>();
             CreateMap<ScreeningDatabaseLogDTO, ScreeningDatabaseLogsModel>();
 
+            CreateMap<DatasetUpdateLogsModel, CaseReportRequestDTO>();
+            CreateMap<CaseReportRequestDTO, DatasetUpdateLogsModel>();
+
+            CreateMap<DatasetUpdateLogsModel, DatasetUpdateLogDTO>();
+            CreateMap<DatasetUpdateLogDTO, DatasetUpdateLogsModel>();
+
         }
     }
 }

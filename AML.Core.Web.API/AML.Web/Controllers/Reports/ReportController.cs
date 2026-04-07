@@ -5187,6 +5187,102 @@ public IActionResult CustomerList(DataTableModel model,
         //    });
         //}
 
+        public JsonResult DatasetUpdateLogsCustompagination(DataTableModel model, string startDate, string endDate, string datasets, int orderColumn = 0, string orderDirection = "desc")
+        {
+            try
+            {
+                List<DatasetUpdateLogsModel> abc = _mapper.Map<List<DatasetUpdateLogsModel>>(
+                    _reportService.GetDatasetUpdateLogs(new CaseReportRequestDTO()
+                    {
+                        StartDate = startDate,
+                        EndDate = endDate,
+                        Datasets = datasets
+                    }));
+
+                // Search
+                if (!string.IsNullOrEmpty(model.search?.value))
+                {
+                    string search = model.search.value.ToLower();
+
+                    abc = abc.Where(m =>
+                        (m.Datasets != null && m.Datasets.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (m.Delta != null && m.Delta.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (m.Humiliated != null && m.Humiliated.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (m.Action != null && m.Action.ToString().Contains(search, StringComparison.OrdinalIgnoreCase))
+                    ).ToList();
+                }
+
+                // Sorting
+                IEnumerable<DatasetUpdateLogsModel> sortedData;
+
+                switch (orderColumn)
+                {
+                    case 0: // Updated Date
+                        sortedData = orderDirection == "asc"
+                            ? abc.OrderBy(x => x.UpdatedDate)
+                            : abc.OrderByDescending(x => x.UpdatedDate);
+                        break;
+
+                    case 1: // Datasets
+                        sortedData = orderDirection == "asc"
+                            ? abc.OrderBy(x => x.Datasets)
+                            : abc.OrderByDescending(x => x.Datasets);
+                        break;
+
+                    case 2: // Delta
+                        sortedData = orderDirection == "asc"
+                            ? abc.OrderBy(x => x.Delta)
+                            : abc.OrderByDescending(x => x.Delta);
+                        break;
+
+                    case 3: // Humiliated
+                        sortedData = orderDirection == "asc"
+                            ? abc.OrderBy(x => x.Humiliated)
+                            : abc.OrderByDescending(x => x.Humiliated);
+                        break;
+
+                    case 4: // Action
+                        sortedData = orderDirection == "asc"
+                            ? abc.OrderBy(x => x.Action)
+                            : abc.OrderByDescending(x => x.Action);
+                        break;
+
+                    default:
+                        sortedData = abc.OrderByDescending(x => x.UpdatedDate);
+                        break;
+                }
+
+                int recordsTotal = abc.Count;
+                int recordsFiltered = abc.Count;
+
+                var query = sortedData.Skip(model.start);
+                if (model.length > 0)
+                {
+                    query = query.Take(model.length);
+                }
+                var pagedData = query.ToList();
+
+                return Json(new
+                {
+                    draw = model.draw,
+                    recordsTotal = recordsTotal,
+                    recordsFiltered = recordsFiltered,
+                    data = pagedData
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    draw = model.draw,
+                    recordsTotal = 0,
+                    recordsFiltered = 0,
+                    data = new List<DatasetUpdateLogsModel>(),
+                    error = ex.Message + " | " + ex.InnerException?.Message
+                });
+            }
+        }
+
 
         [HttpGet("Report/ScreeningDatabaseLogsExportReport")]
         public async Task<IActionResult> ScreeningDatabaseLogsExportReport(string startDate, string endDate, bool IsPDF)
