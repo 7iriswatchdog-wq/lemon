@@ -1,63 +1,64 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using AML.Core.RepositoryContract.Common;
-using AML.Core.ServiceContract.Common;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
+using AML.Core.Common.Algorithms;
 using AML.Core.Common.StaticResource;
-using System.Net.Mail;
-using AML.ViewModel.ViewModels.Common;
+using AML.Core.DataContract.Authentication;
+using AML.Core.Repository.CustomerCase;
+using AML.Core.Repository.FreeSource;
+using AML.Core.RepositoryContract.Common;
+using AML.Core.RepositoryContract.Country;
+using AML.Core.RepositoryContract.CustomerCase;
+using AML.Core.RepositoryContract.FreeSource;
+using AML.Core.RepositoryContract.User;
+using AML.Core.ServiceContract.Common;
+using AML.Core.ServiceContract.CustomerCase;
+using AML.Core.ServiceContract.DigiApiUser;
+using AML.Core.ServiceContract.TransactionScreening;
+using AML.DTO.DTO.Common;
+using AML.DTO.DTO.CorporateShareholder;
+using AML.DTO.DTO.Country;
 using AML.DTO.DTO.CustomerCase;
 using AML.DTO.DTO.CustomerScreening;
-using Newtonsoft.Json;
-using AML.Core.ServiceContract.CustomerCase;
-using AML.Core.RepositoryContract.CustomerCase;
-using AML.Core.ServiceContract.DigiApiUser;
-using AML.Core.DataContract.Authentication;
-using System.Linq;
-using static AML.DTO.DTO.FreeSource.CaseLogsMongoDTO;
 using AML.DTO.DTO.FreeSource;
-using AML.Core.RepositoryContract.FreeSource;
-using AML.DTO.DTO.CorporateShareholder;
-using System.Threading.Tasks;
+using AML.DTO.DTO.TransactionScreening;
 using AML.ViewModel.ViewModels.ApiAuthentication;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
-using AML.Core.RepositoryContract.User;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Builder;
-using static AML.Core.Service.Common.CommonService;
-using AML.DTO.DTO.Common;
-using System.Net.Http;
-using System.IO;
-using Microsoft.AspNetCore.Mvc;
+using AML.ViewModel.ViewModels.CaseAssignment;
+using AML.ViewModel.ViewModels.Common;
+using AML.ViewModel.ViewModels.CustomerCase;
+using AML.ViewModel.ViewModels.TransactionScreening;
+using AutoMapper;
 using iTextSharp.text;
 using iTextSharp.text.html.simpleparser;
 using iTextSharp.text.pdf;
-using AML.ViewModel.ViewModels.CustomerCase;
-using AML.Core.Repository.FreeSource;
-using AML.Core.RepositoryContract.Country;
-using AML.DTO.DTO.Country;
-using static AML.DTO.DTO.FreeSource.BlackListMongoDTO;
-using NLog;
-using System.Text.RegularExpressions;
-using AML.DTO.DTO.TransactionScreening;
-using AML.Core.ServiceContract.TransactionScreening;
-using static AML.DTO.DTO.FreeSource.TransactionCaseLogsMongoDTO;
-using AML.ViewModel.ViewModels.TransactionScreening;
-using System.Reflection;
-using Org.BouncyCastle.Crypto;
-using AutoMapper;
-using AML.ViewModel.ViewModels.CaseAssignment;
-using AML.Core.Repository.CustomerCase;
-using static iTextSharp.text.pdf.AcroFields;
-using MySqlX.XDevAPI.Common;
-using AML.Core.Common.Algorithms;
-using System.Configuration;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using MySqlX.XDevAPI;
+using MySqlX.XDevAPI.Common;
+using Newtonsoft.Json;
+using NLog;
+using Org.BouncyCastle.Crypto;
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.IdentityModel.Tokens.Jwt;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Mail;
+using System.Reflection;
+using System.Security.Claims;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using static AML.Core.Service.Common.CommonService;
+using static AML.DTO.DTO.FreeSource.BlackListMongoDTO;
+using static AML.DTO.DTO.FreeSource.CaseLogsMongoDTO;
+using static AML.DTO.DTO.FreeSource.TransactionCaseLogsMongoDTO;
+using static iTextSharp.text.pdf.AcroFields;
 
 namespace AML.Core.Service.Common
 {
@@ -786,7 +787,7 @@ namespace AML.Core.Service.Common
         //End Transaction Monitoring
 
 
-        private async Task<CustomerCaseDTO> FreeSourceScreening(CustomerCaseDTO _CustomerCaseDTO, string baseUrl, string callFrom = null, string emailBody = null)
+        private async Task<CustomerCaseDTO> FreeSourceScreening(CustomerCaseDTO _CustomerCaseDTO, string baseUrl, string schedulerRunId, string callFrom = null, string emailBody = null)
         {
             if (_CustomerCaseDTO.CustomerType == "C")
             {
@@ -864,6 +865,7 @@ namespace AML.Core.Service.Common
                     _CustomerCaseDTO.MatchType = apiResp.data.matchtype;
                     _CustomerCaseDTO.Status = _CustomerCaseDTO.MatchScore.IsNotNullOrEmpty() ? (_CustomerCaseDTO.MatchScore < checkThreshold ? 5 : 0) : 5;// matching percentage threshold should form client settings
                     _CustomerCaseDTO.IsMatched = _CustomerCaseDTO.Status == 0 ? 1 : 0;
+                    _CustomerCaseDTO.CaseChangeStatus = apiResp.data.matchtype;
                    
                 }
                 else
@@ -876,6 +878,7 @@ namespace AML.Core.Service.Common
                     _CustomerCaseDTO.MatchType = _CustomerCaseDTO.MatchType;
                     _CustomerCaseDTO.Status = _CustomerCaseDTO.Status;// matching percentage threshold should form client settings
                     _CustomerCaseDTO.IsMatched = _CustomerCaseDTO.IsMatched;
+                    _CustomerCaseDTO.CaseChangeStatus = _CustomerCaseDTO.CaseChangeStatus;
 
                 }
 
@@ -885,6 +888,7 @@ namespace AML.Core.Service.Common
                     if (_CustomerCaseDTO.Status == 0)
                     {
                         _CustomerCaseDTO.Status = 6;
+                        _CustomerCaseDTO.ScheduelerTrackerId = schedulerRunId;
                     }
                     //else
                     //{
@@ -893,7 +897,8 @@ namespace AML.Core.Service.Common
                 }
 
             }
-
+           
+            
             var updateRespose = _customerCaseService.Update(_CustomerCaseDTO);
             if (_CustomerCaseDTO.IsMatched == 1 && _CustomerCaseDTO.Status == 6)
             {
@@ -1669,10 +1674,10 @@ namespace AML.Core.Service.Common
                 return false;
             }
         }
-        public async Task<CustomerCaseDTO> ApprovedListScreeningCall(string _newCustMasterId, string baseUrl, string baseC6Url, string callFrom = null, string emailBody = null)
+        public async Task<CustomerCaseDTO> ApprovedListScreeningCall(string _newCustMasterId, string baseUrl, string baseC6Url, string schedulerRunId, string callFrom = null, string emailBody = null)
         {
             CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetCaseFullDetailsByCustId(_newCustMasterId);
-            return await this.FreeSourceScreening(_CustomerCaseDTO, baseUrl, callFrom, emailBody);
+            return await this.FreeSourceScreening(_CustomerCaseDTO, baseUrl,schedulerRunId, callFrom, emailBody);
         }
 
         public async Task<TokenRS> CreateC6Token(string url, string baseURL)
@@ -1906,8 +1911,8 @@ namespace AML.Core.Service.Common
             string respData = "null";
             string potentialhits = "<p>The Potential hits are :</p>";
             string html_table = "<table><thead><tr><th>S.No</th><th>Case ID</th><th>Customer Name</th><th>Date of Initial Screening</th></tr></thead><tbody>";
-           
-                ClientMasterDTO clientMasterDTO = _customerCaseService.GetAllClients().Find(val => val.ClientId == client_id);
+            //string schedulerRunId = $"{client.ClientId}_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid().ToString().Substring(0, 5)}";
+            ClientMasterDTO clientMasterDTO = _customerCaseService.GetAllClients().Find(val => val.ClientId == client_id);
                 var result = _customerCaseService.GetCasebyApprovedStatus(client_id);
                 CustomerCaseDTO apiResp = new CustomerCaseDTO();
                 var count = 0;
@@ -1917,6 +1922,7 @@ namespace AML.Core.Service.Common
 
                     foreach (var item in result)
                     {
+
                         apiResp = null;
                         using (StreamReader reader = new StreamReader(@"Views/Risk/ApprovedRiskEmailBody.html"))
                         {
@@ -1946,7 +1952,7 @@ namespace AML.Core.Service.Common
                     var msg = new LogEventInfo(LogLevel.Info, "", "Approved List Screening Scheduler Log from  digi scheduler\n" + loginfo);
                     msg.Properties.Add("User", "KYCDigi");
                     log.Info(msg);
-                    _customerCaseService.InsertDigiSchedulerLogs(count, result.Count(), client_id);
+                    //_customerCaseService.InsertDigiSchedulerLogs(count, result.Count(), client_id);
                     using (StreamReader reader = new StreamReader(@"Views/Risk/ApprovedScreenLogEmailBody.html"))
                     {
                         body = reader.ReadToEnd();

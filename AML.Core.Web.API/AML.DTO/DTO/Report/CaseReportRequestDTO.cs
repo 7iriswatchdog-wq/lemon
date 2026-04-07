@@ -53,7 +53,7 @@ namespace AML.DTO.DTO.Report
         public string usergroupName { get; set; }
         public string Datasets { get; set; }
 
-
+        public string SchedulerTrackerId { get; set; }
 
     }
 }

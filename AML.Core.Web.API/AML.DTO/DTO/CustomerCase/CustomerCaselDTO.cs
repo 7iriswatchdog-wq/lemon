@@ -519,6 +519,13 @@ namespace AML.DTO.DTO.CustomerCase
         [Column("customer_screen_match_score")]
         public int CustomerScreenMatchScore { get; set; }
 
+        [Column("schedulertrackerId")]
+        public string ScheduelerTrackerId { get; set; }
+
+        [Column("schedulerprocessedon")]
+        public string SchedulerProcessedOn { get; set; }
+
+        
         public string onb_cust_ref_id { get; set; }
 
         public string onb_name { get; set; }

@@ -1168,8 +1168,10 @@ public IActionResult CustomerList(DataTableModel model,
         }
 
         [HttpGet("Report/CaseReport")]
-        public IActionResult CaseReport(int type)
+        public IActionResult CaseReport(int type,string schedulerTrackerId,string option)
         {
+            TempData["option"] = option;
+            TempData["schedulerTrackerId"] = schedulerTrackerId;
             var model = new ReportLogSearchModel();
             model.StartDate = System.DateTime.Now.AddYears(-1);
             //model.StartDate = System.DateTime.Now.AddDays(-7);
@@ -1206,7 +1208,7 @@ public IActionResult CustomerList(DataTableModel model,
         }
         [HttpPost("Report/CaseReportCustompagination")]
         public JsonResult CustomPagination(DataTableModel model,string startDate,
-    string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string caseStatusChange, string riskLevel)
+    string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string caseStatusChange, string riskLevel,string option,string schedulerTrackerId)
         {
             var BranchId = _clientHandler.GetBranchId();
             var GroupId = _clientHandler.GetGroupId();
@@ -1242,42 +1244,55 @@ public IActionResult CustomerList(DataTableModel model,
             {
                 riskLevel = "High Risk";
             }
-
-            if (searchValue != "" && searchValue != null)
+            if (option == "OnGoing")
             {
-                abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportListBySearch(new CaseReportRequestDTO
+                abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportListBySchedulerTrackerId(new CaseReportRequestDTO
                 {
                     //User = userID,
-                    StartDate = startDate,
-                    EndDate = endDate,
-                    caseStatus = caseStatus,
-                    Cust_type = cust_type,
-                    // UpdatedByUserId = updatedByUserID,
-                    ClientId = _clientHandler.GetClientId(),
-                    SearchValue = searchValue,
-                    createdBy = createdBy,
-                    matchscore = matchScore,
-                    riskLevel = riskLevel
+                   SchedulerTrackerId=schedulerTrackerId,
+                   ClientId= _clientHandler.GetClientId()
 
                 }));
+
             }
             else
             {
-                abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportList(new CaseReportRequestDTO
+                if (searchValue != "" && searchValue != null)
                 {
-                    //User = userID,
-                    StartDate = startDate,
-                    EndDate = endDate,
-                    caseStatus = caseStatus,
-                    Cust_type = cust_type,
-                   // UpdatedByUserId = updatedByUserID,
-                    ClientId = _clientHandler.GetClientId(),
-                    createdBy= createdBy,
-                    matchscore=matchScore,
-                    riskLevel=riskLevel
+                    abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportListBySearch(new CaseReportRequestDTO
+                    {
+                        //User = userID,
+                        StartDate = startDate,
+                        EndDate = endDate,
+                        caseStatus = caseStatus,
+                        Cust_type = cust_type,
+                        // UpdatedByUserId = updatedByUserID,
+                        ClientId = _clientHandler.GetClientId(),
+                        SearchValue = searchValue,
+                        createdBy = createdBy,
+                        matchscore = matchScore,
+                        riskLevel = riskLevel
 
-                }));
+                    }));
+                }
+                else
+                {
+                    abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportList(new CaseReportRequestDTO
+                    {
+                        //User = userID,
+                        StartDate = startDate,
+                        EndDate = endDate,
+                        caseStatus = caseStatus,
+                        Cust_type = cust_type,
+                        // UpdatedByUserId = updatedByUserID,
+                        ClientId = _clientHandler.GetClientId(),
+                        createdBy = createdBy,
+                        matchscore = matchScore,
+                        riskLevel = riskLevel
 
+                    }));
+
+                }
             }
             int totalcount = abc.Count;
 

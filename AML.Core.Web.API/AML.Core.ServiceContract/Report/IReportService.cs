@@ -11,6 +11,10 @@ namespace AML.Core.ServiceContract.Report
 
         List<CaseReportListDTO> GetCaseReportListBySearch(CaseReportRequestDTO model);
 
+        List<CaseReportListDTO> GetCaseReportListBySchedulerTrackerId(CaseReportRequestDTO model);
+
+        
+
         List<CaseReportListDTO> GetCaseManagementReportList(CaseReportRequestDTO model);
 
         List<CaseReportListDTO> GetCaseManagementSearchValueReportList(CaseReportRequestDTO model);

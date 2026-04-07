@@ -131,6 +131,31 @@ namespace AML.Core.Repository.Report
             return serviceResponse;
         }
 
+        public ServiceResponse<List<CaseReportListDTO>> GetCaseReportListBySchedulerTrackerId(CaseReportRequestDTO requestModel)
+        {
+            ServiceResponse<List<CaseReportListDTO>> serviceResponse = new ServiceResponse<List<CaseReportListDTO>>();
+            try
+            {
+                //var userID = String.IsNullOrEmpty(requestModel.User) ? "0" : requestModel.User;
+                //var UpdatedByUserId = String.IsNullOrEmpty(requestModel.UpdatedByUserId) ? "0" : requestModel.UpdatedByUserId;
+                
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@c_schedulertrackerid", requestModel.SchedulerTrackerId);
+                parameters.Add("@c_clientId", requestModel.ClientId);
+                
+                    serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_report_by_scheudlertrackerId", parameters, commandType: CommandType.StoredProcedure).ToList();
+                
+                serviceResponse.Message = "CustomerCase details fetched successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
+
         public ServiceResponse<List<CaseReportListDTO>> GetCaseManagementReportList(CaseReportRequestDTO requestModel)
         {
             ServiceResponse<List<CaseReportListDTO>> serviceResponse = new ServiceResponse<List<CaseReportListDTO>>();

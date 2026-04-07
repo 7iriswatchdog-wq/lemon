@@ -1250,9 +1250,9 @@ namespace AML.Core.Service.CustomerCase
             return _customerMasterRepository.GetCustomerMasterByCodePrefixAndCode(prefix, code).Result;
         }
 
-        public int InsertDigiSchedulerLogs(int totalHits, int totalRecords, int clientId)
+        public int InsertDigiSchedulerLogs(int totalHits, int totalRecords, int clientId, string SchedulerTrackerId)
         {
-            return _CustomerCaseRepository.InsertDigiSchedulerLogs(totalHits, totalRecords, clientId);
+            return _CustomerCaseRepository.InsertDigiSchedulerLogs(totalHits, totalRecords, clientId, SchedulerTrackerId);
         }
 
         public List<string> GroupEntityScreeningDetails(CorporateScreeningDTO model)

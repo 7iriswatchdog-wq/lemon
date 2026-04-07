@@ -63,7 +63,7 @@ namespace AML.Core.RepositoryContract.CustomerCase
         ServiceResponse<List<CustomerCaseDTO>> GetApprovedList(int clientId);
 
         ServiceResponse<List<CustomerCaseDTO>> GetCasespendingScheduler();
-        int InsertDigiSchedulerLogs(int totalHits, int totalRecords, int clientId);
+        int InsertDigiSchedulerLogs(int totalHits, int totalRecords, int clientId, string SchedulerTrackerId);
         ServiceResponse<List<ClientMasterDTO>> GetAllClients();
         ServiceResponse<List<ClientMasterDTO>> GetAllAdminClients();
         ServiceResponse<ClientMasterDTO> GetClientDetailsByID(int clientId);

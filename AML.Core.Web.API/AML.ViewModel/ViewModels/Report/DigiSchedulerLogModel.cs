@@ -17,5 +17,7 @@ namespace AML.ViewModel.ViewModels.Report
      
         public int TotalRecords { get; set; }
         public int ClientId { get; set; }
+
+        public string SchedulerTrackerId { get; set; }
     }
 }

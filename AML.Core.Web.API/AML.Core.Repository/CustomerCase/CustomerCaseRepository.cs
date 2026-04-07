@@ -373,15 +373,16 @@ namespace AML.Core.Repository.CustomerCase
 
 
         }
-        public int InsertDigiSchedulerLogs(int totalHits, int totalRecords, int clientId)
+        public int InsertDigiSchedulerLogs(int totalHits, int totalRecords, int clientId, string SchedulerTrackerId)
         {
             try
             {
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_total_hits", totalHits);
                 parameters.Add("@p_total_records", totalRecords);
-                parameters.Add("@p_client_id", clientId);
-                var response = ExecuteScalar("ins_digi_scheduler_logs", parameters, commandType: CommandType.StoredProcedure).ParseInt();
+                parameters.Add("@p_clientId", clientId);
+                parameters.Add("@p_schedulerTrackerId", SchedulerTrackerId);
+                var response = ExecuteScalar("ins_digischeduler_logs", parameters, commandType: CommandType.StoredProcedure).ParseInt();
                 return response;
             }
             catch (Exception ex)
@@ -976,7 +977,8 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_trueuaeunsanction", _CustomerCaseDTO.TrueUAEUNSanction);
                 parameters.Add("@p_trueothersanction", _CustomerCaseDTO.TrueOtherSanction);
                 parameters.Add("@p_changestatus", _CustomerCaseDTO.CaseChangeStatus);
-
+                parameters.Add("@p_schedulerTrackerId", _CustomerCaseDTO.ScheduelerTrackerId);
+                parameters.Add("@p_schedulerprocessedon", _CustomerCaseDTO.SchedulerProcessedOn);
                 var response = ExecuteScalar("mod_customercase", parameters, commandType: CommandType.StoredProcedure).ParseInt();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Customer case added successfully.";

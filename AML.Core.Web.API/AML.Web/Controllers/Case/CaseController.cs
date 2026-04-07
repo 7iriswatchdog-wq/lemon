@@ -2601,6 +2601,7 @@ namespace AML.Web.Controllers.Case
             _CustomerCaseDTO.Partialadversemedia = model.Partialadversemedia;
             _CustomerCaseDTO.TrueUAEUNSanction = model.TrueUAEUNSanction;
             _CustomerCaseDTO.TrueOtherSanction = model.TrueOtherSanction;
+           
 
             
 
