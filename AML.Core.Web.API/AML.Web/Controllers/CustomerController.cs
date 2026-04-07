@@ -797,6 +797,7 @@ namespace AML.Web.Controllers
             string respData = "null";
             foreach (var client in clients.Result)
             {
+                string schedulerRunId = $"{client.ClientId}_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid().ToString().Substring(0, 5)}";
                 ClientMasterDTO clientMasterDTO = client; // Assuming ClientDTO has ClientId property
                 var result = await _customerCaseService.GetCasebyApprovedStatusAsync(client.ClientId);
                 var count = 0;
@@ -836,7 +837,7 @@ namespace AML.Web.Controllers
                     Console.WriteLine(msg);
                     log.Info(msg);
 
-                    _customerCaseService.InsertDigiSchedulerLogs(count, result.Result.Count(), client.ClientId);
+                    _customerCaseService.InsertDigiSchedulerLogs(count, result.Result.Count(), client.ClientId, schedulerRunId);
 
                     //var emailBody = await GetApprovedScreenLogEmailBody(count, result.Result.Count(), clientMasterDTO.ClientName, html_table);
                     //_commonService.SendEmailLog(emailBody, client.ClientId, count == 0 ? "No Action Required" : "Action Required");
@@ -871,6 +872,7 @@ namespace AML.Web.Controllers
             string html_table = "<table><thead><tr><th>S.No</th><th>Case ID</th><th>Customer Name</th><th>Date of Initial Screening</th></tr></thead><tbody>";
             foreach (var client in clients)
             {
+                string schedulerRunId = $"{client.ClientId}_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid().ToString().Substring(0, 5)}";
                 //ClientMasterDTO clientMasterDTO = clients.Find(val => val.ClientId == client.ClientId);
 
                 ClientMasterDTO clientMasterDTO = client;
@@ -890,7 +892,7 @@ namespace AML.Web.Controllers
                             body = reader.ReadToEnd();
                         };
                         //LogFile("Passing the parameters to Api call", item);
-                        apiResp = await _commonService.ApprovedListScreeningCall(item.CustomerId, baseURL, c6BaseURL, "API", body);
+                        apiResp = await _commonService.ApprovedListScreeningCall(item.CustomerId, baseURL, c6BaseURL, schedulerRunId, "API", body );
                         //LogFile("ends the api call", apiResp);
                         log.Info("Ends Api calling", item.CustomerId, DateTime.Now);
                         if (apiResp.IsMatched == 1)
@@ -912,7 +914,7 @@ namespace AML.Web.Controllers
                     msg.Properties.Add("User", "KYCDigi");
                     log.Info(msg);
                     //LogFile1("Inserting into the sql database",result.Count());
-                    _customerCaseService.InsertDigiSchedulerLogs(count, result.Count(), client.ClientId);
+                    _customerCaseService.InsertDigiSchedulerLogs(count, result.Count(), client.ClientId,schedulerRunId);
                     using (StreamReader reader = new StreamReader(@"Views/Risk/ApprovedScreenLogEmailBody.html"))
                     {
                         body = reader.ReadToEnd();

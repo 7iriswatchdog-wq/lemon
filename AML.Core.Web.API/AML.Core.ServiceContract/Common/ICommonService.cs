@@ -44,7 +44,7 @@ namespace AML.Core.ServiceContract.Common
         CustomerCaseDTO CustomerRiskStatusCheck(string resultL,string customertype);
         
          ApiAuthResponse Authenticate(ApiAuthRequest model);
-        Task<CustomerCaseDTO> ApprovedListScreeningCall(string _newCustMasterId, string baseUrl, string baseC6Url, string callFrom = null, string emailBody = null);
+        Task<CustomerCaseDTO> ApprovedListScreeningCall(string _newCustMasterId, string baseUrl, string baseC6Url, string schedulerRunId, string callFrom = null, string emailBody = null);
         void SendEmailLog(string emailBody, int clientId,string actionDisplay);
         bool UpdateCaseRemark(int caseId, List<DataListModel> model);
         Task<bool> SendHtmlFormattedEmailWithAttachment(string v, string body, string file, byte[] ms);

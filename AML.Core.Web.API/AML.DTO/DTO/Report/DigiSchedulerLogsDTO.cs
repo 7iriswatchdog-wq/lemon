@@ -19,5 +19,9 @@ namespace AML.DTO.DTO.Report
         [Column("total_records")]
         public int TotalRecords { get; set; }
 
+
+        [Column("trackerId")]
+        public string SchedulerTrackerId { get; set; }
+
     }
 }

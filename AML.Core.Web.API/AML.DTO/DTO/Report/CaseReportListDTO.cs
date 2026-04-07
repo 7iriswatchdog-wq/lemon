@@ -172,6 +172,10 @@ namespace AML.DTO.DTO.Report
         [Column("type")]
         public string Type { get; set; }
 
+
+
+
+
     }
     public class RiskDashboardDTO
     {
