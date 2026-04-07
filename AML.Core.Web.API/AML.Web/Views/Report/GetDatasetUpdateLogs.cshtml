@@ -325,6 +325,32 @@
 
 </body>
 </html>
+<div id="nameModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg w-[600px] p-4 shadow-lg">
+
+        <div class="flex justify-between items-center border-b pb-2">
+            <h2 class="text-lg font-bold">Names by Date</h2>
+            <button onclick="closePopup()" class="text-red-500 font-bold">X</button>
+        </div>
+
+        <div class="mt-4 grid grid-cols-2 gap-4">
+
+            <!-- Individual -->
+            <div>
+                <h3 class="font-semibold text-sm text-slate-600 mb-2">Individual</h3>
+                <ul id="individualList" class="text-xs space-y-1 max-h-60 overflow-auto"></ul>
+            </div>
+
+            <!-- Corporate -->
+            <div>
+                <h3 class="font-semibold text-sm text-slate-600 mb-2">Corporate</h3>
+                <ul id="corporateList" class="text-xs space-y-1 max-h-60 overflow-auto"></ul>
+            </div>
+
+        </div>
+
+    </div>
+</div>
 @* <div class="custom-container aml-casereport">
     <div class="page-heading">
         <div class="sas-card rounded-card br-20 mb-2 bg-blue">
@@ -581,11 +607,13 @@
             tbody.append(`
                 <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                    <td class="px-6 py-4">
-                            <!-- Updated (only if exists) -->
+                             <!-- Updated (only if exists) -->
                             ${updated ? `
                                 <div class="text-xs text-slate-700">
                                     <div>${updated?.date || '-'}</div>
-                                    
+                                    <div class="ml-2">
+                                        ${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}
+                                    </div>
                                 </div>
                             ` : ''}
                         </td>
@@ -595,7 +623,13 @@
                 <td class="px-6 py-4 ">${row.datasets}</td>
                  <td class="px-6 py-4 ">${row.delta}</td>
                  <td class="px-6 py-4 ">${row.humiliated}</td>
-                 <td class="px-6 py-4 ">${row.action}</td>
+                 <td class="px-6 py-4 text-center">
+                       <a href="javascript:void(0)"
+                       onclick="openPopup('${updated?.date}')"
+                       class="text-blue-600 font-bold text-xs underline">
+                       View
+                    </a>
+                    </td>
                 </tr>
             `);
         });
@@ -692,7 +726,51 @@
       
 
     }
-      
+
+            async function openPopup(date) {
+        try {
+            // date = "07/04/2026" (DD/MM/YYYY)
+
+            const parts = date.split('/');
+            const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`; // yyyy-MM-dd
+
+            const response = await fetch(`/GetNamesByCreatedDate?date=${formattedDate}`);
+            const data = await response.json();
+
+            console.log(data);
+
+            const individualList = document.getElementById("individualList");
+            const corporateList = document.getElementById("corporateList");
+
+            individualList.innerHTML = "";
+            corporateList.innerHTML = "";
+
+            if (data && data.length > 0) {
+                data.forEach(item => {
+                    const li = `<li class="border-b py-1">${item.name}</li>`;
+
+                    if (item.category === "INDIVIDUAL") {
+                        individualList.innerHTML += li;
+                    } else {
+                        corporateList.innerHTML += li;
+                    }
+                });
+            } else {
+                individualList.innerHTML = "<li>No records</li>";
+                corporateList.innerHTML = "<li>No records</li>";
+            }
+
+            document.getElementById("nameModal").classList.remove("hidden");
+            document.getElementById("nameModal").classList.add("flex");
+
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    function closePopup() {
+        document.getElementById("nameModal").classList.add("hidden");
+    }
 </script>
 
 

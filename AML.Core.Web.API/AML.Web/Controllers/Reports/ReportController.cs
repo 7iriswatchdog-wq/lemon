@@ -44,6 +44,7 @@ using AML.ViewModel.ViewModels.UserGroup;
 using AML.Web.CustomFilters;
 using AML.Web.Helper;
 using AutoMapper;
+using DocumentFormat.OpenXml.Bibliography;
 using DocumentFormat.OpenXml.EMMA;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Fingers10.ExcelExport.ActionResults;
@@ -58,9 +59,14 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
+using MongoDB.Driver.Core.Events;
 using MySqlX.XDevAPI;
 using Newtonsoft.Json;
 using NToastNotify;
+using SixLabors.ImageSharp;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -75,8 +81,12 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 using static AML.Core.Service.Common.CommonService;
+using static AML.DTO.DTO.FreeSource.BlackListMongoDTO;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using Font = iTextSharp.text.Font;
+using Image = iTextSharp.text.Image;
+using Rectangle = iTextSharp.text.Rectangle;
+using SourceType = AML.Core.DataContract.Enum.SourceType;
 
 
 namespace AML.Web.Controllers.Reports
@@ -108,12 +118,13 @@ namespace AML.Web.Controllers.Reports
         private IKycService _kycService;
         private ILovMasterService _lovMasterService;
         private IUserGroupService _UserGroupService;
+        
 
         public ReportController(IUserService userService, IMapper mapper, IReportService reportService,
          IHttpClientHandler clientHandler, ICaseCommentService caseCommentService, ICustomerCategoryService customerCategoryService,
         IViewRenderService viewRenderService, IExportDataService exportService, ICustomerScreeningService customerScreeningService, IUserGroupService UserGroupService,
         ICustomerCaseService customerCaseService, ICaseDocumentService caseDocumentService, IFreeSourceRepository freeSourceRepository, IKycService kycService, ILovMasterService lovMasterService, IRiskService RiskService,
-        ICountryService countryService, ICustomerMasterService customerMasterService, ITransactionScreeningService transactionScreeningService, IToastNotification toastNotification, ICommonService commonService)
+        ICountryService countryService, ICustomerMasterService customerMasterService, ITransactionScreeningService transactionScreeningService, IToastNotification toastNotification, ICommonService commonService) 
         {
             _userService = userService;
             _mapper = mapper;
@@ -140,6 +151,7 @@ namespace AML.Web.Controllers.Reports
             _kycService = kycService;
             baseC6URL = clientDetails?.C6BaseUrl;
             _UserGroupService = UserGroupService;
+            
 
         }
         public IActionResult SanctionLogs()
@@ -5201,7 +5213,16 @@ public IActionResult CustomerList(DataTableModel model,
         //        data = data
         //    });
         //}
+        [HttpGet("Report/DatasetUpdateLogs")]
+        public IActionResult GetDatasetUpdateLogs()
+        {
+            var model = new ReportLogSearchModel();
+            model.StartDate = System.DateTime.Now.AddYears(-1);
+            //model.StartDate = System.DateTime.Now.AddDays(-7);
+            model.EndDate = System.DateTime.Now;
 
+            return View(model);
+        }
         public JsonResult DatasetUpdateLogsCustompagination(DataTableModel model, string startDate, string endDate, string datasets, int orderColumn = 0, string orderDirection = "desc")
         {
             try
@@ -5515,6 +5536,25 @@ public IActionResult CustomerList(DataTableModel model,
 
 
 
+        }
+        [HttpGet("GetNamesByCreatedDate")]
+        public IActionResult GetNamesByCreatedDate(string date)
+        {
+            try
+            {
+
+                var result = _freeSourceRepository.GetRecordsByCreatedDate(date);
+
+                if (result != null && result.Count > 0)
+                    return Ok(result);
+
+                return NotFound("No records found");
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
 

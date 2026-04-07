@@ -8,18 +8,19 @@ using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
+using MongoDB.Driver.Core.Events;
+using MySqlX.XDevAPI.Common;
+using NLog;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using static AML.DTO.DTO.FreeSource.BlackListMongoDTO;
 using static AML.DTO.DTO.FreeSource.CaseLogsMongoDTO;
-using NLog;
 using static AML.DTO.DTO.FreeSource.TransactionCaseLogsMongoDTO;
-using MongoDB.Driver.Core.Events;
-using MySqlX.XDevAPI.Common;
-using System.Collections;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AML.Core.Repository.FreeSource
 {
@@ -445,6 +446,36 @@ namespace AML.Core.Repository.FreeSource
             log.Debug($"exists:false");
 			return (exists: false, response: null,null);
         }
+
+        public List<NAMELIST> GetRecordsByCreatedDate(string createdDate)
+        {
+            try
+            {
+                var dateString = createdDate;
+
+                var filter = Builders<NAMELIST>.Filter.Regex(
+                    x => x.CREATEDON,
+                    new BsonRegularExpression("^" + dateString)
+                );
+
+                var collection = mongoDB.GetCollection<NAMELIST>("NAMELIST");
+
+                var data = collection.Find(filter)
+                .Project(x => new NAMELIST
+                {
+                    FULLNAME = x.FULLNAME,
+                    CATEGORY = x.CATEGORY
+                })
+                .ToList();
+
+                return data;
+        }
+    catch (Exception)
+    {
+        return new List<NAMELIST>();
+    }
+}
+
         //public (bool exists, NAMELIST response, List<NAMELIST> response2) SearchFuzzylist(string Name, bool isCorporate, int Clientid) 
         //{
         //    string[] nameList = Name.Trim().Split(' ').Where(s => s != "" && s.Length > 2).Distinct().ToArray();

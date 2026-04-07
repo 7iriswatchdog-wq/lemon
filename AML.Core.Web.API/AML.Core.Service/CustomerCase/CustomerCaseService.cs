@@ -597,6 +597,10 @@ namespace AML.Core.Service.CustomerCase
         {
             return _CustomerCaseRepository.InsertScreeninglogs(model);
         }
+        public ServiceResponse<int> InsertDatasetsScreeninglogs(DataSetsScreeinglogsModel model)
+        {
+            return _CustomerCaseRepository.InsertDatasetsScreeninglogs(model);
+        }
         public ServiceResponse<int> Update(CustomerCaseDTO _CustomerCaseDT)
         {
             return _CustomerCaseRepository.Update(_CustomerCaseDT);

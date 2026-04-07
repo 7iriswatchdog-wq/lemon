@@ -1400,6 +1400,29 @@ namespace AML.Core.Repository.CustomerCase
             return serviceResponse;
         }
 
+        public ServiceResponse<int> InsertDatasetsScreeninglogs(DataSetsScreeinglogsModel model)
+        {
+            ServiceResponse<int> serviceResponse = new ServiceResponse<int>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_datasets", model.Datasets);
+                parameters.Add("@p_delta", model.Detla);
+                parameters.Add("@p_humiliated", model.Humiliated);
+                parameters.Add("@p_updateddate", model.CreatedOn);
+                var response = ExecuteScalar("ins_datasetsscreening_logs", parameters, commandType: CommandType.StoredProcedure).ParseInt();
+                serviceResponse.Result = response;
+                serviceResponse.Message = "Customer case added successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
+
         //public ServiceResponse<string> CreatePassportDetails(PassportDetails passport)
         //{
         //    ServiceResponse<string> serviceResponse = new ServiceResponse<string>();
