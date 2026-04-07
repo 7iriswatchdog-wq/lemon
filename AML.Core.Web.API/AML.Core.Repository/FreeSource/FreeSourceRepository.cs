@@ -451,11 +451,13 @@ namespace AML.Core.Repository.FreeSource
         {
             try
             {
+
                 DateTime createdDate1 = DateTime.ParseExact(
                     createdDate,
                     "yyyy-MM-dd",
                     CultureInfo.InvariantCulture
                 );
+
 
                 var dateString = createdDate1.ToString("dd/MM/yyyy");
 

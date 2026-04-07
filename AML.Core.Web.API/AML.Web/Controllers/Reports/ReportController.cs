@@ -52,6 +52,7 @@ using Fingers10.ExcelExport.Attributes;
 using iTextSharp.text;
 using iTextSharp.text.html.simpleparser;
 using iTextSharp.text.pdf;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -5634,8 +5635,11 @@ public IActionResult CustomerList(DataTableModel model,
 
 
         }
+
         [HttpGet("GetNamesByCreatedDate")]
         public IActionResult GetNamesByCreatedDate(string date,string type)
+
+
         {
             try
             {
@@ -5645,7 +5649,7 @@ public IActionResult CustomerList(DataTableModel model,
                 if (result != null && result.Count > 0)
                     return Ok(result);
 
-                return NotFound("No records found");
+                return Ok(new List<NAMELIST>()); // Return empty list instead of NotFound
 
             }
             catch (Exception ex)

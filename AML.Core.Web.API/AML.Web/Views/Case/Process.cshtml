@@ -847,7 +847,7 @@
                     }
                     else *@
                     @* { *@
-                    <form role="form" id="riskassessmentform" asp-controller="@controllerName" asp-action="@actionName" class="form-horizontal" enctype="multipart/form-data" method="post" onsubmit="return saveRiskAssessment(),updateComments();">
+                    <form role="form" id="riskassessmentform" asp-controller="@controllerName" asp-action="@actionName" class="form-horizontal" enctype="multipart/form-data" method="post" onsubmit="return saveRiskAssessment();">
                     <div>
                 <input type="hidden" asp-for="IsWhiteListed" id="hfIsWhiteListed" />
                 <input type="hidden" name="CaseId" value="@Model.Case.Id" />
@@ -981,7 +981,7 @@
 
                             @if(Model.RiskCreation == true){
                                             <button id="btnSaveRisk" 
-                                                onclick=""
+                                                onclick="return saveRiskAssessmentModified()"
                                                 class="w-full bg-blue-600 hover:bg-blue-700 text-white h-9 text-[11px]
                    font-black uppercase tracking-widest shadow-md shadow-blue-200">
                                             Save
@@ -4054,6 +4054,64 @@
                 });
             });
 
+        // Function to check if risk parameters have been updated
+        function isRiskUpdated() {
+            let riskUpdated = false;
+            for (let i = 0; i < ddlItemCount; i++) {
+                if ($(`#ddlItem_${i}`).val() && $(`#ddlItem_${i}`).val() !== "0") {
+                    riskUpdated = true;
+                    break;
+                }
+            }
+            return riskUpdated;
+        }
+
+        // Modified saveRiskAssessment function
+        function saveRiskAssessmentModified() {
+            $('#loadingeffect').show();
+
+            const selected = document.querySelector('.versionRadio:checked');
+            if (!selected) {
+                $('#loadingeffect').hide();
+                return true;
+            }
+
+            const index = parseInt(selected.dataset.index, 10);
+            const total = parseInt(selected.dataset.total, 10);
+
+            // ❌ Older version → BLOCK
+            if (index < total - 2) {
+                $('#loadingeffect').hide();
+                alert('Save Risk Assessment is allowed only for the latest two versions.');
+                return false;
+            }
+
+            // Check if search types have been updated
+            const searchTypesUpdated = isAnySearchTypeSelected();
+            
+            // Check if risk parameters have been updated
+            const riskUpdated = isRiskUpdated();
+
+            // ❌ No updates → BLOCK
+            if (!searchTypesUpdated && !riskUpdated) {
+                $('#loadingeffect').hide();
+                alert('Please update Search Types or Risk Parameters before saving.');
+                return false;
+            }
+
+            // ✅ Show modal only if both search types and risk are updated
+            if (searchTypesUpdated && riskUpdated) {
+                $('#loadingeffect').hide();
+                $('#saveriskassementModel')
+                    .removeClass('hidden')
+                    .addClass('flex');
+                return false;
+            }
+            
+            // If only one is updated, save without showing modal
+            $('#loadingeffect').hide();
+            return true;
+        }
                </script>
 </body>
 </html>
