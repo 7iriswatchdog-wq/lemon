@@ -355,14 +355,14 @@
 
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left whitespace-nowrap">
+                    <table class="w-full text-sm text-left whitespace-nowrap table-fixed">
                         <thead class="text-[10px] text-slate-500  bg-slate-50/50 border-b border-slate-200">
                             <tr>
-                                <th class="px-6 py-4 font-bold h-12 sortable" onclick="sortTable(0, this)">Updated Date</th>
-                                <th class="px-6 py-4 font-bold h-12 sortable" onclick="sortTable(1, this)">Datasets</th>
-                                <th class="px-6 py-4 font-bold h-12 sortable" onclick="sortTable(2, this)">Delta</th>
-                                <th class="px-6 py-4 font-bold h-12 sortable" onclick="sortTable(3, this)">Humiliated</th>
-                                <th class="px-6 py-4 font-bold h-12 sortable" onclick="sortTable(4, this)">Action</th>
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(0, this)" *@>Updated Date</th>
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(1, this)" *@>Datasets</th>
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(2, this)" *@>Delta</th>
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(3, this)" *@>Humiliated</th>
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(4, this)" *@>Action</th>
                             </tr>
                         </thead>
                         <tbody id="clientsTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
@@ -551,6 +551,8 @@
         lucide.createIcons();
         loadData();
 
+        // Filters should work only upon clicking the Apply button
+        /*
         $('#searchInput').on('input', function() {
             currentPage = 1;
             loadData();
@@ -560,6 +562,7 @@
             currentPage = 1;
             loadData();
         });
+        */
     });
 
     function formatDate(value) {
@@ -594,12 +597,7 @@
         };
     }
 
-    function resetFilters() {
-        $('#searchInput').val('');
-        $('#datasetsFilter').val('');
-        currentPage = 1;
-        loadData();
-    }
+    
 
     function exportTableToCSV(filename) {
         // We will fetch all data from backend for export to get the complete dataset
@@ -739,13 +737,13 @@
                 <td class="px-6 py-4 ">${row.datasets}</td>
                  <td class="px-6 py-4 ">${row.delta}</td>
                  <td class="px-6 py-4 ">${row.humiliated}</td>
-                 <td class="px-6 py-4 text-center">
-                  
+                 <td class="px-6 py-4 text-left">
+                        ${row.datasets && row.datasets.toLowerCase().includes('kyc6') ? '' : `
                        <a href="javascript:void(0)"
                        onclick="openPopup('${updated?.date}','${row.datasets}')"
                        class="text-blue-600 font-bold text-xs underline">
                        View
-                    </a>
+                    </a>`}
                     </td>
                 </tr>
             `);
@@ -811,69 +809,33 @@
     });
     
     function clearFilters() {
+        // Reset text inputs and dropdowns
+        $('#searchInput').val('');
+        $('#datasetsFilter').val('');
+        currentPage = 1;
 
-            const today = new Date();
-            const lastYear = new Date();
-            lastYear.setFullYear(today.getFullYear() - 1);
+        // Reset dates
+        const today = new Date();
+        const lastYear = new Date();
+        lastYear.setFullYear(today.getFullYear() - 1);
 
-            function formatDate(date) {
-                const yyyy = date.getFullYear();
-                const mm = String(date.getMonth() + 1).padStart(2, '0');
-                const dd = String(date.getDate()).padStart(2, '0');
-                return `${dd}/${mm}/${yyyy}`;
-            }
+        // Reset Flatpickr instances
+        if (document.querySelector("#startDate")._flatpickr) {
+            document.querySelector("#startDate")._flatpickr.setDate(lastYear, true);
+        }
 
-            // Reset values with defaults
-                 if (document.querySelector("#startDate")._flatpickr) {
-                document.querySelector("#startDate")._flatpickr.setDate(lastYear, true);
-            }
+        if (document.querySelector("#endDate")._flatpickr) {
+            document.querySelector("#endDate")._flatpickr.setDate(today, true);
+        }
 
-            if (document.querySelector("#endDate")._flatpickr) {
-                document.querySelector("#endDate")._flatpickr.setDate(today, true);
-            }
-        
-
-        // Show filter icon again
-        
-
-        //checkFilterValues();
-
+        // Apply the reset state
         loadData();
-
-      
-
     }
 
-    async function openPopup(date, type) {
+            async function openPopup(date) {
         try {
-            const overlay = document.getElementById("nameModalOverlay");
-            const dialog = document.getElementById("nameModalDialog");
-            const loader = document.getElementById("modalLoader");
-            
-            // Show modal and loader immediately
-            overlay.classList.remove("hidden");
-            // Force reflow
-            void overlay.offsetWidth;
-            
-            // Add animation classes
-            overlay.classList.remove("opacity-0");
-            dialog.classList.remove("scale-95", "opacity-0");
-            dialog.classList.add("scale-100", "opacity-100");
-            
-            loader.classList.remove("hidden");
-            
-            // Re-initialize lucide icons inside modal for loader and close button
-            if (window.lucide) {
-                lucide.createIcons();
-            }
-            
-            // Reset old data
-            document.getElementById("individualList").innerHTML = "";
-            document.getElementById("corporateList").innerHTML = "";
-            document.getElementById("individualCount").textContent = "0";
-            document.getElementById("corporateCount").textContent = "0";
+            // date = "07/04/2026" (DD/MM/YYYY)
 
-            // Format date for API (DD/MM/YYYY -> YYYY-MM-DD)
             const parts = date.split('/');
             const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`; 
 
