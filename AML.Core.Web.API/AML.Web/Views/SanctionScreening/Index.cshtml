@@ -173,7 +173,7 @@
             <!-- Filters Section -->
             <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                 <div class="flex items-center justify-between mb-5">
-                    <h3 class="text-sm font-bold text-slate-800 tracking-tight">Filters</h3>
+                    <h3 class="text-sm font-bold text-slate-800 tracking-tight">Search</h3>
                     <button type="button" onclick="clearFilters()" id="resetBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-4 rounded-md text-sm transition">
                         Reset
                     </button>
@@ -217,7 +217,7 @@
                 <div class="mt-5 flex items-center justify-end gap-3 w-full">
                     <!-- Submit Form button representing existing API behavior -->
                     <button type="submit" id="btnSearch" onclick="showLoader()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold h-10 px-5 rounded-md text-sm transition shadow-sm">
-                        Apply
+                        Search
                     </button>
                 </div>
             </div>
@@ -403,7 +403,17 @@ console.log("rawData3",rawData3);
                 $('#pageSize').val(savedSize);
             }
 
-            
+            // Clear search fields if data is populated
+            if (rawData1.length > 0) {
+                $('#name').val('');
+                $('#nationality').val('');
+                $('#customertype').val('0');
+                if (document.querySelector("#DOB") && document.querySelector("#DOB")._flatpickr) {
+                    document.querySelector("#DOB")._flatpickr.clear();
+                } else {
+                    $('#DOB').val('');
+                }
+            }
 
             loadData1();
         });
@@ -423,9 +433,17 @@ console.log("rawData3",rawData3);
             }
             $('#searchInput').val('');
 
+            // Clear local data
+            rawData1 = [];
+            rawData2 = [];
+            rawData3 = [];
             filteredData1 = [];
             filteredData2 = [];
             filteredData3 = [];
+
+            // Reset to Search Results tab
+            const btn1 = document.querySelectorAll('.nav-btn')[0];
+            if(btn1) showTable('table1', btn1);
 
             currentPage = 1;
                 const noDataRow = `<tr>
