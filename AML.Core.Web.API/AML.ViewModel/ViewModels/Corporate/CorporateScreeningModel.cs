@@ -280,6 +280,8 @@ namespace AML.ViewModel.ViewModels.Corporate
 
         public string CounterPartyName { get; set; }
 
+        public string DualUseGoods { get; set; }
+
     }
 
     public class ShareholderModel

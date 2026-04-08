@@ -77,6 +77,7 @@ using NToastNotify;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -84,6 +85,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static AML.Core.Service.Common.CommonService;
 using static AML.DTO.DTO.FreeSource.BlackListMongoDTO;
@@ -2872,6 +2874,9 @@ namespace AML.Web.Controllers.Case
                                     case "mode of payment":
                                         model1.Modeofpayment = risk.ItemText;
                                         break;
+                                    case "dual use goods match":
+                                        model1.DualUseGoods = risk.ItemText;
+                                    break;
                                 }
                             }
                         }
@@ -2999,6 +3004,9 @@ namespace AML.Web.Controllers.Case
 
                                     case "mode of payment":
                                         corporateDetailsModel.Modeofpayment = risk.ItemText;
+                                        break;
+                                    case "dual use goods match":
+                                        corporateDetailsModel.DualUseGoods = risk.ItemText;
                                         break;
 
                                     default:
@@ -3697,13 +3705,30 @@ namespace AML.Web.Controllers.Case
                                                        Text = s.FName + " " + s.LName.ToString()
                                                    };
             model.Users = new SelectList(userList, "Value", "Text");
+            //var items = from CompletedCaseStatus d in Enum.GetValues(typeof(CompletedCaseStatus))
+            //            select new { Id = (int)d, Name = d.ToString() };
+            //model.CaseStatusList = new SelectList(items, "Id", "Name");
             var items = from CompletedCaseStatus d in Enum.GetValues(typeof(CompletedCaseStatus))
-                        select new { Id = (int)d, Name = d.ToString() };
+                        select new
+                        {
+                            Id = (int)d,
+                            Name = Regex.Replace(d.ToString(), "(\\B[A-Z])", " $1")
+                        };
+
             model.CaseStatusList = new SelectList(items, "Id", "Name");
 
 
             return View(model);
         }
+
+        //public static string GetEnumDisplayName(Enum value)
+        //{
+        //    return value.GetType()
+        //        .GetMember(value.ToString())
+        //        .First()
+        //        .GetCustomAttribute<DisplayAttribute>()?
+        //        .GetName() ?? value.ToString();
+        //}
 
         [HttpPost("/case/completedcasescustompagination")]
         //ToDo

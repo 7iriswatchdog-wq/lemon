@@ -250,7 +250,7 @@ namespace AML.ViewModel.ViewModels.CustomerCase
 
         public bool ModeOfPaymentCategory { get; set; }
 
-        
+        public string DualUseGoods { get; set; }
 
     }
 

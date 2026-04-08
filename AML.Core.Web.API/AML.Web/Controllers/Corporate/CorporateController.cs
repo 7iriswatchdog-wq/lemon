@@ -1745,7 +1745,7 @@ namespace AML.Web.Controllers.Corporate
             {
                 int id = _customerCaseService.GetCaseId(caseRefId);
                 CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(id);
-
+                _CustomerCaseDTO.Status = 0;
                 _customerCaseService.Update(_CustomerCaseDTO);
 
                 string commentText = string.Empty;

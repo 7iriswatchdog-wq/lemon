@@ -80,6 +80,7 @@ using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static AML.Core.Service.Common.CommonService;
 using static AML.DTO.DTO.FreeSource.BlackListMongoDTO;
@@ -1194,8 +1195,17 @@ public IActionResult CustomerList(DataTableModel model,
             //model.StartDate = System.DateTime.Now.AddDays(-7);
             model.EndDate = System.DateTime.Now;
             model.CustomerCategories = new SelectList(_mapper.Map<List<CustomerCategoryModel>>(_customerCategoryService.GetAll().Result), "Code", "Name");
+            //var items = from ReportsCaseStatus d in Enum.GetValues(typeof(ReportsCaseStatus))
+            //            select new { Id = (int)d, Name = d.ToString() };
+            //model.CaseStatusList = new SelectList(items, "Id", "Name");
+
             var items = from ReportsCaseStatus d in Enum.GetValues(typeof(ReportsCaseStatus))
-                        select new { Id = (int)d, Name = d.ToString() };
+                        select new
+                        {
+                            Id = (int)d,
+                            Name = Regex.Replace(d.ToString(), "(\\B[A-Z])", " $1")
+                        };
+
             model.CaseStatusList = new SelectList(items, "Id", "Name");
             model.CaseStatus = "10"; //TODO: Remove/Update the default value
             var clientID = _clientHandler.GetClientId();
