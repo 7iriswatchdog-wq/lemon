@@ -1583,6 +1583,7 @@ namespace AML.Web.Controllers.Corporate
                 .ToList();
             bool isCaseCreated = false;
             string caseRefId = null;
+            string rootCompanyId = null;
             foreach (var sh in sortedShareholders)
             {
                 bool isCorporate = sh.Type == "Corporate_Corp" || sh.Type == "Individual_Corp";
@@ -1595,7 +1596,7 @@ namespace AML.Web.Controllers.Corporate
                     MatchCategory = isCorporate  ? "CORPORATE" : "INDIVIDUAL",
                     ClientId = sh.ClientID,
                     //CreatedBy = sh.UserId,
-                    CompanyCode = sh.CompanyCode,
+                    CompanyCode = rootCompanyId ?? sh.CompanyCode,
                     //CompanyName = sh.CompanyName,
                     //Thershold = sh.Thershold,
                     DOB = sh.RegistrationDate?.ToString("yyyy-MM-dd"),
@@ -1655,6 +1656,10 @@ namespace AML.Web.Controllers.Corporate
 
                 // Get real CustomerId from DB
                 var customerId = result.Result.Split('Ø')[1];
+                if (rootCompanyId == null && isCorporate && !sh.DisplayId.Contains("."))
+                {
+                    rootCompanyId = customerId;
+                }
                 parentIdMap[sh.DisplayId] = customerId; // map TempId -> real CustomerId
 
                 if (!string.IsNullOrEmpty(sh.Document))
