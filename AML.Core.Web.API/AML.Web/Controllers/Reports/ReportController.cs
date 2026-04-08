@@ -5225,58 +5225,58 @@ public IActionResult CustomerList(DataTableModel model,
         //    });
         //}
 
-        [HttpGet("Report/GetDatasetUpdateLogs")]
-        public IActionResult GetDatasetUpdateLogs()
-        {
-            var model = new ReportLogSearchModel();
-            model.StartDate = System.DateTime.Now.AddDays(-7);
-            model.EndDate = System.DateTime.Now;
+        //[HttpGet("Report/GetDatasetUpdateLogs")]
+        //public IActionResult GetDatasetUpdateLogs()
+        //{
+        //    var model = new ReportLogSearchModel();
+        //    model.StartDate = System.DateTime.Now.AddDays(-7);
+        //    model.EndDate = System.DateTime.Now;
 
-            // Get client ID from session
-            var clientId = HttpContext.Session.GetString("sessClientId")?.ParseInt() ?? 0;
+        //    // Get client ID from session
+        //    var clientId = HttpContext.Session.GetString("sessClientId")?.ParseInt() ?? 0;
 
-            // Get client contract start date (using client created date)
-            DateTime clientContractStartDate = DateTime.MinValue;
-            if (clientId > 0)
-            {
-                var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
-                if (clientDetails != null && clientDetails.CreatedOn.HasValue)
-                {
-                    clientContractStartDate = clientDetails.CreatedOn.Value;
-                }
-            }
+        //    // Get client contract start date (using client created date)
+        //    DateTime clientContractStartDate = DateTime.MinValue;
+        //    if (clientId > 0)
+        //    {
+        //        var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
+        //        if (clientDetails != null && clientDetails.CreatedOn.HasValue)
+        //        {
+        //            clientContractStartDate = clientDetails.CreatedOn.Value;
+        //        }
+        //    }
 
-            // Get Individual and Corporate names by matching inserted date and created on date
-            if (clientId > 0)
-            {
-                // Get all customers for this client
-                var customers = _customerMasterService.GetDetailsBySearch("", "", clientId);
+        //    // Get Individual and Corporate names by matching inserted date and created on date
+        //    if (clientId > 0)
+        //    {
+        //        // Get all customers for this client
+        //        var customers = _customerMasterService.GetDetailsBySearch("", "", clientId);
                 
-                // Collect Individual and Corporate names
-                foreach (var customer in customers)
-                {
-                    if (customer.CustomerType.Equals("Individual", StringComparison.OrdinalIgnoreCase))
-                    {
-                        model.IndividualNames.Add($"{customer.FirstName} {customer.LastName}".Trim());
-                    }
-                    else if (customer.CustomerType.Equals("Corporate", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // For corporates, use CustomerId as the name/identifier
-                        // Format: "CustomerId (ReferenceID)" if ReferenceID is available
-                        string corporateName = customer.CustomerId;
-                        if (!string.IsNullOrEmpty(customer.CustomerReferenceID))
-                        {
-                            corporateName += $" ({customer.CustomerReferenceID})";
-                        }
-                        model.CorporateNames.Add(corporateName);
-                    }
-                }
-            }
+        //        // Collect Individual and Corporate names
+        //        foreach (var customer in customers)
+        //        {
+        //            if (customer.CustomerType.Equals("Individual", StringComparison.OrdinalIgnoreCase))
+        //            {
+        //                model.IndividualNames.Add($"{customer.FirstName} {customer.LastName}".Trim());
+        //            }
+        //            else if (customer.CustomerType.Equals("Corporate", StringComparison.OrdinalIgnoreCase))
+        //            {
+        //                // For corporates, use CustomerId as the name/identifier
+        //                // Format: "CustomerId (ReferenceID)" if ReferenceID is available
+        //                string corporateName = customer.CustomerId;
+        //                if (!string.IsNullOrEmpty(customer.CustomerReferenceID))
+        //                {
+        //                    corporateName += $" ({customer.CustomerReferenceID})";
+        //                }
+        //                model.CorporateNames.Add(corporateName);
+        //            }
+        //        }
+        //    }
 
-            model.ClientContractStartDate = clientContractStartDate;
+        //    model.ClientContractStartDate = clientContractStartDate;
 
-            return View(model);
-        }
+        //    return View(model);
+        //}
 
 
         [HttpGet("Report/DatasetUpdateLogs")]
@@ -5284,8 +5284,8 @@ public IActionResult CustomerList(DataTableModel model,
         {
             
             var model = new ReportLogSearchModel();
-            model.StartDate = System.DateTime.Now.AddYears(-1);
-            //model.StartDate = System.DateTime.Now.AddDays(-7);
+            //model.StartDate = System.DateTime.Now.AddYears(-1);
+            model.StartDate = System.DateTime.Now.AddDays(-7);
             model.EndDate = System.DateTime.Now;
             
             return View(model);
@@ -5303,15 +5303,15 @@ public IActionResult CustomerList(DataTableModel model,
                     }));
 
                 // Get client ID from session
-                var clientId = HttpContext.Session.GetString("sessClientId")?.ParseInt() ?? 0;
+                var clientId = _clientHandler.GetClientId();
 
                 // Get client contract start date and filter data
                 if (clientId > 0)
                 {
                     var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
-                    if (clientDetails != null && clientDetails.CreatedOn.HasValue)
+                    if (clientDetails != null && clientDetails.ApplicationStartDate.HasValue)
                     {
-                        DateTime clientContractStartDate = clientDetails.CreatedOn.Value;
+                        DateTime clientContractStartDate = clientDetails.ApplicationStartDate.Value;
                         
                         // Filter out records before the client's contract start date
                         abc = abc.Where(log => 
@@ -5635,14 +5635,16 @@ public IActionResult CustomerList(DataTableModel model,
 
 
         }
-        [HttpGet("Report/GetNamesByCreatedDate")]
-        [AllowAnonymous]
-        public IActionResult GetNamesByCreatedDate(string date)
+
+        [HttpGet("GetNamesByCreatedDate")]
+        public IActionResult GetNamesByCreatedDate(string date,string type)
+
+
         {
             try
             {
 
-                var result = _freeSourceRepository.GetRecordsByCreatedDate(date);
+                var result = _freeSourceRepository.GetRecordsByCreatedDate(date,type);
 
                 if (result != null && result.Count > 0)
                     return Ok(result);

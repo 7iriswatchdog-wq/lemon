@@ -447,23 +447,26 @@ namespace AML.Core.Repository.FreeSource
 			return (exists: false, response: null,null);
         }
 
-        public List<NAMELIST> GetRecordsByCreatedDate(string createdDate)
+        public List<NAMELIST> GetRecordsByCreatedDate(string createdDate,string type)
         {
             try
             {
-                // Convert the input date to both formats for matching
-                var dateString = createdDate;
-                
-                // Try to parse the input date and convert to dd/MM/yyyy format
-                if (DateTime.TryParse(dateString, out DateTime parsedDate))
-                {
-                    // Format as dd/MM/yyyy for matching
-                    dateString = parsedDate.ToString("dd/MM/yyyy");
-                }
 
-                var filter = Builders<NAMELIST>.Filter.Regex(
-                    x => x.CREATEDON,
-                    new BsonRegularExpression("^" + dateString)
+                DateTime createdDate1 = DateTime.ParseExact(
+                    createdDate,
+                    "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture
+                );
+
+
+                var dateString = createdDate1.ToString("dd/MM/yyyy");
+
+                var filter = Builders<NAMELIST>.Filter.And(
+                    Builders<NAMELIST>.Filter.Regex(
+                        x => x.CREATEDON,
+                        new BsonRegularExpression("^" + dateString)
+                    ),
+                    Builders<NAMELIST>.Filter.Eq(x => x.TYPE, type.ToUpper())
                 );
 
                 var collection = mongoDB.GetCollection<NAMELIST>("NAMELIST");
