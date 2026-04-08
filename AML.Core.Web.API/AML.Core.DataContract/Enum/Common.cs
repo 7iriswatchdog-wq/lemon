@@ -52,16 +52,40 @@ namespace AML.Core.DataContract.Enum
         Rejected = 3,
         Auto = 5,
     }
+
     public enum ReportsCaseStatus
     {
+        [Display(Name = "All")]
         All = 10,
+
+        [Display(Name = "Pending")]
         Pending = 0,
+
+        [Display(Name = "Pending Case Created From Daily Scheduler")]
         PendingCaseCreatedFromDailyScheduler = 6,
-        PendingWithSeniorManagement=4,
+
+        [Display(Name = "Pending With Senior Management")]
+        PendingWithSeniorManagement = 4,
+
+        [Display(Name = "White Listed")]
         WhiteListed = 7,
+
+        [Display(Name = "Approved")]
         Approved = 2,
+
+        [Display(Name = "Rejected")]
         Rejected = 3,
+
+        [Display(Name = "Auto")]
         Auto = 5,
+        //All = 10,
+        //Pending = 0,
+        //PendingCaseCreatedFromDailyScheduler = 6,
+        //PendingWithSeniorManagement=4,
+        //WhiteListed = 7,
+        //Approved = 2,
+        //Rejected = 3,
+        //Auto = 5,
         
     }
     public enum CompletedCaseStatus
