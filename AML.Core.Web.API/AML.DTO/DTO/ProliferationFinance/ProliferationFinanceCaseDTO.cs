@@ -9,6 +9,8 @@ namespace AML.DTO.DTO.ProliferationFinance
         public int Id { get; set; }
         [Column("CustomerType")]
         public string CustomerType { get; set; }
+        [Column("Client_Id")]
+        public int? ClientId { get; set; }
         [Column("CorporateId")]
         public string CorporateId { get; set; }
         [Column("CompanyName")]

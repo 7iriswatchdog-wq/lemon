@@ -61,9 +61,9 @@ namespace AML.Core.Service.ProliferationFinance
             return _repository.CreateCase(caseDto);
         }
 
-        public ServiceResponse<List<ProliferationFinanceCaseDTO>> GetAllCases()
+        public ServiceResponse<List<ProliferationFinanceCaseDTO>> GetAllCases(int clientId)
         {
-            return _repository.GetAllCases();
+            return _repository.GetAllCases(clientId);
         }
 
         public ProliferationFinanceCaseDTO GetCaseById(int id)

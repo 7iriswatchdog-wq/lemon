@@ -133,7 +133,7 @@ namespace AML.Web.Controllers
 
                     for (var j = 0; j < riskmodel.RiskTypeCategoryDTO[i].RiskTypes.Count; j++)
                     {
-                        if (model.RiskTypeList[a].Id == riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].Id.ToString())
+                        if (a < model.RiskTypeList.Count && model.RiskTypeList[a].Id == riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].Id.ToString())
                         {
 
                             for (int k = 0; k < riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].RiskItems.Count; k++)
@@ -248,7 +248,7 @@ namespace AML.Web.Controllers
 
                     for (var j = 0; j < riskmodel.RiskTypeCategoryDTO[i].RiskTypes.Count; j++)
                     {
-                        if (model.RiskTypeList[a].Id == riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].Id.ToString())
+                        if (a < model.RiskTypeList.Count && model.RiskTypeList[a].Id == riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].Id.ToString())
                         {
 
                             for (int k = 0; k < riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].RiskItems.Count; k++)
@@ -401,7 +401,7 @@ namespace AML.Web.Controllers
 
                     for (var j = 0; j < riskmodel.RiskTypeCategoryDTO[i].RiskTypes.Count; j++)
                     {
-                        if (model.RiskTypeList[a].Id == riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].Id.ToString())
+                        if (a < model.RiskTypeList.Count && model.RiskTypeList[a].Id == riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].Id.ToString())
                         {
 
                             for (int k = 0; k < riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].RiskItems.Count; k++)
@@ -526,7 +526,7 @@ namespace AML.Web.Controllers
 
                     for (var j = 0; j < riskmodel.RiskTypeCategoryDTO[i].RiskTypes.Count; j++)
                     {
-                        if (model.RiskTypeList[a].Id == riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].Id.ToString())
+                        if (a < model.RiskTypeList.Count && model.RiskTypeList[a].Id == riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].Id.ToString())
                         {
 
                             for (int k = 0; k < riskmodel.RiskTypeCategoryDTO[i].RiskTypes[j].RiskItems.Count; k++)

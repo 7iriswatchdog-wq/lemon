@@ -353,6 +353,28 @@
 
 <script>
 
+    function updateStatusUI(newStatus) {
+        if (!newStatus) return;
+        const sLower = newStatus.toLowerCase();
+        let statusClass = "bg-slate-100 text-slate-800 ring-slate-200";
+        if (sLower.includes("pending")) statusClass = "bg-yellow-100 text-yellow-800 ring-yellow-200";
+        else if (sLower.includes("approved") || sLower.includes("true match")) statusClass = "bg-blue-100 text-blue-800 ring-blue-200";
+        else if (sLower.includes("transfer")) statusClass = "bg-green-100 text-green-800 ring-green-200";
+        else if (sLower.includes("rejected") || sLower.includes("false match")) statusClass = "bg-red-100 text-red-800 ring-red-200";
+        
+        let badge = $(".grid.grid-cols-6 div:contains('Status')").parent().find("span");
+        if(badge.length) {
+            badge.text(newStatus);
+            badge.removeClass().addClass("inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold ring-1 ring-inset " + statusClass);
+        }
+    }
+
+    function refreshCaseUI(newStatus) {
+        if (newStatus) updateStatusUI(newStatus);
+        $('#commentsContainer').empty();
+        loadComments();
+    }
+
     function toggleSaveButton() {
         const comment = $('#caseComment').val().trim();
         const $btn = $('#btnSaveComment');
@@ -383,11 +405,11 @@
                             type: 'POST',
                             data: { caseId: @Model.CaseId, remarks: comment },
                             complete: function() {
-                                setTimeout(() => location.reload(), 1500);
+                                setTimeout(() => refreshCaseUI(decision), 500);
                             }
                         });
                     } else {
-                        setTimeout(() => location.reload(), 1500);
+                        setTimeout(() => refreshCaseUI(decision), 500);
                     }
                 } else {
                     toastr.error(res.message || 'Error saving decision.');
@@ -413,7 +435,7 @@
                 if (res.success) {
                     toastr.success('Comment saved successfully');
                     $('#caseComment').val(''); // Clear the input
-                    setTimeout(() => location.reload(), 1500); // Silent reload to show updated history
+                    setTimeout(() => refreshCaseUI(null), 500);
                 } else {
                     toastr.error(res.message || 'Error saving comment.');
                 }
@@ -443,7 +465,7 @@
                     $('#loadingeffect').hide();
                     if (res.success) {
                         toastr.success('Document uploaded successfully');
-                        setTimeout(() => location.reload(), 1500);
+                        setTimeout(() => refreshCaseUI(null), 500);
                     } else {
                         toastr.error('Upload failed: ' + res.message);
                     }
@@ -487,7 +509,7 @@
                 });
             });
 
-            $('#loadingeffect').show();
+            $('#processLoader').removeClass('hidden').addClass('flex');
             var corporateId='@Model.CorporateId';
             var companyName='@Model.CompanyName';
 
@@ -521,21 +543,21 @@
                                 type: 'POST',
                                 data: { caseId: @Model.CaseId, status: newStatus },
                                 success: function() {
-                                    setTimeout(() => location.reload(), 1500);
+                                    setTimeout(() => refreshCaseUI(newStatus), 500);
                                 },
-                                complete: () => $('#loadingeffect').hide()
+                                complete: () => $('#processLoader').addClass('hidden').removeClass('flex')
                             });
                         } else {
-                            $('#loadingeffect').hide();
-                            setTimeout(() => location.reload(), 1500);
+                            $('#processLoader').addClass('hidden').removeClass('flex');
+                            setTimeout(() => refreshCaseUI(newStatus), 500);
                         }
                     } else {
-                        $('#loadingeffect').hide();
+                        $('#processLoader').addClass('hidden').removeClass('flex');
                         toastr.error('Failed to save actions: ' + res.message);
                     }
                 },
                 error: function() {
-                    $('#loadingeffect').hide();
+                    $('#processLoader').addClass('hidden').removeClass('flex');
                     toastr.error('Error saving search actions');
                 }
             });

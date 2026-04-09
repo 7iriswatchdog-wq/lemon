@@ -67,9 +67,9 @@ namespace AML.Web.Services
             return cachedResult;
         }
 
-        public List<ProliferationFinanceCaseDTO> GetAllPFCases()
+        public List<ProliferationFinanceCaseDTO> GetAllPFCases(int clientId)
         {
-            return _proliferationFinanceService.GetAllCases()?.Result ?? new List<ProliferationFinanceCaseDTO>();
+            return _proliferationFinanceService.GetAllCases(clientId)?.Result ?? new List<ProliferationFinanceCaseDTO>();
         }
 
         public List<PFSearchResultsMongoDTO.PF_Hit> GetMongoSearchResults(int caseId)

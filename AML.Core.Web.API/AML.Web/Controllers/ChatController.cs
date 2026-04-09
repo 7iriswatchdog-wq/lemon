@@ -356,7 +356,11 @@ namespace AML.Web.Controllers
 
         private string GetPFKnowledge()
         {
-            var cases = _chatDataService.GetAllPFCases();
+            var sessionClientIdStr = HttpContext.Session.GetString("SessClientId");
+            int sessionClientId = 0;
+            int.TryParse(sessionClientIdStr, out sessionClientId);
+
+            var cases = _chatDataService.GetAllPFCases(sessionClientId);
             var recentHits = cases.Where(c => c.CreatedOn >= DateTime.Now.AddDays(-7)).Count();
             
             return $@"[LIVE PROLIFERATION LEDGER]: 

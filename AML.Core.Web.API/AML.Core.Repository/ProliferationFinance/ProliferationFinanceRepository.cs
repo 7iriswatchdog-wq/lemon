@@ -60,6 +60,7 @@ namespace AML.Core.Repository.ProliferationFinance
                 parameters.Add("@p_StatusReason", caseDto.StatusReason);
                 parameters.Add("@p_Type", caseDto.Type ?? "Corporate");
                 parameters.Add("@p_CreatedBy", caseDto.CreatedBy);
+                parameters.Add("@p_ClientId", caseDto.ClientId);
                 parameters.Add("@p_SearchHitDetails", caseDto.SearchHitDetails);
                 parameters.Add("@p_CaseId", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
@@ -77,12 +78,13 @@ namespace AML.Core.Repository.ProliferationFinance
             return serviceResponse;
         }
 
-        public ServiceResponse<List<ProliferationFinanceCaseDTO>> GetAllCases()
+        public ServiceResponse<List<ProliferationFinanceCaseDTO>> GetAllCases(int clientId)
         {
             ServiceResponse<List<ProliferationFinanceCaseDTO>> serviceResponse = new ServiceResponse<List<ProliferationFinanceCaseDTO>>();
             try
             {
                 DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_ClientId", clientId);
                 serviceResponse.Result = Get<ProliferationFinanceCaseDTO>("sp_GetAllProliferationFinanceCases", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Status = 200;
                 serviceResponse.Message = "Success";

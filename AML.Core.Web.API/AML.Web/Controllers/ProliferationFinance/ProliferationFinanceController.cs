@@ -1,4 +1,4 @@
-﻿using AML.Core.Common.StaticResource;
+using AML.Core.Common.StaticResource;
 using AML.Core.Service.Kyc;
 using AML.Core.Service.Risk;
 using AML.Core.ServiceContract.CaseComment;
@@ -112,7 +112,7 @@ namespace AML.Web.Controllers.ProliferationFinance
         {
             try
             {
-                var response = _proliferationFinanceService.GetAllCases();
+                var response = _proliferationFinanceService.GetAllCases(_clientHandler.GetClientId());
                 if (response.Status == 200)
                 {
                     var data = response.Result;
@@ -1030,6 +1030,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                 dynamic modelrisk = null;
                 int Id = _customerCaseService.GetCaseId(request.corporateId);
                 CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(Id);
+                if (request.Hits == null || request.Hits.Count == 0) return Json(new { success = true, message = "No hits to save" });
                 foreach (var hit in request.Hits)
                 {
                     if (hit.Decision != "")
@@ -1125,20 +1126,20 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
 
-                            var spStr1 = str1.Result.Split('�');
-                            var entlovId = spStr1[2];
-                            var buslovId = spStr1[4];
-                            var incorplovId = spStr1[3];
-                            var productlovId = spStr1[11];
-                            var deliverylovId = spStr1[12];
-                            var nationality1lovId = spStr1[6];
-                            var nationality2lovId = spStr1[7];
-                            var nationality3lovId = spStr1[8];
-                            var nationality4lovId = spStr1[9];
-                            var nationality5lovId = spStr1[10];
-                            var modeofpaymentlovId = spStr1[16];
+                            var spStr1 = str1.Result.Split('?');
+                            var entlovId = GetSafely(spStr1, 2);
+                            var buslovId = GetSafely(spStr1, 4);
+                            var incorplovId = GetSafely(spStr1, 3);
+                            var productlovId = GetSafely(spStr1, 11);
+                            var deliverylovId = GetSafely(spStr1, 12);
+                            var nationality1lovId = GetSafely(spStr1, 6);
+                            var nationality2lovId = GetSafely(spStr1, 7);
+                            var nationality3lovId = GetSafely(spStr1, 8);
+                            var nationality4lovId = GetSafely(spStr1, 9);
+                            var nationality5lovId = GetSafely(spStr1, 10);
+                            var modeofpaymentlovId = GetSafely(spStr1, 16);
 
-                            var dualusegoodslovId = spStr1[32];
+                            var dualusegoodslovId = GetSafely(spStr1, 32);
 
                             var str = _kycService.GetRiskTypeId(imodel, _mapper.Map<CorporateKycDTO>(corpModel), "C", culture, clientId);
 
@@ -1146,19 +1147,19 @@ namespace AML.Web.Controllers.ProliferationFinance
                             {
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
-                            var spStr = str.Result.Split('�');
-                            var entId = spStr[2];
-                            var busId = spStr[4];
-                            var incorpId = spStr[3];
-                            var productId = spStr[11];
-                            var deliveryId = spStr[12];
-                            var nationality1Id = spStr[6];
-                            var nationality2Id = spStr[7];
-                            var nationality3Id = spStr[8];
-                            var nationality4Id = spStr[9];
-                            var nationality5Id = spStr[10];
-                            var modeofpaymentId = spStr[16];
-                            var dualusegoodsId = spStr[32];
+                            var spStr = str.Result.Split('?');
+                            var entId = GetSafely(spStr, 2);
+                            var busId = GetSafely(spStr, 4);
+                            var incorpId = GetSafely(spStr, 3);
+                            var productId = GetSafely(spStr, 11);
+                            var deliveryId = GetSafely(spStr, 12);
+                            var nationality1Id = GetSafely(spStr, 6);
+                            var nationality2Id = GetSafely(spStr, 7);
+                            var nationality3Id = GetSafely(spStr, 8);
+                            var nationality4Id = GetSafely(spStr, 9);
+                            var nationality5Id = GetSafely(spStr, 10);
+                            var modeofpaymentId = GetSafely(spStr, 16);
+                            var dualusegoodsId = GetSafely(spStr, 32);
 
 
                             RiskAPIRequestModel riskModel = new RiskAPIRequestModel();
@@ -1427,22 +1428,22 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
 
                             }
-                            var spStr1 = str1.Result.Split('�');
-                            var proflovId = spStr1[0];
-                            var natlovId = spStr1[1];
-                            var reslovId = spStr1[5];
-                            //var IspeplovId = spStr1[13];
-                            var IndprodlovId = spStr1[13];
-                            var InddelilovId = spStr1[14];
-                            var IndmodeofpaymentlovId = spStr1[15];
-                            var domesticpeplovId = spStr1[17];
-                            var foreignlovId = spStr1[19];
-                            var redflagslovId = spStr1[21];
-                            var sanctionlovId = spStr1[23];
-                            var UAEORUNSClovId = spStr1[25];
-                            var highestriskproductlovId = spStr1[28];
-                            var veryhighnetworkIdlovId = spStr1[30];
-                            var dualusegoodslovId = spStr1[33];
+                            var spStr1 = str1.Result.Split('?');
+                            var proflovId = GetSafely(spStr1, 0);
+                            var natlovId = GetSafely(spStr1, 1);
+                            var reslovId = GetSafely(spStr1, 5);
+                            //var IspeplovId = GetSafely(spStr1, 13);
+                            var IndprodlovId = GetSafely(spStr1, 13);
+                            var InddelilovId = GetSafely(spStr1, 14);
+                            var IndmodeofpaymentlovId = GetSafely(spStr1, 15);
+                            var domesticpeplovId = GetSafely(spStr1, 17);
+                            var foreignlovId = GetSafely(spStr1, 19);
+                            var redflagslovId = GetSafely(spStr1, 21);
+                            var sanctionlovId = GetSafely(spStr1, 23);
+                            var UAEORUNSClovId = GetSafely(spStr1, 25);
+                            var highestriskproductlovId = GetSafely(spStr1, 28);
+                            var veryhighnetworkIdlovId = GetSafely(spStr1, 30);
+                            var dualusegoodslovId = GetSafely(spStr1, 33);
 
                             var str = _kycService.GetRiskTypeId(_mapper.Map<KycIndividualDTO>(imodel), corpModel, "I", culture,clientId);
                             if (str.Result == null)
@@ -1450,22 +1451,22 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
-                            var spStr = str.Result.Split('�');
-                            var profId = spStr[0];
-                            var natId = spStr[1];
-                            var resId = spStr[5];
-                            //var IspepId = spStr[13];
-                            var IndprodId = spStr[13];
-                            var InddeliId = spStr[14];
-                            var Indmodeofpaymentid = spStr[15];
-                            var domesticpepId = spStr[17];
-                            var foreignId = spStr[19];
-                            var redflagsId = spStr[21];
-                            var sanctionId = spStr[23];
-                            var UAEORUNSCId = spStr[25];
-                            var highestriskproductId = spStr[28];
-                            var veryhighnetworkId = spStr[30];
-                            var dualusegoodsId = spStr[33];
+                            var spStr = str.Result.Split('?');
+                            var profId = GetSafely(spStr, 0);
+                            var natId = GetSafely(spStr, 1);
+                            var resId = GetSafely(spStr, 5);
+                            //var IspepId = GetSafely(spStr, 13);
+                            var IndprodId = GetSafely(spStr, 13);
+                            var InddeliId = GetSafely(spStr, 14);
+                            var Indmodeofpaymentid = GetSafely(spStr, 15);
+                            var domesticpepId = GetSafely(spStr, 17);
+                            var foreignId = GetSafely(spStr, 19);
+                            var redflagsId = GetSafely(spStr, 21);
+                            var sanctionId = GetSafely(spStr, 23);
+                            var UAEORUNSCId = GetSafely(spStr, 25);
+                            var highestriskproductId = GetSafely(spStr, 28);
+                            var veryhighnetworkId = GetSafely(spStr, 30);
+                            var dualusegoodsId = GetSafely(spStr, 33);
                             RiskAPIRequestModel riskModel = new RiskAPIRequestModel();
 
                             riskModel.CustomerId = request.corporateId;
@@ -1694,7 +1695,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                 var comments = new List<(string Comment, string CommentType)>
                 {
                     ("Risk Parameter Has Been Updated", "Risk Parameters(By Proliferation Finance)"),
-                    (request.Hits[0].Decision +" Found And Saved", "Proliferation Finance")
+                    ((request.Hits != null && request.Hits.Count > 0 ? request.Hits[0].Decision : "Details") +" Found And Saved", "Proliferation Finance")
                     
                 };
 
@@ -1761,6 +1762,12 @@ namespace AML.Web.Controllers.ProliferationFinance
                 }
             }
         }
+
+        private string GetSafely(string[] segments, int index)
+        {
+            if (segments == null || index < 0 || segments.Length <= index) return "0";
+            return segments[index] ?? "0";
+        }
     }
 
     public class SearchHitsRequest
@@ -1805,3 +1812,5 @@ namespace AML.Web.Controllers.ProliferationFinance
         public string Message { get; set; }
     }
 }
+
+

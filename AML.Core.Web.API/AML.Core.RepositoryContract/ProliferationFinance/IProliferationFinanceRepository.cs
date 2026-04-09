@@ -9,7 +9,7 @@ namespace AML.Core.RepositoryContract.ProliferationFinance
     {
         ServiceResponse<List<UAEControlListDTO>> SearchChemicals(ProliferationFinanceCaseDTO searchCriteria);
         ServiceResponse<int> CreateCase(ProliferationFinanceCaseDTO caseDto);
-        ServiceResponse<List<ProliferationFinanceCaseDTO>> GetAllCases();
+        ServiceResponse<List<ProliferationFinanceCaseDTO>> GetAllCases(int clientId);
         ProliferationFinanceCaseDTO GetCaseById(int id);
         UAEControlListDTO GetChemicalById(int id);
         ServiceResponse<bool> UpdateCaseStatus(int caseId, string status);
