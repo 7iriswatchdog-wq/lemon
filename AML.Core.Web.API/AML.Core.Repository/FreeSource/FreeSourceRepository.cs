@@ -459,7 +459,7 @@ namespace AML.Core.Repository.FreeSource
                 );
 
 
-                var dateString = createdDate1.ToString("dd-MM-yyyy");
+                var dateString = createdDate1.ToString("dd/MM/yyyy");
 
                 var filter = Builders<NAMELIST>.Filter.And(
                     Builders<NAMELIST>.Filter.Regex(

@@ -2798,7 +2798,7 @@ namespace AML.Web.Controllers.Case
                             var type1 = row.matchtype?.ToUpper() ?? string.Empty;
 
                             // Group 1
-                            var sanctionTypes = new List<string> { "UN", "OFAC", "UAE IEC LIST", "BL", "CBWL", "INTERNAL" };
+                            var sanctionTypes = new List<string> { "UN", "OFAC", "UAE IEC LIST", "BL", "CBWL", "INTERNAL","" };
                             if (sanctionTypes.Any(t => type1.Contains(t)))
                             
                                 hasOFAC = true;   // You can rename this to hasSanction if needed
@@ -2839,13 +2839,15 @@ namespace AML.Web.Controllers.Case
                         {
                             model1.SanctionMatch = "Yes";
                         }
-                        
+
                         if ((hasOFAC || hasKYC6) &&
-                            row.searchTypes.Any(x => x == "UAE Sanction" || x == "UN Sanction"))
+    row.searchTypes.Any(x =>
+        x.Trim().Equals("UAE Sanction", StringComparison.OrdinalIgnoreCase) || x.Trim().Equals("UAE Sanctions", StringComparison.OrdinalIgnoreCase) ||
+        x.Trim().Equals("UN Sanction", StringComparison.OrdinalIgnoreCase)|| x.Trim().Equals("UN Sanctions", StringComparison.OrdinalIgnoreCase)))
                         {
                             model1.UAEORUNSC = "Yes";
                         }
-                        
+
 
                         if (hasKYC6 && row.searchTypes.Contains("VHNWI"))
                         {

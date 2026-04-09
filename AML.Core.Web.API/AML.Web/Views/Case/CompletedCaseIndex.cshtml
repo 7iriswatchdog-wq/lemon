@@ -690,8 +690,10 @@
             const approved = shInfo.match(/Approved\s(\d+)/)?.[1] || 0;
             const pending = shInfo.match(/Pending\s(\d+)/)?.[1] || 0;
             const rejected = shInfo.match(/Rejected\s(\d+)/)?.[1] || 0;
+
             const onhold = shInfo.match(/OnHold\s(\d+)/)?.[1] || 0;
             const whitelist = shInfo.match(/Whitelist\s(\d+)/)?.[1] || 0;
+
 
             const statusClass = getStatusClass(corpStatus);
 
@@ -723,6 +725,7 @@
                                     R:${rejected}
                                 </span>
 
+
                                 <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-400 text-black" title="On Hold">
                                     OH:${onhold}
                                 </span>
@@ -730,6 +733,7 @@
                                 <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white" title="Whitelist">
                                     W:${whitelist}
                                 </span>
+
                             </div>
                         </div>
                        </div>
@@ -916,9 +920,11 @@
                 else if (statusLower.startsWith("rejected")) baseStatus = "Rejected";
                 else if (statusLower.startsWith("pending")) baseStatus = "Pending";
                 else if (statusLower.startsWith("auto")) baseStatus = "Auto";
+               else if (statusLower.startsWith("on")) baseStatus = "OnHold";
+               else if (statusLower.startsWith("white")) baseStatus = "WhiteList";
 
                 // If main is approved/rejected → show Revert
-                if (baseStatus === "Approved" || baseStatus === "Rejected") {
+                    if (baseStatus === "Approved" || baseStatus === "Rejected" || baseStatus === "WhiteList") {
                     showRevert = true;
                 }
 
@@ -929,6 +935,7 @@
                     const shText = shareholderMatch[0].toLowerCase();
                     const approvedMatch = shText.match(/approved\s+(\d+)/i);
                     const rejectedMatch = shText.match(/rejected\s+(\d+)/i);
+                    const whitelistMatch = shText.match(/whiteList\s+(\d+)/i);
                     if ((approvedMatch && parseInt(approvedMatch[1]) > 0) ||
                         (rejectedMatch && parseInt(rejectedMatch[1]) > 0)) {
                         showRevert = true;

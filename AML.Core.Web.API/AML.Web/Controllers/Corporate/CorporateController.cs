@@ -1592,7 +1592,7 @@ namespace AML.Web.Controllers.Corporate
                 CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(companyid);
                  
                 bool isCorporate = sh.Type == "Corporate_Corp" || sh.Type == "Individual_Corp";
-                if (_CustomerCaseDTO.Type != "Corporate" || _CustomerCaseDTO.Type != "Individual")
+                if (_CustomerCaseDTO.Type != "Corporate" && _CustomerCaseDTO.Type != "Individual")
                 {
                     if (sh.Type == "Corporate_Ind")
                     {
