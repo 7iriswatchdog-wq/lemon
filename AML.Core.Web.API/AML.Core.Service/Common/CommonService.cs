@@ -12,6 +12,7 @@ using AML.Core.ServiceContract.Common;
 using AML.Core.ServiceContract.CustomerCase;
 using AML.Core.ServiceContract.DigiApiUser;
 using AML.Core.ServiceContract.TransactionScreening;
+using AML.DTO.DTO.CaseComment;
 using AML.DTO.DTO.Common;
 using AML.DTO.DTO.CorporateShareholder;
 using AML.DTO.DTO.Country;
@@ -21,6 +22,7 @@ using AML.DTO.DTO.FreeSource;
 using AML.DTO.DTO.TransactionScreening;
 using AML.ViewModel.ViewModels.ApiAuthentication;
 using AML.ViewModel.ViewModels.CaseAssignment;
+using AML.ViewModel.ViewModels.CaseComment;
 using AML.ViewModel.ViewModels.Common;
 using AML.ViewModel.ViewModels.CustomerCase;
 using AML.ViewModel.ViewModels.TransactionScreening;
@@ -67,6 +69,7 @@ namespace AML.Core.Service.Common
         private IMapper _mapper;
         private readonly ICommonRepository _commonRepository;
         private readonly IConfiguration _configuration;
+        
         IHostingEnvironment _env;
         private string baseURL;
         private string baseapiURL;
@@ -92,7 +95,7 @@ namespace AML.Core.Service.Common
 
         private readonly Logger log = LogManager.GetCurrentClassLogger();
 
-        public CommonService(IMapper mapper,ICommonRepository commonRepository, IDigiApiUserService digiApiUserService, ICountryRepository countryRepository, IConfiguration configuration, IHostingEnvironment env, ICustomerCaseService customerCaseService, ICustomerMasterRepository customerMasterRepository, IFreeSourceRepository freeSourceRepository, IUserRepository userRepository, ITransactionScreeningService transactionScreeningService, IHttpContextAccessor httpContextAccessor) : base(commonRepository, configuration)
+        public CommonService(IMapper mapper, ICommonRepository commonRepository, IDigiApiUserService digiApiUserService, ICountryRepository countryRepository, IConfiguration configuration, IHostingEnvironment env, ICustomerCaseService customerCaseService, ICustomerMasterRepository customerMasterRepository, IFreeSourceRepository freeSourceRepository, IUserRepository userRepository, ITransactionScreeningService transactionScreeningService, IHttpContextAccessor httpContextAccessor) : base(commonRepository, configuration)
         {
             _mapper = mapper;
             _commonRepository = commonRepository;
@@ -108,7 +111,7 @@ namespace AML.Core.Service.Common
             checkThreshold = Convert.ToInt32(_configuration.GetSection("C6BaseApiUrl:Threshold").Value);
             c6BaseURL = configuration.GetSection("C6BaseApiUrl").GetSection("BaseUrl").Value;
             baseapiURL = configuration.GetSection("AMLBaseApiUrl").GetSection("BaseUrl").Value;
-
+            
             _countryRepository = countryRepository;
             /* client data from db instead of appseting --begin*/
             var clientId = 0;
@@ -897,7 +900,9 @@ namespace AML.Core.Service.Common
                 }
 
             }
-           
+
+            
+
             
             var updateRespose = _customerCaseService.Update(_CustomerCaseDTO);
             if (_CustomerCaseDTO.IsMatched == 1 && _CustomerCaseDTO.Status == 6)
