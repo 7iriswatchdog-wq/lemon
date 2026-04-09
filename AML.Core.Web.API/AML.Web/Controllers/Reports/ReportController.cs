@@ -5094,7 +5094,129 @@ public IActionResult CustomerList(DataTableModel model,
                 return new ExcelResult<SchedulerlogsReportExcelModel>((excelData), "Scheduler Log Report", "scheduler_log_report_" + DateTime.Now.Ticks);
             }
 
+            var clientData = _customerCaseService.GetClientDetailsByID(_clientHandler.GetClientId());
+            var logos = "wwwroot/img/" + clientData.DocumentFileName;
+            var companyName = clientData.ClientName;
 
+            using (System.IO.MemoryStream memoryStream = new System.IO.MemoryStream())
+            {
+                Document document = new Document(PageSize.A4, 15, 15, 15, 15);
+                PdfWriter writer = PdfWriter.GetInstance(document, memoryStream);
+                document.Open();
+
+                document.Add(new Paragraph("\n"));
+
+                PdfPTable logo = new PdfPTable(2);
+                logo.TotalWidth = 550f;
+                float[] logowidth = new float[] { 3f, 0.5f };
+                logo.SetWidths(logowidth);
+                logo.LockedWidth = true;
+                logo.HorizontalAlignment = 1;//0=Left, 1=Centre, 2=Right
+                logo.DefaultCell.VerticalAlignment = 1;
+                logo.DefaultCell.HorizontalAlignment = 1;
+                logo.SpacingBefore = 20f;
+                logo.SpacingAfter = 30f;
+                logo.DefaultCell.Border = 0;
+                PdfPCell compname = new PdfPCell(new Phrase(companyName?.ToString() ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 17, Font.BOLD)));
+                compname.FixedHeight = 40f;
+                compname.VerticalAlignment = 1;
+                compname.HorizontalAlignment = 1;
+                compname.Border = 0;
+                logo.AddCell(compname);
+                if (logos != null)
+                {
+                    try {
+                        string url = logos;
+                        Image tif = Image.GetInstance(url);
+                        tif.ScalePercent(1f);
+                        tif.SpacingBefore = 20f;
+                        logo.AddCell(tif);
+                    } catch {
+                        logo.AddCell(new Phrase(""));
+                    }
+                }
+                else
+                {
+                    logo.AddCell(new Phrase(""));
+                }
+                document.Add(logo);
+
+                PdfPTable header = new PdfPTable(1);
+                header.TotalWidth = 550f;
+                header.LockedWidth = true;
+                header.HorizontalAlignment = Element.ALIGN_LEFT;
+                header.SpacingAfter = 30f;
+                header.DefaultCell.Border = 0;
+                PdfPCell hd = new PdfPCell(new Phrase("Report               :   Scheduler Log Report"));
+                hd.Border = 0;
+                header.AddCell(hd);
+                document.Add(header);
+
+                PdfPTable table = new PdfPTable(5);
+                table.TotalWidth = 550f;
+                table.LockedWidth = true;
+                float[] widths = new float[] { 0.5f, 2f, 1f, 1f, 1.5f };
+                table.SetWidths(widths);
+                table.HorizontalAlignment = 1;
+                table.SpacingAfter = 30f;
+
+                string[] headers = { "#", "Source", "Total Hits", "Total Records", "Created On" };
+                foreach (var hText in headers)
+                {
+                    PdfPCell cell = new PdfPCell(new Phrase(hText, new Font(Font.FontFamily.TIMES_ROMAN, 11, Font.NORMAL)));
+                    cell.HorizontalAlignment = 1;
+                    cell.VerticalAlignment = 1;
+                    cell.BackgroundColor = new BaseColor(System.Drawing.Color.LightGray);
+                    cell.FixedHeight = 30f;
+                    table.AddCell(cell);
+                }
+
+                for (int i = 0; i < abc.Count; i++)
+                {
+                    table.AddCell(new Phrase((i + 1).ToString(), new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                    table.AddCell(new Phrase(abc[i].Source?.ToString() ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                    table.AddCell(new Phrase(abc[i].TotalHits.ToString(), new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                    table.AddCell(new Phrase(abc[i].TotalRecords.ToString(), new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                    
+                    string createdOnStr = abc[i].CreatedOn != null ? Convert.ToDateTime(abc[i].CreatedOn).ToString("yyyy-MM-dd HH:mm") : "";
+                    table.AddCell(new Phrase(createdOnStr, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                }
+                document.Add(table);
+
+                document.Add(new Paragraph("\n"));
+                iTextSharp.text.pdf.draw.LineSeparator line1 = new iTextSharp.text.pdf.draw.LineSeparator(1f, 100f, BaseColor.BLACK, Element.ALIGN_LEFT, 1);
+                document.Add(new Chunk(line1));
+
+                PdfPTable footer2 = new PdfPTable(1);
+                footer2.TotalWidth = 550f;
+                footer2.LockedWidth = true;
+                footer2.DefaultCell.Border = 0;
+                footer2.AddCell("Computer generated report; hence no signature is required. ");
+                footer2.AddCell(new Phrase("Date of Extraction  :   " + DateTime.Now));
+                document.Add(footer2);
+
+                PdfContentByte content = writer.DirectContent;
+                Rectangle rectangle = new Rectangle(document.PageSize);
+                rectangle.Left += document.LeftMargin;
+                rectangle.Right -= document.RightMargin;
+                rectangle.Top -= document.TopMargin;
+                rectangle.Bottom += document.BottomMargin;
+                content.SetColorStroke(GrayColor.BLACK);
+                content.Rectangle(rectangle.Left, rectangle.Bottom, rectangle.Width, rectangle.Height);
+                content.Stroke();
+
+                document.Close();
+
+                byte[] dataBytes = memoryStream.ToArray();
+                var result = dataBytes.ToString();
+
+                List<CaseReportListModel> list = new List<CaseReportListModel>();
+                var file = _exportService.ExportDataWithHeader<CaseReportListModel>(list, result, (int)OperationType.PDF, "Scheduler_Log_Report_" + DateTime.Now.Ticks, dataBytes);
+                if (file != null)
+                {
+                    return file;
+                }
+            }
 
             return null;
 
