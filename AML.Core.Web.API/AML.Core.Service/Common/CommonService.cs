@@ -1949,9 +1949,7 @@ namespace AML.Core.Service.Common
                 try
                 {
                     var loginfo = count.ToString() + "/" + result.Count().ToString() + "cases added to approved list on " + DateTime.Now;
-                    var msg = new LogEventInfo(LogLevel.Info, "", "Approved List Screening Scheduler Log from  digi scheduler\n" + loginfo);
-                    msg.Properties.Add("User", "KYCDigi");
-                    log.Info(msg);
+                    
                     //_customerCaseService.InsertDigiSchedulerLogs(count, result.Count(), client_id);
                     using (StreamReader reader = new StreamReader(@"Views/Risk/ApprovedScreenLogEmailBody.html"))
                     {

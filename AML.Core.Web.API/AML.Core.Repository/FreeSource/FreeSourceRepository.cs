@@ -447,7 +447,7 @@ namespace AML.Core.Repository.FreeSource
 			return (exists: false, response: null,null);
         }
 
-        public List<NAMELIST> GetRecordsByCreatedDate(string createdDate,string type)
+        public List<NAMELIST> GetRecordsByCreatedDate(string createdDate,string type,string category)
         {
             try
             {
@@ -459,14 +459,20 @@ namespace AML.Core.Repository.FreeSource
                 );
 
 
-                var dateString = createdDate1.ToString("dd/MM/yyyy");
+                var dateString = createdDate1.ToString("dd-MM-yyyy");
 
                 var filter = Builders<NAMELIST>.Filter.And(
                     Builders<NAMELIST>.Filter.Regex(
                         x => x.CREATEDON,
                         new BsonRegularExpression("^" + dateString)
                     ),
-                    Builders<NAMELIST>.Filter.Eq(x => x.TYPE, type.ToUpper())
+                    Builders<NAMELIST>.Filter.Eq(x => x.TYPE, type.ToUpper()),
+                    Builders<NAMELIST>.Filter.In(
+                        x => x.CATEGORY,
+                        category.ToUpper() == "CORPORATE"
+                            ? new[] { "CORPORATE", "ENTITY" }
+                            : new[] { "INDIVIDUAL" }
+                    )
                 );
 
                 var collection = mongoDB.GetCollection<NAMELIST>("NAMELIST");

@@ -188,7 +188,7 @@ namespace AML.Web.Controllers.Case
         {
 
             ReportLogSearchModel model = new ReportLogSearchModel();
-            var clientId = _clientHandler.GetUserId();
+            var clientId = _clientHandler.GetClientId();
             model.StartDate = System.DateTime.Now.AddYears(-1);
             //model.StartDate = System.DateTime.Now.AddDays(-7);
             model.EndDate = System.DateTime.Now;
@@ -209,8 +209,15 @@ namespace AML.Web.Controllers.Case
                                                    };
             model.Users = new SelectList(userList, "Value", "Text");
             var items = from CaseStatus d in Enum.GetValues(typeof(CaseStatus))
-                        select new { Id = (int)d, Name = d.ToString() };
+                        select new
+                        {
+                            Id = (int)d,
+                            Name = Regex.Replace(d.ToString(), "(\\B[A-Z])", " $1")
+                        };
+
             model.CaseStatusList = new SelectList(items, "Id", "Name");
+            
+           
 
 
 
@@ -2261,7 +2268,7 @@ namespace AML.Web.Controllers.Case
             {
                 //string url = pdfbaseURL;
                 string url = baseC6URL;
-                //TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, url, "kycdigi");
+                
                 TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
                 //     string accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1ZmQ4NzVjNWVmMmFmYjMxNGNhMWE1YjIiLCJpYXQiOjE2MTI2OTE4MTMsImV4cCI6MTYxMzI5NjYxM30.trsanUcNCINZTa0gkWD_5LfofoHG1aD2wX8tq3XsP8I";
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.user.token);
@@ -2289,7 +2296,7 @@ namespace AML.Web.Controllers.Case
             {
                 //string url = pdfbaseURL;
                 string url = baseC6URL;
-                //TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, url, "kycdigi");
+            
                 TokenRS token =  AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
                 //     string accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1ZmQ4NzVjNWVmMmFmYjMxNGNhMWE1YjIiLCJpYXQiOjE2MTI2OTE4MTMsImV4cCI6MTYxMzI5NjYxM30.trsanUcNCINZTa0gkWD_5LfofoHG1aD2wX8tq3XsP8I";
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.user.token);
@@ -2382,7 +2389,7 @@ namespace AML.Web.Controllers.Case
 
             ViewBag.ReturnUrl = returnUrl;
 
-            //TokenRS token = AMLUtility.CreateC6Token("users/authenticate", baseC6URL, "kycdigi");
+            
             TokenRS token =  AMLUtility.CreateC6Token("users/authenticate", baseC6URL, _c6Username);
             using (HttpClient httpClient = new HttpClient())
             {
@@ -2537,7 +2544,13 @@ namespace AML.Web.Controllers.Case
             
             var userName = HttpContext.Session.GetString("SessUsername");
             var comment = string.Format("Customer Case Onhold");
+            CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(model.CaseId);
+            _CustomerCaseDTO.Status = 7;
+            _CustomerCaseDTO.UpdatedBy = _clientHandler.GetUserId();
+            _CustomerCaseDTO.UpdatedOn = Convert.ToString(DateTime.Now);
+            _CustomerCaseDTO.Comments = model.Comment;
 
+            var result = _customerCaseService.Update(_CustomerCaseDTO);
             if (model.Comment != "" && model.Comment != null)
             {
                 CaseCommentModel remarkModel = new CaseCommentModel();
@@ -2548,7 +2561,8 @@ namespace AML.Web.Controllers.Case
             }
             CaseCommentModel commentModel = new CaseCommentModel();
             commentModel.CaseId = model.CaseId;
-            commentModel.Comment = comment;
+            commentModel.Comment = comment;// ✅ FIXED
+            commentModel.CommentType = "On Hold";
             commentModel.CreatedBy = _clientHandler.GetUserId();
             var commentResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(commentModel));
 
@@ -2590,7 +2604,7 @@ namespace AML.Web.Controllers.Case
 
 
             CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(model.CaseId);
-            _CustomerCaseDTO.Status = model.Action != 1 ? model.Action : 2;
+            _CustomerCaseDTO.Status = model.Action == 1 ? model.Action : 2;
             _CustomerCaseDTO.UpdatedBy = _clientHandler.GetUserId();
             _CustomerCaseDTO.UpdatedOn = Convert.ToString(DateTime.Now);
             _CustomerCaseDTO.Comments = model.Comment;
@@ -3047,8 +3061,9 @@ namespace AML.Web.Controllers.Case
                         var UAEORUNSClovId = spStr1[25];
                         var highestriskproductlovId = spStr1[28];
                         var veryhighnetworkIdlovId = spStr1[30];
+                    var dualusegoodslovId = spStr1[33];
 
-                        var str = _kycService.GetRiskTypeId(_mapper.Map<KycIndividualDTO>(model1), corpModel, "I", culture, clientid);
+                    var str = _kycService.GetRiskTypeId(_mapper.Map<KycIndividualDTO>(model1), corpModel, "I", culture, clientid);
                         if (str.Result == null)
                         {
                             _toastNotification.AddWarningToastMessage("Unable to calculate risk due to insufficient data.");
@@ -3069,7 +3084,9 @@ namespace AML.Web.Controllers.Case
                         var UAEORUNSCId = spStr[25];
                         var highestriskproductId = spStr[28];
                         var veryhighnetworkId = spStr[30];
-                        RiskAPIRequestModel riskModel = new RiskAPIRequestModel();
+                    var dualusegoodsId = spStr[33];
+
+                    RiskAPIRequestModel riskModel = new RiskAPIRequestModel();
 
                         riskModel.CustomerId = customerid;
                         riskModel.CustomerName = _CustomerCaseDTO.FirstName;
@@ -3243,9 +3260,20 @@ namespace AML.Web.Controllers.Case
                             riskType8.RiskItemList = riskItemList8;
                             riskTypeList.Add(riskType8);
                         }
+                    if (dualusegoodsId != "0")
+                    {
+                        var riskType13 = new RiskTypeListModel();
+                        riskType13.Id = Convert.ToString(dualusegoodslovId);
+                        var riskItem13 = new RiskItemListModel();
+                        riskItem13.Id = dualusegoodsId.ToString();//Convert.ToString(1);
+                        var riskItemList13 = new List<RiskItemListModel>();
+                        riskItemList13.Add(riskItem13);
+                        riskType13.RiskItemList = riskItemList13;
+                        riskTypeList.Add(riskType13);
+                    }
 
 
-                        riskModel.RiskTypeList = riskTypeList;
+                    riskModel.RiskTypeList = riskTypeList;
                         var riskResult = _riskAPIController.KycRiskAssessment(riskModel);
                         var xyz = riskResult;
 
@@ -3285,6 +3313,7 @@ namespace AML.Web.Controllers.Case
                     var corpfaftlovId = spStr1[27];
                     var highestriskproductlovId = spStr1[29];
                     var veryhighnetworkIdlovId = spStr1[31];
+                    var dualusegoodslovId = spStr1[32];
                     // var IsPeplovId = spStr1[14];
 
                     var str = _kycService.GetRiskTypeId(imodel, _mapper.Map<CorporateKycDTO>(corporateDetailsModel), "C", culture, clientid);
@@ -3314,6 +3343,7 @@ namespace AML.Web.Controllers.Case
                     var corpfaftId = spStr[27];
                     var highestriskproductId = spStr[29];
                     var veryhighnetworkId = spStr[31];
+                    var dualusegoodsId = spStr[32];
 
                     //var IsPepId = spStr[14];
                     Console.WriteLine(
@@ -3580,7 +3610,19 @@ namespace AML.Web.Controllers.Case
                             riskType12.RiskItemList = riskItemList12;
                             riskTypeList.Add(riskType12);
                         }
+
                         //for mode of payment end
+                        if (dualusegoodsId != "0")
+                        {
+                            var riskType13 = new RiskTypeListModel();
+                            riskType13.Id = Convert.ToString(dualusegoodslovId);
+                            var riskItem13 = new RiskItemListModel();
+                            riskItem13.Id = dualusegoodsId.ToString();//Convert.ToString(1);
+                            var riskItemList13 = new List<RiskItemListModel>();
+                            riskItemList13.Add(riskItem13);
+                            riskType13.RiskItemList = riskItemList13;
+                            riskTypeList.Add(riskType13);
+                        }
 
                         riskModel.RiskTypeList = riskTypeList;
                         var riskResult = _riskAPIController.KycRiskAssessment(riskModel);
@@ -3686,7 +3728,7 @@ namespace AML.Web.Controllers.Case
         {
 
             ReportLogSearchModel model = new ReportLogSearchModel();
-            var clientId = _clientHandler.GetUserId();
+            var clientId = _clientHandler.GetClientId();
             model.StartDate = System.DateTime.Now.AddYears(-1);
             //model.StartDate = System.DateTime.Now.AddDays(-7);
             model.EndDate = System.DateTime.Now;

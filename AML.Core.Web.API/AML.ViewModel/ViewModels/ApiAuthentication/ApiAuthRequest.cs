@@ -40,10 +40,15 @@ namespace AML.ViewModel.ViewModels.ApiAuthentication
         
         public string Datasets { get; set; }
         
-        public string Detla { get; set; }
+        public string Delta { get; set; }
 
-        public string Humiliated { get; set; }
-        
+        public string Cumulative { get; set; }
+
+        public string Individual { get; set; }
+
+
+        public string Corporate { get; set; }
+
         public DateTime CreatedOn { get; set; }
 
     }

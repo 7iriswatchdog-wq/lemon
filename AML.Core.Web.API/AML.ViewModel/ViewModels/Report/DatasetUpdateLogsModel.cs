@@ -12,10 +12,15 @@ namespace AML.Web.Controllers.Reports
 
         public string Delta { get; set; }
         
-        public string Humiliated { get; set; }
-        
-        public string Action { get; set; }
-        
+        public string Cumulative { get; set; }
+
+        public string Individual { get; set; }
+
+
+        public string Corporate { get; set; }
+
+
+
         public string UpdatedDate { get; set; }
     }
 

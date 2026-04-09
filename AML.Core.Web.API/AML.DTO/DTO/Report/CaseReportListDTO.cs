@@ -9,6 +9,8 @@ namespace AML.DTO.DTO.Report
 {
     public class CaseReportListDTO
     {
+        [Column("id")]
+        public int Id { get; set; }
         [Column("cust_id")]
         public string CustomerID { get; set; }
         [Column("cust_type")]

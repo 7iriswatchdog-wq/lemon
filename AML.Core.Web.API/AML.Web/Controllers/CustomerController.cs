@@ -832,10 +832,7 @@ namespace AML.Web.Controllers
                     }
 
                     var loginfo = $"{count}/{result.Result.Count()} cases added to approved list on {DateTime.Now}";
-                    var msg = new LogEventInfo(LogLevel.Info, "", $"Approved List Screening Scheduler Log from digi scheduler\n{loginfo}");
-                    msg.Properties.Add("User", "KYCDigi");
-                    Console.WriteLine(msg);
-                    log.Info(msg);
+                   
 
                     _customerCaseService.InsertDigiSchedulerLogs(count, result.Result.Count(), client.ClientId, schedulerRunId);
 
@@ -910,9 +907,7 @@ namespace AML.Web.Controllers
                         html_table = "";
                     }
                     var loginfo = count.ToString() + "/" + result.Count().ToString() + "cases added to approved list on " + DateTime.Now;
-                    var msg = new LogEventInfo(LogLevel.Info, "", "Approved List Screening Scheduler Log from  digi scheduler\n" + loginfo);
-                    msg.Properties.Add("User", "KYCDigi");
-                    log.Info(msg);
+                    
                     //LogFile1("Inserting into the sql database",result.Count());
                     _customerCaseService.InsertDigiSchedulerLogs(count, result.Count(), client.ClientId,schedulerRunId);
                     using (StreamReader reader = new StreamReader(@"Views/Risk/ApprovedScreenLogEmailBody.html"))

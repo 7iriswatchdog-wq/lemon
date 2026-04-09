@@ -21,7 +21,7 @@ namespace AML.Core.RepositoryContract.FreeSource
         bool UpdateCaseLogRemarks(CASELOG model);
         (bool exists, List<NAMELIST> response, List<NAMELIST> response2) SearchNameList(string name, bool v,int clientid);
 
-        public List<NAMELIST> GetRecordsByCreatedDate(string createdDate,string type);
+        public List<NAMELIST> GetRecordsByCreatedDate(string createdDate,string type,string category);
         //(bool exists, NAMELIST response, List<NAMELIST> response2) SearchFuzzylist(string name, bool v, int clientid);
         //Transaction Screening
         bool InsertTransactionCaseLog(TRANSACTION_CASELOG model);

@@ -5351,8 +5351,7 @@ public IActionResult CustomerList(DataTableModel model,
                     abc = abc.Where(m =>
                         (m.Datasets != null && m.Datasets.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                         (m.Delta != null && m.Delta.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                        (m.Humiliated != null && m.Humiliated.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                        (m.Action != null && m.Action.ToString().Contains(search, StringComparison.OrdinalIgnoreCase))
+                        (m.Cumulative != null && m.Cumulative.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)) 
                     ).ToList();
                 }
 
@@ -5381,15 +5380,11 @@ public IActionResult CustomerList(DataTableModel model,
 
                     case 3: // Humiliated
                         sortedData = orderDirection == "asc"
-                            ? abc.OrderBy(x => x.Humiliated)
-                            : abc.OrderByDescending(x => x.Humiliated);
+                            ? abc.OrderBy(x => x.Cumulative)
+                            : abc.OrderByDescending(x => x.Cumulative);
                         break;
 
-                    case 4: // Action
-                        sortedData = orderDirection == "asc"
-                            ? abc.OrderBy(x => x.Action)
-                            : abc.OrderByDescending(x => x.Action);
-                        break;
+                    
 
                     default:
                         sortedData = abc.OrderByDescending(x => x.UpdatedDate);
@@ -5647,14 +5642,12 @@ public IActionResult CustomerList(DataTableModel model,
         }
 
         [HttpGet("GetNamesByCreatedDate")]
-        public IActionResult GetNamesByCreatedDate(string date,string type)
-
-
+        public IActionResult GetNamesByCreatedDate(string date,string type,string category)
         {
             try
             {
 
-                var result = _freeSourceRepository.GetRecordsByCreatedDate(date,type);
+                var result = _freeSourceRepository.GetRecordsByCreatedDate(date,type, category);
 
                 if (result != null && result.Count > 0)
                     return Ok(result);

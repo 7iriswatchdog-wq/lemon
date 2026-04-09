@@ -14,6 +14,7 @@ namespace AML.ViewModel.ViewModels.Report
 {
     public class CaseReportListModel
     {
+        public int Id { get; set; }
         public string CustomerID { get; set; }
         public string CustomerType { get; set; }
         public string CustomerName { get; set; }

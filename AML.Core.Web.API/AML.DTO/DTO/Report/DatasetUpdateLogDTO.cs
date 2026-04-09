@@ -14,12 +14,17 @@ namespace AML.Web.Controllers.Reports
         [Column("delta")]
         public string Delta { get; set; }
         
-        [Column("humiliated")]
-        public string Humiliated { get; set; }
-        
-        [Column("action")]
-        public string Action { get; set; }
-        
+        [Column("individualdelta")]
+        public string Individual { get; set; }
+
+        [Column("corporatedelta")]
+        public string Corporate { get; set; }
+
+        [Column("cumulative")]
+        public string Cumulative { get; set; }
+
+
+
         [Column("createdon")]
         public DateTime UpdatedDate { get; set; }
     }

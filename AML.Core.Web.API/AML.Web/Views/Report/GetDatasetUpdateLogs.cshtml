@@ -360,9 +360,10 @@
                             <tr>
                                 <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(0, this)" *@>Updated Date</th>
                                 <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(1, this)" *@>Datasets</th>
-                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(2, this)" *@>Delta</th>
-                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(3, this)" *@>Humiliated</th>
-                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(4, this)" *@>Action</th>
+                                 <th class="px-6 py-4 font-bold h-12 w-1/5" @*onclick="sortTable(2, this)"*@ >Delta</th> 
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(3, this)" *@>Individual</th>
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(3, this)" *@>Corporate</th>
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(3, this)" *@>Cumulative</th>
                             </tr>
                         </thead>
                         <tbody id="clientsTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
@@ -437,32 +438,15 @@
 
         <!-- Content -->
         <div class="p-6 overflow-y-auto flex-1 bg-white">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                <!-- Individual Group -->
-                <div class="flex flex-col h-full bg-blue-50/30 border border-blue-100 rounded-xl overflow-hidden shadow-sm">
-                    <div class="px-5 py-3.5 bg-blue-50/70 border-b border-blue-100 flex justify-between items-center">
-                        <h3 class="font-bold text-sm text-blue-800 uppercase tracking-widest">Individual</h3>
-                        <span id="individualCount" class="bg-blue-200 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">0</span>
-                    </div>
-                    <div class="p-4 flex-1">
-                        <ul id="individualList" class="text-sm space-y-1.5 max-h-[40vh] overflow-y-auto scrollable-list text-slate-700 font-medium">
-                        </ul>
-                    </div>
+            <div id="modalRecordContainer" class="flex flex-col h-full bg-blue-50/30 border border-blue-100 rounded-xl overflow-hidden shadow-sm">
+                <div id="modalRecordHeader" class="px-5 py-3.5 bg-blue-50/70 border-b border-blue-100 flex justify-between items-center">
+                    <h3 id="modalCategoryTitle" class="font-bold text-sm text-blue-800 uppercase tracking-widest">Records</h3>
+                    <span id="modalRecordCount" class="bg-blue-200 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">0</span>
                 </div>
-
-                <!-- Corporate Group -->
-                <div class="flex flex-col h-full bg-green-50/30 border border-green-100 rounded-xl overflow-hidden shadow-sm">
-                    <div class="px-5 py-3.5 bg-green-50/70 border-b border-green-100 flex justify-between items-center">
-                        <h3 class="font-bold text-sm text-green-800 uppercase tracking-widest">Corporate</h3>
-                        <span id="corporateCount" class="bg-green-200 text-green-800 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">0</span>
-                    </div>
-                    <div class="p-4 flex-1">
-                        <ul id="corporateList" class="text-sm space-y-1.5 max-h-[40vh] overflow-y-auto scrollable-list text-slate-700 font-medium">
-                        </ul>
-                    </div>
+                <div class="p-4 flex-1">
+                    <ul id="modalRecordList" class="text-sm space-y-1.5 max-h-[40vh] overflow-y-auto scrollable-list text-slate-700 font-medium">
+                    </ul>
                 </div>
-
             </div>
         </div>
     </div>
@@ -618,7 +602,7 @@
             },
             success: function (resp) {
                 let csv = [];
-                let headers = ['Updated Date', 'Datasets', 'Delta', 'Humiliated', 'Action'];
+                let headers = ['Updated Date', 'Datasets', 'Delta', 'Cumulative', 'Action'];
                 csv.push(headers.join(','));
 
                 console.log(resp);
@@ -735,16 +719,18 @@
 
 
                 <td class="px-6 py-4 ">${row.datasets}</td>
-                 <td class="px-6 py-4 ">${row.delta}</td>
-                 <td class="px-6 py-4 ">${row.humiliated}</td>
-                 <td class="px-6 py-4 text-left">
-                        ${row.datasets && row.datasets.toLowerCase().includes('kyc6') ? '' : `
-                       <a href="javascript:void(0)"
-                       onclick="openPopup('${updated?.date}','${row.datasets}')"
-                       class="text-blue-600 font-bold text-xs underline">
-                       View
-                    </a>`}
-                    </td>
+                <td class="px-6 py-4 ">${row.delta}</td>
+                 <td class="px-6 py-4 ">
+                    ${(row.datasets && row.datasets.toLowerCase().includes('kyc6')) || !row.individual || row.individual == 0 ? row.individual : `
+                        <a href="javascript:void(0)" onclick="openPopup('${updated?.date}','${row.datasets}', 'INDIVIDUAL')" class="text-blue-600 font-bold underline cursor-pointer">${row.individual}</a>
+                    `}
+                 </td>
+                 <td class="px-6 py-4 ">
+                    ${(row.datasets && row.datasets.toLowerCase().includes('kyc6')) || !row.corporate || row.corporate == 0 ? row.corporate : `
+                        <a href="javascript:void(0)" onclick="openPopup('${updated?.date}','${row.datasets}', 'CORPORATE')" class="text-green-600 font-bold underline cursor-pointer">${row.corporate}</a>
+                    `}
+                 </td>
+                 <td class="px-6 py-4 ">${row.cumulative}</td>
                 </tr>
             `);
         });
@@ -832,7 +818,23 @@
         loadData();
     }
 
-            async function openPopup(date,type) {
+            async function openPopup(date, dataset, category) {
+        const overlay = document.getElementById("nameModalOverlay");
+        const dialog = document.getElementById("nameModalDialog");
+        const modalLoader = document.getElementById("modalLoader");
+
+        // Step 1: Show overlay & modal immediately with loader
+        document.getElementById("modalRecordList").innerHTML = "";
+        document.getElementById("modalRecordCount").textContent = "0";
+        overlay.classList.remove("hidden");
+        modalLoader.classList.remove("hidden");
+
+        setTimeout(() => {
+            overlay.classList.remove("opacity-0");
+            dialog.classList.remove("scale-95", "opacity-0");
+            dialog.classList.add("scale-100", "opacity-100");
+        }, 10);
+
         try {
             // date = "07/04/2026" (DD/MM/YYYY)
 
@@ -840,7 +842,7 @@
             const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`; 
 
 
-            const response = await fetch(`/GetNamesByCreatedDate?date=${formattedDate}&type=${type}`);
+            const response = await fetch(`/GetNamesByCreatedDate?date=${formattedDate}&type=${dataset}&category=${category}`);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -849,66 +851,63 @@
 
             const data = await response.json();
 
-            let indHtml = "";
-            let corpHtml = "";
-            let indCount = 0;
-            let corpCount = 0;
-
+            let listHtml = "";
+            let recordCount = 0;
             const maxRecords = 100;
-            let totalProcessed = 0;
 
             if (data && data.length > 0) {
                 for (const item of data) {
-                    const li = `<li class="py-2 px-3 bg-white/50 hover:bg-white hover:shadow-sm rounded-lg transition-all duration-200 border border-transparent hover:border-slate-200">${item.fullname}</li>`;
-                    
-                    if (item.category === "INDIVIDUAL") {
-                        if (indCount < maxRecords) indHtml += li;
-                        indCount++;
-                    } else {
-                        if (corpCount < maxRecords) corpHtml += li;
-                        corpCount++;
+                    const isCorporateItem = item.category !== "INDIVIDUAL";
+                    const isCorporateFilter = category !== "INDIVIDUAL";
+
+                    if ((category === "INDIVIDUAL" && item.category === "INDIVIDUAL") || 
+                        (isCorporateFilter && isCorporateItem)) {
+                        
+                        const li = `<li class="py-2 px-3 border-b border-slate-100 last:border-0">${item.fullname}</li>`;
+                        if (recordCount < maxRecords) listHtml += li;
+                        recordCount++;
                     }
-                    totalProcessed++;
                 }
             }
 
-            const individualList = document.getElementById("individualList");
-            const corporateList = document.getElementById("corporateList");
-
-
-            if (indCount > 0) {
-                individualList.innerHTML = indHtml;
-                if (indCount > maxRecords) {
-                    // individualList.innerHTML += `<li class="py-2 px-3 text-xs italic text-slate-500 text-center border-t border-slate-100 mt-2">Showing 100 of ${indCount} records</li>`;
-                }
-
+            const recordList = document.getElementById("modalRecordList");
+            const modalCategoryTitle = document.getElementById("modalCategoryTitle");
+            const modalRecordCount = document.getElementById("modalRecordCount");
             
+            const modalRecordContainer = document.getElementById("modalRecordContainer");
+            const modalRecordHeader = document.getElementById("modalRecordHeader");
+            
+            modalCategoryTitle.textContent = category === "INDIVIDUAL" ? "Individual" : "Corporate";
+            modalRecordCount.textContent = recordCount;
 
+            if (category === "INDIVIDUAL") {
+                modalRecordContainer.className = "flex flex-col h-full bg-blue-50/30 border border-blue-100 rounded-xl overflow-hidden shadow-sm";
+                modalRecordHeader.className = "px-5 py-3.5 bg-blue-50/70 border-b border-blue-100 flex justify-between items-center";
+                modalCategoryTitle.className = "font-bold text-sm text-blue-800 uppercase tracking-widest";
+                modalRecordCount.className = "bg-blue-200 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm";
             } else {
-                individualList.innerHTML = `<li class="py-8 text-center text-slate-500 italic flex flex-col items-center gap-3"><i data-lucide="inbox" class="h-8 w-8 text-blue-200"></i>No individual records found</li>`;
+                modalRecordContainer.className = "flex flex-col h-full bg-green-50/30 border border-green-100 rounded-xl overflow-hidden shadow-sm";
+                modalRecordHeader.className = "px-5 py-3.5 bg-green-50/70 border-b border-green-100 flex justify-between items-center";
+                modalCategoryTitle.className = "font-bold text-sm text-green-800 uppercase tracking-widest";
+                modalRecordCount.className = "bg-green-200 text-green-800 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm";
             }
 
-            if (corpCount > 0) {
-                corporateList.innerHTML = corpHtml;
-                if (corpCount > maxRecords) {
-                    // corporateList.innerHTML += `<li class="py-2 px-3 text-xs italic text-slate-500 text-center border-t border-slate-100 mt-2">Showing 100 of ${corpCount} records</li>`;
-                }
+            if (recordCount > 0) {
+                recordList.innerHTML = listHtml;
             } else {
-                corporateList.innerHTML = `<li class="py-8 text-center text-slate-500 italic flex flex-col items-center gap-3"><i data-lucide="inbox" class="h-8 w-8 text-green-200"></i>No corporate records found</li>`;
+                let iconColor = category === "INDIVIDUAL" ? "text-blue-200" : "text-green-200";
+                let catName = category === "INDIVIDUAL" ? "individual" : "corporate";
+                recordList.innerHTML = `<li class="py-8 text-center text-slate-500 italic flex flex-col items-center gap-3"><i data-lucide="inbox" class="h-8 w-8 ${iconColor}"></i>No ${catName} records found</li>`;
             }
-            
-            document.getElementById("individualCount").textContent = indCount;
-            document.getElementById("corporateCount").textContent = corpCount;
-            
-            // Re-initialize for empty states inbox icons
+
+                // Re-initialize for empty states inbox icons
             if (window.lucide) {
                 lucide.createIcons();
             }
 
         } catch (err) {
             console.error("Error fetching name list:", err);
-            document.getElementById("individualList").innerHTML = `<li class="text-red-500 text-center py-4 font-bold bg-red-50 rounded-lg">Error loading data</li>`;
-            document.getElementById("corporateList").innerHTML = `<li class="text-red-500 text-center py-4 font-bold bg-red-50 rounded-lg">Error loading data</li>`;
+            document.getElementById("modalRecordList").innerHTML = `<li class="text-red-500 text-center py-4 font-bold bg-red-50 rounded-lg">Error loading data</li>`;
             if (typeof toastr !== 'undefined') {
                 toastr.error("Failed to load records.");
             }

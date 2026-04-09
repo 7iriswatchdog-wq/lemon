@@ -1407,8 +1407,10 @@ namespace AML.Core.Repository.CustomerCase
             {
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_datasets", model.Datasets);
-                parameters.Add("@p_delta", model.Detla);
-                parameters.Add("@p_humiliated", model.Humiliated);
+                parameters.Add("@p_delta", model.Delta);
+                parameters.Add("@p_cumulative", model.Cumulative);
+                parameters.Add("@p_individual", model.Individual);
+                parameters.Add("@p_corporate", model.Corporate);
                 parameters.Add("@p_updateddate", model.CreatedOn);
                 var response = ExecuteScalar("ins_datasetsscreening_logs", parameters, commandType: CommandType.StoredProcedure).ParseInt();
                 serviceResponse.Result = response;
