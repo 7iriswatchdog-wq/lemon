@@ -523,6 +523,11 @@ namespace AML.Core.Service.CustomerCase
             //Perform business requirements here
             return _CustomerCaseRepository.GetShareHoldersByCompanyCode(Id).Result;
         }
+        public List<CustomerCaseDTO> GetShareHoldersByParentCode(string Id)
+        {
+            //Perform business requirements here
+            return _CustomerCaseRepository.GetShareHoldersByParentCode(Id).Result;
+        }
         public int GetCaseId(string CustId)
         {
             return _CustomerCaseRepository.GetCaseId(CustId);

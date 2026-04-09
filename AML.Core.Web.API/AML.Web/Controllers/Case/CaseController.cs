@@ -1975,7 +1975,7 @@ namespace AML.Web.Controllers.Case
 
                 List<CaseDocumentDTO> caseDocumentbyId = _caseDocumentService.GetCaseDocumentByCaseId(CaseId);
                 model.CaseDocuments = _mapper.Map<List<CaseDocumentModel>>(caseDocumentbyId);
-                List<CustomerCaseDTO> _CustomerCaseshareholders = _customerCaseService.GetShareHoldersByCompanyCode(_CustomerCaseDTO.CustomerId);
+                List<CustomerCaseDTO> _CustomerCaseshareholders = _customerCaseService.GetShareHoldersByParentCode(_CustomerCaseDTO.CustomerId);
                 model.ShareholdersData = _mapper.Map<List<CaseModel>>(_CustomerCaseshareholders);
                 List<RiskReportModel> riskReports = _mapper.Map<List<RiskReportModel>>(_riskService.GetLastestRiskVersion(_CustomerCaseDTO.CustomerId, _CustomerCaseDTO.CustomerType));
                 model.RiskVersionData = _mapper.Map<List<RiskReportModel>>(riskReports);

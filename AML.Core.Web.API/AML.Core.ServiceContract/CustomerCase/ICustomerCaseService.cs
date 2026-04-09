@@ -32,6 +32,7 @@ namespace AML.Core.ServiceContract.CustomerCase
         string GetDualGoodsStatus(string customerId);
 
         List<CustomerCaseDTO> GetShareHoldersByCompanyCode(string Id);
+        List<CustomerCaseDTO> GetShareHoldersByParentCode(string Id);
         List<CustomerMasterDTO> GetUnscreenedCustomers();
         int GetCaseId(string custId);
         ServiceResponse<int> Update(CustomerCaseDTO _customerCaseDTO);

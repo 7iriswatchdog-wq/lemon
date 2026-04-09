@@ -294,6 +294,24 @@ namespace AML.Core.Repository.CustomerCase
             }
             return serviceResponse;
         }
+        public ServiceResponse<List<CustomerCaseDTO>> GetShareHoldersByParentCode(string Id)
+        {
+            ServiceResponse<List<CustomerCaseDTO>> serviceResponse = new ServiceResponse<List<CustomerCaseDTO>>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_id", Id);
+                serviceResponse.Result = Get<CustomerCaseDTO>("get_all_customercase_by_parentcode", parameters, commandType: CommandType.StoredProcedure).ToList();
+                serviceResponse.Message = "Customer cases fetched successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
         public int GetCaseId(string CustId)
         {
             ServiceResponse<int> serviceResponse = new ServiceResponse<int>();
