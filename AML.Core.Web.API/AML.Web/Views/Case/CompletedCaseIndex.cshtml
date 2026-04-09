@@ -1,4 +1,4 @@
-﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
 @using Microsoft.AspNetCore.Http
 @using Newtonsoft.Json;
 @inject IHttpContextAccessor HttpContextAccessor
@@ -668,9 +668,9 @@
             const t = text.toLowerCase().trim();
 
             if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
-            if (t.includes('hold')) return 'bg-yellow-100 text-yellow-800';
+            if (t.includes('hold')) return 'bg-yellow-400 text-black'; // matching main dashboard yellow
             if (t.includes('approved')) return 'bg-green-700 text-white';     // dark green
-            if (t.includes('white')) return 'bg-green-700 text-white';
+            if (t.includes('white')) return 'bg-green-700 text-white'; // dark green
             if (t.includes('auto')) return 'bg-green-100 text-green-800'; 
             // if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
             // //if (t.includes('auto')) return 'bg-blue-100 text-blue-800';
@@ -690,7 +690,10 @@
             const approved = shInfo.match(/Approved\s(\d+)/)?.[1] || 0;
             const pending = shInfo.match(/Pending\s(\d+)/)?.[1] || 0;
             const rejected = shInfo.match(/Rejected\s(\d+)/)?.[1] || 0;
-                const whitelisted = shInfo.match(/White\s(\d+)/)?.[1] || 0;
+
+            const onhold = shInfo.match(/OnHold\s(\d+)/)?.[1] || 0;
+            const whitelist = shInfo.match(/Whitelist\s(\d+)/)?.[1] || 0;
+
 
             const statusClass = getStatusClass(corpStatus);
 
@@ -714,18 +717,23 @@
                                         hidden group-hover:flex gap-2
                                         bg-white p-2 rounded-lg shadow-lg border z-50">
 
-                                    <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white">
+                                    <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white" title="Approved">
                                     A:${approved}
                                 </span>
 
-
-
-                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800" title="Rejected">
                                     R:${rejected}
                                 </span>
-                                    <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-                                            W:${whitelisted}
-                                    </span>
+
+
+                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-400 text-black" title="On Hold">
+                                    OH:${onhold}
+                                </span>
+
+                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white" title="Whitelist">
+                                    W:${whitelist}
+                                </span>
+
                             </div>
                         </div>
                        </div>
