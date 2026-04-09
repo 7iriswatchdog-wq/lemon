@@ -274,7 +274,7 @@
                             </tr>
                             *@
                             <tr>
-                                
+                                <th class="px-4 py-4 font-semibold h-12">Searched On</th>
                                 <th class="px-4 py-4 font-semibold h-12">Datasets</th>
                                 <th class="px-4 py-4 font-semibold h-12">Customer Type</th>
                                 <th class="px-4 py-4 font-semibold h-12">Customer Name</th>
@@ -738,15 +738,23 @@ console.log("rawData3",rawData3);
                 if (activeTable === 'table1') {
                    tbody.innerHTML = pageData.map(item => {
                                 const dob = formatDateTime1(item.matchdob);
+                                    
+                                         const searchedOnFormatted = formatDateTime(new Date());
+                                
                         return `
                             <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50">
+                                    <td class="px-4 py-4 font-medium text-slate-600"><div class="text-xs text-slate-700">
+                                        <div>${searchedOnFormatted?.date || '-'}</div>
+                                    <div class="ml-2">
+                                                ${searchedOnFormatted?.time ? searchedOnFormatted.time.replace(/\s?(AM|PM)/i, '') : ''}
+                                    </div>
+                                </div></td>
                                 <td class="px-4 py-4 font-medium text-slate-600">${item.matchtype || '-'}</td>
                                 <td class="px-4 py-4 font-medium text-slate-600">${item.matchcategory || '-'}</td>
                                 <td class="px-4 py-4 font-medium text-slate-600">${item.matchname || '-'}</td>
                                     <td class="px-4 py-4 font-medium text-slate-600">${item.matchnationality || '-'}</td>
                                 <td class="px-4 py-4 font-medium text-slate-600">${dob || '-'}</td>
                                 <td class="px-4 py-4 font-medium text-slate-600">${item.matchscore || '-'}</td>
-                                <td class="px-4 py-4 font-medium text-slate-600">${item.matchidnumber || '-'}</td>
                                 <td class="px-4 py-4 font-medium text-slate-600">${currentUserName || '-'}</td>
                             </tr>
                         `;
@@ -771,7 +779,13 @@ console.log("rawData3",rawData3);
                             <td class="px-4 py-4">${v.CustomerType || '-'}</td>
                             <td class="px-4 py-4">${v.CustomerName || '-'}</td>
                             <td class="px-4 py-4">${v.Nationality || '-'}</td>
-                            <td class="px-4 py-4">${v.dob || v.DOB || '-'}</td>
+                            <td class="px-4 py-4">
+    ${ (v.dob && v.dob !== "0001-01-01T00:00:00") 
+        ? formatDateTime1(v.dob) 
+        : (v.DOB && v.DOB !== "0001-01-01T00:00:00") 
+            ? formatDateTime1(v.DOB) 
+            : '-' }
+</td>
                             <td class="px-4 py-4">${v.MatchScore || '-'}</td>
                             <td class="px-4 py-4">${v.CreatedUser || '-'}</td>
                         </tr>
