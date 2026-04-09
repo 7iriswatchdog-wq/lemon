@@ -2319,6 +2319,18 @@ namespace AML.Web.Controllers.Corporate
 
             return Json(result);
         }
+        public JsonResult GetCaseCreatedPendingShareholders(string companyCode)
+        {
+            var clientId = _clientHandler.GetClientId();
+            var userId = _clientHandler.GetUserId();
+            var result = _customerCaseService.GetAllCaseCreatedShareHolders(clientId, companyCode, userId);
+
+
+
+
+
+            return Json(result);
+        }
 
         [HttpPost]
         public IActionResult SaveShareholders(string data, List<IFormFile> Documents)

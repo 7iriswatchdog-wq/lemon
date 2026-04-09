@@ -115,6 +115,8 @@ namespace AML.Core.ServiceContract.CustomerCase
 
         List<ShareholderDTO> GetAllShareHolders(int clientid,string shareholders,int userId,string CustomerType);
 
+        List<ShareholderDTO> GetAllCaseCreatedShareHolders(int clientid, string shareholders, int userId);
+
         ServiceResponse<string> DeleteShareholders(int id);
 
 

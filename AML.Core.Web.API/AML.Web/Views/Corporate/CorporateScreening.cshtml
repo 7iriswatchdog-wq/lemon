@@ -3491,7 +3491,7 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                                     // Load pending shareholders
                                     window.dispatchEvent(new Event('load-pending-shareholders'));
                                 });
-
+/*created for getting shareholder from temp table*/
                                 // Load shareholders
            window.addEventListener('load-pending-shareholders', async (event) => {
                 debugger;
@@ -3631,6 +3631,146 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                 this.isLoading = false;
 
             });
+
+            /*Created for getting shreholders data after case is created customermaster table*/
+                        window.addEventListener('load-casecreated-shareholders', async (event) => {
+                            debugger;
+                            this.isLoading = true;
+
+                            try {
+
+                               let response = await fetch(`/corporate/GetCaseCreatedPendingShareholders?companyCode=${this.companyCode}`);
+                                let data = await response.json();
+
+                                console.log(data);
+
+                                const skipModal = event?.detail?.skipModal ?? false;
+
+                                if (Array.isArray(data) && data.length > 0) {
+
+                                    this.hasPending = true;
+
+                                    // Save globally
+                                    window.pendingShareholderData = data;
+
+                                    // Populate modal list
+                                                          let uniqueCompanies = [...new Set(data.map(x => x.companyCode))];
+
+                                                let html = "";
+
+                                                uniqueCompanies.forEach(code => {
+
+                                                            html += `
+                                                    <label class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-sm">
+
+                                                        <div class="flex items-center gap-3 cursor-pointer">
+
+                                                            <input type="radio"
+                                                                   name="pendingCompany"
+                                                                   value="${code}"
+                                                                   class="w-4 h-4 text-blue-600 border-slate-300">
+
+                                                            <span class="font-medium text-slate-700">
+                                                                ${code}
+                                                            </span>
+
+                                                        </div>
+
+                                                        <button onclick="deletePendingCompany('${code}')"
+                                                            class="ml-auto text-red-500 hover:text-red-700 text-lg font-bold leading-none">
+                                                            ×
+                                                        </button>
+
+                                                    </label>
+
+                                                `;
+
+                                                });
+
+                                        document.getElementById("pendingCompanyList").innerHTML = html;
+
+                                    // Show modal ONLY if skipModal = false
+                                                if (!skipModal && !this.skipPendingModal) {
+                                                    $('#rollbackModal').removeClass('hidden').addClass('flex');
+
+                                                    // After first display, prevent future popup
+                                                    this.skipPendingModal = true;
+                                                }
+
+                                    this.companyCode = data[0].companyCode;
+                                    this.companyName = (data[0].firstName || data[0].lastName) ? `${data[0].firstName || ''} ${data[0].lastName || ''}`.trim() : data[0].companyName;;
+                                    this.thershold = data[0].thershold;
+
+                                    $('#CompanyCodeInput').val(this.companyCode);
+                                    $('#CompanyCode').text(this.companyCode);
+                                                $('#CompanyCodeHidden').val(this.companyCode);
+                                                                           $('#CompanyNameHidden').val(this.companyName);
+                                                                           $('#CompanyThershold').val(this.thershold);
+                                    $('#CompanyName').text(this.companyName);
+                                    $('#Thershold').val(this.thershold);
+
+                                    Alpine.store('screeningStore').screeningList = data.map(item => ({
+                                        id: Number(item.id),
+                                        name: item.name,
+                                        type: item.type,
+                                        parentId: item.parentId ? Number(item.parentId) : null,
+                                        initials: item.name.split(' ').map(x => x[0]).join('').toUpperCase(),
+                                        companyCode: item.companyCode || '',
+                                        tradeLicence: item.tradeLicence || '',
+                                        nationality: item.nationality || '',
+                                        registrationDate: item.registrationDate || '',
+                                        idType: item.idType || '',
+                                        idNumber: item.idNumber || '',
+                                        designation: item.designation || '',
+                                        share: item.share || 0,
+                                        issueDate: item.issueDate || null,
+                                        idExpiry: item.idExpiry || null,
+                                        cif: item.cif || '',
+                                        employer: item.employer || '',
+                                        goldenVisa: item.goldenVisa || '',
+                                        documentFileName: item.documentFileName || '',
+                                        docFullPath:item.docFullPath || '',
+                                        residence:item.residence || '',
+                                        employerIndustry:item.employerIndustry || '',
+                                        employerSector:item.employerSector || '',
+                                        sowsofCountry:item.sowsofCountry || '',
+                                        tradeLicenseAuthority:item.tradeLicenseAuthority || '',
+                                        tradeLicenseSector:item.tradeLicenseSector || '',
+                                        gender : item.gender || '',
+                                        relationship : item.relationship || '',
+                                        flagType    : item.flagType || '',
+
+                                    }));
+
+
+
+
+                                                // Trigger tree refresh
+                                    window.dispatchEvent(new Event('store-updated'));
+
+                                } else {
+
+                                    this.hasPending = false;
+
+                                    $('#rollbackModal').addClass('hidden').removeClass('flex');
+                                                 // $('#CompanyCodeInput').val('');
+                                                 // $('#CompanyCode').text('');
+                                                 //  $('#CompanyCodeHidden').val('');
+                                                 //   $('#CompanyName').text('');
+                                                 //  $('#Thershold').val('');
+
+                                    Alpine.store('screeningStore').screeningList = [];
+
+                                    window.dispatchEvent(new Event('store-updated'));
+                                }
+
+                            } catch (e) {
+                                console.error(e);
+                            }
+
+                            this.isLoading = false;
+
+                        });
                
                             }
                         }
@@ -3983,9 +4123,12 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
 
                             // Refresh pending shareholders via event
                             //window.dispatchEvent(new Event('load-pending-shareholders'));
-                                        window.dispatchEvent(new CustomEvent('load-pending-shareholders', {
+                                    window.dispatchEvent(new CustomEvent('load-casecreated-shareholders', {
                                         detail: { skipModal: true }
                                     }));
+                                    window.dispatchEvent(new CustomEvent('load-pending-shareholders', {
+                                                    detail: { skipModal: true }
+                                                }));
 
                             // Optionally, clear forms after submit
                             this.forms = [{ type: this.activeShareholderTab }];
