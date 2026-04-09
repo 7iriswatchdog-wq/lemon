@@ -1,6 +1,6 @@
 /**
  * PDF Export Utility for AML Web Application
- * Uses html2pdf.js (requires https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js)
+ * Uses html2pdf.js (self-hosted in ~/lib/html2pdf.js/html2pdf.bundle.min.js)
  */
 
 async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.pdf') {
