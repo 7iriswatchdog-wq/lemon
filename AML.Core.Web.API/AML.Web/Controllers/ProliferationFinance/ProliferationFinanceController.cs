@@ -1253,7 +1253,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 _riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("C", 1, 0, 0, clientId);
 
 
-                                modelrisk = _mapper.Map<RiskCorpCustomerModel>(_riskService.GetRiskDetailsOfCorporate(riskid).Result);
+                                modelrisk = _mapper.Map<RiskCorpCustomerModel>(_riskService.GetRiskDetailsOfCorporateByCID(request.corporateId).Result);
 
                                 MapRiskValues(_riskmodel.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
 
@@ -1276,6 +1276,15 @@ namespace AML.Web.Controllers.ProliferationFinance
                                                 case "country of incorporation":
                                                     corpModel.PlaceofIncorporation = riskType.ItemTxt;
                                                     break;
+                                                case "nationality partner 1":
+                                                    corpModel.Partners[0].Nationality = riskType.ItemTxt;
+                                                    break;
+                                                case "nationality partner 2":
+                                                    corpModel.Partners[1].Nationality = riskType.ItemTxt;
+                                                    break;
+                                                case "nationality partner 3":
+                                                    corpModel.Partners[2].Nationality = riskType.ItemTxt;
+                                                    break;
 
                                                 case "does the company have any subsidiary, affiliate, branch or group/holding company in fatf listed high risk monitored jurisdiction?":
                                                     corpModel.FATF = riskType.ItemTxt;
@@ -1292,7 +1301,25 @@ namespace AML.Web.Controllers.ProliferationFinance
                                                 case "delivery channel":
                                                     corpModel.DeliveryChannelName = riskType.ItemTxt;
                                                     break;
-
+                                                case "is there any domestic pep match on the owners / bod/senior management / related parties names?":
+                                                    corpModel.Domesticpep = riskType.ItemTxt;
+                                                    break;
+                                                case "is there any foreign pep match on the owners / bod/senior management/ related parties names?":
+                                                    corpModel.ForeignPep = riskType.ItemTxt;
+                                                    break;
+                                                case "are there any red flags noticed against the company/ owners / bod/senior management/ related parties names?":
+                                                    corpModel.RedFlags = riskType.ItemTxt;
+                                                    break;
+                                                case "is there any owners / bod/senior management names categorized as very high networth individual?":
+                                                    corpModel.HighNetworkIndividual = riskType.ItemTxt;
+                                                    break;
+                                                case "is there a sanction match against other than uae local list or unsc consolidated list on the company, owner/partners/bod, senior management / related parties names?":
+                                                    corpModel.SanctionMatch = riskType.ItemTxt;
+                                                    break;
+                                                case "is there a sanction match against uae local list or unsc consolidated list on the company, owner/partners/bod, senior management / related parties names?":
+                                                    corpModel.UAEORUNSC = riskType.ItemTxt;
+                                                    break;
+                                                
                                                 case "mode of payment":
                                                     corpModel.Modeofpayment = riskType.ItemTxt;
                                                     break;
@@ -1330,7 +1357,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
 
-                            var spStr1 = str1.Result.Split('?');
+                            var spStr1 = str1.Result.Split('Ø');
                             var entlovId = GetSafely(spStr1, 2);
                             var buslovId = GetSafely(spStr1, 4);
                             var incorplovId = GetSafely(spStr1, 3);
@@ -1342,6 +1369,14 @@ namespace AML.Web.Controllers.ProliferationFinance
                             var nationality4lovId = GetSafely(spStr1, 9);
                             var nationality5lovId = GetSafely(spStr1, 10);
                             var modeofpaymentlovId = GetSafely(spStr1, 16);
+                            var domesticpeplovId = spStr1[18];
+                            var foreignlovId = spStr1[20];
+                            var redflagslovId = spStr1[22];
+                            var sanctionlovId = spStr1[24];
+                            var UAEORUNSClovId = spStr1[26];
+                            var corpfaftlovId = spStr1[27];
+                            var highestriskproductlovId = spStr1[29];
+                            var veryhighnetworkIdlovId = spStr1[31];
 
                             var dualusegoodslovId = GetSafely(spStr1, 32);
 
@@ -1351,7 +1386,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                             {
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
-                            var spStr = str.Result.Split('?');
+                            var spStr = str.Result.Split('Ø');
                             var entId = GetSafely(spStr, 2);
                             var busId = GetSafely(spStr, 4);
                             var incorpId = GetSafely(spStr, 3);
@@ -1363,6 +1398,14 @@ namespace AML.Web.Controllers.ProliferationFinance
                             var nationality4Id = GetSafely(spStr, 9);
                             var nationality5Id = GetSafely(spStr, 10);
                             var modeofpaymentId = GetSafely(spStr, 16);
+                            var domesticpepId = spStr[18];
+                            var foreignId = spStr[20];
+                            var redflagsId = spStr[22];
+                            var sanctionId = spStr[24];
+                            var UAEORUNSCId = spStr[26];
+                            var corpfaftId = spStr[27];
+                            var highestriskproductId = spStr[29];
+                            var veryhighnetworkId = spStr[31];
                             var dualusegoodsId = GetSafely(spStr, 32);
 
 
@@ -1507,6 +1550,82 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 riskType11.RiskItemList = riskItemList11;
                                 riskTypeList.Add(riskType11);
                             }
+                            if (domesticpepId != "0")
+                            {
+                                var riskType13 = new RiskTypeListModel();
+                                riskType13.Id = Convert.ToString(domesticpeplovId);
+                                var riskItem13 = new RiskItemListModel();
+                                riskItem13.Id = domesticpepId.ToString();
+                                var riskItemList13 = new List<RiskItemListModel>();
+                                riskItemList13.Add(riskItem13);
+                                riskType13.RiskItemList = riskItemList13;
+                                riskTypeList.Add(riskType13);
+                            }
+                            //for pep end
+                            //for foreignId start
+                            if (foreignId != "0")
+                            {
+                                var riskType14 = new RiskTypeListModel();
+                                riskType14.Id = Convert.ToString(foreignlovId);
+                                var riskItem14 = new RiskItemListModel();
+                                riskItem14.Id = foreignId.ToString();
+                                var riskItemList14 = new List<RiskItemListModel>();
+                                riskItemList14.Add(riskItem14);
+                                riskType14.RiskItemList = riskItemList14;
+                                riskTypeList.Add(riskType14);
+                            }
+                            //for foreign pep end
+                            //for redflags start
+                            if (redflagsId != "0")
+                            {
+                                var riskType15 = new RiskTypeListModel();
+                                riskType15.Id = Convert.ToString(redflagslovId);
+                                var riskItem15 = new RiskItemListModel();
+                                riskItem15.Id = redflagsId.ToString();
+                                var riskItemList15 = new List<RiskItemListModel>();
+                                riskItemList15.Add(riskItem15);
+                                riskType15.RiskItemList = riskItemList15;
+                                riskTypeList.Add(riskType15);
+                            }
+                            //for red flags end
+                            //for very high metwork Individual start
+                            if (veryhighnetworkId != "0")
+                            {
+                                var riskType16 = new RiskTypeListModel();
+                                riskType16.Id = Convert.ToString(veryhighnetworkIdlovId);
+                                var riskItem16 = new RiskItemListModel();
+                                riskItem16.Id = veryhighnetworkId.ToString();
+                                var riskItemList16 = new List<RiskItemListModel>();
+                                riskItemList16.Add(riskItem16);
+                                riskType16.RiskItemList = riskItemList16;
+                                riskTypeList.Add(riskType16);
+                            }
+                            //for very high metwork Individual end
+                            //for other sanction start
+                            if (sanctionId != "0")
+                            {
+                                var riskType17 = new RiskTypeListModel();
+                                riskType17.Id = Convert.ToString(sanctionlovId);
+                                var riskItem17 = new RiskItemListModel();
+                                riskItem17.Id = sanctionId.ToString();
+                                var riskItemList17 = new List<RiskItemListModel>();
+                                riskItemList17.Add(riskItem17);
+                                riskType17.RiskItemList = riskItemList17;
+                                riskTypeList.Add(riskType17);
+                            }
+                            //for other sanction end
+                            //for UaeUnsc start
+                            if (UAEORUNSCId != "0")
+                            {
+                                var riskType18 = new RiskTypeListModel();
+                                riskType18.Id = Convert.ToString(UAEORUNSClovId);
+                                var riskItem18 = new RiskItemListModel();
+                                riskItem18.Id = UAEORUNSCId.ToString();
+                                var riskItemList18 = new List<RiskItemListModel>();
+                                riskItemList18.Add(riskItem18);
+                                riskType18.RiskItemList = riskItemList18;
+                                riskTypeList.Add(riskType18);
+                            }
                             //delivery end
                             ////for pep start
                             //if (IsPepId != "0")
@@ -1564,7 +1683,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 _riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("I", 1, 0, 0, clientId);
 
 
-                                modelrisk = _mapper.Map<RiskModel>(_riskService.GetRiskDetailsOfIndividual(riskid).Result);
+                                modelrisk = _mapper.Map<RiskModel>(_riskService.GetRiskDetailsOfIndividualByCID(request.corporateId).Result);
 
                                 MapRiskValues(_riskmodel.RiskTypeCategoryDTO, modelrisk.ReportDataDTO);
 
@@ -1585,9 +1704,9 @@ namespace AML.Web.Controllers.ProliferationFinance
                                                 case "nationality":
                                                     imodel.Nationality = riskType.ItemTxt;
                                                     break;
-                                                case "Second Nationality (if applicable)":
-                                                    imodel.Nationality = riskType.ItemTxt;
-                                                    break;
+                                                //case "Second Nationality (if applicable)":
+                                                //    imodel.Parnter = riskType.ItemTxt;
+                                                //    break;
                                                 case "product, service & activity":
                                                     imodel.ProductName = riskType.ItemTxt;
                                                     break;
@@ -1596,6 +1715,24 @@ namespace AML.Web.Controllers.ProliferationFinance
                                                     break;
                                                 case "delivery channel":
                                                     imodel.DeliveryChannelName = riskType.ItemTxt;
+                                                    break;
+                                                case "is the customer a domestic pep or related close associate of domestic pep?":
+                                                    imodel.Domesticpep = riskType.ItemTxt;
+                                                    break;
+                                                case "is the customer a foreign pep or related close associate of foreign pep?":
+                                                    imodel.ForeignPep = riskType.ItemTxt;
+                                                    break;
+                                                case "are there any red flags noticed against the customer or related close associate?":
+                                                    imodel.RedFlags = riskType.ItemTxt;
+                                                    break;
+                                                case "is the customer categorized as very high networth individual?":
+                                                    imodel.HighNetworkIndividual = riskType.ItemTxt;
+                                                    break;
+                                                case "is the customer a sanction match against other than uae local list or unsc consolidated?":
+                                                    imodel.SanctionMatch = riskType.ItemTxt;
+                                                    break;
+                                                case "is the customer a sanction match against uae local list or unsc consolidated?":
+                                                    imodel.UAEORUNSC = riskType.ItemTxt;
                                                     break;
 
                                                 case "mode of payment":
@@ -1632,7 +1769,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
 
                             }
-                            var spStr1 = str1.Result.Split('?');
+                            var spStr1 = str1.Result.Split('Ø');
                             var proflovId = GetSafely(spStr1, 0);
                             var natlovId = GetSafely(spStr1, 1);
                             var reslovId = GetSafely(spStr1, 5);
@@ -1655,7 +1792,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
-                            var spStr = str.Result.Split('?');
+                            var spStr = str.Result.Split('Ø');
                             var profId = GetSafely(spStr, 0);
                             var natId = GetSafely(spStr, 1);
                             var resId = GetSafely(spStr, 5);
