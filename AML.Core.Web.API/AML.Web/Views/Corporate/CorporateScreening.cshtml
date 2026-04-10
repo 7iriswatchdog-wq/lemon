@@ -472,7 +472,7 @@
                             </div>
 
                             <div class="h-px bg-slate-100 mx-[-32px]"></div>
-                                @* <div x-show="selectedMethod === 'shareholder'" x-transition>
+                                <div x-show="selectedMethod === 'shareholder'" x-transition>
                                 <div class="space-y-6" x-data="companySearch()">
 
                                     <h3 class="text-sm font-bold text-slate-900">
@@ -3413,21 +3413,21 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                     var CompanyCode = Alpine.store('searchQuery') || document.getElementById('CompanyCodeInput').value;
                                     var CustomerType="C";
 
-                                    if (!CompanyCode || CompanyCode.trim() === '') {
-                                        toastr.error("Please enter a valid Corporate ID");
-                                        return;
-                                    }
+            if (!CompanyCode || CompanyCode.trim() === '') {
+                toastr.error("Please enter a valid Corporate ID");
+                return;
+            }
 
-                                    $("#loader").show();
+            $("#loader").show();
 
-                                                //alert(CompanyCode);
+                        //alert(CompanyCode);
 
-                                    $.ajax({
-                                        url: '/corporate/searchcompanycode',
-                                        type: 'POST',
-                                                    data: { CompanyCode: CompanyCode,CustomerType:CustomerType },
-                                        success: function (data) {
-                                            console.log(data);
+            $.ajax({
+                url: '/corporate/searchcompanycode',
+                type: 'POST',
+                data: { CompanyCode: CompanyCode,CustomerType:CustomerType },
+                success: function (data) {
+                    console.log(data);
 
                     if (data && data.length > 0) {
                         
@@ -3771,107 +3771,107 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                             this.isLoading = false;
 
                         });
-
-                                        }
-                                    }
-                                }
-
-                        function continueNewSearch() {
-
-                            $('#rollbackModal').addClass('hidden').removeClass('flex');
-
-                                                                    $('#CompanyCodeInput').val('');
-                                                                    $('#CompanyCode').text('');
-                                                                    $('#CompanyCodeHidden').val('');
-                                                                    $('#CompanyName').text('');
-                                                                    $('#Thershold').val('');
-                            Alpine.store('screeningStore').screeningList = [];
-
-                            window.dispatchEvent(new Event('store-updated'));
-
-                        }
-                                    function openPendingShareholder() {
-
-                            const selected = document.querySelector('input[name="pendingCompany"]:checked');
-
-                            if (!selected) {
-                                toastr.error("Please Select a Company");
-                                return;
+               
                             }
-
-                            const selectedCode = selected.value;
-
-                            // Filter only selected company data
-                            const filtered = window.pendingShareholderData.filter(x => x.companyCode === selectedCode);
-                                        console.log(filtered);
-                            if (filtered.length === 0) return;
-
-                            // Update Alpine store
-                            Alpine.store('screeningStore').screeningList = filtered.map(item => ({
-                                id: Number(item.id),
-                                name: item.name,
-                                type: item.type,
-                                parentId: item.parentId ? Number(item.parentId) : null,
-                                initials: item.name.split(' ').map(x => x[0]).join('').toUpperCase(),
-                                companyCode: item.companyCode || '',
-                                tradeLicence: item.tradeLicence || '',
-                                nationality: item.nationality || '',
-                                registrationDate: item.registrationDate || '',
-                                idType: item.idType || '',
-                                idNumber: item.idNumber || '',
-                                designation: item.designation || '',
-                                share: item.share || 0,
-                                issueDate: item.issueDate || null,
-                                idExpiry: item.idExpiry || null,
-                                cif: item.cif || '',
-                                employer: item.employer || '',
-                                goldenVisa: item.goldenVisa || '',
-                                documentFileName: item.documentFileName || '',
-                                docFullPath:item.docFullPath || '',
-                                residence:item.residence || '',
-                                employerIndustry:item.employerIndustry || '',
-                                employerSectoremployersector:item.employerSector || '',
-                                sowsofCountry:item.sowsofCountry || '',
-                                tradeLicenseAuthority:item.tradeLicenseAuthority || '',
-                                tradeLicenseSector:item.tradeLicenseSector || '',
-                                gender : item.gender || '',
-                                relationship : item.relationship || '',
-                                flagType    : item.flagType || '',
-                            }));
-
-                                        $('#CompanyCodeInput').val(filtered[0].companyCode);
-                                        $('#CompanyCode').text(filtered[0].companyCode);
-                                        $('#CompanyCodeHidden').val(filtered[0].companyCode);
-                                        $('#CompanyName').text(filtered[0].companyName);
-                                        $('#Thershold').val(filtered[0].thershold);
-
-                                        //window.dispatchEvent(new CustomEvent('company-searched'));
-                                                     window.dispatchEvent(new CustomEvent('company-searched', {
-                                                                detail: filtered
-                                                }));
-                            // Refresh tree
-                            window.dispatchEvent(new Event('store-updated'));
-
-                            // Close modal
-                            $('#rollbackModal').addClass('hidden').removeClass('flex');
                         }
+                    }
 
-                                    async function deletePendingCompany(companyCode) {
+            function continueNewSearch() {
 
-                            // if (!confirm("Are you sure you want to delete this company and its shareholders?")) {
-                            //     return;
-                            // }
+                $('#rollbackModal').addClass('hidden').removeClass('flex');
 
-                            try {
+                                                        $('#CompanyCodeInput').val('');
+                                                        $('#CompanyCode').text('');
+                                                        $('#CompanyCodeHidden').val('');
+                                                        $('#CompanyName').text('');
+                                                        $('#Thershold').val('');
+                Alpine.store('screeningStore').screeningList = [];
 
-                                let response = await fetch(`/corporate/DeletePendingShareholders?companyCode=${companyCode}`, {
-                                    method: 'POST'
-                                });
+                window.dispatchEvent(new Event('store-updated'));
 
+            }
+            function openPendingShareholder() {
 
-                                let result = await response.json();
+                const selected = document.querySelector('input[name="pendingCompany"]:checked');
 
-                                if (result.success) {
+                if (!selected) {
+                    toastr.error("Please Select a Company");
+                    return;
+                }
+
+                const selectedCode = selected.value;
+
+                // Filter only selected company data
+                const filtered = window.pendingShareholderData.filter(x => x.companyCode === selectedCode);
+                            console.log(filtered);
+                if (filtered.length === 0) return;
+                                        
+                // Update Alpine store
+                Alpine.store('screeningStore').screeningList = filtered.map(item => ({
+                    id: Number(item.id),
+                    name: item.name,
+                    type: item.type,
+                    parentId: item.parentId ? Number(item.parentId) : null,
+                    initials: item.name.split(' ').map(x => x[0]).join('').toUpperCase(),
+                    companyCode: item.companyCode || '',
+                    tradeLicence: item.tradeLicence || '',
+                    nationality: item.nationality || '',
+                    registrationDate: item.registrationDate || '',
+                    idType: item.idType || '',
+                    idNumber: item.idNumber || '',
+                    designation: item.designation || '',
+                    share: item.share || 0,
+                    issueDate: item.issueDate || null,
+                    idExpiry: item.idExpiry || null,
+                    cif: item.cif || '',
+                    employer: item.employer || '',        
+                    goldenVisa: item.goldenVisa || '',    
+                    documentFileName: item.documentFileName || '',
+                    docFullPath:item.docFullPath || '',
+                    residence:item.residence || '',
+                    employerIndustry:item.employerIndustry || '',
+                    employerSector:item.employerSector || '',
+                    sowsofCountry:item.sowsofCountry || '',
+                    tradeLicenseAuthority:item.tradeLicenseAuthority || '',
+                    tradeLicenseSector:item.tradeLicenseSector || '',
+                    gender : item.gender || '',
+                    relationship : item.relationship || '',
+                    flagType    : item.flagType || '',
+
+                }));
+
+                            $('#CompanyCodeInput').val(filtered[0].companyCode);
+                            $('#CompanyCode').text(filtered[0].companyCode);
+                            $('#CompanyCodeHidden').val(filtered[0].companyCode);
+                            $('#CompanyName').text(filtered[0].companyName);
+                            $('#Thershold').val(filtered[0].thershold);
+
+                            //window.dispatchEvent(new CustomEvent('company-searched'));
+                                         window.dispatchEvent(new CustomEvent('company-searched', {
+                                                    detail: filtered
+                                    }));
+                // Refresh tree
+                window.dispatchEvent(new Event('store-updated'));
+
+                // Close modal
+                $('#rollbackModal').addClass('hidden').removeClass('flex');
+            }
+
+                        async function deletePendingCompany(companyCode) {
+
+                // if (!confirm("Are you sure you want to delete this company and its shareholders?")) {
+                //     return;
+                // }
+
+                try {
+
+                    let response = await fetch(`/corporate/DeletePendingShareholders?companyCode=${companyCode}`, {
+                        method: 'POST'
+                    });
+
+                    let result = await response.json();
+
+                    if (result.success) {
 
                         // Remove from global data
                         window.pendingShareholderData =
@@ -3954,389 +3954,192 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                                 return build();
                             },
 
-                                        // deleteShareholder(id) {
-                                        //     if (!confirm('Are you sure you want to remove this shareholder?')) return;
-                                        //     const store = Alpine.store('screeningStore');
-                                        //     store.screeningList = store.screeningList.filter(i => i.id !== id && i.parentId !== id);
-                                        //     window.dispatchEvent(new Event('store-updated'));
-                                        // },
-                                    submitshareholderForm() {
+                            // deleteShareholder(id) {
+                            //     if (!confirm('Are you sure you want to remove this shareholder?')) return;
+                            //     const store = Alpine.store('screeningStore');
+                            //     store.screeningList = store.screeningList.filter(i => i.id !== id && i.parentId !== id);
+                            //     window.dispatchEvent(new Event('store-updated'));
+                            // },
+                        submitshareholderForm() {
                                         $('#loadingeffect').show();
-                                        var screeningType="Individual";
-                                     const form = document.getElementById('myForm2');
-                                     // Copy company details to hidden inputs
-                                     document.getElementById('CompanyCodeHidden').value = Alpine.store('companyStore')?.companyCode || '';
-                                     document.getElementById('CompanyNameHidden').value = Alpine.store('companyStore')?.companyName || '';
-
+                                        var screeningType="Corporate";
+                         const form = document.getElementById('myForm2');
+                         // Copy company details to hidden inputs
+                         document.getElementById('CompanyCodeHidden').value = Alpine.store('companyStore')?.companyCode || '';
+                         document.getElementById('CompanyNameHidden').value = Alpine.store('companyStore')?.companyName || '';
+                         // Submit form
                                      document.getElementById('ScreeningTypeHidden').value = screeningType;
-                                     // Submit form
-                                     form.submit();
-                                 }
-                                    }
-                                }
-                                     function shareholderRepeater(parentTab) {
-                                        return {
-                                            forms: [{ type: parentTab }],
-                                            maxForms: 5,
-                                            activeShareholderTab: parentTab, // track current tab
+                         form.submit();
+                     }
+                        }
+                    }
 
-                                                                  init() {
+
+
+        
+
+
+                    function shareholderRepeater(parentTab) {
+                return {
+                    forms: [{ type: parentTab }],
+                    maxForms: 5,
+                    activeShareholderTab: parentTab, // track current tab
+
+                                  init() {
                                                     // listen for dropdown change
                                                     window.addEventListener('tab-changed', (e) => {
                                                         if (!e.detail) return;
                                                         this.updateFormsType(e.detail);
                                                     });
                                                 },
-                                            // Add a new form
-                                            addForm() {
-                                                if (this.forms.length >= this.maxForms) {
-                                                    toastr.error("Only 5 forms allowed");
-                                                    return;
-                                                }
-                                                this.forms.push({ type: this.activeShareholderTab });
-                                                this.$nextTick(() => {
+
+                    // Add a new form
+                    addForm() {
+                        if (this.forms.length >= this.maxForms) {
+                            toastr.error("Only 5 forms allowed");
+                            return;
+                        }
+                        this.forms.push({ type: this.activeShareholderTab });
+                                    this.$nextTick(() => {
                                                                             initAllDatePickers(); // 🔥 reinitialize new inputs
                                                 });
-                                            },
-
-                                            // Remove a form
-                                            removeForm(index) {
-                                                this.forms.splice(index, 1);
-                                            },
-
-                                            // Update all forms type when tab changes
-                                            updateFormsType(newType) {
-                                                this.activeShareholderTab = newType;
-                                                this.forms.forEach(f => f.type = newType); // update all existing forms
-                                            },
-
-                                            // Submit forms to the server
-                                            async submitForms() {
-                                                const payload = [];
-                                                const formData = new FormData();
-                                                const CompanyCode = $('#CompanyCodeInput').val() || "";
-                                                const CompanyName = $('#CompanyNameHidden').val() || "";
-                                                const Thershold = parseInt($('#Thershold').val() || 0);
-
-                                                // Prepare payload only from filled forms
-                                                                       this.forms.forEach((form,index) => {
-
-                                        if (!form.name || form.name.trim() === "") return;
-
-                                                    const typeValue = form.type === 'shareholder'
-                                                    ? 'Individual_Ind'
-                                                    : form.type === 'corporate_shareholder'
-                                                    ? 'Individual_Corp'
-                                                    : form.type === 'related_shareholder'
-                                                    ? 'Individual_Ind'
-                                                    : form.type === 'related_corporate_shareholder'
-                                                    ? 'Individual_Corp'
-                                                    : form.type === 'signatories'
-                                                    ? 'Individual_Ind'
-                                                    : 'Individual_Ind';
-
-                                                                const flagType = form.type === 'shareholder'
-                                                                ? 'Individual Sharholder'
-                                                                : form.type === 'corporate_shareholder'
-                                                                ? 'Corporate Shareholder'
-                                                                : form.type === 'related_shareholder'
-                                                                ? 'Individual Related Parties'
-                                                                : form.type === 'related_corporate_shareholder'
-                                                                ? 'Corporate Related Parties'
-                                                                : form.type === 'signatories'
-                                                                ? 'Authorized Signatory'
-                                                                : 'Senior Management';
-
-                                        const obj = {
-                                            Name: form.name,
-                                            Share: parseInt(form.share || 0),
-                                            Designation: form.designation || "",
-                                            Nationality: form.nationality || "",
-                                            Residence: form.residence || "",
-                                            TradeLicence: form.tradeLicence || "",
-                                            RegistrationDate: form.registrationDate || "",
-                                            IdType: form.idType || "",
-                                            IdNumber: form.idNumber || "",
-                                            IssueDate: form.issueDate || "",
-                                            IdExpiry: form.idExpiry || "",
-                                            Cif: form.cif || "",
-                                            Type: typeValue,
-                                            CompanyCode: CompanyCode,
-                                            CompanyName: CompanyName,
-                                            Thershold: Thershold,
-                                            Employer: form.employername || "",
-                                            GoldenVisa: form.goldenvisa || "",
-                                            EmployerIndustry:form.employerindustry || "",
-                                            EmployerSector:form.employersector || "",
-                                            SOWSOFCountry:form.sowsofcountry || "",
-                                            TradeLicenseAuthority:form.tradeLicenceAuthority || "",
-                                            TradeLicenseSector:form.tradeLicenceSector  || "",
-                                            Gender:form.gender || "",
-                                            Relationship:form.relationship || "",
-                                            FlagType:flagType,
-                                            CustType:"I",
-                                            ClientID: 0,
-                                            UserId: 0,
-
-                                        };
-
-                                        payload.push(obj);
-
-                                        if (form.document) {
-                                            formData.append("Documents", form.document);
-                                        }
-                                    });
-
-                                    // THIS LINE WAS MISSING
-                                    formData.append("data", JSON.stringify(payload));
-
-
-
-                                                if (payload.length === 0) {
-                                                    toastr.warning("No shareholder details to save");
-                                                    return;
-                                                }
-
-                                                try {
-                                                    // Send payload to server
-                                                const res = await fetch('/Corporate/SaveShareholders', {
-                                                method: 'POST',
-                                                body: formData
-                                            });
-
-                                                    if (!res.ok) throw new Error("Save failed");
-
-                                                    toastr.success("Saved Successfully");
-
-                                                    // Refresh pending shareholders via event
-                                                    //window.dispatchEvent(new Event('load-pending-shareholders'));
-                                                                window.dispatchEvent(new CustomEvent('load-pending-shareholders', {
-                                                                detail: { skipModal: true }
-                                                            }));
-
-                                                    // Optionally, clear forms after submit
-                                                                           this.forms.forEach((form, index) => {
-                                                            // reset fields
-                                                            for (let key in form) {
-                                                                if (key !== 'type') form[key] = null;
-                                                            }
-
-                                                            // reset displayed file name
-                                                            form.fileName = 'No file chosen';
-
-                                                            // reset file input
-                                                            const fileInput = this.$refs['docUpload_' + index];
-                                                            if (fileInput) fileInput.value = '';
-                                                        });
-
-                                                        // Reset forms array
-                                                        this.forms = [{ type: this.activeShareholderTab }];
-
-                                                } catch (err) {
-                                                    console.error("Error saving shareholders:", err);
-                                                    toastr.error("Failed to save shareholders");
-                                                }
-                                            }
-                                        };
-                                    }
-
-                                                  function shareholderTree() {
-
-                                            return {
-
-                                                items: [],
-
-                                                syncFromStore() {
-
-                                                    this.items = JSON.parse(
-                                                        JSON.stringify(Alpine.store('screeningStore').screeningList || [])
-                                                    );
-                                                },
-
-                                                init() {
-
-                                                    this.syncFromStore();
-
-                                                    this.$nextTick(() => {
-                                                        this.initSortable();
-                                                    });
-
-                                                    window.addEventListener('store-updated', () => {
-                                                        this.syncFromStore();
-                                                    });
-                                                },
-
-
-                                                // ⭐ Numbering + Tree Build
-                                                flattenedItems() {
-
-                                                    let list = this.items || [];
-
-                                                    function build(parentId = null, prefix = "", depth = 0) {
-
-                                                        let children = list.filter(x => x.parentId === parentId);
-
-                                                        return children.flatMap((item, index) => {
-
-                                                            let number = prefix
-                                                                ? `${prefix}.${index + 1}`
-                                                                : `${index + 1}`;
-
-                                                            return [
-                                                                { ...item, depth, displayId: number },
-                                                                ...build(item.id, number, depth + 1)
-                                                            ];
-                                                        });
-                                                    }
-
-                                                    return build();
-                                                },
-
-
-                                                // ⭐ Drag Logic
-                                                initSortable() {
-
-                                                    let self = this;
-                                                    let container = document.getElementById("shareholderTreeContainer");
-
-                                                    if (!container) return;
-
-                                                    new Sortable(container, {
-
-                                                        animation: 150,
-                                                        handle: ".drag-handle",
-
-                                                                    onEnd(evt) {
-
-                                                if (!evt.item || !evt.item.dataset.id) return;
-
-                                                let movedId = Number(evt.item.dataset.id);
-                                                let prev = evt.item.previousElementSibling;
-
-                                                let newParentId = null;
-                                                let parentType = null;
-
-                                                if (prev && prev.dataset.id) {
-
-                                                    let prevId = Number(prev.dataset.id);
-                                                    let prevItem = self.items.find(x => x.id === prevId);
-
-                                                    if (prevItem) {
-
-                                                        if (prevItem.type === "Individual_Corp") {
-
-                                                            newParentId = prevItem.id;
-                                                            parentType = prevItem.type;
-
-                                                        } else {
-
-                                                            newParentId = prevItem.parentId ?? null;
-
-                                                            let parent = self.items.find(x => x.id === newParentId);
-                                                            parentType = parent ? parent.type : null;
-                                                        }
-                                                    }
-                                                }
-
-                                                let store = Alpine.store('screeningStore');
-                                                let moved = store.screeningList.find(x => x.id === movedId);
-
-                                                if (!moved) return;
-
-                                                // update parent
-                                                moved.parentId = newParentId;
-
-                                                // ⭐ CHANGE FORM TYPE IF UNDER CORPORATE
-                                                if (parentType === "Individual_Corp") {
-
-                // If dropped under corporate, convert Individual to Corporate child
-                                        if (moved.type === "Individual_Ind") {
-                                            moved.type = "Individual_Corp_Ind";
-                                        }
-
-                                    } else {
-
-                                        // If moved outside corporate, convert back only if it was corporate child
-                                        if (moved.type === "Individual_Corp_Ind") {
-                                            moved.type = "Individual_Ind";
-                                        }
-
-                                    }
-                                                store.screeningList = [...store.screeningList];
-
-                                                    window.dispatchEvent(new Event('store-updated'));
-                                                }
-
-                                                        // onEnd(evt) {
-
-                                                        //     if (!evt.item || !evt.item.dataset.id) return;
-
-                                                        //     let movedId = Number(evt.item.dataset.id);
-                                                        //     let prev = evt.item.previousElementSibling;
-
-                                                        //     let newParentId = null;
-
-                                                        //     if (prev && prev.dataset.id) {
-
-                                                        //         let prevId = Number(prev.dataset.id);
-                                                        //         let prevItem = self.items.find(x => x.id === prevId);
-
-                                                        //         if (prevItem) {
-
-                                                        //             if (prevItem.type === "Corporate_Ind") {
-                                                        //                 newParentId = prevItem.id;
-                                                        //             }
-                                                        //             else {
-                                                        //                 newParentId = prevItem.parentId ?? null;
-                                                        //             }
-                                                        //         }
-                                                        //     }
-
-                                                        //     let store = Alpine.store('screeningStore');
-                                                        //     let moved = store.screeningList.find(x => x.id === movedId);
-
-                                                        //     if (!moved) return;
-
-                                                        //     moved.parentId = newParentId;
-
-
-
-                                                        //     window.dispatchEvent(new Event('store-updated'));
-                                                        // }
-                                                    });
-                                                }
-                                            }
-                                        }
-
-                                                    function deleteShareholder(id) {
-                                        if (!id) return;
-
-                                        // let self = this; // capture Alpine component context
-                                        // let companyCode = self.companyCode || $('#CompanyCode').val();
-                                        // if (!companyCode) return;
-
-                                        // Call backend API to delete shareholder
-                                        $.ajax({
-                                            url: '/corporate/DeleteShareholder',
-                                            type: 'POST',
-                                            data: { id: id },
-                                            success: function(deleteResult) {
-                                                if (deleteResult === true || deleteResult === "true") {
-                                                    toastr.success("Deleted Successfully");
-
-                                                    // Fetch the latest pending shareholders
-                                                            window.dispatchEvent(new Event('load-pending-shareholders'));
-
-                                                } else {
-                                                    toastr.error("Failed to delete shareholder");
-                                                }
-                                            },
-                                            error: function(xhr) {
-                                                toastr.error("Error deleting shareholder");
-                                                console.error(xhr.responseText);
-                                            }
-                                        });
-                                    }
+                    },
+
+                    // Remove a form
+                    removeForm(index) {
+                        this.forms.splice(index, 1);
+                    },
+
+                    // Update all forms type when tab changes
+                    updateFormsType(newType) {
+                        this.activeShareholderTab = newType;
+                        this.forms.forEach(f => f.type = newType); // update all existing forms
+                    },
+
+                    // Submit forms to the server
+                    async submitForms() {
+                        const payload = [];
+                        const formData = new FormData();
+                        const CompanyCode = $('#CompanyCodeInput').val() || "";
+                        const CompanyName = $('#CompanyNameHidden').val() || "";
+                        const Thershold = parseInt($('#Thershold').val() || 0);
+
+                        // Prepare payload only from filled forms
+                                               this.forms.forEach((form,index) => {
+
+                if (!form.name || form.name.trim() === "") return;
+
+                
+
+
+                const typeValue = form.type === 'shareholder'
+                      ? 'Corporate_Ind'
+                      : form.type === 'corporate_shareholder'
+                      ? 'Corporate_Corp'
+                      : form.type === 'related_shareholder'
+                      ? 'Corporate_Ind'
+                      : form.type === 'related_corporate_shareholder'
+                      ? 'Corporate_Corp'
+                      : form.type === 'signatories'
+                      ? 'Corporate_Ind'
+                      : 'Corporate_Ind';
+
+                 const flagType = form.type === 'shareholder'
+                      ? 'Individual Sharholder'
+                      : form.type === 'corporate_shareholder'
+                      ? 'Corporate Shareholder'
+                      : form.type === 'related_shareholder'
+                      ? 'Individual Related Parties'
+                      : form.type === 'related_corporate_shareholder'
+                      ? 'Corporate Related Parties'
+                      : form.type === 'signatories'
+                      ? 'Authorized Signatory'
+                      : 'Senior Management';
+
+                const obj = {
+                    Name: form.name,
+                    Share: parseInt(form.share || 0),
+                    Designation: form.designation || "",
+                    Nationality: form.nationality || "",
+                    Residence: form.residence || "",
+                    TradeLicence: form.tradeLicence || "",
+                    RegistrationDate: form.registrationDate || "",
+                    IdType: form.idType || "",
+                    IdNumber: form.idNumber || "",
+                    IssueDate: form.issueDate || "",
+                    IdExpiry: form.idExpiry || "",
+                    Cif: form.cif || "",
+                    Type: typeValue,
+                    CompanyCode: CompanyCode,
+                    CompanyName: CompanyName,
+                    Thershold: Thershold,
+                    Employer: form.employername || "",
+                    GoldenVisa: form.goldenvisa || "",
+                    EmployerIndustry:form.employerindustry || "",
+                    EmployerSector:form.employersector || "",
+                    SOWSOFCountry:form.sowsofcountry || "",
+                    TradeLicenseAuthority:form.tradeLicenceAuthority || "",
+                    TradeLicenseSector:form.tradeLicenceSector  || "",
+                    Gender:form.gender || "",
+                    Relationship:form.relationship || "",
+                    FlagType:flagType,
+                    CustType:"C",
+                    ClientID: 0,
+                    UserId: 0,
+                    
+                };
+
+                                                                        
+                                                            
+                                                            
+
+                payload.push(obj);
+
+                if (form.document) {
+                    formData.append("Documents", form.document);
+                }
+            });
+
+            // THIS LINE WAS MISSING
+            formData.append("data", JSON.stringify(payload));
+                        
+
+                                                                        
+                        if (payload.length === 0) {
+                            toastr.warning("No shareholder details to save");
+                            return;
+                        }
+
+                        try {
+                            // Send payload to server
+                        const res = await fetch('/Corporate/SaveShareholders', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                            if (!res.ok) throw new Error("Save failed");
+
+                            toastr.success("Saved Successfully");
+
+                            // Refresh pending shareholders via event
+                            //window.dispatchEvent(new Event('load-pending-shareholders'));
+                                    window.dispatchEvent(new CustomEvent('load-casecreated-shareholders', {
+                                        detail: { skipModal: true }
+                                    }));
+                                    window.dispatchEvent(new CustomEvent('load-pending-shareholders', {
+                                                    detail: { skipModal: true }
+                                                }));
+
+                            // Optionally, clear forms after submit
+                            this.forms = [{ type: this.activeShareholderTab }];
+
+                        } catch (err) {
+                            console.error("Error saving shareholders:", err);
+                            toastr.error("Failed to save shareholders");
+                        }
+                    }
+                };
+            }
 
             
 
