@@ -480,21 +480,21 @@
                                     </h3>
 
                                     <!-- ⭐ COMPANY DETAILS -->
-                                    <div class="space-y-1" x-show="hasPending">
+                                    <div class="space-y-1" x-show="$store.screeningStore.hasPending">
                                         <div class="flex items-center gap-2">
                                             <span class="text-[13px] font-medium text-slate-400">Company Code:</span>
-                                            <span class="text-[13px] font-bold text-slate-700 uppercase" x-text="companyCode" id="CompanyCode"></span>
+                                            <span class="text-[13px] font-bold text-slate-700 uppercase" x-text="$store.screeningStore.companyCode" id="CompanyCode"></span>
                                         </div>
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="text-[13px] font-medium text-slate-400">Name of the Company:</span>
-                                            <span class="text-[13px] font-bold text-slate-700 uppercase" x-text="companyName" id="CompanyName"></span>
+                                            <span class="text-[13px] font-bold text-slate-700 uppercase" x-text="$store.screeningStore.companyName" id="CompanyName"></span>
                                         </div>
                                     </div>
 
-                                    <div class="h-px bg-slate-100" x-show="hasPending"></div>
+                                    <div class="h-px bg-slate-100" x-show="$store.screeningStore.hasPending"></div>
 
                                     <!-- ⭐ DRAG HEADER -->
-                                    <div class="space-y-3" x-show="hasPending">
+                                    <div class="space-y-3" x-show="$store.screeningStore.hasPending">
                                         <div class="flex items-center justify-between">
                                             <h4 class="text-[13px] font-bold text-slate-900">Drag and Drop</h4>
                                             <button @@click="showTreeSheet = true"
@@ -508,31 +508,47 @@
                                     </div>
 
                                     <!-- ⭐ LOADING MESSAGE -->
-                                    <div x-show="isLoading" class="text-sm text-blue-600 font-medium">
+                                    <div x-show="$store.screeningStore.isLoading" class="text-sm text-blue-600 font-medium">
                                         Loading pending shareholders...
                                     </div>
 
                                     <!-- ⭐ NO PENDING MESSAGE -->
-                                    <div x-show="!isLoading && !hasPending" class="text-sm text-slate-400 font-medium">
+                                    <div x-show="!$store.screeningStore.isLoading && !$store.screeningStore.hasPending" class="text-sm text-slate-400 font-medium">
                                         No pending shareholder screening found.
                                     </div>
 
                                     <!-- ⭐ SHAREHOLDER LIST FORM -->
+
                                         <form id="myForm2" asp-controller="Corporate" asp-action="CreateShareholder" enctype="multipart/form-data" method="post" x-data="shareholderList()" x-on:submit.prevent="submitshareholderForm">
                                             <input type="hidden" id="ScreeningTypeHidden" name="screeningType">
                                             <div class="space-y-2.5" x-show="hasPending">
                                                 <template x-for="(item, index) in flattenedItems()" :key="item.id">
                                                     <div class="flex items-center gap-2" :style="'margin-left:' + (item.depth * 20) + 'px'">
+
+                                    <form id="myForm2" asp-controller="Corporate" asp-action="CreateShareholder" enctype="multipart/form-data" method="post" x-data="shareholderList()" x-init="init()" x-on:submit.prevent="submitshareholderForm">
+                                            <input type="hidden" id="ScreeningTypeHidden" name="screeningType">
+                                        <div class="space-y-2.5" x-show="$store.screeningStore.hasPending">
+                                            <template x-for="(item, index) in items" :key="item.id">
+                                                <div class="space-y-2">
+                                                    <!-- Category Header -->
+                                                    <template x-if="index === 0 || item.category !== items[index-1]?.category">
+                                                        <div class="pt-4 pb-2 border-b border-slate-100 mb-2">
+                                                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest" x-text="item.category || 'Shareholders'"></span>
+                                                        </div>
+                                                    </template>
+
+                                                    <div class="flex items-center gap-2" :style="'margin-left:' + ((item.depth || 0) * 20) + 'px'">
+
                                                         <i data-lucide="chevron-down" class="w-3 h-3 text-slate-300"></i>
                                                         <div class="flex-1 flex items-center justify-between bg-blue-50/50 border border-blue-100 rounded-lg px-3 py-2 shadow-sm">
                                                             <div class="flex items-center gap-2.5">
                                                                 <div class="w-7 h-7 rounded-full bg-blue-600 text-[10px] font-black text-white flex items-center justify-center"
-                                                                     x-text="item.initials"></div>
+                                                                     x-text="item.initials || 'SH'"></div>
                                                                 <div class="flex items-baseline gap-1.5 min-w-0">
                                                                     <!-- Visible text -->
-                                                                    <span class="text-xs font-bold text-slate-700" x-text="item.name"></span>
-                                                                    <span class="text-[10px] text-slate-400" x-text="'(' + item.type + ')'"></span>
-                                                                    <span class="text-[10px] text-slate-400" x-text="item.displayId"></span>
+                                                                    <span class="text-xs font-bold text-slate-700" x-text="item.name || 'Unknown Shareholder'"></span>
+                                                                    <span class="text-[10px] text-slate-400" x-text="'(' + (item.type || 'Individual') + ')'"></span>
+                                                                    <span class="text-[10px] text-slate-400" x-text="item.displayId || 'N/A'"></span>
 
                                                                     <!-- Hidden inputs for form submission -->
                                                                     <input type="hidden" :name="'Shareholders[' + index + '].DisplayId'" :value="item.displayId">
@@ -579,6 +595,7 @@
                                                             </button>
                                                         </div>
                                                     </div>
+
                                                 </template>
                                             </div>
 
@@ -723,6 +740,9 @@
                                             </div>
                                         </form>
                                     </div>
+
+                                               
+
                                 </div>
 
                             
@@ -2131,73 +2151,7 @@
         </div>
     
 
-    <!-- SHEET: CORPORATE TREE STRUCTURE (OVERLAY) -->
-    <div x-show="showTreeSheet" x-cloak class="fixed inset-0 z-100 flex justify-end">
-        <div x-show="showTreeSheet" x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-            class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @@click="showTreeSheet = false"></div>
-        <div x-show="showTreeSheet" x-transition:enter="transition ease-out duration-300 transform"
-            x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
-            class="relative w-full max-w-3xl bg-white h-full shadow-2xl flex flex-col p-10 overflow-y-auto scrollbar-thin">
-            <div class="flex items-center justify-between mb-10">
-                <div>
-                    <h2
-                        class="text-2xl font-black text-slate-900 tracking-tighter decoration-4 decoration-blue-500 underline underline-offset-8 uppercase">
-                        Corporate Structure</h2>
-                    <p class="text-sm text-slate-500 font-medium mt-4">Organisational hierarchy & control mapping</p>
-                </div>
-                <button @@click="showTreeSheet = false"
-                    class="p-3 bg-slate-50 rounded-full text-slate-400 hover:text-slate-900 transition-colors"><i
-                        data-lucide="x" class="w-6 h-6"></i></button>
-            </div>
 
-            <!-- Tree Structure -->
-            <div class="space-y-4">
-                <template x-for="item in treeItems" :key="item.id">
-                    <div class="relative transition-all" :style="'margin-left: ' + (item.depth * 3) + 'rem'">
-                        <!-- Connector Line -->
-                        <div x-show="item.depth > 0" class="tree-connector"></div>
-
-                        <div class="relative flex items-center gap-4 p-4 rounded-2xl border bg-white shadow-sm group hover:border-blue-300 transition-all active:scale-[0.99]"
-                            :class="item.type === 'corporate' ? 'border-slate-200' : 'border-slate-100 bg-slate-50/10'">
-                            <div class="p-1 cursor-grab text-slate-300"><i data-lucide="grip-vertical"
-                                    class="w-4 h-4"></i></div>
-                            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                                :class="item.type === 'corporate' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'">
-                                <i :data-lucide="item.type === 'corporate' ? 'building-2' : 'user'" class="w-5 h-5"></i>
-                            </div>
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3">
-                                    <span
-                                        class="text-[10px] font-black bg-slate-800 text-white px-2 py-0.5 rounded shadow-sm"
-                                        x-text="item.ref"></span>
-                                    <h4 class="text-sm font-black text-slate-900" x-text="item.name"></h4>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><i
-                                        data-lucide="pencil" class="w-4 h-4"></i></button>
-                                <button class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><i
-                                        data-lucide="trash-2" class="w-4 h-4"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-            </div>
-
-            <div class="mt-auto pt-10 border-t border-slate-100 flex flex-col gap-4">
-                <div
-                    class="bg-blue-600 p-6 rounded-[24px] text-white shadow-xl shadow-blue-500/30 flex items-center justify-between group cursor-pointer active:scale-95 transition-all">
-                    <div>
-                        <p class="text-[11px] font-black uppercase tracking-widest opacity-80 mb-1">Final Validation</p>
-                        <p class="text-lg font-black tracking-tight leading-none">Execute Structure Screening</p>
-                    </div>
-                    <i data-lucide="shield-check"
-                        class="w-8 h-8 opacity-40 group-hover:scale-110 transition-transform"></i>
-                </div>
-            </div>
-        </div>
-    </div>
 
         <div x-show="isDuplicateModalOpen"
              x-cloak
@@ -2543,49 +2497,6 @@
 
             <!-- Sheet Content -->
             <div class="p-8">
-                <!-- Info Banner -->
-                @* <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-start gap-3"> *@
-                    @* <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600 mt-0.5 shrink-0">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg> *@
-                    <div class="text-sm text-blue-800">
-                        @* <p class="font-semibold mb-1">Drag and Drop to Reorder</p>
-                        <!-- Initials Circle -->
-                        <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-blue-500/20"
-                             x-text="item.initials">
-                        </div> *@
-
-                        <!-- Name and Type -->
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-baseline gap-2">
-                                <span class="font-bold text-slate-900 text-sm" x-text="item.name"></span>
-                                <span class="text-xs text-slate-400" x-text="'(' + item.type + ')'"></span>
-                            </div>
-                        </div>
-
-                        <!-- Position Indicator -->
-                        <div class="text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full"
-                             x-text="'#' + (index + 1)">
-                        </div>
-                    </div>
-                @* </div> *@
-                </template>
-
-                <!-- Empty State -->
-                @* <div x-show="!$store.screeningStore.screeningList || $store.screeningStore.screeningList.length === 0"
-                     class="text-center py-12">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-slate-300 mb-4">
-                        <rect x="16" y="16" width="6" height="6" rx="1"></rect>
-                        <rect x="2" y="16" width="6" height="6" rx="1"></rect>
-                        <rect x="9" y="2" width="6" height="6" rx="1"></rect>
-                        <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path>
-                        <path d="M12 12V8"></path>
-                    </svg>
-                    <p class="text-slate-400 font-medium">No shareholders added yet</p>
-                    <p class="text-sm text-slate-400 mt-1">Add shareholders to see them here</p>
-                </div> *@
             </div>
 
             <div x-data="shareholderTree()" x-init="initSortable()" class="p-6">
@@ -2748,12 +2659,42 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                 newItems: [],
                 pendingItems: [],
                 existingItems: [],
+                _hasHadData: false,
+                get hasPending() {
+                    const hasData = this.newItems.length > 0 || this.pendingItems.length > 0 || this.existingItems.length > 0;
+                    console.log(`hasPending check: new=${this.newItems.length}, pending=${this.pendingItems.length}, existing=${this.existingItems.length}, result=${hasData}`);
+                    
+                    // Debug: log detailed item info if we have data
+                    if (hasData) {
+                        console.log('hasPending items breakdown:', {
+                            newItems: this.newItems.map(i => ({id: i.id, name: i.name})),
+                            pendingItems: this.pendingItems.map(i => ({id: i.id, name: i.name})),
+                            existingItems: this.existingItems.map(i => ({id: i.id, name: i.name}))
+                        });
+                    }
+                    
+                    // Once we have data, keep hasPending true to prevent flickering
+                    if (hasData && !this._hasHadData) {
+                        this._hasHadData = true;
+                        console.log('Set _hasHadData to true');
+                    }
+                    
+                    // Always return true if we've had data before, otherwise return current state
+                    const result = this._hasHadData || hasData;
+                    console.log(`hasPending final result: ${result}`);
+                    return result;
+                },
+                isLoading: false,
+                companyCode: '',
+                companyName: '',
+                threshold: 0,
                 get screeningList() {
-                    return [
+                    const list = [
                         ...this.newItems.map(i => ({ ...i, category: 'Newly Added' })),
                         ...this.pendingItems.map(i => ({ ...i, category: 'Pending' })),
                         ...this.existingItems.map(i => ({ ...i, category: 'Existing' }))
                     ];
+                    return list;
                 }
             });
         });
@@ -3549,6 +3490,7 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                                             var CompanyCode = Alpine.store('searchQuery') || document.getElementById('CompanyCodeInput').value;
                                             var CustomerType="I";
 
+
                                     if (!CompanyCode || CompanyCode.trim() === '') {
                                         toastr.error("Please enter a valid Corporate ID");
                                         return;
@@ -3636,6 +3578,420 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                             try {
 
                                             let response = await fetch(`/corporate/GetPendingShareholders?companyCode=${this.companyCode}&customerType=${'C'}`);
+
+            if (!CompanyCode || CompanyCode.trim() === '') {
+                toastr.error("Please enter a valid Corporate ID");
+                return;
+            }
+
+            $("#loader").show();
+
+                        //alert(CompanyCode);
+
+            $.ajax({
+                url: '/corporate/searchcompanycode',
+                type: 'POST',
+                data: { CompanyCode: CompanyCode,CustomerType:CustomerType },
+                success: function (data) {
+                    console.log(data);
+
+                    if (data && data.length > 0) {
+                        
+                        // Dispatch event for company found
+                        console.log("SUCCESS: company search data received:", data);
+                        window.dispatchEvent(new CustomEvent('company-searched', {
+                            detail: data
+                        }));
+
+                        // Load pending shareholders (if any)
+                        window.dispatchEvent(new Event('load-pending-shareholders'));
+                    }
+                    else {
+                        window.dispatchEvent(new CustomEvent('company-notfound'));
+
+                        toastr.error('No Corporate ID was found for the entered value.', {
+                            tapToDismiss: true,
+                            showMethod: 'fadeIn',
+                            showDuration: 200
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    console.error('Error:', xhr.responseText);
+                    toastr.error("Error loading company details");
+                },
+                complete: function () {
+                    $("#loader").hide();
+                }
+            });
+        }
+
+                function companySearch() {
+                        return {
+                            showPendingModal:false,
+                            skipPendingModal:false,
+
+                            init() {
+                                window.addEventListener('company-searched', (event) => {
+                                    const store = Alpine.store('screeningStore');
+                                    let company = event.detail[0];
+                                    console.log("company details:", company);
+
+                                    store.companyCode = company.customerId || company.companyCode;
+                                    store.companyName = (company.firstName || company.lastName) ? `${company.firstName || ''} ${company.lastName || ''}`.trim() : company.companyName;
+                                    store.threshold = company.thershold;
+
+                                    $('#CompanyCodeInput').val(store.companyCode);
+                                    $('#CompanyCode').text(store.companyCode);
+                                    $('#CompanyCodeHidden').val(store.companyCode);
+                                    $('#CompanyNameHidden').val(store.companyName);
+                                    $('#CompanyThershold').val(store.threshold);
+                                    $('#CompanyName').text(store.companyName);
+                                    $('#Thershold').val(store.threshold);
+
+                                    // Load pending shareholders
+                                    window.dispatchEvent(new Event('load-pending-shareholders'));
+                                });
+/*created for getting shareholder from temp table*/
+                                // Load shareholders
+           window.addEventListener('load-pending-shareholders', async (event) => {
+                const store = Alpine.store('screeningStore');
+                store.isLoading = true;
+
+                try {
+
+                   let response = await fetch(`/corporate/GetPendingShareholders?companyCode=${store.companyCode}&customerType=${'C'}`);
+                    let data = await response.json();
+
+                    console.log(data);
+
+                    const skipModal = event?.detail?.skipModal ?? false;
+
+                    if (Array.isArray(data) && data.length > 0) {
+
+
+                        // Save globally
+                        window.pendingShareholderData = data;
+
+                        // Populate modal list
+                                              let uniqueCompanies = [...new Set(data.map(x => x.companyCode))];
+
+                                    let html = "";
+
+                                    uniqueCompanies.forEach(code => {
+
+                                                html += `
+                                        <label class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-sm">
+
+                                            <div class="flex items-center gap-3 cursor-pointer">
+
+                                                <input type="radio"
+                                                       name="pendingCompany"
+                                                       value="${code}"
+                                                       class="w-4 h-4 text-blue-600 border-slate-300">
+
+                                                <span class="font-medium text-slate-700">
+                                                    ${code}
+                                                </span>
+
+                                            </div>
+
+                                            <button onclick="deletePendingCompany('${code}')"
+                                                class="ml-auto text-red-500 hover:text-red-700 text-lg font-bold leading-none">
+                                                ×
+                                            </button>
+
+                                        </label>
+                                        
+                                    `;
+
+                                    });
+
+                            document.getElementById("pendingCompanyList").innerHTML = html;
+
+                                     if (!skipModal && !store.skipPendingModal) {
+                                        $('#rollbackModal').removeClass('hidden').addClass('flex');
+
+                                        // After first display, prevent future popup
+                                        store.skipPendingModal = true;
+                                    }
+
+                        store.companyCode = data[0].companyCode;
+                        store.companyName = (data[0].firstName || data[0].lastName) ? `${data[0].firstName || ''} ${data[0].lastName || ''}`.trim() : data[0].companyName;;
+                        store.threshold = data[0].thershold;
+                                                
+                        $('#CompanyCodeInput').val(store.companyCode);
+                        $('#CompanyCode').text(store.companyCode);
+                        $('#CompanyCodeHidden').val(store.companyCode);
+                        $('#CompanyNameHidden').val(store.companyName);
+                        $('#CompanyThershold').val(store.threshold);
+                        $('#CompanyName').text(store.companyName);
+                        $('#Thershold').val(store.threshold);
+
+                        // Enhanced mapping function that handles incomplete data
+                        console.log('Raw API data:', data);
+                        
+                        store.pendingItems = data.map((item, index) => {
+                            // Generate default values for missing fields
+                            const baseId = item.id || index + 1;
+                            
+                            console.log(`Mapping item ${index}:`, item);
+
+                            return {
+                                id: Number(baseId),
+                                name: item.fullname || item.name || `Shareholder ${baseId}`,
+                                type: item.type || 'Individual',
+                                parentId: item.parentId || item.parentid ? Number(item.parentId || item.parentid) : null,
+                                displayId: item.displayId || item.displayid || item.idNumber || `SH-${baseId}`,
+                                initials: (item.fullname || item.name || `SH${baseId}`).split(' ').map(x => x[0]).join('').toUpperCase().substr(0, 2),
+                                companyCode: item.companycode || store.companyCode,
+                                tradeLicence: item.tradelicense || '',
+                                nationality: item.nationality || 'Not Specified',
+                                registrationDate: item.registrationdate || null,
+                                idType: item.idtype || 'Passport',
+                                idNumber: item.idnumber || `ID-${baseId.toString().padStart(4, '0')}`,
+                                designation: item.designation || '',
+                                share: item.share || 0,
+                                issueDate: item.issuedate || null,
+                                idExpiry: item.expirydate || null,
+                                cif: item.cif || `CIF-${baseId.toString().padStart(4, '0')}`,
+                                employer: item.employer || store.companyName || 'Not Specified',
+                                goldenVisa: item.goldenvisa || '',
+                                documentFileName: item.document_file_name || 'document.pdf',
+                                docFullPath: item.document_full_path || '/documents/generic.pdf',
+                                residence: item.residence || 'Not Specified',
+                                employerIndustry: item.employerindustry || 'Not Specified',
+                                employerSector: item.employersector || 'Not Specified',
+                                sowsofCountry: item.sowsofcountry || 'Not Specified',
+                                tradeLicenseAuthority: item.tradelicenseauthority || 'Not Specified',
+                                tradeLicenseSector: item.tradelicensesector || 'Not Specified',
+                                gender: item.gender || 'Not Specified',
+                                relationship: item.relationship || '',
+                                flagType: item.flagtype || 'Individual',
+                                // Add company context
+                                companyName: store.companyName,
+                                thershold: store.threshold,
+                                // Ensure all required fields have values
+                                category: 'Pending'
+                            };
+                        });
+                        
+                        console.log('Mapped pendingItems:', store.pendingItems);
+
+                        // Bridge Logic: Infer parentId from dots if missing
+                        store.pendingItems.forEach(item => {
+                            if (item.parentId === null && item.displayId && item.displayId.includes('.')) {
+                                let parts = item.displayId.split('.');
+                                parts.pop();
+                                let parentDisplayId = parts.join('.');
+                                let parent = store.pendingItems.find(p => p.displayId === parentDisplayId);
+                                if (parent) item.parentId = parent.id;
+                            }
+                        });
+                        
+                        // Calculate depth for each item based on parent relationships
+                        function calculateDepth(item, allItems, currentDepth = 0) {
+                            if (!item.parentId) return 0;
+                            
+                            const parent = allItems.find(i => i.id === item.parentId);
+                            if (!parent) return currentDepth;
+                            
+                            return calculateDepth(parent, allItems, currentDepth + 1);
+                        }
+                        
+                        store.pendingItems.forEach(item => {
+                            item.depth = calculateDepth(item, store.pendingItems);
+                        });
+                        
+                        console.log('Pending items with depth:', store.pendingItems);
+
+
+                                    
+                                               
+                        console.log("Mapped shareholders:", store.pendingItems);
+
+                        // Force Alpine.js reactivity
+                        store.newItems = [...store.newItems]; // Trigger reactive update
+
+                        // Trigger tree refresh
+                        window.dispatchEvent(new Event('store-updated'));
+
+                        // Debug output
+                        console.log("hasPending after update:", store.hasPending);
+                        console.log("pendingItems length:", store.pendingItems.length);
+                        
+                        // Force UI update by toggling a reactive property
+                        store.isLoading = true;
+                        setTimeout(() => {
+                            store.isLoading = false;
+                            
+                            // Enhanced debug: comprehensive component visibility check
+                            console.log('=== Debugging Component Visibility ===');
+                            
+                            // 1. Check if form element exists
+                            const formElement = document.getElementById('myForm2');
+                            console.log('1. Form element exists:', !!formElement);
+                            
+                            if (formElement) {
+                                const alpineData = formElement.__x?.$data;
+                                console.log('2. Alpine.js data exists:', !!alpineData);
+                                
+                                if (alpineData) {
+                                    console.log('3. Component items count:', alpineData.items?.length || 0);
+                                    console.log('4. Component hasPending:', alpineData.hasPending);
+                                    console.log('5. First item sample:', JSON.stringify(alpineData.items?.[0]));
+                                } else {
+                                    console.log('2. Alpine.js data NOT accessible - trying alternative access');
+                                    
+                                    // Check if Alpine.js is properly initialized on the element
+                                    if (window.Alpine && formElement._x_dataStack) {
+                                        console.log('Alpine.js data stack exists, trying to access component');
+                                        
+                                        // Try to access the component through Alpine's internal methods
+                                        try {
+                                            const dataStack = formElement._x_dataStack;
+                                            if (dataStack && dataStack.length > 0) {
+                                                const componentData = dataStack[dataStack.length - 1];
+                                                console.log('Found component data via data stack:', componentData);
+                                                
+                                                // Manually sync data to the component
+                                                if (componentData && typeof componentData.syncFromStore === 'function') {
+                                                    componentData.syncFromStore();
+                                                    console.log('Manually synced component data');
+                                                    
+                                                    // Force reactivity
+                                                    if (componentData.items && componentData.items.length === 0) {
+                                                        const store = Alpine.store('screeningStore');
+                                                        componentData.items = [...store.pendingItems];
+                                                        console.log('Forced component items update:', componentData.items.length);
+                                                    }
+                                                }
+                                            }
+                                        } catch (error) {
+                                            console.log('Data stack access failed:', error.message);
+                                        }
+                                    }
+                                    
+                                    // Try to reinitialize the component
+                                    try {
+                                        console.log('Attempting to reinitialize component');
+                                        
+                                        // Get the shareholderList function from window scope
+                                        const shareholderListFunc = window.shareholderList || (() => {
+                                            console.log('shareholderList function not found in window scope');
+                                            return shareholderList(); // Try direct call
+                                        });
+                                        
+                                        const component = shareholderListFunc();
+                                        if (component && typeof component.init === 'function') {
+                                            component.init();
+                                            
+                                            // Manually set the data
+                                            const store = Alpine.store('screeningStore');
+                                            component.items = [...store.pendingItems];
+                                            
+                                            console.log('Reinitialized component with items:', component.items.length);
+                                            
+                                            // Try to force Alpine.js to rebind
+                                            if (window.Alpine && window.Alpine.bind) {
+                                                window.Alpine.bind(formElement);
+                                                console.log('Rebound Alpine.js to form element');
+                                            }
+                                        }
+                                    } catch (error) {
+                                        console.log('Reinitialization failed:', error.message);
+                                    }
+                                    
+
+                                }
+                            }
+                            
+                            // 2. Check container visibility
+                            const container = document.querySelector('[x-show="$store.screeningStore.hasPending"]');
+                            console.log('6. Container element exists:', !!container);
+                            if (container) {
+                                console.log('7. Container computed style:', window.getComputedStyle(container).display);
+                                
+                                // Try to force container visibility
+                                if (window.getComputedStyle(container).display === 'none' && store.hasPending) {
+                                    console.log('Container is hidden but should be visible - forcing visibility');
+                                    container.style.display = 'block';
+                                }
+                            }
+                            
+                            // 3. Check store state directly (with safety check)
+                            try {
+                                const store = Alpine.store('screeningStore');
+                                console.log('8. Store hasPending:', store?.hasPending);
+                                console.log('9. Store _hasHadData:', store?._hasHadData);
+                                console.log('10. Store pendingItems count:', store?.pendingItems?.length);
+                                
+                                // Log first pending item details
+                                if (store?.pendingItems?.length > 0) {
+                                    console.log('11. First pending item:', JSON.stringify(store.pendingItems[0]));
+                                }
+                                
+                                // Hide "No pending" message if we have data
+                                if (store?.hasPending) {
+                                    setTimeout(() => {
+                                        const noPendingMessage = document.querySelector('[x-show="!$store.screeningStore.isLoading && !$store.screeningStore.hasPending"]');
+                                        if (noPendingMessage && window.getComputedStyle(noPendingMessage).display !== 'none') {
+                                            console.log('Hiding "No pending shareholder screening found" message');
+                                            noPendingMessage.style.display = 'none';
+                                        }
+                                    }, 50);
+                                }
+                            } catch (error) {
+                                console.log('Store access error:', error.message);
+                            }
+                            console.log('=== End Debug ===');
+                            
+                            // Additional check: Alpine.js initialization status
+                            console.log('Alpine.js version:', typeof Alpine !== 'undefined' ? Alpine.version : 'Not loaded');
+                            
+                            // Check if there are any Alpine.js errors
+                            if (window.Alpine) {
+                                console.log('Alpine.js is initialized');
+                                const store = Alpine.store('screeningStore');
+                                console.log('Store accessible:', !!store);
+                                console.log('Store data:', store ? { hasPending: store.hasPending, itemsCount: store.pendingItems.length } : 'No store');
+                            } else {
+                                console.log('Alpine.js not initialized yet');
+                            }
+                        }, 100);
+
+                    } else {
+
+
+                        $('#rollbackModal').addClass('hidden').removeClass('flex');
+                                     // $('#CompanyCodeInput').val('');
+                                     // $('#CompanyCode').text('');
+                                     //  $('#CompanyCodeHidden').val('');
+                                     //   $('#CompanyName').text('');
+                                     //  $('#Thershold').val('');
+
+                        Alpine.store('screeningStore').screeningList = [];
+
+                        window.dispatchEvent(new Event('store-updated'));
+                    }
+
+                } catch (e) {
+                    console.error(e);
+                }
+
+                store.isLoading = false;
+
+            });
+
+            /*Created for getting shreholders data after case is created customermaster table*/
+                        window.addEventListener('load-casecreated-shareholders', async (event) => {
+                             const store = Alpine.store('screeningStore');
+                             store.isLoading = true;
+
+                            try {
+
+                               let response = await fetch(`/corporate/GetCaseCreatedPendingShareholders?companyCode=${store.companyCode}`);
+
                                 let data = await response.json();
 
                                 console.log(data);
@@ -3644,7 +4000,6 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
 
                                 if (Array.isArray(data) && data.length > 0) {
 
-                                    this.hasPending = true;
 
                                     // Save globally
                                     window.pendingShareholderData = data;
@@ -3686,24 +4041,24 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                                         document.getElementById("pendingCompanyList").innerHTML = html;
 
                                     // Show modal ONLY if skipModal = false
-                                                if (!skipModal && !this.skipPendingModal) {
+                                                if (!skipModal && !store.skipPendingModal) {
                                                     $('#rollbackModal').removeClass('hidden').addClass('flex');
 
                                                     // After first display, prevent future popup
-                                                    this.skipPendingModal = true;
+                                                    store.skipPendingModal = true;
                                                 }
 
-                                    this.companyCode = data[0].companyCode;
-                                    this.companyName = (data[0].firstName || data[0].lastName) ? `${data[0].firstName || ''} ${data[0].lastName || ''}`.trim() : data[0].companyName;;
-                                    this.thershold = data[0].thershold;
+                                    store.companyCode = data[0].companyCode;
+                                    store.companyName = (data[0].firstName || data[0].lastName) ? `${data[0].firstName || ''} ${data[0].lastName || ''}`.trim() : data[0].companyName;;
+                                    store.threshold = data[0].thershold;
 
-                                    $('#CompanyCodeInput').val(this.companyCode);
-                                    $('#CompanyCode').text(this.companyCode);
-                                                $('#CompanyCodeHidden').val(this.companyCode);
-                                                                           $('#CompanyNameHidden').val(this.companyName);
-                                                                           $('#CompanyThershold').val(this.thershold);
-                                    $('#CompanyName').text(this.companyName);
-                                    $('#Thershold').val(this.thershold);
+                                    $('#CompanyCodeInput').val(store.companyCode);
+                                    $('#CompanyCode').text(store.companyCode);
+                                                $('#CompanyCodeHidden').val(store.companyCode);
+                                                                           $('#CompanyNameHidden').val(store.companyName);
+                                                                           $('#CompanyThershold').val(store.threshold);
+                                    $('#CompanyName').text(store.companyName);
+                                    $('#Thershold').val(store.threshold);
 
                                     Alpine.store('screeningStore').screeningList = data.map(item => ({
                                         id: Number(item.id),
@@ -3743,7 +4098,6 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
 
                                 } else {
 
-                                    this.hasPending = false;
 
                                     $('#rollbackModal').addClass('hidden').removeClass('flex');
                                                  // $('#CompanyCodeInput').val('');
@@ -3752,7 +4106,7 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                                                  //   $('#CompanyName').text('');
                                                  //  $('#Thershold').val('');
 
-                                    Alpine.store('screeningStore').screeningList = [];
+                                    store.screeningList = [];
 
                                     window.dispatchEvent(new Event('store-updated'));
                                 }
@@ -3761,7 +4115,7 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                                 console.error(e);
                             }
 
-                            this.isLoading = false;
+                            store.isLoading = false;
 
                         });
 
@@ -3861,6 +4215,7 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                                     method: 'POST'
                                 });
 
+
                                 let result = await response.json();
 
                                 if (result.success) {
@@ -3868,6 +4223,80 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                                     // Remove from global data
                                     window.pendingShareholderData =
                                         window.pendingShareholderData.filter(x => x.companyCode !== companyCode);
+=======
+            // Make shareholderList available globally for debugging and fallback
+            window.shareholderList = function shareholderList() {
+                        return {
+                            items: [],
+
+                            init() {
+                                console.log('shareholderList component initialized');
+                                this.syncFromStore();
+                                window.addEventListener('store-updated', () => {
+                                    console.log('Store updated event received');
+                                    this.syncFromStore();
+                                });
+                                
+                                // Force initial sync
+                                setTimeout(() => this.syncFromStore(), 100);
+                                
+                                // Additional reactivity triggers
+                                setTimeout(() => {
+                                    const store = Alpine.store('screeningStore');
+                                    if (store && store.hasPending) {
+                                        console.log('Triggering additional sync due to hasPending being true');
+                                        this.syncFromStore();
+                                    }
+                                }, 500);
+                                
+                                // Multiple sync attempts for reliability
+                                setTimeout(() => this.syncFromStore(), 1000);
+                                setTimeout(() => this.syncFromStore(), 2000);
+                                
+                                // Debug: log component state
+                                console.log('Component initialized with items:', this.items);
+                                
+                                // Force UI update if needed
+                                setTimeout(() => {
+                                    if (this.items.length > 0) {
+                                        console.log('Forcing UI update with items:', this.items.length);
+                                        this.items = [...this.items]; // Trigger reactivity
+                                    }
+                                }, 1500);
+                            },
+
+                            syncFromStore() {
+                                const store = Alpine.store('screeningStore');
+                                console.log('Syncing from store:', {
+                                    newItems: store.newItems.length,
+                                    pendingItems: store.pendingItems.length,
+                                    existingItems: store.existingItems.length,
+                                    hasPending: store.hasPending
+                                });
+                                
+                                // Debug: log the actual store data
+                                console.log('Store newItems:', store.newItems);
+                                console.log('Store pendingItems:', store.pendingItems);
+                                console.log('Store existingItems:', store.existingItems);
+                                
+                                // Force reactivity by creating a new array with all items
+                                this.items = [
+                                    ...store.newItems.map(i => ({ ...i, category: 'Newly Added' })),
+                                    ...store.pendingItems.map(i => ({ ...i, category: 'Pending' })),
+                                    ...store.existingItems.map(i => ({ ...i, category: 'Existing' }))
+                                ];
+                                
+                                console.log('Synced items count:', this.items.length);
+                                
+                                // Debug: log the actual items
+                                console.log('Synced items:', this.items);
+                                
+                                // Check if items have proper data
+                                if (this.items.length > 0) {
+                                    console.log('First item details:', this.items[0]);
+                                }
+                            },
+>>>>>>> d2f5e1ca87c711c778550c1ac21e9772c9b4576b
 
                                     let remainingCompanies = [...new Set(window.pendingShareholderData.map(x => x.companyCode))];
 
