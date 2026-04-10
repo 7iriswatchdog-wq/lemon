@@ -2419,5 +2419,11 @@ namespace AML.Web.Controllers.Corporate
                 return Json(new { success = false });
             }
         }
+        [HttpPost]
+        public JsonResult UpdateParentId(int id, int? parentId)
+        {
+            var result = _customerCaseService.UpdateParentId(id, parentId);
+            return Json(result.Status == StaticResource.SuccessStatusCode);
+        }
     }
 }

@@ -1,4 +1,4 @@
-﻿using AML.Core.Common.StaticResource;
+using AML.Core.Common.StaticResource;
 using AML.Core.DataContract.Enum;
 using AML.Core.Repository.CustomerCase;
 using AML.Core.RepositoryContract.CorporateShareholder;
@@ -2228,6 +2228,11 @@ namespace AML.Core.Service.CustomerCase
         {
             //Perform business requirements here
             return _customerMasterRepository.DeletePendingShareholders(companyCode);
+        }
+        public ServiceResponse<string> UpdateParentId(int id, int? parentId)
+        {
+            //Perform business requirements here
+            return _customerMasterRepository.UpdateParentId(id, parentId);
         }
     }
 }

@@ -155,15 +155,15 @@ namespace AML.DTO.DTO.CustomerCase
         [Column("created_by")]
         public int onb_created_by { get; set; }
         [Column("created_on")]
-        public DateTime onb_created_on { get; set; }
+        public DateTime? onb_created_on { get; set; }
         [Column("updated_by")]
         public int onb_updated_by { get; set; }
         [Column("emirates_id")]
         public string onb_emirates_id { get; set; }
         [Column("emirates_id_expiry")]
-        public DateTime onb_emirates_id_expiry { get; set; }
+        public DateTime? onb_emirates_id_expiry { get; set; }
         [Column("passport_expiry")]
-        public DateTime onb_passport_expiry { get; set; }
+        public DateTime? onb_passport_expiry { get; set; }
         [Column("profession")]
         public string onb_profession { get; set; }
         [Column("residence_status")]
@@ -536,11 +536,11 @@ namespace AML.DTO.DTO.CustomerCase
         public string onb_cust_id { get; set; }
         public string onb_mobile { get; set; }
         public string  onb_created_by { get; set; }
-        public DateTime onb_created_on { get; set; }
+        public DateTime? onb_created_on { get; set; }
         public string onb_updated_by { get; set; }
         public string onb_emirates_id { get; set; }
-        public DateTime onb_emirates_id_expiry { get; set; }
-        public DateTime onb_passport_expiry { get; set; }
+        public DateTime? onb_emirates_id_expiry { get; set; }
+        public DateTime? onb_passport_expiry { get; set; }
         public string onb_profession { get; set; }
         public string onb_residence_status { get; set; }
         public string onb_insurance_product { get; set; }
@@ -742,6 +742,9 @@ namespace AML.DTO.DTO.CustomerCase
 
         [Column("flagtype")]
         public string FlagType { get; set; }
+
+        public int? ParentId { get; set; }
+        public string DisplayId { get; set; }
 
 
     }

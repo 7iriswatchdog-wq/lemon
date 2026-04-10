@@ -121,6 +121,7 @@ namespace AML.Core.ServiceContract.CustomerCase
 
 
         ServiceResponse<string> DeletePendingShareholders(string companyCode);
+        ServiceResponse<string> UpdateParentId(int id, int? parentId);
 
 
     }
