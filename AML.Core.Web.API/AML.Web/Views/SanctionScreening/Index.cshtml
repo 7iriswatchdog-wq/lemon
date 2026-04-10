@@ -247,12 +247,25 @@
                     <input type="hidden" name="BatchID" id="pdfBatchId" />
                     <button type="submit" id="btnPdf"></button>
                 </form>
-                <button onclick="exportPdf()" id="exportBtn" style="display: none;" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-11 px-5 rounded-md text-sm transition">
-                    <i data-lucide="download" class="h-4 w-4"></i> Export PDF
-                </button>
-                <button onclick="exportToCSV()" id="exportCsvBtn" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-11 px-5 rounded-md text-sm transition shadow-sm">
-                    <i data-lucide="download" class="h-4 w-4"></i> Export to CSV
-                </button>
+                
+                <div class="relative inline-block text-left group">
+                    <button type="button" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-11 px-5 rounded-md text-sm transition focus:outline-none shadow-sm">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                        Export
+                        <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                    </button>
+                    <div class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200" role="menu" aria-orientation="vertical">
+                        <div class="py-1" role="none">
+                            <button onclick="ExportList(true);" id="exportPdfBtnStandard" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
+                                Export PDF
+                            </button>
+                            <button onclick="ExportList(false);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -928,13 +941,8 @@ console.log("rawData3",rawData3);
             $('#searchInput').attr('placeholder', tableId === 'table1' ? "Search by Customer Name/ID" : "Search by Customer Name/ID");
             $('#searchInput').val('');
 
-            if(tableId === 'table2' && $('#hdnBatchId').val()) {
-                $('#exportBtn').show();
-            } else {
-                $('#exportBtn').hide();
-            }
-
             filterTableActive();
+
         }
 
         // function fetchCustomerData(batchId) {
@@ -962,8 +970,15 @@ console.log("rawData3",rawData3);
             if(batchId) {
                 $('#pdfBatchId').val(batchId);
                 $('#btnPdf').click();
+            } else {
+                if (window.toastr) {
+                    toastr.warning("PDF export is only available for Search Logs with a valid record.");
+                } else {
+                    alert("PDF export is only available for Search Logs with a valid record.");
+                }
             }
         }
+
         function initDatePicker(selector, defaultDate, options = {}) {
 
                 const elements = document.querySelectorAll(selector);
@@ -1059,6 +1074,14 @@ console.log("rawData3",rawData3);
                 });
             }
             
+        function ExportList(isPDF) {
+            if (isPDF) {
+                exportPdf();
+            } else {
+                exportToCSV();
+            }
+        }
+
         function formatDateString(dateStr) {
             if (!dateStr) return '';
             const dt = formatDateTime(dateStr);

@@ -322,11 +322,24 @@
                     </button>
 
                     <!-- Export -->
-                    <button onclick="exportTableToCSV('GetDatasetUpdateLogs.csv')" id="exportBtn"
-                            class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-5 rounded-md text-sm transition">
-                        <i data-lucide="download" class="h-4 w-4"></i>
-                        Export
-                    </button>
+                    <div class="relative inline-block text-left group">
+                        <button type="button" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-5 rounded-md text-sm transition focus:outline-none">
+                            <i data-lucide="download" class="h-4 w-4"></i>
+                            Export
+                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                        </button>
+                        <div class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200" role="menu" aria-orientation="vertical">
+                            <div class="py-1" role="none">
+                                <button onclick="ExportList(true);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
+                                    Export PDF
+                                </button>
+                                <button onclick="ExportList(false);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
+                                    Export CSV
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
 
                 </div>
 
@@ -581,9 +594,17 @@
         };
     }
 
-    
+    function ExportList(isPDF) {
+        const startDate = formatDate($('#startDate').val());
+        const endDate = formatDate($('#endDate').val());
+        const datasets = $('#datasetsFilter').val();
+        
+        const url = `/Report/DatasetUpdateLogsExportReport?isPDF=${isPDF}&startDate=${startDate}&endDate=${endDate}&datasets=${datasets}`;
+        window.location.href = url;
+    }
 
     function exportTableToCSV(filename) {
+
         // We will fetch all data from backend for export to get the complete dataset
         $("#loadingCaseDetails").removeClass("hidden");
         $.ajax({

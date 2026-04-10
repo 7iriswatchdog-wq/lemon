@@ -5543,9 +5543,135 @@ public IActionResult CustomerList(DataTableModel model,
                 });
             }
         }
+        [HttpGet("Report/DatasetUpdateLogsExportReport")]
+        public async Task<IActionResult> DatasetUpdateLogsExportReport(bool isPDF, string startDate, string endDate, string datasets)
+        {
+            var clientId = _clientHandler.GetClientId();
+            List<DatasetUpdateLogsModel> abc = _mapper.Map<List<DatasetUpdateLogsModel>>(
+                _reportService.GetDatasetUpdateLogs(new CaseReportRequestDTO()
+                {
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    Datasets = datasets
+                }));
 
+            // Filter by client contract start date
+            if (clientId > 0)
+            {
+                var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
+                if (clientDetails != null && clientDetails.ApplicationStartDate.HasValue)
+                {
+                    DateTime clientContractStartDate = clientDetails.ApplicationStartDate.Value;
+                    abc = abc.Where(log =>
+                    {
+                        if (string.IsNullOrEmpty(log.UpdatedDate)) return false;
+                        try
+                        {
+                            DateTime logDate = DateTime.Parse(log.UpdatedDate);
+                            return logDate >= clientContractStartDate;
+                        }
+                        catch { return false; }
+                    }).ToList();
+                }
+            }
 
-        [HttpGet("Report/ScreeningDatabaseLogsExportReport")]
+            if (!isPDF)
+            {
+                List<DatasetUpdateLogsModel> excelData = abc.Select(res => new DatasetUpdateLogsModel
+                {
+                    UpdatedDate = res.UpdatedDate,
+                    Datasets = res.Datasets,
+                    Delta = res.Delta,
+                    Cumulative = res.Cumulative
+                }).ToList();
+
+                return new ExcelResult<DatasetUpdateLogsModel>(excelData, "Dataset Update Logs", "dataset_update_logs_" + DateTime.Now.Ticks);
+            }
+
+            var clientInfo = _customerCaseService.GetClientDetailsByID(clientId);
+            var logos = "wwwroot/img/" + clientInfo?.DocumentFileName;
+            var companyName = clientInfo?.ClientName;
+
+            using (System.IO.MemoryStream memoryStream = new System.IO.MemoryStream())
+            {
+                Document document = new Document(PageSize.A4, 15, 15, 15, 15);
+                PdfWriter writer = PdfWriter.GetInstance(document, memoryStream);
+                document.Open();
+
+                document.Add(new Paragraph("\n"));
+
+                PdfPTable logoTable = new PdfPTable(2);
+                logoTable.TotalWidth = 550f;
+                float[] logowidth = new float[] { 3f, 0.5f };
+                logoTable.SetWidths(logowidth);
+                logoTable.LockedWidth = true;
+                logoTable.HorizontalAlignment = 1;
+
+                PdfPCell compname = new PdfPCell(new Phrase(companyName ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 17, Font.BOLD)));
+                compname.FixedHeight = 40f;
+                compname.VerticalAlignment = 1;
+                compname.HorizontalAlignment = 1;
+                compname.Border = 0;
+                logoTable.AddCell(compname);
+
+                if (!string.IsNullOrEmpty(logos) && System.IO.File.Exists(logos))
+                {
+                    try
+                    {
+                        Image tif = Image.GetInstance(logos);
+                        tif.ScalePercent(1f);
+                        logoTable.AddCell(new PdfPCell(tif) { Border = 0 });
+                    }
+                    catch { logoTable.AddCell(new PdfPCell(new Phrase("")) { Border = 0 }); }
+                }
+                else
+                {
+                    logoTable.AddCell(new PdfPCell(new Phrase("")) { Border = 0 });
+                }
+                document.Add(logoTable);
+
+                PdfPTable header = new PdfPTable(1);
+                header.TotalWidth = 550f;
+                header.LockedWidth = true;
+                header.HorizontalAlignment = Element.ALIGN_LEFT;
+                header.SpacingAfter = 20f;
+                header.AddCell(new PdfPCell(new Phrase("Report : Dataset Update Logs")) { Border = 0 });
+                document.Add(header);
+
+                PdfPTable table = new PdfPTable(5);
+                table.TotalWidth = 550f;
+                table.LockedWidth = true;
+                float[] widths = new float[] { 0.5f, 1.5f, 2f, 1f, 1f };
+                table.SetWidths(widths);
+                table.HorizontalAlignment = 1;
+
+                string[] headers = { "#", "Updated Date", "Datasets", "Delta", "Cumulative" };
+                foreach (var hText in headers)
+                {
+                    PdfPCell cell = new PdfPCell(new Phrase(hText, new Font(Font.FontFamily.TIMES_ROMAN, 11, Font.BOLD)));
+                    cell.HorizontalAlignment = 1;
+                    cell.VerticalAlignment = 1;
+                    cell.BackgroundColor = new BaseColor(System.Drawing.Color.LightGray);
+                    cell.FixedHeight = 30f;
+                    table.AddCell(cell);
+                }
+
+                for (int i = 0; i < abc.Count; i++)
+                {
+                    table.AddCell(new Phrase((i + 1).ToString(), new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                    table.AddCell(new Phrase(abc[i].UpdatedDate ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                    table.AddCell(new Phrase(abc[i].Datasets ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                    table.AddCell(new Phrase(abc[i].Delta ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                    table.AddCell(new Phrase(abc[i].Cumulative ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                }
+                document.Add(table);
+
+                document.Close();
+                byte[] data = memoryStream.ToArray();
+                return File(data, "application/pdf", "dataset_update_logs_" + DateTime.Now.Ticks + ".pdf");
+            }
+        }
+
         public async Task<IActionResult> ScreeningDatabaseLogsExportReport(string startDate, string endDate, bool IsPDF)
         {
 
