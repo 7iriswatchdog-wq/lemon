@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using AML.Core.Common.StaticResource;
 using AML.Core.DataContract.Authentication;
 using AML.Core.DataContract.Enum;
@@ -1739,24 +1741,25 @@ public IActionResult CustomerList(DataTableModel model,
 
             var userId = _clientHandler.GetUserId();
 
+            // Date parsing for dd/MM/yyyy format
+            if (!string.IsNullOrEmpty(startDate) && startDate.Contains("/"))
+            {
+                if (DateTime.TryParseExact(startDate, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime pStart))
+                    startDate = pStart.ToString("yyyy-MM-dd");
+            }
+            if (!string.IsNullOrEmpty(endDate) && endDate.Contains("/"))
+            {
+                if (DateTime.TryParseExact(endDate, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime pEnd))
+                    endDate = pEnd.ToString("yyyy-MM-dd");
+            }
+
 
             var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
-            if (endDate == null)
+            if (string.IsNullOrEmpty(cust_type) || cust_type == "0")
             {
-                endDate = System.DateTime.Now.ToString();
+                cust_type = null;
             }
-            if (cust_type == "INDIVIDUAL")
-            {
-                cust_type = "I";
-            }
-            else if (cust_type == "CORPORATE")
-            {
-                cust_type = "C";
-            }
-            else if (cust_type == "SHAREHOLDER")
-            {
-                cust_type = "S";
-            }
+
             if (riskLevel == "1")
             {
                 riskLevel = "Low Risk";
@@ -1773,8 +1776,30 @@ public IActionResult CustomerList(DataTableModel model,
             {
                 caseStatusChange = null;
             }
-            //List<CaseReportListModel> abc = new List<CaseReportListModel>();
             List<CaseReportListModel> abc = new List<CaseReportListModel>();
+
+            #region Dynamic Filter Summary
+            string filter = "None";
+            List<string> filterList = new List<string>();
+
+            if (createdBy != 0) filterList.Add("User: " + createdBy);
+            if (!string.IsNullOrEmpty(cust_type) && cust_type != "0")
+            {
+                filterList.Add("Customer Type: " + cust_type);
+            }
+            if (caseStatus != 10)
+            {
+                // Simple label mapping for status
+                string statusLabel = Enum.GetName(typeof(ReportsCaseStatus), caseStatus) ?? caseStatus.ToString();
+                filterList.Add("Status: " + statusLabel);
+            }
+            if (!string.IsNullOrEmpty(riskLevel)) filterList.Add("Risk: " + riskLevel);
+            if (!string.IsNullOrEmpty(matchScore)) filterList.Add("Score: " + matchScore);
+            if (!string.IsNullOrEmpty(searchValue)) filterList.Add("Search: " + searchValue);
+
+            if (filterList.Count > 0) filter = string.Join(", ", filterList);
+            #endregion
+
             if (searchValue != "" && searchValue != null)
             {
                 abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportListBySearch(new CaseReportRequestDTO
@@ -1851,28 +1876,6 @@ public IActionResult CustomerList(DataTableModel model,
             downloadModel.TotalRows = abc.Count;
             var clientData = _customerCaseService.GetClientDetailsByID(_clientHandler.GetClientId());
 
-            #region FiltersCheck
-            string filter = "";
-            if (userId != 0)
-            {
-                filter += "User ";
-            }
-
-
-            if (cust_type != "0")
-            {
-                if (filter == "")
-                {
-                    filter += "Customer Type";
-                    ;
-                }
-                else
-                {
-                    filter += ", Customer Type";
-                }
-            }
-            #endregion
-            #region status
             //string caseStatus = "";
             //switch (status)
             //{
@@ -1904,7 +1907,6 @@ public IActionResult CustomerList(DataTableModel model,
             //        caseStatus = "";
             //        break;
             //}
-            #endregion
 
             //Excel Export
             if (!isPDF)
@@ -2010,10 +2012,10 @@ public IActionResult CustomerList(DataTableModel model,
                 header.SpacingAfter = 30f;
                 header.DefaultCell.Border = 0;
                 //header.DefaultCell.ExtraParagraphSpace= 1;
-                PdfPCell hd = new PdfPCell(new Phrase("Report               :   Case Management Report"));
+                PdfPCell hd = new PdfPCell(new Phrase("Report               :   Case Report"));
 
                 PdfPCell _hd = new PdfPCell(new Phrase("\n"));
-                PdfPCell dateRange = new PdfPCell(new Phrase("Date Range       :   " + startDate + "  to  " + endDate));
+                PdfPCell dateRange = new PdfPCell(new Phrase("Date Range       :   " + (startDate ?? "All") + "  to  " + (endDate ?? "All")));
                 PdfPCell _dateRange = new PdfPCell(new Phrase("\n"));
                 PdfPCell filters = new PdfPCell(new Phrase("Filters Applied   :   " + filter));
                 PdfPCell _filters = new PdfPCell(new Phrase("\n"));
@@ -2202,24 +2204,29 @@ public IActionResult CustomerList(DataTableModel model,
 
             var userId = _clientHandler.GetUserId();
 
+            // Date parsing for dd/MM/yyyy format
+            if (!string.IsNullOrEmpty(startDate) && startDate.Contains("/"))
+            {
+                if (DateTime.TryParseExact(startDate, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime pStart))
+                    startDate = pStart.ToString("yyyy-MM-dd");
+            }
+            if (!string.IsNullOrEmpty(endDate) && endDate.Contains("/"))
+            {
+                if (DateTime.TryParseExact(endDate, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime pEnd))
+                    endDate = pEnd.ToString("yyyy-MM-dd");
+            }
+
 
             var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
             if (endDate == null)
             {
                 endDate = System.DateTime.Now.ToString();
             }
-            if (cust_type == "INDIVIDUAL")
+            if (string.IsNullOrEmpty(cust_type) || cust_type == "0")
             {
-                cust_type = "I";
+                cust_type = null;
             }
-            else if (cust_type == "CORPORATE")
-            {
-                cust_type = "C";
-            }
-            else if (cust_type == "SHAREHOLDER")
-            {
-                cust_type = "S";
-            }
+
             if (riskLevel == "1")
             {
                 riskLevel = "Low Risk";
@@ -2236,6 +2243,28 @@ public IActionResult CustomerList(DataTableModel model,
             {
                 caseStatusChange = null;
             }
+
+            #region Dynamic Filter Summary
+            string filter = "None";
+            List<string> filterList = new List<string>();
+
+            if (createdBy != 0) filterList.Add("User: " + createdBy);
+            if (!string.IsNullOrEmpty(cust_type) && cust_type != "0")
+            {
+                filterList.Add("Customer Type: " + cust_type);
+            }
+            if (caseStatus != 10)
+            {
+                string statusLabel = Enum.GetName(typeof(ReportsCaseStatus), caseStatus) ?? caseStatus.ToString();
+                filterList.Add("Status: " + statusLabel);
+            }
+            if (!string.IsNullOrEmpty(riskLevel)) filterList.Add("Risk: " + riskLevel);
+            if (!string.IsNullOrEmpty(matchScore)) filterList.Add("Score: " + matchScore);
+            if (!string.IsNullOrEmpty(searchValue)) filterList.Add("Search: " + searchValue);
+
+            if (filterList.Count > 0) filter = string.Join(", ", filterList);
+            #endregion
+
             //List<CaseReportListModel> abc = new List<CaseReportListModel>();
             List<CaseModel> abc = new List<CaseModel>();
             if (searchValue != "" && searchValue != null)
@@ -2301,27 +2330,6 @@ public IActionResult CustomerList(DataTableModel model,
             var clientData = _customerCaseService.GetClientDetailsByID(_clientHandler.GetClientId());
 
 
-            #region FiltersCheck
-            string filter = "";
-            if (userId != 0)
-            {
-                filter += "User ";
-            }
-            
-            
-            if (cust_type != "0")
-            {
-                if (filter == "")
-                {
-                    filter += "Customer Type";
-                    ;
-                }
-                else
-                {
-                    filter += ", Customer Type";
-                }
-            }
-            #endregion
             #region status
             //string caseStatus = "";
             //switch (status)
@@ -2362,8 +2370,7 @@ public IActionResult CustomerList(DataTableModel model,
                 CaseManagementReportExcelModel excelModel = new CaseManagementReportExcelModel();
                 List<CaseManagementReportExcelModel> excelData =new List<CaseManagementReportExcelModel>();
                 //List<CaseReportExcelModel> excelData1 = new List<CaseReportExcelModel>();
-                string details = "Report               :   Due Diligence Report" + "\r\n" + "Date Range       :   " + startDate + "  to  " + endDate + "\r\n" +
-
+                string details = "Report               :   Due Diligence Report" + "\r\n" + "Date Range       :   " + (startDate ?? "All") + "  to  " + (endDate ?? "All") + "\r\n" +
                                           "Filters Applied  :   " + filter;
                 excelModel.Details = details;
 
@@ -2883,10 +2890,10 @@ public IActionResult CustomerList(DataTableModel model,
                 header.SpacingAfter = 30f;
                 header.DefaultCell.Border = 0;
                 //header.DefaultCell.ExtraParagraphSpace= 1;
-                PdfPCell hd = new PdfPCell(new Phrase("Report               :   Completed Cases Report"));
+                PdfPCell hd = new PdfPCell(new Phrase("Report               :   Due Diligence Report"));
 
                 PdfPCell _hd = new PdfPCell(new Phrase("\n"));
-                PdfPCell dateRange = new PdfPCell(new Phrase("Date Range       :   " + startDate + "  to  " + endDate));
+                PdfPCell dateRange = new PdfPCell(new Phrase("Date Range       :   " + (startDate ?? "All") + "  to  " + (endDate ?? "All")));
                 PdfPCell _dateRange = new PdfPCell(new Phrase("\n"));
                 PdfPCell filters = new PdfPCell(new Phrase("Filters Applied   :   " + filter));
                 PdfPCell _filters = new PdfPCell(new Phrase("\n"));
@@ -3073,17 +3080,9 @@ public IActionResult CustomerList(DataTableModel model,
             {
                 endDate = System.DateTime.Now.ToString();
             }
-            if (cust_type == "INDIVIDUAL")
+            if (string.IsNullOrEmpty(cust_type) || cust_type == "0")
             {
-                cust_type = "I";
-            }
-            else if (cust_type == "CORPORATE")
-            {
-                cust_type = "C";
-            }
-            else if (cust_type == "SHAREHOLDER")
-            {
-                cust_type = "S";
+                cust_type = null;
             }
             
             List<CaseReportListModel> abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetKycReportList(new CaseReportRequestDTO()
@@ -3101,69 +3100,28 @@ public IActionResult CustomerList(DataTableModel model,
             downloadModel.TotalRows = abc.Count;
             var clientData = _customerCaseService.GetClientDetailsByID(_clientHandler.GetClientId());
 
-            #region FiltersCheck
-            string filter = "";
-            if (userID != "0")
+            #region Dynamic Filter Summary
+            string filter = "None";
+            List<string> filterList = new List<string>();
+
+            if (userID != "0" && !string.IsNullOrEmpty(userID)) filterList.Add("User: " + userID);
+            if (updatedByUserID != "0" && !string.IsNullOrEmpty(updatedByUserID)) filterList.Add("Updated By: " + updatedByUserID);
+            
+            if (!string.IsNullOrEmpty(cust_type) && cust_type != "0")
             {
-                filter += "User ";
+                filterList.Add("Customer Type: " + cust_type);
+            }
+            
+            if (!string.IsNullOrEmpty(status) && status != "10")
+            {
+                // Simple label mapping for status
+                int sInt = 10;
+                int.TryParse(status, out sInt);
+                string statusLabel = Enum.GetName(typeof(ReportsCaseStatus), sInt) ?? status;
+                filterList.Add("Status: " + statusLabel);
             }
 
-            if (updatedByUserID != "0")
-            {
-                if (filter == "")
-                {
-                    filter += "Updated By";
-                }
-                else
-                {
-                    filter += ", Updated By";
-                }
-            }
-            if (cust_type != "0")
-            {
-                if (filter == "")
-                {
-                    filter += "Customer Type";
-                    ;
-                }
-                else
-                {
-                    filter += ", Customer Type";
-                }
-            }
-            #endregion
-            #region status
-            string caseStatus = "";
-            switch (status)
-            {
-                case "0":
-                    caseStatus = "Pending";
-                    break;
-                case "1":
-                    caseStatus = "Assigned";
-                    break;
-                case "2":
-                    caseStatus = "Approved";
-                    break;
-                case "3":
-                    caseStatus = "Rejected";
-                    break;
-                case "4":
-                    caseStatus = "Closed";
-                    break;
-                case "5":
-                    caseStatus = "Auto Approved";
-                    break;
-                case "6":
-                    caseStatus = "Pending Case Created From Daily Scheduler";
-                    break;
-                case "10":
-                    caseStatus = "All";
-                    break;
-                default:
-                    caseStatus = "";
-                    break;
-            }
+            if (filterList.Count > 0) filter = string.Join(", ", filterList);
             #endregion
 
             //Excel Export
@@ -3172,9 +3130,8 @@ public IActionResult CustomerList(DataTableModel model,
                 CaseKycReportExcelModel excelModel = new CaseKycReportExcelModel();
                 List<CaseKycReportExcelModel> excelData = new List<CaseKycReportExcelModel>();
                 //List<CaseReportExcelModel> excelData1 = new List<CaseReportExcelModel>();
-                string details = "Report               :   Kyc Report" + "\r\n" + "Date Range       :   " + startDate + "  to  " + endDate + "\r\n" +
-                                          "Filters Applied  :   " + filter + "\r\n" + "Created by        :   " + clientData.ClientName + "\r\n" +
-                                          "Case Status       :   " + caseStatus;
+                string details = "Report               :   Kyc Report" + "\r\n" + "Date Range       :   " + (startDate ?? "All") + "  to  " + (endDate ?? "All") + "\r\n" +
+                                          "Filters Applied  :   " + filter;
                 excelModel.Details = details;
 
                 excelData = (from res in abc
@@ -3281,38 +3238,24 @@ public IActionResult CustomerList(DataTableModel model,
                 //header.DefaultCell.ExtraParagraphSpace= 1;
                 PdfPCell hd = new PdfPCell(new Phrase("Report               :   Kyc Report"));
                 PdfPCell _hd = new PdfPCell(new Phrase("\n"));
-                PdfPCell dateRange = new PdfPCell(new Phrase("Date Range       :   " + startDate + "  to  " + endDate));
+                PdfPCell dateRange = new PdfPCell(new Phrase("Date Range       :   " + (startDate ?? "All") + "  to  " + (endDate ?? "All")));
                 PdfPCell _dateRange = new PdfPCell(new Phrase("\n"));
                 PdfPCell filters = new PdfPCell(new Phrase("Filters Applied   :   " + filter));
                 PdfPCell _filters = new PdfPCell(new Phrase("\n"));
-                PdfPCell createdBy = new PdfPCell(new Phrase("Created by        :   " + clientData.ClientName));
-                PdfPCell _createdBy = new PdfPCell(new Phrase("\n"));
-                PdfPCell caseStat = new PdfPCell(new Phrase("Case Status      :   " + caseStatus));
-                PdfPCell _caseStat = new PdfPCell(new Phrase("\n"));
 
-                //hd.HorizontalAlignment = Element.ALIGN_LEFT;
-                //hd.FixedHeight = 20f;
-                //hd.VerticalAlignment = 1;
                 hd.Border = 0;
                 dateRange.Border = 0;
                 filters.Border = 0;
-                createdBy.Border = 0;
-                caseStat.Border = 0;
                 _hd.Border = 0;
                 _dateRange.Border = 0;
                 _filters.Border = 0;
-                _createdBy.Border = 0;
-                _caseStat.Border = 0;
+
                 header.AddCell(hd);
                 header.AddCell(_hd);
                 header.AddCell(dateRange);
                 header.AddCell(_dateRange);
                 header.AddCell(filters);
                 header.AddCell(_filters);
-                header.AddCell(createdBy);
-                header.AddCell(_createdBy);
-                header.AddCell(caseStat);
-                header.AddCell(_caseStat);
                 document.Add(header);
                 PdfPTable table = new PdfPTable(7);
                 table.TotalWidth = 550f;
@@ -5050,7 +4993,7 @@ public IActionResult CustomerList(DataTableModel model,
                 ClientReportExcelModel excelModel = new ClientReportExcelModel();
                 List<ClientReportExcelModel> excelData = new List<ClientReportExcelModel>();
                 //List<CaseReportExcelModel> excelData1 = new List<CaseReportExcelModel>();
-                string details = "Report               :   Client Search count Report" + "\r\n" + "Date Range       :   " + startDate + "  to  " + endDate + "\r\n";
+                string details = "Report               :   Client Search Count Report" + "\r\n" + "Date Range       :   " + (startDate ?? "All") + "  to  " + (endDate ?? "All") + "\r\n";
                 excelModel.Details = details;
 
                 excelData = (from res in matchrecordsList
@@ -5113,7 +5056,7 @@ public IActionResult CustomerList(DataTableModel model,
                 SchedulerlogsReportExcelModel excelModel = new SchedulerlogsReportExcelModel();
                 List<SchedulerlogsReportExcelModel> excelData = new List<SchedulerlogsReportExcelModel>();
                 //List<CaseReportExcelModel> excelData1 = new List<CaseReportExcelModel>();
-                string details = "Report               :   Scheduler Log reports";
+                string details = "Report               :   Scheduler Log Report" + "\r\n" + "Date Range       :   " + (startDate ?? "All") + "  to  " + (endDate ?? "All");
                 excelModel.Details = details;
 
                 excelData = (from res in abc
@@ -5185,8 +5128,12 @@ public IActionResult CustomerList(DataTableModel model,
                 header.SpacingAfter = 30f;
                 header.DefaultCell.Border = 0;
                 PdfPCell hd = new PdfPCell(new Phrase("Report               :   Scheduler Log Report"));
+                PdfPCell dateRange = new PdfPCell(new Phrase("Date Range       :   " + (startDate ?? "All") + "  to  " + (endDate ?? "All")));
                 hd.Border = 0;
+                dateRange.Border = 0;
                 header.AddCell(hd);
+                header.AddCell(new PdfPCell(new Phrase("\n")) { Border = 0 });
+                header.AddCell(dateRange);
                 document.Add(header);
 
                 PdfPTable table = new PdfPTable(5);
@@ -5672,7 +5619,19 @@ public IActionResult CustomerList(DataTableModel model,
                 header.LockedWidth = true;
                 header.HorizontalAlignment = Element.ALIGN_LEFT;
                 header.SpacingAfter = 20f;
-                header.AddCell(new PdfPCell(new Phrase("Report : Dataset Update Logs")) { Border = 0 });
+                header.AddCell(new PdfPCell(new Phrase("Report               :   Dataset Update Logs Report")) { Border = 0 });
+                PdfPCell dateRange = new PdfPCell(new Phrase("Date Range       :   " + (startDate ?? "All") + "  to  " + (endDate ?? "All")));
+                dateRange.Border = 0;
+                header.AddCell(new PdfPCell(new Phrase("\n")) { Border = 0 });
+                header.AddCell(dateRange);
+                
+                if (!string.IsNullOrEmpty(datasets))
+                {
+                    PdfPCell filters = new PdfPCell(new Phrase("Filters Applied   :   Datasets: " + datasets));
+                    filters.Border = 0;
+                    header.AddCell(new PdfPCell(new Phrase("\n")) { Border = 0 });
+                    header.AddCell(filters);
+                }
                 document.Add(header);
 
                 PdfPTable table = new PdfPTable(5);
@@ -5738,7 +5697,7 @@ public IActionResult CustomerList(DataTableModel model,
                 ScreeningDatabaselogsReportExcelModel excelModel = new ScreeningDatabaselogsReportExcelModel();
                 List<ScreeningDatabaselogsReportExcelModel> excelData = new List<ScreeningDatabaselogsReportExcelModel>();
                 //List<CaseReportExcelModel> excelData1 = new List<CaseReportExcelModel>();
-                string details = "Report               : Screening Database Log reports";
+                string details = "Report               :   Screening Database Logs Report" + "\r\n" + "Date Range       :   " + (startDate ?? "All") + "  to  " + (endDate ?? "All");
                 excelModel.Details = details;
 
                 excelData = (from res in abc
@@ -5804,16 +5763,12 @@ public IActionResult CustomerList(DataTableModel model,
                 header.DefaultCell.Border = 0;
                 //header.DefaultCell.ExtraParagraphSpace= 1;
                 PdfPCell hd = new PdfPCell(new Phrase("Report               :   Screening Database Logs Report"));
-                PdfPCell _hd = new PdfPCell(new Phrase("\n"));
-
-
-                //hd.HorizontalAlignment = Element.ALIGN_LEFT;
-                //hd.FixedHeight = 20f;
-                //hd.VerticalAlignment = 1;
+                PdfPCell dateRange = new PdfPCell(new Phrase("Date Range       :   " + (startDate ?? "All") + "  to  " + (endDate ?? "All")));
                 hd.Border = 0;
-
-                _hd.Border = 0;
-
+                dateRange.Border = 0;
+                header.AddCell(hd);
+                header.AddCell(new PdfPCell(new Phrase("\n")) { Border = 0 });
+                header.AddCell(dateRange);
                 document.Add(header);
                 PdfPTable table = new PdfPTable(5);
                 table.TotalWidth = 550f;
