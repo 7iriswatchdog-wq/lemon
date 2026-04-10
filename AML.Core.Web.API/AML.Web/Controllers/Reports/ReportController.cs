@@ -5425,13 +5425,12 @@ public IActionResult CustomerList(DataTableModel model,
         {
             try
             {
-                List<DatasetUpdateLogsModel> abc = _mapper.Map<List<DatasetUpdateLogsModel>>(
-                    _reportService.GetDatasetUpdateLogs(new CaseReportRequestDTO()
-                    {
-                        StartDate = startDate,
-                        EndDate = endDate,
-                        Datasets = datasets
-                    }));
+                var logs = _reportService.GetDatasetUpdateLogs(new CaseReportRequestDTO()
+                {
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    Datasets = datasets
+                });
 
                 // Get client ID from session
                 var clientId = _clientHandler.GetClientId();
@@ -5443,12 +5442,11 @@ public IActionResult CustomerList(DataTableModel model,
                     if (clientDetails != null && clientDetails.ApplicationStartDate.HasValue)
                     {
                         DateTime clientContractStartDate = clientDetails.ApplicationStartDate.Value;
-                        
-                        // Filter out records before the client's contract start date
-                            }
-                        ).ToList();
+                        logs = logs.Where(log => log.UpdatedDate >= clientContractStartDate).ToList();
                     }
                 }
+
+                List<DatasetUpdateLogsModel> abc = _mapper.Map<List<DatasetUpdateLogsModel>>(logs);
 
                 // Search
                 if (!string.IsNullOrEmpty(model.search?.value))
@@ -5490,8 +5488,6 @@ public IActionResult CustomerList(DataTableModel model,
                             ? abc.OrderBy(x => x.Cumulative)
                             : abc.OrderByDescending(x => x.Cumulative);
                         break;
-
-                    
 
                     default:
                         sortedData = abc.OrderByDescending(x => x.UpdatedDate);
