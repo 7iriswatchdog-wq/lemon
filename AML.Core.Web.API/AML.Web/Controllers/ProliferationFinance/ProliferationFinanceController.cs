@@ -42,6 +42,10 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using iTextSharp.text;
+using iTextSharp.text.pdf;
+using Fingers10.ExcelExport.ActionResults;
+using AML.Web.CustomFilters;
 
 namespace AML.Web.Controllers.ProliferationFinance
 {
@@ -147,6 +151,159 @@ namespace AML.Web.Controllers.ProliferationFinance
                 return Json(new { success = false, message = ex.Message });
             }
         }
+
+        [HttpGet("/ProliferationFinance/ExportPFCaseReport")]
+        public async Task<IActionResult> ExportPFCaseReport(DateTime? startDate, DateTime? endDate, string customerType, string status, string searchValue, bool isPDF)
+        {
+            try
+            {
+                var clientId = _clientHandler.GetClientId();
+                var response = _proliferationFinanceService.GetAllCases(clientId);
+                if (response.Status != 200) return BadRequest("Failed to fetch data");
+
+                var data = response.Result;
+
+                // Filtering alignment with GetAllCases
+                if (startDate.HasValue) data = data.FindAll(x => x.CreatedOn >= startDate.Value);
+                if (endDate.HasValue) data = data.FindAll(x => x.CreatedOn <= endDate.Value.AddDays(1).AddSeconds(-1));
+                if (!string.IsNullOrEmpty(customerType) && customerType != "0") data = data.FindAll(x => x.CustomerType == customerType);
+                if (!string.IsNullOrEmpty(status) && status != "0") data = data.FindAll(x => x.Status == status);
+
+                // Search Value filtering
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    searchValue = searchValue.ToLower();
+                    data = data.FindAll(x =>
+                        (x.CorporateId != null && x.CorporateId.ToLower().Contains(searchValue)) ||
+                        (x.CompanyName != null && x.CompanyName.ToLower().Contains(searchValue)) ||
+                        (x.ChemicalName != null && x.ChemicalName.ToLower().Contains(searchValue)) ||
+                        (x.HsCode != null && x.HsCode.ToLower().Contains(searchValue)) ||
+                        (x.CasNumber != null && x.CasNumber.ToLower().Contains(searchValue)) ||
+                        (x.Id.ToString().Contains(searchValue))
+                    );
+                }
+
+                // Service Group Filter
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+                if (_UserGroupModel.Name != "Senior Management")
+                {
+                    data = data.FindAll(x => x.Status != "Submit to Senior Management");
+                }
+
+                if (!isPDF)
+                {
+                    var excelData = data.Select(x => new PFReportExcelModel
+                    {
+                        CaseId = "PF-" + x.Id,
+                        CreatedDate = x.CreatedOn.ToString("dd/MM/yyyy HH:mm:ss"),
+                        CorporateId = x.CorporateId,
+                        CompanyName = x.CompanyName,
+                        CustomerType = x.CustomerType,
+                        ChemicalName = x.ChemicalName,
+                        HsCode = x.HsCode,
+                        CasNumber = x.CasNumber,
+                        Status = x.Status,
+                        Remarks = x.StatusReason
+                    }).ToList();
+
+                    string filterStr = $"Type: {customerType ?? "All"}, Status: {status ?? "All"}";
+                    var headerModel = new PFReportExcelModel
+                    {
+                        Details = $"Report               :   Proliferation Finance Case Report\r\nDate Range       :   {startDate?.ToString("dd/MM/yyyy") ?? "All"} to {endDate?.ToString("dd/MM/yyyy") ?? "All"}\r\nFilters Applied  :   {filterStr}"
+                    };
+                    excelData.Insert(0, headerModel);
+
+                    return new ExcelResult<PFReportExcelModel>(excelData, "Proliferation Finance Report", "PF_Case_Report_" + DateTime.Now.Ticks);
+                }
+
+                // PDF Export using iTextSharp
+                var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
+                var logos = "wwwroot/img/" + clientDetails.DocumentFileName;
+                var clientName = clientDetails.ClientName;
+
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    Document document = new Document(PageSize.A4.Rotate(), 15, 15, 15, 15);
+                    PdfWriter writer = PdfWriter.GetInstance(document, ms);
+                    document.Open();
+
+                    // Logo & Header
+                    PdfPTable logoTable = new PdfPTable(2);
+                    logoTable.WidthPercentage = 100;
+                    logoTable.SetWidths(new float[] { 3f, 1f });
+                    
+                    PdfPCell nameCell = new PdfPCell(new Phrase(clientName, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 18, iTextSharp.text.Font.BOLD)));
+                    nameCell.Border = 0;
+                    nameCell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                    logoTable.AddCell(nameCell);
+
+                    if (System.IO.File.Exists(logos))
+                    {
+                        iTextSharp.text.Image logoImg = iTextSharp.text.Image.GetInstance(logos);
+                        logoImg.ScaleToFit(100, 50);
+                        PdfPCell imgCell = new PdfPCell(logoImg);
+                        imgCell.Border = 0;
+                        imgCell.HorizontalAlignment = Element.ALIGN_RIGHT;
+                        logoTable.AddCell(imgCell);
+                    }
+                    else logoTable.AddCell("");
+
+                    document.Add(logoTable);
+                    document.Add(new Paragraph("\n"));
+
+                    // Report Metadata
+                    document.Add(new Phrase("Report               :   Proliferation Finance Case Report\n", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 11)));
+                    document.Add(new Phrase($"Date Range       :   {startDate?.ToString("dd/MM/yyyy") ?? "All"} to {endDate?.ToString("dd/MM/yyyy") ?? "All"}\n", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 11)));
+                    document.Add(new Phrase($"Filters Applied  :   Type: {customerType ?? "All"}, Status: {status ?? "All"}\n", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 11)));
+                    document.Add(new Paragraph("\n"));
+
+                    // Data Table
+                    PdfPTable table = new PdfPTable(8);
+                    table.WidthPercentage = 100;
+                    table.SetWidths(new float[] { 0.4f, 0.8f, 1.2f, 1f, 1.8f, 1.8f, 0.6f, 0.8f });
+
+                    string[] headers = { "#", "CASE ID", "CREATED DATE", "CORPORATE ID", "COMPANY NAME", "PRODUCT / CHEMICAL", "SCORE", "STATUS" };
+                    foreach (var h in headers)
+                    {
+                        PdfPCell cell = new PdfPCell(new Phrase(h, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 10, iTextSharp.text.Font.BOLD)));
+                        cell.BackgroundColor = BaseColor.LIGHT_GRAY;
+                        cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                        cell.Padding = 5;
+                        table.AddCell(cell);
+                    }
+
+                    int count = 1;
+                    foreach (var item in data)
+                    {
+                        table.AddCell(new Phrase(count++.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
+                        table.AddCell(new Phrase("PF-" + item.Id, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
+                        table.AddCell(new Phrase(item.CreatedOn.ToString("dd/MM/yyyy HH:mm"), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
+                        table.AddCell(new Phrase(item.CorporateId, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
+                        table.AddCell(new Phrase(item.CompanyName, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
+                        table.AddCell(new Phrase(item.ChemicalName, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
+                        table.AddCell(new Phrase(item.Score ?? "0", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
+                        table.AddCell(new Phrase(item.Status, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
+                    }
+
+                    document.Add(table);
+
+                    // Footer
+                    document.Add(new Paragraph("\n"));
+                    document.Add(new iTextSharp.text.pdf.draw.LineSeparator(1f, 100f, BaseColor.BLACK, Element.ALIGN_LEFT, 1));
+                    document.Add(new Phrase("Computer generated report; hence no signature is required.\n", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
+                    document.Add(new Phrase("Date of Extraction  :   " + DateTime.Now, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
+
+                    document.Close();
+                    return File(ms.ToArray(), "application/pdf", $"PF_Case_Report_{DateTime.Now:yyyyMMdd}.pdf");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Error generating report: " + ex.Message);
+            }
+        }
+
 
         [HttpPost]
         public IActionResult SearchChemicalsOnly([FromBody] ProliferationFinanceModel model)
