@@ -3173,21 +3173,36 @@ hasSearched: false,
                     <template x-for="item in flattenedItems()" :key="item.id">
 
                         <div :data-id="item.id"
-                             :style="'margin-left:' + (item.depth * 30) + 'px'">
+                             :style="'margin-left:' + (item.depth * 30) + 'px'"
+                             :class="item.isScreened ? 'opacity-75 grayscale-[0.5]' : ''">
 
-                            <div class="flex gap-3 border p-3">
+                            <div class="flex items-center gap-3 border p-3 rounded-lg transition-all"
+                                 :class="item.isScreened ? 'bg-slate-50 border-slate-200' : 'bg-white border-blue-100 hover:border-blue-300 shadow-sm'">
 
-                                <span class="drag-handle cursor-move">☰</span>
+                                <template x-if="!item.isScreened">
+                                    <span class="drag-handle cursor-move p-1 hover:text-blue-600">☰</span>
+                                </template>
+                                <template x-if="item.isScreened">
+                                    <span class="p-1 text-slate-400">
+                                        <i data-lucide="lock" class="w-4 h-4"></i>
+                                    </span>
+                                </template>
 
-                                <span class="text-blue-600"
+                                <span class="text-blue-600 font-bold"
                                       x-text="item.displayId"></span>
 
-                                <span x-text="item.name"></span>
-
-                                <span x-text="'(' + item.type + ')'"></span>
-
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-medium text-slate-900" x-text="item.name"></span>
+                                        <span class="text-xs text-slate-400 uppercase font-bold" x-text="'(' + item.type.replace('_', ' ') + ')'"></span>
+                                    </div>
+                                    <template x-if="item.isScreened">
+                                        <p class="text-[10px] text-red-500 font-medium italic mt-0.5">
+                                            modifications are not allowed on screened shareholders
+                                        </p>
+                                    </template>
+                                </div>
                             </div>
-
                         </div>
 
                     </template>
@@ -5114,6 +5129,7 @@ function validateIdNumber($form, isSubmit = false) {
                             gender: item.gender || '',
                             relationship: item.relationship || '',
                             flagType: item.flagType || '',
+                            isScreened: false,
                         }));
 
                     } else {
@@ -5196,7 +5212,8 @@ function validateIdNumber($form, isSubmit = false) {
                         gender: item.gender || '',
                         relationship: item.relationship || '',
                         flagType: item.flagType || '',
-                        customerId:item.customerId
+                        customerId:item.customerId,
+                        isScreened: true,
                     };
                 });
 
