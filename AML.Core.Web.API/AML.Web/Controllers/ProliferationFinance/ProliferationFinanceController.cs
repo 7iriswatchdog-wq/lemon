@@ -129,7 +129,22 @@ namespace AML.Web.Controllers.ProliferationFinance
                         data = data.FindAll(x => x.CreatedOn <= endDate.Value.AddDays(1).AddSeconds(-1));
 
                     if (!string.IsNullOrEmpty(customerType) && customerType != "0")
-                        data = data.FindAll(x => x.CustomerType == customerType);
+                    {
+                        if (customerType == "Chemical")
+                        {
+                            data = data.FindAll(x => 
+                                (!string.IsNullOrEmpty(x.ChemicalName) && x.ChemicalName != "-" && x.ChemicalName != "N/A") ||
+                                (!string.IsNullOrEmpty(x.HsCode) && x.HsCode != "-" && x.HsCode != "N/A") ||
+                                (!string.IsNullOrEmpty(x.CasNumber) && x.CasNumber != "-" && x.CasNumber != "N/A") ||
+                                (!string.IsNullOrEmpty(x.Eccn) && x.Eccn != "-" && x.Eccn != "N/A") ||
+                                (!string.IsNullOrEmpty(x.SynonymName) && x.SynonymName != "-" && x.SynonymName != "N/A")
+                            );
+                        }
+                        else if (customerType == "Non-Chemical")
+                        {
+                            data = data.FindAll(x => !string.IsNullOrEmpty(x.SearchHitDetails) && x.SearchHitDetails.Trim() != "");
+                        }
+                    }
 
                     if (!string.IsNullOrEmpty(status) && status != "0")
                         data = data.FindAll(x => x.Status == status);
@@ -166,7 +181,25 @@ namespace AML.Web.Controllers.ProliferationFinance
                 // Filtering alignment with GetAllCases
                 if (startDate.HasValue) data = data.FindAll(x => x.CreatedOn >= startDate.Value);
                 if (endDate.HasValue) data = data.FindAll(x => x.CreatedOn <= endDate.Value.AddDays(1).AddSeconds(-1));
-                if (!string.IsNullOrEmpty(customerType) && customerType != "0") data = data.FindAll(x => x.CustomerType == customerType);
+                // Filtering alignment with GetAllCases (Datasets)
+                if (!string.IsNullOrEmpty(customerType) && customerType != "0")
+                {
+                    if (customerType == "Chemical")
+                    {
+                        data = data.FindAll(x => 
+                            (!string.IsNullOrEmpty(x.ChemicalName) && x.ChemicalName != "-" && x.ChemicalName != "N/A") ||
+                            (!string.IsNullOrEmpty(x.HsCode) && x.HsCode != "-" && x.HsCode != "N/A") ||
+                            (!string.IsNullOrEmpty(x.CasNumber) && x.CasNumber != "-" && x.CasNumber != "N/A") ||
+                            (!string.IsNullOrEmpty(x.Eccn) && x.Eccn != "-" && x.Eccn != "N/A") ||
+                            (!string.IsNullOrEmpty(x.SynonymName) && x.SynonymName != "-" && x.SynonymName != "N/A")
+                        );
+                    }
+                    else if (customerType == "Non-Chemical")
+                    {
+                        data = data.FindAll(x => !string.IsNullOrEmpty(x.SearchHitDetails) && x.SearchHitDetails.Trim() != "");
+                    }
+                }
+
                 if (!string.IsNullOrEmpty(status) && status != "0") data = data.FindAll(x => x.Status == status);
 
                 // Search Value filtering
@@ -207,7 +240,11 @@ namespace AML.Web.Controllers.ProliferationFinance
                         Remarks = x.StatusReason
                     }).ToList();
 
-                    string filterStr = $"Type: {customerType ?? "All"}, Status: {status ?? "All"}";
+                    string typeLabel = (customerType == "0" || string.IsNullOrEmpty(customerType)) ? "All" : customerType;
+                    string statusLabel = (status == "0" || string.IsNullOrEmpty(status)) ? "All" : status;
+                    string filterStr = $"Dataset: {typeLabel}, Status: {statusLabel}";
+                    if (!string.IsNullOrEmpty(searchValue)) filterStr += $", Search: {searchValue}";
+
                     var headerModel = new PFReportExcelModel
                     {
                         Details = $"Report               :   Proliferation Finance Case Report\r\nDate Range       :   {startDate?.ToString("dd/MM/yyyy") ?? "All"} to {endDate?.ToString("dd/MM/yyyy") ?? "All"}\r\nFilters Applied  :   {filterStr}"
@@ -253,9 +290,14 @@ namespace AML.Web.Controllers.ProliferationFinance
                     document.Add(new Paragraph("\n"));
 
                     // Report Metadata
+                    string typeLabel = (customerType == "0" || string.IsNullOrEmpty(customerType)) ? "All" : customerType;
+                    string statusLabel = (status == "0" || string.IsNullOrEmpty(status)) ? "All" : status;
+                    string filterStr = $"Dataset: {typeLabel}, Status: {statusLabel}";
+                    if (!string.IsNullOrEmpty(searchValue)) filterStr += $", Search: {searchValue}";
+
                     document.Add(new Phrase("Report               :   Proliferation Finance Case Report\n", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 11)));
                     document.Add(new Phrase($"Date Range       :   {startDate?.ToString("dd/MM/yyyy") ?? "All"} to {endDate?.ToString("dd/MM/yyyy") ?? "All"}\n", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 11)));
-                    document.Add(new Phrase($"Filters Applied  :   Type: {customerType ?? "All"}, Status: {status ?? "All"}\n", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 11)));
+                    document.Add(new Phrase($"Filters Applied  :   {filterStr}\n", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 11)));
                     document.Add(new Paragraph("\n"));
 
                     // Data Table
