@@ -243,8 +243,12 @@
                 @* <button onclick="filterTableActive()" id="searchButton" class="h-11 px-5 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm">
                     Search
                 </button> *@
-                <form method="post" action="/ClientCase/GeneratePdf" id="pdfForm" class="hidden">
-                    <input type="hidden" name="BatchID" id="pdfBatchId" />
+                <form method="post" action="/SanctionScreening/DownloadPDFs" id="pdfForm" class="hidden">
+                    <input type="hidden" name="activeTable" id="pdfActiveTable" />
+                    <input type="hidden" name="Name" id="pdfName" />
+                    <input type="hidden" name="Nationality" id="pdfNationality" />
+                    <input type="hidden" name="DOB" id="pdfDOB" />
+                    <input type="hidden" name="customerType" id="pdfCustomerType" />
                     <button type="submit" id="btnPdf"></button>
                 </form>
                 
@@ -966,16 +970,17 @@ console.log("rawData3",rawData3);
         // }
 
         function exportPdf() {
-            const batchId = $('#hdnBatchId').val();
-            if(batchId) {
-                $('#pdfBatchId').val(batchId);
-                $('#btnPdf').click();
-            } else {
-                if (window.toastr) {
-                    toastr.warning("PDF export is only available for Search Logs with a valid record.");
-                } else {
-                    alert("PDF export is only available for Search Logs with a valid record.");
-                }
+            // Populate form with current filters
+            $('#pdfName').val($('#name').val());
+            $('#pdfNationality').val($('#nationality').val());
+            $('#pdfDOB').val($('#DOB').val());
+            $('#pdfCustomerType').val($('#customertype').val());
+            $('#pdfActiveTable').val(activeTable);
+
+            // Trigger submit safely
+            const form = document.getElementById('pdfForm');
+            if (form) {
+                document.getElementById('btnPdf').click();
             }
         }
 
