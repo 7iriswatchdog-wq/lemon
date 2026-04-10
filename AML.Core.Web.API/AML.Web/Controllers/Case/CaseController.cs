@@ -2556,13 +2556,14 @@ namespace AML.Web.Controllers.Case
                 CaseCommentModel remarkModel = new CaseCommentModel();
                 remarkModel.CaseId = model.CaseId;
                 remarkModel.Comment = model.Comment;
+                remarkModel.CommentType = "Hold Remarks";
                 remarkModel.CreatedBy = _clientHandler.GetUserId();
                 var remarkResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
             }
             CaseCommentModel commentModel = new CaseCommentModel();
             commentModel.CaseId = model.CaseId;
             commentModel.Comment = comment;// ✅ FIXED
-            commentModel.CommentType = "On Hold";
+            commentModel.CommentType = "Hold";
             commentModel.CreatedBy = _clientHandler.GetUserId();
             var commentResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(commentModel));
 
