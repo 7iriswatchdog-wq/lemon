@@ -868,7 +868,7 @@ namespace AML.Core.Repository.CustomerCase
                     {
                         if (_riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].SelectedItemId != 0)
                         {
-                            riskItemlist += _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].Id + "Ã˜" + _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].SelectedItemId + "Â¥";
+                            riskItemlist += _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].Id + "Ø" + _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].SelectedItemId + "¥";
                             index2++;
                         }
 
@@ -916,7 +916,7 @@ namespace AML.Core.Repository.CustomerCase
                     {
                         if (_riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].SelectedItemId != 0)
                         {
-                            rowData += _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].Id + "Ã˜" + _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].SelectedItemId + "Â¥";
+                            rowData += _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].Id + "Ø" + _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].SelectedItemId + "¥";
                             index++;
                         }
                     }
@@ -938,7 +938,7 @@ namespace AML.Core.Repository.CustomerCase
             }
             return serviceResponse;
 
-             }
+        }
         public ServiceResponse<string> GetCustomerId(string  CustomerId)
         {
             ServiceResponse<string> serviceResponse = new ServiceResponse<string>();
@@ -981,25 +981,22 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_thershold", _shareholderDTO.Thershold);
                 parameters.Add("@p_clientid", _shareholderDTO.ClientId);
                 parameters.Add("@p_userid", _shareholderDTO.UserId);
-                parameters.Add("@p_companycode", _shareholderDTO.CompanyCode);
                 parameters.Add("@p_companyname", _shareholderDTO.CompanyName);
                 parameters.Add("@p_employer", _shareholderDTO.Employer);
                 parameters.Add("@p_GoldenVisa", _shareholderDTO.GoldenVisa);
                 parameters.Add("@p_residence", _shareholderDTO.Residence);
-                parameters.Add("@p_docfilename", _shareholderDTO.DocumentFileName);
-                parameters.Add("@p_custtype", _shareholderDTO.CustType);
-                parameters.Add("@p_docfullpath", _shareholderDTO.DocFullPath);
                 parameters.Add("@p_employerindustry", _shareholderDTO.EmployerIndustry);
                 parameters.Add("@p_employersector", _shareholderDTO.EmployerSector);
                 parameters.Add("@p_sowsofcountry", _shareholderDTO.SOWSOFCountry);
+                //parameters.Add("@p_docfullpath", _shareholderDTO.DocFullPath);
+                parameters.Add("@p_docfilename", _shareholderDTO.DocumentFileName);
+                parameters.Add("@p_custtype", _shareholderDTO.CustType);
+                parameters.Add("@p_docfullpath", _shareholderDTO.DocFullPath);
                 parameters.Add("@p_tradelicenseauthority", _shareholderDTO.TradeLicenseAuthority);
                 parameters.Add("@p_tradelicensesector", _shareholderDTO.TradeLicenseSector);
                 parameters.Add("@p_gender", _shareholderDTO.Gender);
                 parameters.Add("@p_relationship", _shareholderDTO.Relationship);
                 parameters.Add("@p_flag", _shareholderDTO.FlagType);
-                parameters.Add("@p_parentid", _shareholderDTO.ParentId);
-                parameters.Add("@p_displayid", _shareholderDTO.DisplayId);
-
                 var response = ExecuteScalar("ins_shareholders_data", parameters, commandType: CommandType.StoredProcedure).ParseString();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Customer master added successfully.";
@@ -1020,9 +1017,12 @@ namespace AML.Core.Repository.CustomerCase
             {
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_id", id);
+                
+                
+
                 var response = ExecuteScalar("Del_shareholders", parameters, commandType: CommandType.StoredProcedure).ParseString();
                 serviceResponse.Result = response;
-                serviceResponse.Message = "Shareholder deleted successfully.";
+                serviceResponse.Message = "Customer master added successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
             }
             catch (Exception ex)
@@ -1040,9 +1040,12 @@ namespace AML.Core.Repository.CustomerCase
             {
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_companyCode", companyCode);
+
+
+
                 var response = ExecuteScalar("Del_shareholders_companycode", parameters, commandType: CommandType.StoredProcedure).ParseString();
                 serviceResponse.Result = response;
-                serviceResponse.Message = "Pending shareholders deleted successfully.";
+                serviceResponse.Message = "Customer master added successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
             }
             catch (Exception ex)
@@ -1053,25 +1056,6 @@ namespace AML.Core.Repository.CustomerCase
             return serviceResponse;
         }
 
-        public ServiceResponse<string> UpdateParentId(int id, int? parentId)
-        {
-            ServiceResponse<string> serviceResponse = new ServiceResponse<string>();
-            try
-            {
-                var parameters = new DynamicParameters();
-                parameters.Add("@p_id", id);
-                parameters.Add("@p_parentid", parentId);
-                string query = "UPDATE tempshareholdersdata SET parentId = @p_parentid WHERE id = @p_id";
-                Execute(query, parameters, commandType: CommandType.Text);
-                serviceResponse.Message = "Parent ID updated successfully.";
-                serviceResponse.Status = StaticResource.SuccessStatusCode;
-            }
-            catch (Exception ex)
-            {
-                serviceResponse.Message = ex.Message;
-                serviceResponse.Status = StaticResource.FailStatusCode;
-            }
-            return serviceResponse;
-        }
-}
+
+    }
 }
