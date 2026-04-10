@@ -103,7 +103,7 @@ namespace AML.Core.RepositoryContract.CustomerCase
 
         ServiceResponse<List<ShareholderDTO>> GetAllShareHolders(int clientId,string companyCode,int userId,string customerType);
 
-        ServiceResponse<List<ShareholderDTO>> GetAllCaseCreatedShareHolders(int clientId, string companyCode, int userId);
+        ServiceResponse<List<CustomerCaseDTO>> GetAllCaseCreatedShareHolders(int clientId, string companyCode, int userId);
 
 
     }

@@ -2213,7 +2213,7 @@ namespace AML.Core.Service.CustomerCase
             return _CustomerCaseRepository.GetAllShareHolders(clientid, companyCode, userId, customerType).Result;
         }
 
-        public List<ShareholderDTO> GetAllCaseCreatedShareHolders(int clientid, string companyCode, int userId)
+        public List<CustomerCaseDTO> GetAllCaseCreatedShareHolders(int clientid, string companyCode, int userId)
         {
             //Perform business requirements here
             return _CustomerCaseRepository.GetAllCaseCreatedShareHolders(clientid, companyCode, userId).Result;

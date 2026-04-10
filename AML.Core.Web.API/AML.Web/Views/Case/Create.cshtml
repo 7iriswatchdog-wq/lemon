@@ -560,6 +560,7 @@ hasSearched: false,
                                                                     <input type="hidden" :name="'Shareholders[' + index + '].Gender'" :value="item.gender">
                                                                     <input type="hidden" :name="'Shareholders[' + index + '].Relationship'" :value="item.relationship">
                                                                     <input type="hidden" :name="'Shareholders[' + index + '].FlagType'" :value="item.flagType">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].CustomerId'" :value="item.customerId">
                                                                     @* :value="item.documentFileName"> *@
                                                                     
                                                                     
@@ -3351,13 +3352,20 @@ hasSearched: false,
                     window.addEventListener('beforeunload', () => {
                     sessionStorage.removeItem('activeShareholderTab');
                 });
-                            document.addEventListener('alpine:init', () => {
+                    //         document.addEventListener('alpine:init', () => {
 
-                        Alpine.store('screeningStore', {
-                            screeningList: []
-                        });
+                    //     Alpine.store('screeningStore', {
+                    //         screeningList: []
+                    //     });
 
-                    });
+                    // });
+             document.addEventListener('alpine:init', () => {
+                Alpine.store('screeningStore', {
+                    pendingItems: [],
+                    caseCreatedItems: [],
+                    screeningList: []
+                });
+            });
 
                        $(function () {
     // Initialize validation for multiple forms
@@ -4996,87 +5004,91 @@ function validateIdNumber($form, isSubmit = false) {
                                 });
 
                                 // Load shareholders
-           window.addEventListener('load-pending-shareholders', async (event) => {
-                debugger;
+
+                        window.addEventListener('load-pending-shareholders', async (event) => {
                 this.isLoading = true;
 
                 try {
+                                 let response = await fetch(`/corporate/GetPendingShareholders?companyCode=${this.companyCode}&customerType=${'I'}`);
+                                let data = await response.json();
 
-                                let response = await fetch(`/corporate/GetPendingShareholders?companyCode=${this.companyCode}&customerType=${'I'}`);
-                    let data = await response.json();
+                                console.log(data);
 
-                    console.log(data);
+                                const skipModal = event?.detail?.skipModal ?? false;
+                                            let store = Alpine.store('screeningStore');
+                                if (Array.isArray(data) && data.length > 0) {
 
-                    const skipModal = event?.detail?.skipModal ?? false;
+                                    this.hasPending = true;
 
-                    if (Array.isArray(data) && data.length > 0) {
+                                    // Save globally
+                                    window.pendingShareholderData = data;
 
-                        this.hasPending = true;
+                                    // Populate modal list
+                                                          let uniqueCompanies = [...new Set(data.map(x => x.companyCode))];
 
-                        // Save globally
-                        window.pendingShareholderData = data;
+                                                let html = "";
 
-                        // Populate modal list
-                                              let uniqueCompanies = [...new Set(data.map(x => x.companyCode))];
+                                                uniqueCompanies.forEach(code => {
 
-                                    let html = "";
+                                                            html += `
+                                                    <label class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-sm">
 
-                                    uniqueCompanies.forEach(code => {
+                                                        <div class="flex items-center gap-3 cursor-pointer">
 
-                                                html += `
-                                        <label class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-sm">
+                                                            <input type="radio"
+                                                                   name="pendingCompany"
+                                                                   value="${code}"
+                                                                   class="w-4 h-4 text-blue-600 border-slate-300">
 
-                                            <div class="flex items-center gap-3 cursor-pointer">
+                                                            <span class="font-medium text-slate-700">
+                                                                ${code}
+                                                            </span>
 
-                                                <input type="radio"
-                                                       name="pendingCompany"
-                                                       value="${code}"
-                                                       class="w-4 h-4 text-blue-600 border-slate-300">
+                                                        </div>
 
-                                                <span class="font-medium text-slate-700">
-                                                    ${code}
-                                                </span>
+                                                        <button onclick="deletePendingCompany('${code}')"
+                                                            class="ml-auto text-red-500 hover:text-red-700 text-lg font-bold leading-none">
+                                                            ×
+                                                        </button>
 
-                                            </div>
+                                                    </label>
 
-                                            <button onclick="deletePendingCompany('${code}')"
-                                                class="ml-auto text-red-500 hover:text-red-700 text-lg font-bold leading-none">
-                                                ×
-                                            </button>
+                                                `;
 
-                                        </label>
-                                        
-                                    `;
+                                                });
 
-                                    });
+                                        document.getElementById("pendingCompanyList").innerHTML = html;
 
-                            document.getElementById("pendingCompanyList").innerHTML = html;
+                                    // Show modal ONLY if skipModal = false
+                                                if (!skipModal && !this.skipPendingModal) {
+                                                    $('#rollbackModal').removeClass('hidden').addClass('flex');
 
-                        // Show modal ONLY if skipModal = false
-                                    if (!skipModal && !this.skipPendingModal) {
-                                        $('#rollbackModal').removeClass('hidden').addClass('flex');
-
-                                        // After first display, prevent future popup
-                                        this.skipPendingModal = true;
-                                    }
-
+                                                    // After first display, prevent future popup
+                                                    this.skipPendingModal = true;
+                                                }
+                        // Set company details
                         this.companyCode = data[0].companyCode;
-                        this.companyName = (data[0].firstName || data[0].lastName) ? `${data[0].firstName || ''} ${data[0].lastName || ''}`.trim() : data[0].companyName;;
+                        this.companyName = (data[0].firstName || data[0].lastName)
+                            ? `${data[0].firstName || ''} ${data[0].lastName || ''}`.trim()
+                            : data[0].companyName;
+
                         this.thershold = data[0].thershold;
-                                                
+
                         $('#CompanyCodeInput').val(this.companyCode);
                         $('#CompanyCode').text(this.companyCode);
-                                    $('#CompanyCodeHidden').val(this.companyCode);
-                                                               $('#CompanyNameHidden').val(this.companyName);
-                                                               $('#CompanyThershold').val(this.thershold);
+                        $('#CompanyCodeHidden').val(this.companyCode);
+                        $('#CompanyNameHidden').val(this.companyName);
+                        $('#CompanyThershold').val(this.thershold);
                         $('#CompanyName').text(this.companyName);
                         $('#Thershold').val(this.thershold);
 
-                        Alpine.store('screeningStore').screeningList = data.map(item => ({
+                        // ✅ Save pending separately
+                        store.pendingItems = data.map(item => ({
                             id: Number(item.id),
                             name: item.name,
                             type: item.type,
                             parentId: item.parentId ? Number(item.parentId) : null,
+                            displayId: item.displayId || item.idNumber || '',
                             initials: item.name.split(' ').map(x => x[0]).join('').toUpperCase(),
                             companyCode: item.companyCode || '',
                             tradeLicence: item.tradeLicence || '',
@@ -5092,45 +5104,405 @@ function validateIdNumber($form, isSubmit = false) {
                             employer: item.employer || '',
                             goldenVisa: item.goldenVisa || '',
                             documentFileName: item.documentFileName || '',
-                            docFullPath:item.docFullPath || '',
-                            residence:item.residence || '',
-                            employerIndustry:item.employerIndustry || '',
-                            employerSector:item.employerSector || '',
-                            sowsofCountry:item.sowsofCountry || '',
-                            tradeLicenseAuthority:item.tradeLicenseAuthority || '',
-                            tradeLicenseSector:item.tradeLicenseSector || '',
-                            gender : item.gender || '',
-                            relationship : item.relationship || '',
-                            flagType    : item.flagType || '',
-
+                            docFullPath: item.docFullPath || '',
+                            residence: item.residence || '',
+                            employerIndustry: item.employerIndustry || '',
+                            employerSector: item.employerSector || '',
+                            sowsofCountry: item.sowsofCountry || '',
+                            tradeLicenseAuthority: item.tradeLicenseAuthority || '',
+                            tradeLicenseSector: item.tradeLicenseSector || '',
+                            gender: item.gender || '',
+                            relationship: item.relationship || '',
+                            flagType: item.flagType || '',
                         }));
-                                    
-                        // Trigger tree refresh
-                        window.dispatchEvent(new Event('store-updated'));
 
                     } else {
-
                         this.hasPending = false;
+                        store.pendingItems = [];
 
                         $('#rollbackModal').addClass('hidden').removeClass('flex');
-                                     // $('#CompanyCodeInput').val('');
-                                     // $('#CompanyCode').text('');
-                                     //  $('#CompanyCodeHidden').val('');
-                                     //   $('#CompanyName').text('');
-                                     //  $('#Thershold').val('');
-
-                        Alpine.store('screeningStore').screeningList = [];
-
-                        window.dispatchEvent(new Event('store-updated'));
                     }
+
+                    // ✅ MERGE BOTH DATASETS
+                    store.screeningList = [
+                        ...(store.pendingItems || []),
+                        ...(store.caseCreatedItems || [])
+                    ];
+
+                    window.dispatchEvent(new Event('store-updated'));
 
                 } catch (e) {
                     console.error(e);
                 }
 
                 this.isLoading = false;
-
             });
+                                 window.addEventListener('load-casecreated-shareholders', async (event) => {
+                this.isLoading = true;
+
+                try {
+                    let response = await fetch(`/corporate/GetCaseCreatedPendingShareholders?companyCode=${this.companyCode}`);
+                    let data = await response.json();
+
+                                console.log(data);
+
+                    let store = Alpine.store('screeningStore');
+
+                               if (Array.isArray(data) && data.length > 0) {
+
+                store.caseCreatedItems = data.map(item => {
+
+                    const fullName = `${item.firstName || ''} ${item.lastName || ''}`.trim()
+                                     || item.companyName
+                                     || '';
+
+                    return {
+                        id: Number(item.id),
+                        name: fullName,
+
+                        initials: fullName
+                            ? fullName
+                                .split(' ')
+                                .filter(x => x)
+                                .map(x => x[0])
+                                .join('')
+                                .toUpperCase()
+                            : '',
+
+                        type: item.type,
+                        parentId: item.parentId ? Number(item.parentId) : null,
+                        displayId: item.displayId || item.idNumber || '',
+                        companyCode: item.companyCode || '',
+                        tradeLicence: item.tradeLicence || '',
+                        nationality: item.nationality || '',
+                        registrationDate: item.registrationDate || '',
+                        idType: item.idType || '',
+                        idNumber: item.idNumber || '',
+                        designation: item.designation || '',
+                        share: item.share || 0,
+                        issueDate: item.issueDate || null,
+                        idExpiry: item.idExpiry || null,
+                        cif: item.cif || '',
+                        employer: item.employer || '',
+                        goldenVisa: item.goldenVisa || '',
+                        documentFileName: item.documentFileName || '',
+                        docFullPath: item.docFullPath || '',
+                        residence: item.residence || '',
+                        employerIndustry: item.employerIndustry || '',
+                        employerSector: item.employerSector || '',
+                        sowsofCountry: item.sowsofCountry || '',
+                        tradeLicenseAuthority: item.tradeLicenseAuthority || '',
+                        tradeLicenseSector: item.tradeLicenseSector || '',
+                        gender: item.gender || '',
+                        relationship: item.relationship || '',
+                        flagType: item.flagType || '',
+                        customerId:item.customerId
+                    };
+                });
+
+            } else {
+                        store.caseCreatedItems = [];
+                    }
+
+                    // ✅ MERGE
+                    store.screeningList = [
+                        ...(store.pendingItems || []),
+                        ...(store.caseCreatedItems || [])
+                    ];
+
+                    window.dispatchEvent(new Event('store-updated'));
+
+                } catch (e) {
+                    console.error(e);
+                }
+
+                this.isLoading = false;
+            });
+           // window.addEventListener('load-pending-shareholders', async (event) => {
+           //      debugger;
+           //      this.isLoading = true;
+
+           //      try {
+
+           //                      let response = await fetch(`/corporate/GetPendingShareholders?companyCode=${this.companyCode}&customerType=${'I'}`);
+           //          let data = await response.json();
+
+           //          console.log(data);
+
+           //          const skipModal = event?.detail?.skipModal ?? false;
+
+           //          if (Array.isArray(data) && data.length > 0) {
+
+           //              this.hasPending = true;
+
+           //              // Save globally
+           //              window.pendingShareholderData = data;
+
+           //              // Populate modal list
+           //                                    let uniqueCompanies = [...new Set(data.map(x => x.companyCode))];
+
+           //                          let html = "";
+
+           //                          uniqueCompanies.forEach(code => {
+
+           //                                      html += `
+           //                              <label class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-sm">
+
+           //                                  <div class="flex items-center gap-3 cursor-pointer">
+
+           //                                      <input type="radio"
+           //                                             name="pendingCompany"
+           //                                             value="${code}"
+           //                                             class="w-4 h-4 text-blue-600 border-slate-300">
+
+           //                                      <span class="font-medium text-slate-700">
+           //                                          ${code}
+           //                                      </span>
+
+           //                                  </div>
+
+           //                                  <button onclick="deletePendingCompany('${code}')"
+           //                                      class="ml-auto text-red-500 hover:text-red-700 text-lg font-bold leading-none">
+           //                                      ×
+           //                                  </button>
+
+           //                              </label>
+                                        
+           //                          `;
+
+           //                          });
+
+           //                  document.getElementById("pendingCompanyList").innerHTML = html;
+
+           //              // Show modal ONLY if skipModal = false
+           //                          if (!skipModal && !this.skipPendingModal) {
+           //                              $('#rollbackModal').removeClass('hidden').addClass('flex');
+
+           //                              // After first display, prevent future popup
+           //                              this.skipPendingModal = true;
+           //                          }
+
+           //              this.companyCode = data[0].companyCode;
+           //              this.companyName = (data[0].firstName || data[0].lastName) ? `${data[0].firstName || ''} ${data[0].lastName || ''}`.trim() : data[0].companyName;;
+           //              this.thershold = data[0].thershold;
+                                                
+           //              $('#CompanyCodeInput').val(this.companyCode);
+           //              $('#CompanyCode').text(this.companyCode);
+           //                          $('#CompanyCodeHidden').val(this.companyCode);
+           //                                                     $('#CompanyNameHidden').val(this.companyName);
+           //                                                     $('#CompanyThershold').val(this.thershold);
+           //              $('#CompanyName').text(this.companyName);
+           //              $('#Thershold').val(this.thershold);
+
+           //              Alpine.store('screeningStore').screeningList = data.map(item => ({
+           //                  id: Number(item.id),
+           //                  name: item.name,
+           //                  type: item.type,
+           //                  parentId: item.parentId ? Number(item.parentId) : null,
+           //                  initials: item.name.split(' ').map(x => x[0]).join('').toUpperCase(),
+           //                  companyCode: item.companyCode || '',
+           //                  tradeLicence: item.tradeLicence || '',
+           //                  nationality: item.nationality || '',
+           //                  registrationDate: item.registrationDate || '',
+           //                  idType: item.idType || '',
+           //                  idNumber: item.idNumber || '',
+           //                  designation: item.designation || '',
+           //                  share: item.share || 0,
+           //                  issueDate: item.issueDate || null,
+           //                  idExpiry: item.idExpiry || null,
+           //                  cif: item.cif || '',
+           //                  employer: item.employer || '',
+           //                  goldenVisa: item.goldenVisa || '',
+           //                  documentFileName: item.documentFileName || '',
+           //                  docFullPath:item.docFullPath || '',
+           //                  residence:item.residence || '',
+           //                  employerIndustry:item.employerIndustry || '',
+           //                  employerSector:item.employerSector || '',
+           //                  sowsofCountry:item.sowsofCountry || '',
+           //                  tradeLicenseAuthority:item.tradeLicenseAuthority || '',
+           //                  tradeLicenseSector:item.tradeLicenseSector || '',
+           //                  gender : item.gender || '',
+           //                  relationship : item.relationship || '',
+           //                  flagType    : item.flagType || '',
+
+           //              }));
+                                    
+           //              // Trigger tree refresh
+           //              window.dispatchEvent(new Event('store-updated'));
+
+           //          } else {
+
+           //              this.hasPending = false;
+
+           //              $('#rollbackModal').addClass('hidden').removeClass('flex');
+           //                           // $('#CompanyCodeInput').val('');
+           //                           // $('#CompanyCode').text('');
+           //                           //  $('#CompanyCodeHidden').val('');
+           //                           //   $('#CompanyName').text('');
+           //                           //  $('#Thershold').val('');
+
+           //              Alpine.store('screeningStore').screeningList = [];
+
+           //              window.dispatchEvent(new Event('store-updated'));
+           //          }
+
+           //      } catch (e) {
+           //          console.error(e);
+           //      }
+
+           //      this.isLoading = false;
+
+           //  });
+            // window.addEventListener('load-casecreated-shareholders', async (event) => {
+            //      debugger;
+            //      this.isLoading = true;
+
+            //      try {
+
+            //         let response = await fetch(`/corporate/GetCaseCreatedPendingShareholders?companyCode=${this.companyCode}`);
+            //          let data = await response.json();
+
+            //          console.log(data);
+
+            //          const skipModal = event?.detail?.skipModal ?? false;
+
+            //          if (Array.isArray(data) && data.length > 0) {
+
+            //              this.hasPending = true;
+
+            //              // Save globally
+            //              window.pendingShareholderData = data;
+
+            //              // Populate modal list
+            //                                    let uniqueCompanies = [...new Set(data.map(x => x.companyCode))];
+
+            //                          let html = "";
+
+            //                          uniqueCompanies.forEach(code => {
+
+            //                                      html += `
+            //                              <label class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-sm">
+
+            //                                  <div class="flex items-center gap-3 cursor-pointer">
+
+            //                                      <input type="radio"
+            //                                             name="pendingCompany"
+            //                                             value="${code}"
+            //                                             class="w-4 h-4 text-blue-600 border-slate-300">
+
+            //                                      <span class="font-medium text-slate-700">
+            //                                          ${code}
+            //                                      </span>
+
+            //                                  </div>
+
+            //                                  <button onclick="deletePendingCompany('${code}')"
+            //                                      class="ml-auto text-red-500 hover:text-red-700 text-lg font-bold leading-none">
+            //                                      ×
+            //                                  </button>
+
+            //                              </label>
+
+            //                          `;
+
+            //                          });
+
+            //                  document.getElementById("pendingCompanyList").innerHTML = html;
+
+            //              // Show modal ONLY if skipModal = false
+            //                          if (!skipModal && !this.skipPendingModal) {
+            //                              $('#rollbackModal').removeClass('hidden').addClass('flex');
+
+            //                              // After first display, prevent future popup
+            //                              this.skipPendingModal = true;
+            //                          }
+
+            //              this.companyCode = data[0].companyCode;
+            //              this.companyName = (data[0].firstName || data[0].lastName) ? `${data[0].firstName || ''} ${data[0].lastName || ''}`.trim() : data[0].companyName;;
+            //              this.thershold = data[0].thershold;
+
+            //              $('#CompanyCodeInput').val(this.companyCode);
+            //              $('#CompanyCode').text(this.companyCode);
+            //                          $('#CompanyCodeHidden').val(this.companyCode);
+            //                                                     $('#CompanyNameHidden').val(this.companyName);
+            //                                                     $('#CompanyThershold').val(this.thershold);
+            //              $('#CompanyName').text(this.companyName);
+            //              $('#Thershold').val(this.thershold);
+
+            //              Alpine.store('screeningStore').existingItems = data.map(item => ({
+            //                  id: Number(item.id),
+            //                  name: item.name,
+            //                  type: item.type,
+            //                  parentId: item.parentId ? Number(item.parentId) : null,
+            //                  displayId: item.displayId || item.idNumber || '',
+            //                  initials: item.name.split(' ').map(x => x[0]).join('').toUpperCase(),
+            //                  companyCode: item.companyCode || '',
+            //                  tradeLicence: item.tradeLicence || '',
+            //                  nationality: item.nationality || '',
+            //                  registrationDate: item.registrationDate || '',
+            //                  idType: item.idType || '',
+            //                  idNumber: item.idNumber || '',
+            //                  designation: item.designation || '',
+            //                  share: item.share || 0,
+            //                  issueDate: item.issueDate || null,
+            //                  idExpiry: item.idExpiry || null,
+            //                  cif: item.cif || '',
+            //                  employer: item.employer || '',
+            //                  goldenVisa: item.goldenVisa || '',
+            //                  documentFileName: item.documentFileName || '',
+            //                  docFullPath:item.docFullPath || '',
+            //                  residence:item.residence || '',
+            //                  employerIndustry:item.employerIndustry || '',
+            //                  employerSector:item.employerSector || '',
+            //                  sowsofCountry:item.sowsofCountry || '',
+            //                  tradeLicenseAuthority:item.tradeLicenseAuthority || '',
+            //                  tradeLicenseSector:item.tradeLicenseSector || '',
+            //                  gender : item.gender || '',
+            //                  relationship : item.relationship || '',
+            //                  flagType    : item.flagType || '',
+            //              }));
+
+            //              // Bridge Logic for existing items
+            //              let store = Alpine.store('screeningStore');
+            //              store.existingItems.forEach(item => {
+            //                  if (item.parentId === null && item.displayId && item.displayId.includes('.')) {
+            //                      let parts = item.displayId.split('.');
+            //                      parts.pop();
+            //                      let parentDisplayId = parts.join('.');
+            //                      let parent = store.existingItems.find(p => p.displayId === parentDisplayId);
+            //                      if (parent) item.parentId = parent.id;
+            //                  }
+            //              });
+
+
+
+
+            //                          // Trigger tree refresh
+            //              window.dispatchEvent(new Event('store-updated'));
+
+            //          } else {
+
+            //              this.hasPending = false;
+
+            //              $('#rollbackModal').addClass('hidden').removeClass('flex');
+            //                           // $('#CompanyCodeInput').val('');
+            //                           // $('#CompanyCode').text('');
+            //                           //  $('#CompanyCodeHidden').val('');
+            //                           //   $('#CompanyName').text('');
+            //                           //  $('#Thershold').val('');
+
+            //              Alpine.store('screeningStore').screeningList = [];
+
+            //              window.dispatchEvent(new Event('store-updated'));
+            //          }
+
+            //      } catch (e) {
+            //          console.error(e);
+            //      }
+
+            //      this.isLoading = false;
+
+            //  });
                
                             }
                         }
@@ -5465,10 +5837,26 @@ function validateIdNumber($form, isSubmit = false) {
                                         toastr.success("Saved Successfully");
 
                                         // Refresh pending shareholders via event
-                                        //window.dispatchEvent(new Event('load-pending-shareholders'));
-                                                    window.dispatchEvent(new CustomEvent('load-pending-shareholders', {
-                                                    detail: { skipModal: true }
-                                                }));
+                                        //        window.dispatchEvent(new CustomEvent('load-casecreated-shareholders', {
+                                        //                         detail: { skipModal: true }
+                                        //                   }));
+                                        // //window.dispatchEvent(new Event('load-pending-shareholders'));
+                                        //        window.dispatchEvent(new CustomEvent('load-pending-shareholders', {
+                                        //             detail: { skipModal: true }
+                                        //         }));
+                                                    await new Promise(resolve => {
+                window.dispatchEvent(new CustomEvent('load-casecreated-shareholders', {
+                    detail: { skipModal: true }
+                }));
+                setTimeout(resolve, 300);
+            });
+
+            await new Promise(resolve => {
+                window.dispatchEvent(new CustomEvent('load-pending-shareholders', {
+                    detail: { skipModal: true }
+                }));
+                setTimeout(resolve, 300);
+            });
 
                                         // Optionally, clear forms after submit
                                                                this.forms.forEach((form, index) => {

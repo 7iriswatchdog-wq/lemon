@@ -1552,16 +1552,16 @@ namespace AML.Core.Repository.CustomerCase
             }
             return serviceResponse;
         }
-        public ServiceResponse<List<ShareholderDTO>> GetAllCaseCreatedShareHolders(int clientid, string companyCode, int userId)
+        public ServiceResponse<List<CustomerCaseDTO>> GetAllCaseCreatedShareHolders(int clientid, string companyCode, int userId)
         {
-            ServiceResponse<List<ShareholderDTO>> serviceResponse = new ServiceResponse<List<ShareholderDTO>>();
+            ServiceResponse<List<CustomerCaseDTO>> serviceResponse = new ServiceResponse<List<CustomerCaseDTO>>();
             try
             {
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_clientid", clientid);
                 parameters.Add("@p_companyCode", companyCode);
                 parameters.Add("@p_userid", userId);
-                serviceResponse.Result = Get<ShareholderDTO>("get_all_CaseCreated_shareholders", parameters, commandType: CommandType.StoredProcedure).ToList();
+                serviceResponse.Result = Get<CustomerCaseDTO>("get_all_CaseCreated_shareholders", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Customer cases fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
             }

@@ -1592,213 +1592,8 @@ namespace AML.Web.Controllers.Corporate
                 CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(companyid);
                  
                 bool isCorporate = sh.Type == "Corporate_Corp" || sh.Type == "Individual_Corp";
-                if (_CustomerCaseDTO.Type != "Corporate" && _CustomerCaseDTO.Type != "Individual")
-                {
-                    if (sh.Type == "Corporate_Ind")
-                    {
-                        if (_CustomerCaseDTO.Type == "Corporate_Corp")
-                        {
-                            sh.Type = "Corporate_Corp_Ind"; // ✅ correct
-                        }
-
-                    }
-                    else
-                    {
-                        if (_CustomerCaseDTO.Type == "Corporate_Corp")
-                        {
-                            sh.Type = "Corporate_Corp_Corp"; // ✅ correct
-                        }
-
-                    }
-                    if (sh.Type == "Individual_Corp")
-                    {
-                        if (_CustomerCaseDTO.Type == "Individual_Corp")
-                        {
-                            sh.Type = "Individual_Corp_Ind"; // ✅ correct
-                        }
-
-                    }
-
-                    CaseModel caseModel = new CaseModel
-                        {
-                            LastName = sh.Name,
-                            Type = sh.Type,
-                            CustomerType = isCorporate ? "C" : "I",
-                            MatchCategory = isCorporate ? "CORPORATE" : "INDIVIDUAL",
-                            ClientId = sh.ClientID,
-                            //CreatedBy = sh.UserId,
-                            CompanyCode = _CustomerCaseDTO.CompanyCode,
-                            //CompanyName = sh.CompanyName,
-                            //Thershold = sh.Thershold,
-                            DOB = sh.RegistrationDate?.ToString("yyyy-MM-dd"),
-                            CustomerIdType = sh.IdType,
-                            CustomerIdNumber = sh.IdNumber,
-                            IdIssueDate = sh.IssueDate,
-                            IdExpiryDate = sh.IdExpiry,
-                            Nationality = sh.Nationality,
-                            Share = sh.Share,
-                            Designation = sh.Designation,
-                            Tradelicense = sh.TradeLicence,
-                            CIFNumber = sh.Cif,
-                            Residence = sh.Residence,
-                            Employer = sh.Employer,
-                            GoldenVisa = sh.GoldenVisa,
-                            EmployerIndustry = sh.EmployerIndustry,
-                            EmployerSector = sh.EmployerSector,
-                            SOWSOFCountry = sh.SOWSOFCountry,
-                            TradeLicenseAuthority = sh.TradeLicenseAuthority,
-                            TradeLicenseSector = sh.TradeLicenseSector,
-                            Gender = sh.Gender,
-                            Relationship = sh.Relationship,
-                            FlagType = sh.FlagType
-                        };
-                    var mainCaseId = sh.CompanyCode;
-
-                    parentIdMap[sh.CompanyCode] = mainCaseId;
-                    // Determine ParentId from TempId (everything before last dot)
-                    if (!string.IsNullOrEmpty(sh.DisplayId))
-                    {
-                        string parentTempId;
-
-                        if (sh.DisplayId.Contains("."))
-                        {
-                            parentTempId = sh.DisplayId.Substring(0, sh.DisplayId.LastIndexOf('.'));
-                        }
-                        else
-                        {
-                            // ✅ fallback to CompanyCode
-                            parentTempId = sh.CompanyCode;
-                        }
-
-                        if (parentIdMap.TryGetValue(parentTempId, out var parentId))
-                        {
-                            caseModel.ParentId = parentId;
-                        }
-                        else
-                        {
-                            //_log.LogWarning("Parent not found for key: {key}", parentTempId);
-
-                            // ✅ fallback (VERY IMPORTANT)
-                            caseModel.ParentId = mainCaseId;
-                        }
-                    }
-                    //if (sh.DisplayId.Contains("."))
-                    //{
-                    //    var lastDotIndex = sh.DisplayId.LastIndexOf('.');
-                    //    var parentTempId = sh.DisplayId.Substring(0, lastDotIndex);
-                    //    if (parentIdMap.ContainsKey(parentTempId))
-                    //        caseModel.ParentId = parentIdMap[parentTempId];
-                    //}
-
-                    // Map to DTO
-                    //var _ccDTO = _mapper.Map<CustomerCaseDTO>(caseModel);
-
-                    caseModel.ClientId = _clientHandler.GetClientId();
-                    caseModel.CreatedBy = _clientHandler.GetUserId();
-
-                    CustomerCaseDTO _ccDTO = _mapper.Map<CustomerCaseDTO>(caseModel);
-                    _ccDTO.ClientId = _clientHandler.GetClientId();
-                    _ccDTO.CreatedBy = _clientHandler.GetUserId();
-                    _ccDTO.Threshold = sh.Thershold == 0 ? checkThreshold : sh.Thershold;
-                    _ccDTO.DOB = Convert.ToDateTime(sh.RegistrationDate);
-                    _ccDTO.Nationality = caseModel.Nationality;
-                    _ccDTO.ScreeningOptions = screeningoption;
-
-
-                    // Create case in DB
-                    var result = _customerCaseService.Create(_ccDTO);
-                    if (result.Status != StaticResource.SuccessStatusCode)
-                    {
-                        _toastNotification.AddErrorToastMessage($"Failed to create shareholder {sh.Name}");
-                        continue;
-                    }
-
-                    // Get real CustomerId from DB
-                    var customerId = result.Result.Split('Ø')[1];
-                    parentIdMap[sh.DisplayId] = customerId; // map TempId -> real CustomerId
-
-                    if (!string.IsNullOrEmpty(sh.Document))
-                    {
-                        CaseDocumentModel _caseDoc = new CaseDocumentModel();
-                        _caseDoc.CaseId = _customerCaseService.GetCaseId(_ccDTO.CustomerId).ToString();
-                        _caseDoc.CreatedBy = _clientHandler.GetUserId();
-                        _caseDoc.CreatedOn = DateTime.Now;
-                        _caseDoc.ClientId = _clientHandler.GetClientId();
-
-                        _caseDoc.DocumentFileName = sh.Document;
-                        _caseDoc.DocumentFullPath = sh.DocumentFullPath; // or stored path
-                        _caseDoc.DocumentName = sh.Name;
-
-                        _caseDocumentService.Create(_mapper.Map<CaseDocumentDTO>(_caseDoc));
-                    }
-                    // Screening logic
-                    if (CallC6Screening == "Y")
-                    {
-                        _ccDTO.IsPep = true;
-                        _ccDTO.IsSan = true;
-                    }
-
-                    string body = string.Empty;
-                    using (StreamReader reader = new StreamReader(@"Views/Risk/RiskEmailBody.html"))
-                    {
-                        body = reader.ReadToEnd();
-                    }
-
-                    CustomerCaseDTO screeningResult;
-                    if (_ccDTO.CustomerType == "I")
-                        screeningResult = await _commonService.CustomerScreeningCall(_ccDTO, baseURL, baseC6URL, "INDIVIDUAL", body, _ccDTO.Threshold, customerId);
-                    else
-                        screeningResult = await _commonService.CustomerScreeningCall(_ccDTO, baseURL, baseC6URL, "CORPORATE", body, _ccDTO.Threshold, customerId);
-
-                    // Send mail if needed
-                    if (screeningResult.sendMail == 1)
-                        await SendScreendedMailAsync(body, caseModel, screeningResult);
-
-                    // Show toast messages based on screening
-                    if (screeningResult.IsMatched == 1 && screeningResult.MatchScore >= _ccDTO.Threshold)
-                    {
-                        caseRefId ??= _CustomerCaseDTO.CompanyCode;
-
-                        // Mark that at least one case was created
-                        isCaseCreated = true;
-                    }
-                    //_toastNotification.AddWarningToastMessage($"Customer {sh.Name} blocked, Case created");
-                    else if (screeningResult.IsMatched == 0 && screeningResult.MatchScore == 0)
-                    {
-                        caseRefId ??= _CustomerCaseDTO.CompanyCode;
-
-                        // Mark that at least one case was created
-                        isCaseCreated = true;
-                    }
-                    //_toastNotification.AddInfoToastMessage($"Customer Approved: no match found for {sh.Name}");
-                    else if (screeningResult.MatchScore > 0 && screeningResult.MatchScore < _ccDTO.Threshold)
-                    {
-                        caseRefId ??= _CustomerCaseDTO.CompanyCode;
-
-                        // Mark that at least one case was created
-                        isCaseCreated = true;
-                        //_toastNotification.AddInfoToastMessage($"Customer Approved: match score below threshold for {sh.Name}");
-                    }
-                    else
-                    {
-                        caseRefId ??= _CustomerCaseDTO.CompanyCode;
-
-                        // Mark that at least one case was created
-                        isCaseCreated = true;
-                        //_toastNotification.AddSuccessToastMessage($"Customer {sh.Name} Approved");
-                    }
-
-                    // Optional: Delete temp shareholder record if using temp table
-                    _customerCaseService.DeleteShareholders(sh.Id);
-
-                    if (!string.IsNullOrEmpty(sh.FlagType))
-                    {
-                        flagTypes.Add(sh.FlagType);
-                    }
-
-                }
-                else
-                {
+                
+                
                     CaseModel caseModel = new CaseModel
                     {
                         LastName = sh.Name,
@@ -1833,19 +1628,29 @@ namespace AML.Web.Controllers.Corporate
                         FlagType = sh.FlagType
                     };
 
-                    // Determine ParentId from TempId (everything before last dot)
-                    if (sh.DisplayId.Contains("."))
+                // Determine ParentId from TempId (everything before last dot)
+                //if (sh.DisplayId.Contains("."))
+                //{
+                //    var lastDotIndex = sh.DisplayId.LastIndexOf('.');
+                //    var parentTempId = sh.DisplayId.Substring(0, lastDotIndex);
+                //    if (parentIdMap.ContainsKey(parentTempId))
+                //        caseModel.ParentId = parentIdMap[parentTempId];
+                //}
+                if (!string.IsNullOrEmpty(sh.DisplayId) && sh.DisplayId.Contains("."))
+                {
+                    var parentTempId = sh.DisplayId.Substring(0, sh.DisplayId.LastIndexOf('.'));
+
+                    if (parentIdMap.TryGetValue(parentTempId, out var parentId))
                     {
-                        var lastDotIndex = sh.DisplayId.LastIndexOf('.');
-                        var parentTempId = sh.DisplayId.Substring(0, lastDotIndex);
-                        if (parentIdMap.ContainsKey(parentTempId))
-                            caseModel.ParentId = parentIdMap[parentTempId];
+                        caseModel.ParentId = parentId; // ✅ only for its actual parent
                     }
+                }
 
-                    // Map to DTO
-                    //var _ccDTO = _mapper.Map<CustomerCaseDTO>(caseModel);
 
-                    caseModel.ClientId = _clientHandler.GetClientId();
+                // Map to DTO
+                //var _ccDTO = _mapper.Map<CustomerCaseDTO>(caseModel);
+
+                caseModel.ClientId = _clientHandler.GetClientId();
                     caseModel.CreatedBy = _clientHandler.GetUserId();
 
                     CustomerCaseDTO _ccDTO = _mapper.Map<CustomerCaseDTO>(caseModel);
@@ -1855,20 +1660,37 @@ namespace AML.Web.Controllers.Corporate
                     _ccDTO.DOB = Convert.ToDateTime(sh.RegistrationDate);
                     _ccDTO.Nationality = caseModel.Nationality;
                     _ccDTO.ScreeningOptions = screeningoption;
+                string customerId = null;
 
-
-                    // Create case in DB
+                // ✅ STEP 2: Decide existing vs new
+                if (!string.IsNullOrEmpty(sh.CustomerId))
+                {
+                    // 👉 EXISTING CUSTOMER
+                    customerId = sh.CustomerId;
+                    if (!string.IsNullOrEmpty(sh.DisplayId))
+                    {
+                        parentIdMap[sh.DisplayId] = customerId;
+                    }
+                }
+                else
+                {
+                    // 👉 NEW CUSTOMER → create
                     var result = _customerCaseService.Create(_ccDTO);
+
                     if (result.Status != StaticResource.SuccessStatusCode)
                     {
                         _toastNotification.AddErrorToastMessage($"Failed to create shareholder {sh.Name}");
                         continue;
                     }
 
-                    // Get real CustomerId from DB
-                    var customerId = result.Result.Split('Ø')[1];
-                    parentIdMap[sh.DisplayId] = customerId; // map TempId -> real CustomerId
+                    customerId = result.Result.Split('Ø')[1];
 
+
+                    // ✅ STEP 3: ALWAYS MAP (VERY IMPORTANT)
+                    if (!string.IsNullOrEmpty(sh.DisplayId))
+                    {
+                        parentIdMap[sh.DisplayId] = customerId;
+                    }
                     if (!string.IsNullOrEmpty(sh.Document))
                     {
                         CaseDocumentModel _caseDoc = new CaseDocumentModel();
@@ -1948,11 +1770,12 @@ namespace AML.Web.Controllers.Corporate
                         flagTypes.Add(sh.FlagType);
                     }
                 }
+                }
 
                 
                 
 
-            }
+            
             
            
 
