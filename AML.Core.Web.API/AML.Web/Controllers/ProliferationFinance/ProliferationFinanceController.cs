@@ -1333,7 +1333,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 }
 
                             }
-                            if (hit.Decision == "True Match" || hit.Decision == "Potential Hits")
+                            if (hit.Decision == "True Match" || hit.Decision == "Potential Match")
                             {
                                 corpModel.DualUseGoods = "Yes";
                             }
@@ -1744,7 +1744,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 }
 
                             }
-                            if (hit.Decision == "True Match" || hit.Decision == "Potential Hits")
+                            if (hit.Decision == "True Match" || hit.Decision == "Potential Match")
                             {
                                 imodel.DualUseGoods = "Yes";
                             }
