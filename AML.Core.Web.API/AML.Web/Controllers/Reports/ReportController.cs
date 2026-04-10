@@ -2113,12 +2113,7 @@ public IActionResult CustomerList(DataTableModel model,
                     table.AddCell(new Phrase(downloadModel.Data[i].CustomerID, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(downloadModel.Data[i].CreatedOn, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(downloadModel.Data[i].CustomerType, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-                    string customerName = downloadModel.Data[i].CustomerName;
-                    if (string.IsNullOrEmpty(customerName))
-                    {
-                        customerName = (downloadModel.Data[i].FirstName + " " + (string.IsNullOrEmpty(downloadModel.Data[i].MiddleName) ? "" : downloadModel.Data[i].MiddleName + " ") + downloadModel.Data[i].LastName).Trim();
-                    }
-                    table.AddCell(new Phrase(customerName, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                    table.AddCell(new Phrase(downloadModel.Data[i].CustomerName, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(downloadModel.Data[i].Nationality, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(downloadModel.Data[i].CaseStatus, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     var riskValue = downloadModel.Data[i].CustomerType == "I"
@@ -2996,12 +2991,7 @@ public IActionResult CustomerList(DataTableModel model,
                     table.AddCell(new Phrase(downloadModel.Data[i].CustomerID, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(downloadModel.Data[i].CreatedOn, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(downloadModel.Data[i].CustomerType, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-                    string customerName = downloadModel.Data[i].CustomerName;
-                    if (string.IsNullOrEmpty(customerName))
-                    {
-                        customerName = (downloadModel.Data[i].FirstName + " " + (string.IsNullOrEmpty(downloadModel.Data[i].MiddleName) ? "" : downloadModel.Data[i].MiddleName + " ") + downloadModel.Data[i].LastName).Trim();
-                    }
-                    table.AddCell(new Phrase(customerName, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                    table.AddCell(new Phrase(downloadModel.Data[i].CustomerName, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(downloadModel.Data[i].Nationality, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(downloadModel.Data[i].CaseStatus, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     var riskValue = downloadModel.Data[i].CustomerType == "I"
@@ -3322,12 +3312,7 @@ public IActionResult CustomerList(DataTableModel model,
                     table.AddCell(new Phrase((i + 1).ToString(), new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(downloadModel.Data[i].CustomerID, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(downloadModel.Data[i].CustomerType, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-                    string customerName = downloadModel.Data[i].CustomerName;
-                    if (string.IsNullOrEmpty(customerName))
-                    {
-                        customerName = (downloadModel.Data[i].FirstName + " " + (string.IsNullOrEmpty(downloadModel.Data[i].MiddleName) ? "" : downloadModel.Data[i].MiddleName + " ") + downloadModel.Data[i].LastName).Trim();
-                    }
-                    table.AddCell(new Phrase(customerName, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                    table.AddCell(new Phrase(downloadModel.Data[i].CustomerName, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(downloadModel.Data[i].Status, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(downloadModel.Data[i].CreatedBy, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(downloadModel.Data[i].CreatedOn, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
@@ -5445,6 +5430,20 @@ public IActionResult CustomerList(DataTableModel model,
                         DateTime clientContractStartDate = clientDetails.ApplicationStartDate.Value;
                         
                         // Filter out records before the client's contract start date
+                        abc = abc.Where(log => 
+                            { 
+                                if (string.IsNullOrEmpty(log.UpdatedDate))
+                                    return false;
+                                
+                                try
+                                {
+                                    DateTime logDate = DateTime.Parse(log.UpdatedDate);
+                                    return logDate >= clientContractStartDate;
+                                }
+                                catch
+                                {
+                                    return false; // If date parsing fails, exclude the record
+                                }
                             }
                         ).ToList();
                     }
@@ -5532,21 +5531,33 @@ public IActionResult CustomerList(DataTableModel model,
         public async Task<IActionResult> DatasetUpdateLogsExportReport(bool isPDF, string startDate, string endDate, string datasets)
         {
             var clientId = _clientHandler.GetClientId();
-            var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
-            var logs = _reportService.GetDatasetUpdateLogs(new CaseReportRequestDTO()
-            {
-                StartDate = startDate,
-                EndDate = endDate,
-                Datasets = datasets
-            });
+            List<DatasetUpdateLogsModel> abc = _mapper.Map<List<DatasetUpdateLogsModel>>(
+                _reportService.GetDatasetUpdateLogs(new CaseReportRequestDTO()
+                {
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    Datasets = datasets
+                }));
 
-            if (clientId > 0 && clientDetails != null && clientDetails.ApplicationStartDate.HasValue)
+            // Filter by client contract start date
+            if (clientId > 0)
             {
-                DateTime clientContractStartDate = clientDetails.ApplicationStartDate.Value;
-                logs = logs.Where(log => log.UpdatedDate >= clientContractStartDate).ToList();
+                var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
+                if (clientDetails != null && clientDetails.ApplicationStartDate.HasValue)
+                {
+                    DateTime clientContractStartDate = clientDetails.ApplicationStartDate.Value;
+                    abc = abc.Where(log =>
+                    {
+                        if (string.IsNullOrEmpty(log.UpdatedDate)) return false;
+                        try
+                        {
+                            DateTime logDate = DateTime.Parse(log.UpdatedDate);
+                            return logDate >= clientContractStartDate;
+                        }
+                        catch { return false; }
+                    }).ToList();
+                }
             }
-
-            List<DatasetUpdateLogsModel> abc = _mapper.Map<List<DatasetUpdateLogsModel>>(logs);
 
             if (!isPDF)
             {
