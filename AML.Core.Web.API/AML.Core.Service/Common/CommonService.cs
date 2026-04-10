@@ -8,6 +8,8 @@ using AML.Core.RepositoryContract.Country;
 using AML.Core.RepositoryContract.CustomerCase;
 using AML.Core.RepositoryContract.FreeSource;
 using AML.Core.RepositoryContract.User;
+using AML.Core.Service.CaseComment;
+using AML.Core.ServiceContract.CaseComment;
 using AML.Core.ServiceContract.Common;
 using AML.Core.ServiceContract.CustomerCase;
 using AML.Core.ServiceContract.DigiApiUser;
@@ -89,13 +91,14 @@ namespace AML.Core.Service.Common
         private IUserRepository _userRepository;
         private IHttpContextAccessor _httpContextAccessor;
         private ITransactionScreeningService _transactionScreeningService;
-         
-        
+        private ICaseCommentService _caseCommentService;
+
+
         private string c6BaseURL = string.Empty;
 
         private readonly Logger log = LogManager.GetCurrentClassLogger();
 
-        public CommonService(IMapper mapper, ICommonRepository commonRepository, IDigiApiUserService digiApiUserService, ICountryRepository countryRepository, IConfiguration configuration, IHostingEnvironment env, ICustomerCaseService customerCaseService, ICustomerMasterRepository customerMasterRepository, IFreeSourceRepository freeSourceRepository, IUserRepository userRepository, ITransactionScreeningService transactionScreeningService, IHttpContextAccessor httpContextAccessor) : base(commonRepository, configuration)
+        public CommonService(IMapper mapper, ICommonRepository commonRepository, IDigiApiUserService digiApiUserService, ICountryRepository countryRepository, IConfiguration configuration, IHostingEnvironment env, ICustomerCaseService customerCaseService, ICustomerMasterRepository customerMasterRepository, IFreeSourceRepository freeSourceRepository, IUserRepository userRepository, ITransactionScreeningService transactionScreeningService, ICaseCommentService caseCommentService, IHttpContextAccessor httpContextAccessor) : base(commonRepository, configuration)
         {
             _mapper = mapper;
             _commonRepository = commonRepository;
@@ -106,6 +109,7 @@ namespace AML.Core.Service.Common
             _digiApiUserService = digiApiUserService;
             _freeSourceRepository = freeSourceRepository;
             _userRepository = userRepository;
+            _caseCommentService = caseCommentService;
             _transactionScreeningService = transactionScreeningService;
             _c6Threshold = Convert.ToInt32(_configuration.GetSection("C6BaseApiUrl:C6Threshold").Value);
             checkThreshold = Convert.ToInt32(_configuration.GetSection("C6BaseApiUrl:Threshold").Value);
@@ -893,6 +897,17 @@ namespace AML.Core.Service.Common
                         _CustomerCaseDTO.Status = 6;
                         _CustomerCaseDTO.ScheduelerTrackerId = schedulerRunId;
                     }
+                    
+                        int id = _customerCaseService.GetCaseId(_CustomerCaseDTO.CustomerId);
+
+                        CaseCommentModel remarkModel = new CaseCommentModel();
+                        remarkModel.CaseId = Convert.ToInt32(id);
+                        remarkModel.Comment ="Case is Updated from Daily Scheduler"; // ? FIXED
+                        remarkModel.CommentType = "Daily Scheduler";
+                        remarkModel.CreatedBy = 1;
+
+                        var remarkResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
+                    
                     //else
                     //{
                     //    _CustomerCaseDTO.Status = previousStatus;
