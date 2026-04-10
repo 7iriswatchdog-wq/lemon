@@ -27,6 +27,7 @@ namespace AML.ViewModel.ViewModels.Sanction
         public List<CaseModel> CaseLogs = new List<CaseModel>();
 
         public int clientId { get; set; }
+        public string activeTable { get; set; }
 
         
     }

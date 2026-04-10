@@ -4475,6 +4475,36 @@ public IActionResult CustomerList(DataTableModel model,
 
 
         }
+        public class DatasetUpdateLogsExcelModel
+        {
+            [IncludeInReport(Order = 1)]
+            [Display(Name = "Updated Date")]
+            public string UpdatedDate { get; set; }
+
+            [IncludeInReport(Order = 2)]
+            [Display(Name = "Datasets")]
+            public string Datasets { get; set; }
+
+            [IncludeInReport(Order = 3)]
+            [Display(Name = "Delta")]
+            public string Delta { get; set; }
+
+            [IncludeInReport(Order = 4)]
+            [Display(Name = "Individual")]
+            public string Individual { get; set; }
+
+            [IncludeInReport(Order = 5)]
+            [Display(Name = "Corporate")]
+            public string Corporate { get; set; }
+
+            [IncludeInReport(Order = 6)]
+            [Display(Name = "Cumulative")]
+            public string Cumulative { get; set; }
+
+            [IncludeInReport(Order = 7)]
+            [Display(Name = "Details")]
+            public string Details { get; set; }
+        }
         public IActionResult UserPasswordLogs()
         {
             var model = new ReportLogSearchModel();
@@ -5546,15 +5576,17 @@ public IActionResult CustomerList(DataTableModel model,
 
             if (!isPDF)
             {
-                List<DatasetUpdateLogsModel> excelData = abc.Select(res => new DatasetUpdateLogsModel
+                List<DatasetUpdateLogsExcelModel> excelData = abc.Select(res => new DatasetUpdateLogsExcelModel
                 {
                     UpdatedDate = res.UpdatedDate,
                     Datasets = res.Datasets,
                     Delta = res.Delta,
+                    Individual = res.Individual,
+                    Corporate = res.Corporate,
                     Cumulative = res.Cumulative
                 }).ToList();
 
-                return new ExcelResult<DatasetUpdateLogsModel>(excelData, "Dataset Update Logs", "dataset_update_logs_" + DateTime.Now.Ticks);
+                return new ExcelResult<DatasetUpdateLogsExcelModel>(excelData, "Dataset Update Logs", "dataset_update_logs_" + DateTime.Now.Ticks);
             }
 
             var clientInfo = _customerCaseService.GetClientDetailsByID(clientId);
@@ -5619,14 +5651,14 @@ public IActionResult CustomerList(DataTableModel model,
                 }
                 document.Add(header);
 
-                PdfPTable table = new PdfPTable(5);
+                PdfPTable table = new PdfPTable(7);
                 table.TotalWidth = 550f;
                 table.LockedWidth = true;
-                float[] widths = new float[] { 0.5f, 1.5f, 2f, 1f, 1f };
+                float[] widths = new float[] { 0.5f, 1.2f, 1.5f, 0.8f, 1f, 1f, 1f };
                 table.SetWidths(widths);
                 table.HorizontalAlignment = 1;
 
-                string[] headers = { "#", "Updated Date", "Datasets", "Delta", "Cumulative" };
+                string[] headers = { "#", "Updated Date", "Datasets", "Delta", "Individual", "Corporate", "Cumulative" };
                 foreach (var hText in headers)
                 {
                     PdfPCell cell = new PdfPCell(new Phrase(hText, new Font(Font.FontFamily.TIMES_ROMAN, 11, Font.BOLD)));
@@ -5643,6 +5675,8 @@ public IActionResult CustomerList(DataTableModel model,
                     table.AddCell(new Phrase(abc[i].UpdatedDate ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(abc[i].Datasets ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(abc[i].Delta ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                    table.AddCell(new Phrase(abc[i].Individual ?? "0", new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
+                    table.AddCell(new Phrase(abc[i].Corporate ?? "0", new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                     table.AddCell(new Phrase(abc[i].Cumulative ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
                 }
                 document.Add(table);

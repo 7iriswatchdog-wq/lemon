@@ -578,8 +578,12 @@ namespace AML.Core.Repository.Report
             try
             {
                 DynamicParameters parameters = new DynamicParameters();
-                parameters.Add("@c_from", Convert.ToDateTime(model.StartDate));
-                parameters.Add("@c_to", Convert.ToDateTime(model.EndDate));
+                DateTime fromDate, toDate;
+                DateTime.TryParseExact(model.StartDate, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out fromDate);
+                DateTime.TryParseExact(model.EndDate, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out toDate);
+
+                parameters.Add("@c_from", fromDate);
+                parameters.Add("@c_to", toDate);
                 parameters.Add("@c_datasets", model.Datasets);
                 serviceResponse.Result = Get<DatasetUpdateLogDTO>("get_all_Dataset_Update_logs", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Dataset Update Logs fetched successfully.";
