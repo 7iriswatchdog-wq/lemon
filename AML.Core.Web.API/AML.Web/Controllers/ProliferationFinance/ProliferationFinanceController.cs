@@ -198,6 +198,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                 var searchDto = new ProliferationFinanceCaseDTO
                 {
                     CustomerType = "Goods", // Consolidated Type
+                    ClientId = _clientHandler.GetClientId(),
                     CorporateId = string.IsNullOrWhiteSpace(model.CorporateId) ? null : model.CorporateId,
                     CompanyName = string.IsNullOrWhiteSpace(model.CompanyName) ? null : model.CompanyName,
                     HsCode = string.IsNullOrWhiteSpace(model.HsCode) ? null : model.HsCode,
@@ -334,6 +335,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                 {
                     var searchDto = new AML.DTO.DTO.ProliferationFinance.ProliferationFinanceCaseDTO
                     {
+                        ClientId = _clientHandler.GetClientId(),
                         ChemicalName = model.ChemicalName,
                         HsCode = model.HsCode,
                         CasNumber = model.CasNumber,
@@ -425,6 +427,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                 {
                     var searchDto = new AML.DTO.DTO.ProliferationFinance.ProliferationFinanceCaseDTO
                     {
+                        ClientId = _clientHandler.GetClientId(),
                         ChemicalName = model.ChemicalName,
                         HsCode = model.HsCode,
                         CasNumber = model.CasNumber,
@@ -708,6 +711,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                     // Re-fetch ALL potential hits to display in a list if requested
                     var searchDto = new AML.DTO.DTO.ProliferationFinance.ProliferationFinanceCaseDTO
                     {
+                        ClientId = _clientHandler.GetClientId(),
                         ChemicalName = model.ChemicalName,
                         HsCode = model.HsCode,
                         CasNumber = model.CasNumber,
@@ -887,6 +891,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                     var caseDto = new ProliferationFinanceCaseDTO
                                     {
                                         CustomerType = "Goods", // Consolidated type
+                                        ClientId = _clientHandler.GetClientId(),
                                         CorporateId = customerId,
                                         CompanyName = companyName,
                                         HsCode = hsCode,
