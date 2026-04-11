@@ -23,5 +23,8 @@ namespace AML.DTO.DTO.Report
         [Column("trackerId")]
         public string SchedulerTrackerId { get; set; }
 
+        [Column("total_pending")]
+        public int TotalPending { get; set; }
+
     }
 }
