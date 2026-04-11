@@ -1,4 +1,4 @@
-using AML.Core.Common.StaticResource;
+ï»¿using AML.Core.Common.StaticResource;
 using AML.Core.Service.Kyc;
 using AML.Core.Service.Risk;
 using AML.Core.ServiceContract.CaseComment;
@@ -1357,7 +1357,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
 
-                            var spStr1 = str1.Result.Split('Ø');
+                            var spStr1 = str1.Result.Split('Ã˜');
                             var entlovId = GetSafely(spStr1, 2);
                             var buslovId = GetSafely(spStr1, 4);
                             var incorplovId = GetSafely(spStr1, 3);
@@ -1386,7 +1386,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                             {
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
-                            var spStr = str.Result.Split('Ø');
+                            var spStr = str.Result.Split('Ã˜');
                             var entId = GetSafely(spStr, 2);
                             var busId = GetSafely(spStr, 4);
                             var incorpId = GetSafely(spStr, 3);
@@ -1769,7 +1769,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
 
                             }
-                            var spStr1 = str1.Result.Split('Ø');
+                            var spStr1 = str1.Result.Split('Ã˜');
                             var proflovId = GetSafely(spStr1, 0);
                             var natlovId = GetSafely(spStr1, 1);
                             var reslovId = GetSafely(spStr1, 5);
@@ -1792,7 +1792,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 
                                 return Json(new { success = false, message = "Unable to calculate risk due to insufficient data." });
                             }
-                            var spStr = str.Result.Split('Ø');
+                            var spStr = str.Result.Split('Ã˜');
                             var profId = GetSafely(spStr, 0);
                             var natId = GetSafely(spStr, 1);
                             var resId = GetSafely(spStr, 5);
@@ -2153,5 +2153,7 @@ namespace AML.Web.Controllers.ProliferationFinance
         public string Message { get; set; }
     }
 }
+
+
 
 
