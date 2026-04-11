@@ -116,7 +116,7 @@ namespace AML.Web.Controllers.InternalWatchList
             {
                 if (ModelState.IsValid)
                 {
-                    var apiresponse="";
+                    var apiresponse = "";
                     if (model.Source == "UAE IEC LIST")
                     {
                         var request = new { fullname = model.FullName, dob = model.DOB, nationality = model.Nationality, type = model.Source, category = model.Type, IDNUMBER = model.IdNumber, REMARKS = model.Remarks };
@@ -124,26 +124,23 @@ namespace AML.Web.Controllers.InternalWatchList
 
                         if (!string.IsNullOrEmpty(apiresponse))
                         {
-
                             SourceUploadLogsDTO uploadLogsDTO = new SourceUploadLogsDTO();
                             uploadLogsDTO.Source = model.Source;
                             uploadLogsDTO.TotalRecords = 1;
-
                             _internalWatchListService.InsertUploadLogs(uploadLogsDTO);
-
                         }
-
-
                     }
                     else
                     {
                         var request2 = new { fullname = model.FullName, dob = model.DOB, nationality = model.Nationality, type = model.Source, category = model.Type, IDNUMBER = model.IdNumber, CLIENTID = clientId, REMARKS = model.Remarks };
                         apiresponse = _clientHandler.PostAsync(request2, ScreeningService.ADDTOBLACKLIST).Result;
-
                     }
                     //model.Nationality = _mapper.Map<CountryModel>(_countryService.GetDetails(model.NationalityId)).Name;
 
                     //var result = _sanctionService.Create(_mapper.Map<WatchListDTO>(model));
+
+                    if (!string.IsNullOrEmpty(apiresponse))
+                    {
                         var uid = model.UID ?? Guid.NewGuid().ToString();
                         _mongoRepository.InsertBlockList(new NAMELIST
                         {
@@ -220,9 +217,9 @@ namespace AML.Web.Controllers.InternalWatchList
                                     REMARKS = item.REMARKS,
                                     DOB = new List<DOBLIST> { new DOBLIST { DOB = item.DOB } },
                                     STATUS = "A",
-                                    CREATEDON = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"),
-                                    CREATEDDATE = DateTime.Now,
-                                    UPDATEDDATE = DateTime.Now
+                                    CREATEDON = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss"),
+                                    CREATEDDATE = DateTime.UtcNow,
+                                    UPDATEDDATE = DateTime.UtcNow
                                 });
                             }
 
@@ -284,6 +281,7 @@ namespace AML.Web.Controllers.InternalWatchList
                     AddedBy = _documentsModel.AddedBy,
                     Type = (int)LogModulle.InternalWatchlist
                 };
+                int resp = _etlLogRepository.Create(_etlBatchDTO).Result;
                 if (resp > 0)
                 {
                     return Json(new { success = true, total = totalrecords, message = "Bulk Watch List uploaded successfully" });
@@ -373,9 +371,9 @@ namespace AML.Web.Controllers.InternalWatchList
                             IDDETAILS = new List<IDDETAIL> { new IDDETAIL { IDNUMBER = model.IdNumber } },
                             DOB = new List<DOBLIST> { new DOBLIST { DOB = model.DOB } },
                             STATUS = "A",
-                            CREATEDON = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"),
-                            CREATEDDATE = DateTime.Now,
-                            UPDATEDDATE = DateTime.Now
+                            CREATEDON = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss"),
+                            CREATEDDATE = DateTime.UtcNow,
+                            UPDATEDDATE = DateTime.UtcNow
                         });
 
                         _toastNotification.AddSuccessToastMessage("Internal Watchlist Updated successfully");
