@@ -17,7 +17,9 @@ namespace AML.Core.ServiceContract.ProliferationFinance
         ServiceResponse<bool> UpdateCaseRemarks(int caseId, string remarks);
         ServiceResponse<bool> UpdateSearchHits(int caseId, string hitDetails);
         ServiceResponse<List<ProliferationFinanceCaseDTO>> GetCaseHistory(string corporateId, int clientId);
-        
+
+        ProliferationFinanceCaseDTO GetVersionAllCases(int caseId,string corporateId, int clientId);
+
         // MongoDB methods
         ServiceResponse<bool> SyncSearchResultsToMongo(int caseId, string productName, List<DTO.DTO.ProliferationFinance.UAEControlListDTO> chemicalHits, string pdfHits);
         ServiceResponse<bool> UpdateMongoHitDecision(int caseId, int hitIndex, string decision, string remarks);

@@ -2627,6 +2627,7 @@ namespace AML.Web.Controllers.Case
             //Update White List
             if (model.Action == 1)
             {
+
                 var res = _customerMasterService.UpdateWhiteList(_CustomerCaseDTO.CustomerMasterId, "YES");
                 _customerMasterService.InsertCustomerWhiteListLogs(_CustomerCaseDTO.CustomerMasterId, _CustomerCaseDTO.CustomerId, _clientHandler.GetUserId(), "YES");
             }
@@ -2894,6 +2895,9 @@ namespace AML.Web.Controllers.Case
                                     case "dual use goods match":
                                         model1.DualUseGoods = risk.ItemText;
                                     break;
+                                    case "if more dual use goods match":
+                                        model1.MoreDualUseGoods = risk.ItemText;
+                                        break;
                                 }
                             }
                         }
@@ -3025,6 +3029,9 @@ namespace AML.Web.Controllers.Case
                                     case "dual use goods match":
                                         corporateDetailsModel.DualUseGoods = risk.ItemText;
                                         break;
+                                    case "if more dual use goods match":
+                                        corporateDetailsModel.MoreDualUseGoods = risk.ItemText;
+                                        break;
 
                                     default:
                                         // Optional: log unmatched value
@@ -3065,6 +3072,7 @@ namespace AML.Web.Controllers.Case
                         var highestriskproductlovId = spStr1[28];
                         var veryhighnetworkIdlovId = spStr1[30];
                     var dualusegoodslovId = spStr1[33];
+                    var MoredualusegoodslovId = spStr1[35];
 
                     var str = _kycService.GetRiskTypeId(_mapper.Map<KycIndividualDTO>(model1), corpModel, "I", culture, clientid);
                         if (str.Result == null)
@@ -3088,6 +3096,7 @@ namespace AML.Web.Controllers.Case
                         var highestriskproductId = spStr[28];
                         var veryhighnetworkId = spStr[30];
                     var dualusegoodsId = spStr[33];
+                    var MoredualusegoodsId = spStr[35];
 
                     RiskAPIRequestModel riskModel = new RiskAPIRequestModel();
 
@@ -3274,6 +3283,17 @@ namespace AML.Web.Controllers.Case
                         riskType13.RiskItemList = riskItemList13;
                         riskTypeList.Add(riskType13);
                     }
+                    if (MoredualusegoodsId != "0")
+                    {
+                        var riskType14 = new RiskTypeListModel();
+                        riskType14.Id = Convert.ToString(dualusegoodslovId);
+                        var riskItem14 = new RiskItemListModel();
+                        riskItem14.Id = MoredualusegoodsId.ToString();//Convert.ToString(1);
+                        var riskItemList14 = new List<RiskItemListModel>();
+                        riskItemList14.Add(riskItem14);
+                        riskType14.RiskItemList = riskItemList14;
+                        riskTypeList.Add(riskType14);
+                    }
 
 
                     riskModel.RiskTypeList = riskTypeList;
@@ -3317,6 +3337,7 @@ namespace AML.Web.Controllers.Case
                     var highestriskproductlovId = spStr1[29];
                     var veryhighnetworkIdlovId = spStr1[31];
                     var dualusegoodslovId = spStr1[32];
+                    var MoredualusegoodslovId = spStr1[34];
                     // var IsPeplovId = spStr1[14];
 
                     var str = _kycService.GetRiskTypeId(imodel, _mapper.Map<CorporateKycDTO>(corporateDetailsModel), "C", culture, clientid);
@@ -3347,6 +3368,7 @@ namespace AML.Web.Controllers.Case
                     var highestriskproductId = spStr[29];
                     var veryhighnetworkId = spStr[31];
                     var dualusegoodsId = spStr[32];
+                    var MoredualusegoodsId = spStr[34];
 
                     //var IsPepId = spStr[14];
                     Console.WriteLine(
@@ -3625,6 +3647,18 @@ namespace AML.Web.Controllers.Case
                             riskItemList13.Add(riskItem13);
                             riskType13.RiskItemList = riskItemList13;
                             riskTypeList.Add(riskType13);
+                        }
+
+                        if (MoredualusegoodsId != "0")
+                        {
+                            var riskType14 = new RiskTypeListModel();
+                            riskType14.Id = Convert.ToString(dualusegoodslovId);
+                            var riskItem14 = new RiskItemListModel();
+                            riskItem14.Id = MoredualusegoodsId.ToString();//Convert.ToString(1);
+                            var riskItemList14 = new List<RiskItemListModel>();
+                            riskItemList14.Add(riskItem14);
+                            riskType14.RiskItemList = riskItemList14;
+                            riskTypeList.Add(riskType14);
                         }
 
                         riskModel.RiskTypeList = riskTypeList;

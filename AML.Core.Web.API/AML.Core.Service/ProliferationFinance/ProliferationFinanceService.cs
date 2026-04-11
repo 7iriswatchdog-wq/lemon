@@ -162,5 +162,10 @@ namespace AML.Core.Service.ProliferationFinance
         {
             return _mongoRepository.GetSearchResultsByCaseId(caseId);
         }
+
+        public ProliferationFinanceCaseDTO GetVersionAllCases(int CaseId,string corporateId, int clientId)
+        {
+            return _repository.GetVersionAllCases(CaseId,corporateId, clientId).Result;
+        }
     }
 }

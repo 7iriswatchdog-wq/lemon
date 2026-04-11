@@ -252,6 +252,8 @@ namespace AML.ViewModel.ViewModels.CustomerCase
 
         public string DualUseGoods { get; set; }
 
+        public string MoreDualUseGoods { get; set; }
+
     }
 
     

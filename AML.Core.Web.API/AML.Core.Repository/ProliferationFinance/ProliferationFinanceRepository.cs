@@ -212,5 +212,25 @@ namespace AML.Core.Repository.ProliferationFinance
             }
             return serviceResponse;
         }
+        public ServiceResponse<ProliferationFinanceCaseDTO> GetVersionAllCases(int CaseId,string corporateId, int clientId)
+        {
+            ServiceResponse<ProliferationFinanceCaseDTO> serviceResponse = new ServiceResponse<ProliferationFinanceCaseDTO>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_CaseId", CaseId);
+                parameters.Add("@p_CorporateId", corporateId);
+                parameters.Add("@p_ClientId", clientId);
+                serviceResponse.Result = GetFirstOrDefault<ProliferationFinanceCaseDTO>("sp_GetVersionAllCases", parameters, commandType: CommandType.StoredProcedure);
+                serviceResponse.Status = 200;
+                serviceResponse.Message = "Success";
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Status = 500;
+                serviceResponse.Message = ex.Message;
+            }
+            return serviceResponse;
+        }
     }
 }

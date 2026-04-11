@@ -88,6 +88,8 @@ namespace AML.DTO.DTO.Kyc
 
         public string DualUseGoods { get; set; }
 
+        public string MoreDualUseGoods { get; set; }
+
 
 
 

@@ -16,5 +16,7 @@ namespace AML.Core.RepositoryContract.ProliferationFinance
         ServiceResponse<bool> UpdateCaseRemarks(int caseId, string remarks);
         ServiceResponse<bool> UpdateSearchHits(int caseId, string hitDetails);
         ServiceResponse<List<ProliferationFinanceCaseDTO>> GetCaseHistory(string corporateId, int clientId);
+
+        ServiceResponse<ProliferationFinanceCaseDTO> GetVersionAllCases(int CaseId,string corporateId, int clientId);
     }
 }

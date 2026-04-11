@@ -282,6 +282,8 @@ namespace AML.ViewModel.ViewModels.Corporate
 
         public string DualUseGoods { get; set; }
 
+        public string MoreDualUseGoods { get; set; }
+
     }
 
     public class ShareholderModel

@@ -1240,6 +1240,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                     if (hit.Decision != "")
                     {
                         _proliferationFinanceService.UpdateMongoHitDecision(request.CaseId, hit.Index, hit.Decision, hit.Remarks);
+                        ProliferationFinanceCaseDTO result = _proliferationFinanceService.GetVersionAllCases(request.CaseId, request.corporateId, clientId);
 
                         CorporateKycDTO corpModel = new CorporateKycDTO();
                         KycIndividualDTO imodel = new KycIndividualDTO();
@@ -1323,6 +1324,9 @@ namespace AML.Web.Controllers.ProliferationFinance
                                                 case "mode of payment":
                                                     corpModel.Modeofpayment = riskType.ItemTxt;
                                                     break;
+                                                case "dual use goods match":
+                                                    corpModel.DualUseGoods = riskType.ItemTxt;
+                                                    break;
 
                                                 default:
                                                     // Optional: log unmatched value
@@ -1333,13 +1337,27 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 }
 
                             }
-                            if (hit.Decision == "True Match" || hit.Decision == "Potential Match")
+                            if (result.Version > 0)
                             {
-                                corpModel.DualUseGoods = "Yes";
+                                if (hit.Decision == "True Match" || hit.Decision == "Potential Match")
+                                {
+                                    corpModel.MoreDualUseGoods = "Yes";
+                                }
+                                else
+                                {
+                                    corpModel.MoreDualUseGoods = "No";
+                                }
                             }
                             else
                             {
-                                corpModel.DualUseGoods = "No";
+                                if (hit.Decision == "True Match" || hit.Decision == "Potential Match")
+                                {
+                                    corpModel.DualUseGoods = "Yes";
+                                }
+                                else
+                                {
+                                    corpModel.DualUseGoods = "No";
+                                }
                             }
 
                             //var result = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(clientId));
@@ -1369,16 +1387,17 @@ namespace AML.Web.Controllers.ProliferationFinance
                             var nationality4lovId = GetSafely(spStr1, 9);
                             var nationality5lovId = GetSafely(spStr1, 10);
                             var modeofpaymentlovId = GetSafely(spStr1, 16);
-                            var domesticpeplovId = spStr1[18];
-                            var foreignlovId = spStr1[20];
-                            var redflagslovId = spStr1[22];
-                            var sanctionlovId = spStr1[24];
-                            var UAEORUNSClovId = spStr1[26];
-                            var corpfaftlovId = spStr1[27];
-                            var highestriskproductlovId = spStr1[29];
-                            var veryhighnetworkIdlovId = spStr1[31];
+                            var domesticpeplovId = GetSafely(spStr1,18);
+                            var foreignlovId = GetSafely(spStr1,20);
+                            var redflagslovId = GetSafely(spStr1,22);
+                            var sanctionlovId = GetSafely(spStr1,24);
+                            var UAEORUNSClovId = GetSafely(spStr1,26);
+                            var corpfaftlovId = GetSafely(spStr1,27);
+                            var highestriskproductlovId = GetSafely(spStr1,29);
+                            var veryhighnetworkIdlovId = GetSafely(spStr1, 31);
 
                             var dualusegoodslovId = GetSafely(spStr1, 32);
+                            var MoredualusegoodslovId = GetSafely(spStr1, 34);
 
                             var str = _kycService.GetRiskTypeId(imodel, _mapper.Map<CorporateKycDTO>(corpModel), "C", culture, clientId);
 
@@ -1398,15 +1417,16 @@ namespace AML.Web.Controllers.ProliferationFinance
                             var nationality4Id = GetSafely(spStr, 9);
                             var nationality5Id = GetSafely(spStr, 10);
                             var modeofpaymentId = GetSafely(spStr, 16);
-                            var domesticpepId = spStr[18];
-                            var foreignId = spStr[20];
-                            var redflagsId = spStr[22];
-                            var sanctionId = spStr[24];
-                            var UAEORUNSCId = spStr[26];
-                            var corpfaftId = spStr[27];
-                            var highestriskproductId = spStr[29];
-                            var veryhighnetworkId = spStr[31];
+                            var domesticpepId = GetSafely(spStr, 18);
+                            var foreignId = GetSafely(spStr, 20);
+                            var redflagsId = GetSafely(spStr, 22);
+                            var sanctionId = GetSafely(spStr, 24);
+                            var UAEORUNSCId = GetSafely(spStr, 26);
+                            var corpfaftId = GetSafely(spStr, 27);
+                            var highestriskproductId = GetSafely(spStr, 29);
+                            var veryhighnetworkId = GetSafely(spStr, 31);
                             var dualusegoodsId = GetSafely(spStr, 32);
+                            var MoredualusegoodsId = GetSafely(spStr, 34);
 
 
                             RiskAPIRequestModel riskModel = new RiskAPIRequestModel();
@@ -1654,14 +1674,25 @@ namespace AML.Web.Controllers.ProliferationFinance
                             }
                             if (dualusegoodsId != "0")
                             {
-                                var riskType13 = new RiskTypeListModel();
-                                riskType13.Id = Convert.ToString(dualusegoodslovId);
-                                var riskItem13 = new RiskItemListModel();
-                                riskItem13.Id = dualusegoodsId.ToString();//Convert.ToString(1);
-                                var riskItemList13 = new List<RiskItemListModel>();
-                                riskItemList13.Add(riskItem13);
-                                riskType13.RiskItemList = riskItemList13;
-                                riskTypeList.Add(riskType13);
+                                var riskType20 = new RiskTypeListModel();
+                                riskType20.Id = Convert.ToString(dualusegoodslovId);
+                                var riskItem20 = new RiskItemListModel();
+                                riskItem20.Id = dualusegoodsId.ToString();//Convert.ToString(1);
+                                var riskItemList20 = new List<RiskItemListModel>();
+                                riskItemList20.Add(riskItem20);
+                                riskType20.RiskItemList = riskItemList20;
+                                riskTypeList.Add(riskType20);
+                            }
+                            if (MoredualusegoodsId != "0")
+                            {
+                                var riskType21 = new RiskTypeListModel();
+                                riskType21.Id = Convert.ToString(dualusegoodslovId);
+                                var riskItem21 = new RiskItemListModel();
+                                riskItem21.Id = MoredualusegoodsId.ToString();//Convert.ToString(1);
+                                var riskItemList21 = new List<RiskItemListModel>();
+                                riskItemList21.Add(riskItem21);
+                                riskType21.RiskItemList = riskItemList21;
+                                riskTypeList.Add(riskType21);
                             }
 
                             //for legal status of entity start
@@ -1738,20 +1769,38 @@ namespace AML.Web.Controllers.ProliferationFinance
                                                 case "mode of payment":
                                                     imodel.ModeOfPayment = riskType.ItemTxt;
                                                     break;
+                                                case "dual use goods match":
+                                                    corpModel.DualUseGoods = riskType.ItemTxt;
+                                                    break;
                                             }
                                         }
                                     }
                                 }
 
                             }
-                            if (hit.Decision == "True Match" || hit.Decision == "Potential Match")
+                            if (result.Version > 0)
                             {
-                                imodel.DualUseGoods = "Yes";
+                                if (hit.Decision == "True Match" || hit.Decision == "Potential Match")
+                                {
+                                    imodel.MoreDualUseGoods = "Yes";
+                                }
+                                else
+                                {
+                                    imodel.MoreDualUseGoods = "No";
+                                }
                             }
                             else
                             {
-                                imodel.DualUseGoods = "No";
+                                if (hit.Decision == "True Match" || hit.Decision == "Potential Match")
+                                {
+                                    imodel.DualUseGoods = "Yes";
+                                }
+                                else
+                                {
+                                    imodel.DualUseGoods = "No";
+                                }
                             }
+                            
 
                             //var result = _mapper.Map<Menumodel>(_kycService.GetMenuRightsByClientId(clientId));
 
@@ -1785,6 +1834,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                             var highestriskproductlovId = GetSafely(spStr1, 28);
                             var veryhighnetworkIdlovId = GetSafely(spStr1, 30);
                             var dualusegoodslovId = GetSafely(spStr1, 33);
+                            var MoredualusegoodslovId = GetSafely(spStr1, 35);
 
                             var str = _kycService.GetRiskTypeId(_mapper.Map<KycIndividualDTO>(imodel), corpModel, "I", culture,clientId);
                             if (str.Result == null)
@@ -1808,6 +1858,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                             var highestriskproductId = GetSafely(spStr, 28);
                             var veryhighnetworkId = GetSafely(spStr, 30);
                             var dualusegoodsId = GetSafely(spStr, 33);
+                            var MoredualusegoodsId = GetSafely(spStr, 35);
                             RiskAPIRequestModel riskModel = new RiskAPIRequestModel();
 
                             riskModel.CustomerId = request.corporateId;
@@ -1974,7 +2025,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                             if (Indmodeofpaymentid != "0")
                             {
                                 var riskType8 = new RiskTypeListModel();
-                                riskType8.Id = Convert.ToString(IndmodeofpaymentlovId);
+                                riskType8.Id = Convert.ToString(MoredualusegoodslovId);
                                 var riskItem8 = new RiskItemListModel();
                                 riskItem8.Id = Indmodeofpaymentid.ToString();//Convert.ToString(1);
                                 var riskItemList8 = new List<RiskItemListModel>();
@@ -1993,6 +2044,17 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 riskItemList13.Add(riskItem13);
                                 riskType13.RiskItemList = riskItemList13;
                                 riskTypeList.Add(riskType13);
+                            }
+                            if (MoredualusegoodsId != "0")
+                            {
+                                var riskType14 = new RiskTypeListModel();
+                                riskType14.Id = Convert.ToString(dualusegoodslovId);
+                                var riskItem14 = new RiskItemListModel();
+                                riskItem14.Id = MoredualusegoodsId.ToString();//Convert.ToString(1);
+                                var riskItemList14 = new List<RiskItemListModel>();
+                                riskItemList14.Add(riskItem14);
+                                riskType14.RiskItemList = riskItemList14;
+                                riskTypeList.Add(riskType14);
                             }
 
 
