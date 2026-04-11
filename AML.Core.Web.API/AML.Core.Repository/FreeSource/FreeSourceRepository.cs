@@ -453,19 +453,26 @@ namespace AML.Core.Repository.FreeSource
             {
 
                 DateTime createdDate1 = DateTime.ParseExact(
-                    createdDate,
-                    "yyyy-MM-dd",
-                    CultureInfo.InvariantCulture
-                );
+     createdDate,
+     "yyyy-MM-dd",
+     CultureInfo.InvariantCulture
+ );
 
-
-                var dateString = createdDate1.ToString("dd/MM/yyyy");
+                var dateSlash = createdDate1.ToString("dd/MM/yyyy");
+                var dateDash = createdDate1.ToString("dd-MM-yyyy");
+                var dateFilter = Builders<NAMELIST>.Filter.Or(
+    Builders<NAMELIST>.Filter.Regex(
+        x => x.CREATEDON,
+        new BsonRegularExpression("^" + dateSlash)
+    ),
+    Builders<NAMELIST>.Filter.Regex(
+        x => x.CREATEDON,
+        new BsonRegularExpression("^" + dateDash)
+    )
+);
 
                 var filter = Builders<NAMELIST>.Filter.And(
-                    Builders<NAMELIST>.Filter.Regex(
-                        x => x.CREATEDON,
-                        new BsonRegularExpression("^" + dateString)
-                    ),
+                    dateFilter,
                     Builders<NAMELIST>.Filter.Eq(x => x.TYPE, type.ToUpper()),
                     Builders<NAMELIST>.Filter.In(
                         x => x.CATEGORY,

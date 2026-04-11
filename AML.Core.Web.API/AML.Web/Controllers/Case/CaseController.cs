@@ -1798,7 +1798,6 @@ namespace AML.Web.Controllers.Case
             _CustomerCaseDTO.ClientId = _clientHandler.GetClientId();
             _CustomerCaseDTO.CreatedBy = _clientHandler.GetUserId();
             _CustomerCaseDTO.CustomerId = "0";
-            _CustomerCaseDTO.CreatedOn = null;
 
             int previousStatus = _CustomerCaseDTO.Status;
 
@@ -1897,6 +1896,32 @@ namespace AML.Web.Controllers.Case
                 remarkModel.CreatedBy = _clientHandler.GetUserId();
 
                 var remarkResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel));
+
+                int previousId = _customerCaseService.GetCaseId(customerCode);
+
+                CustomerCaseDTO _CustomerCaseDTO1 = _customerCaseService.GetDetails(previousId);
+                DateTime createdDate;
+                CaseCommentModel remarkModel1 = new CaseCommentModel();
+                remarkModel1.CaseId = id;
+                var formats = new[]
+                {
+                    "dd/MM/yyyy HH:mm:ss",
+                    "dd-MM-yyyy HH:mm:ss"
+                };
+
+                if (DateTime.TryParseExact(
+                    _CustomerCaseDTO1.CreatedOn,
+                    formats,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out createdDate))
+                {
+                    remarkModel1.Comment = $"Case is Screened on {createdDate:dd/MM/yyyy}";
+                }
+                remarkModel1.CommentType = "Convert Related Parties to Main Party";
+                remarkModel1.CreatedBy = _clientHandler.GetUserId();
+
+                var remarkResult1 = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(remarkModel1));
 
                 TempData["CaseRefId"] = caseRefId;
                 TempData["IsCaseCreated"] = true;

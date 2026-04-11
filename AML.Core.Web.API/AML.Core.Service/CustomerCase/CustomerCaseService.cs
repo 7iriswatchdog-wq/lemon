@@ -138,6 +138,7 @@ namespace AML.Core.Service.CustomerCase
         }
         public ServiceResponse<string> Create(CustomerCaseDTO _CustomerCaseDT)
         {
+            _CustomerCaseDT.CreatedOn = null;
             CustomerMasterDTO custDetails = new CustomerMasterDTO()
             {
                 CustomerId = _CustomerCaseDT.CustomerId,
