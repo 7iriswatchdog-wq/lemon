@@ -369,6 +369,9 @@ namespace AML.DTO.DTO.CustomerCase
         public DateTime? IdIssueDate { get; set; }
         [Column("id_expiry_date")]
         public DateTime? IdExpiryDate { get; set; }
+
+        [Column("dateofwhitelisting")]
+        public DateTime?  DateOfWhitelisting { get; set; }
         //[Column("created_on")]
         //public DateTime? CreatedOnDB { get; set; }
         //public string CreatedOn
@@ -425,6 +428,7 @@ namespace AML.DTO.DTO.CustomerCase
         public string Gender { get; set; }
         [Column("birthyear")]
         public string BirthYear { get; set; }
+
         public bool IsPep { get; set; } = false;
         public bool IsSan { get; set; } = false;
         public bool IsRre { get; set; } = false;

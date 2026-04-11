@@ -1,3 +1,4 @@
+using MongoDB.Bson.Serialization.Serializers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -20,6 +21,10 @@ namespace AML.DTO.DTO.CustomerScreening
         public string CUSTOMERMOBILENUMBER { get; set; }
         public string CREATEDON { get; set; }
         public string UPDATEDON { get; set; }
+
+        public string WHITELISTINGDATE { get; set; }
+
+        public string WHITELISTING { get; set; }
 
     }
     public class C6ScreeningRQ

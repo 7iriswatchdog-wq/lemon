@@ -825,6 +825,8 @@ namespace AML.Core.Service.Common
             screeningrq.CUSTOMERMOBILENUMBER = _CustomerCaseDTO.Mobile.IsNotNullOrEmpty() ? _CustomerCaseDTO.Mobile : string.Empty;
             screeningrq.CUSTOMERTYPE = _CustomerCaseDTO.CustomerType.IsNotNullOrEmpty() ? _CustomerCaseDTO.CustomerType : string.Empty;
             screeningrq.UPDATEDON = string.Empty;
+            screeningrq.WHITELISTINGDATE = _CustomerCaseDTO.DateOfWhitelisting.ToString();
+            screeningrq.WHITELISTING = _CustomerCaseDTO.IsWhiteListed;
             checkThreshold = _CustomerCaseDTO.Threshold;
             if (_CustomerCaseDTO.Status == 2 || _CustomerCaseDTO.Status == 5)
             {
@@ -833,8 +835,8 @@ namespace AML.Core.Service.Common
             CustomerScreeningRS apiResp = new CustomerScreeningRS();
             try
             {
-                if (_CustomerCaseDTO.IsWhiteListed != "YES")
-                {
+                //if (_CustomerCaseDTO.IsWhiteListed != "YES")
+                //{
                     string cleanedString = screeningrq.CUSTOMERFULLNAME;
                     screeningrq.CUSTOMERFULLNAME = GetCleanedString(cleanedString,true);
                     //Calling Screening API
@@ -846,7 +848,7 @@ namespace AML.Core.Service.Common
                     var response = await AMLUtility.ScreeningAPICall(screeningrq, ScreeningService.CUSTOMER_SCREENING, baseUrl);
                     if (!string.IsNullOrEmpty(response))
                         apiResp = JsonConvert.DeserializeObject<CustomerScreeningRS>(response);
-                }
+                //}
             }
             catch (Exception Ex)
             {

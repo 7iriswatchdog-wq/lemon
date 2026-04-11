@@ -1,21 +1,18 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
 using AML.Core.Common.StaticResource;
 using AML.Core.DataContract.Enum;
 using AML.Core.RepositoryContract.EtlBatch;
+using AML.Core.RepositoryContract.InternalWatchList;
+using AML.Core.Service.CustomerCase;
 using AML.Core.ServiceContract.Country;
 using AML.Core.ServiceContract.CustomerCase;
-using AML.Core.RepositoryContract.InternalWatchList;
 using AML.Core.ServiceContract.InternalWatchList;
 using AML.Core.ServiceContract.Sanction;
-using AML.DTO.DTO.FreeSource;
-using static AML.DTO.DTO.FreeSource.BlackListMongoDTO;
 using AML.DTO.DTO.Common;
 using AML.DTO.DTO.EtlBatch;
+using AML.DTO.DTO.FreeSource;
 using AML.DTO.DTO.InternalWatchListExcel;
 using AML.DTO.DTO.Sanction;
+using AML.ViewModel.ViewModels.ApiAuthentication;
 using AML.ViewModel.ViewModels.Common;
 using AML.ViewModel.ViewModels.Country;
 using AML.ViewModel.ViewModels.CustomerCase;
@@ -29,6 +26,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Newtonsoft.Json;
 using NToastNotify;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Linq;
+using static AML.DTO.DTO.FreeSource.BlackListMongoDTO;
 
 namespace AML.Web.Controllers.InternalWatchList
 {
@@ -46,10 +49,11 @@ namespace AML.Web.Controllers.InternalWatchList
         IEtlLogRepository _etlLogRepository;
         IFileUploader _fileUploader;
         private readonly IInternalWatchListMongoRepository _mongoRepository;
+        private ICustomerCaseService _customerCaseService;
         public InternalWatchListController(
             IMapper mapper,
             IToastNotification toastNotification,
-            IHttpClientHandler clientHandler,
+            IHttpClientHandler clientHandler, ICustomerCaseService customerCaseService,
             ICountryService countryService, IEtlLogRepository etlLogRepository,
             IFileUploader fileUploader, IInternalWatchListService internalWatchListService,
             IInternalWatchListMongoRepository mongoRepository
@@ -63,6 +67,7 @@ namespace AML.Web.Controllers.InternalWatchList
             _fileUploader = fileUploader;
             _etlLogRepository = etlLogRepository;
             _mongoRepository = mongoRepository;
+            _customerCaseService = customerCaseService;
         }
         public IActionResult Index()
         {
@@ -124,10 +129,32 @@ namespace AML.Web.Controllers.InternalWatchList
 
                         if (!string.IsNullOrEmpty(apiresponse))
                         {
-                            SourceUploadLogsDTO uploadLogsDTO = new SourceUploadLogsDTO();
-                            uploadLogsDTO.Source = model.Source;
-                            uploadLogsDTO.TotalRecords = 1;
-                            _internalWatchListService.InsertUploadLogs(uploadLogsDTO);
+
+                            DataSetsScreeinglogsModel uploadLogsDTO = new DataSetsScreeinglogsModel();
+
+                            uploadLogsDTO.Datasets = model.Source;
+                            uploadLogsDTO.Cumulative = "1";
+                            uploadLogsDTO.CreatedOn = DateTime.Now;
+
+                            // Initialize
+                            uploadLogsDTO.Delta = "0";
+                            uploadLogsDTO.Individual = "0";
+                            uploadLogsDTO.Corporate = "0";
+
+                            // ? Based on Type
+                            if (model.Type == "Individual")
+                            {
+                                uploadLogsDTO.Delta = "+1";
+                                uploadLogsDTO.Individual = "+1";
+                            }
+                            else if (model.Type == "Corporate")
+                            {
+                                uploadLogsDTO.Delta = "+1";
+                                uploadLogsDTO.Corporate = "+1";
+                            }
+                            uploadLogsDTO.CreatedOn = DateTime.Now;
+                            // Call service
+                            _customerCaseService.InsertDatasetsScreeninglogs(uploadLogsDTO);
                         }
                     }
                     else
@@ -189,7 +216,11 @@ namespace AML.Web.Controllers.InternalWatchList
                 _documentsModel.AddedBy = _clientHandler.GetUserId();
                 var totalrecords = 0;
                 var apiresponse2 = "";
-                
+               
+                int individualCount = 0;
+                int corporateCount = 0;
+                string lastSource = "";
+
                 List<InternalWatcListExcelDTO> _custExcelDataResponse = _internalWatchListService.LoadInternalWatchExcelData(_documentsModel.DocFullPath, 1).Result;
                 foreach (var item in _custExcelDataResponse)
                 {
@@ -205,6 +236,17 @@ namespace AML.Web.Controllers.InternalWatchList
                             {
                                 model.Source = item.Source;
                                 totalrecords++;
+                                
+                                lastSource = item.Source;
+
+                                totalrecords++;
+
+                                var type = item.Type?.Trim().ToLower();
+
+                                if (type == "individual")
+                                    individualCount++;
+                                else if (type == "corporate")
+                                    corporateCount++;
 
                                 // Log to MongoDB (Fixed: Added missing logging for UAE IEC LIST)
                                 _mongoRepository.InsertBlockList(new NAMELIST
@@ -258,13 +300,25 @@ namespace AML.Web.Controllers.InternalWatchList
                     }
 
                 }
+                
                 if (!string.IsNullOrEmpty(apiresponse2))
                 {
-                    SourceUploadLogsDTO uploadLogsDTO = new SourceUploadLogsDTO();
-                    uploadLogsDTO.Source = model.Source;
-                    uploadLogsDTO.TotalRecords = totalrecords;
+                    
 
-                    _internalWatchListService.InsertUploadLogs(uploadLogsDTO);
+                    
+
+                    // ? Dataset Screening Log
+                    DataSetsScreeinglogsModel datasetLog = new DataSetsScreeinglogsModel
+                    {
+                        Datasets = lastSource,
+                        Delta = $"+{totalrecords}",
+                        Individual = $"+{individualCount}",
+                        Corporate = $"+{corporateCount}",
+                        Cumulative = totalrecords.ToString(), // replace with DB cumulative if needed
+                        CreatedOn = DateTime.Now
+                    };
+
+                    _customerCaseService.InsertDatasetsScreeninglogs(datasetLog);
                 }
 
 
