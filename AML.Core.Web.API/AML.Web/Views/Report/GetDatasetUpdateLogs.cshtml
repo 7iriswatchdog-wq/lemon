@@ -421,7 +421,7 @@
                 </div>
             </div>
         </div>
-
+        <iframe id="pdfExportFrame" style="position: absolute; left: -9999px; visibility: hidden; width: 1024px; height: 100%;"></iframe>
 </body>
 </html>
 <div id="nameModalOverlay" 
@@ -598,9 +598,16 @@
         const startDate = formatDate($('#startDate').val());
         const endDate = formatDate($('#endDate').val());
         const datasets = $('#datasetsFilter').val();
+        const searchValue = $('#searchInput').val() || '';
         
-        const url = `/Report/DatasetUpdateLogsExportReport?isPDF=${isPDF}&startDate=${startDate}&endDate=${endDate}&datasets=${datasets}`;
-        window.location.href = url;
+        if (isPDF) {
+            $('#loader').removeClass('hidden').addClass('flex');
+            const url = `/Report/DatasetUpdateLogs_PDF?startDate=${startDate}&endDate=${endDate}&datasets=${datasets}&searchValue=${searchValue}`;
+            $('#pdfExportFrame').attr('src', url);
+        } else {
+            const url = `/Report/DatasetUpdateLogsExportReport?isPDF=${isPDF}&startDate=${startDate}&endDate=${endDate}&datasets=${datasets}&searchValue=${searchValue}`;
+            window.location.href = url;
+        }
     }
 
     function exportTableToCSV(filename) {

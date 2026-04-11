@@ -189,11 +189,17 @@
                                 <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(3, this)">Updated On</th>
                             </tr>
                             <tr> *@
-                                <th class="px-6 py-4 font-bold h-12 sortable text-center">Source</th>
-                                <th class="px-6 py-4 font-bold h-12 sortable text-center">Total Records</th>
-                                <th class="px-6 py-4 font-bold h-12 sortable text-center">Total Hits</th>
-                                <th class="px-6 py-4 font-bold h-12 sortable text-center">Cumulative</th>
-                                <th class="px-6 py-4 font-bold h-12 sortable text-center">Updated On</th>
+                                @* <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(0, this)">Source</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(1, this)">Total Records</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(2, this)">Total Hits</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(3, this)">Cumulative</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(4, this)">Updated On</th> *@
+
+                                <th class="px-6 py-4 font-bold h-12 text-center">Source</th>
+                                <th class="px-6 py-4 font-bold h-12 text-center">Total Records</th>
+                                <th class="px-6 py-4 font-bold h-12 text-center">Total Hits</th>
+                                <th class="px-6 py-4 font-bold h-12 text-center">Cumulative</th>
+                                <th class="px-6 py-4 font-bold h-12 text-center">Updated On</th>
                             </tr>
                         </thead>
                         <tbody id="filterTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
@@ -239,7 +245,7 @@
                 </div>
             </div>
         </div>
-        <iframe id="pdfExportFrame" style="display:none;"></iframe>
+        <iframe id="pdfExportFrame" style="position: absolute; left: -9999px; visibility: hidden; width: 1024px; height: 100%;"></iframe>
     </div>
 </div>
 
@@ -553,6 +559,7 @@
         }
     }
 
+    /* 
     function sortTable(columnIndex, element) {
         $('.sortable').removeClass('active asc desc');
         if (currentSortColumn === columnIndex) {
@@ -566,6 +573,7 @@
         const searchValue = $('#searchInput').val();
         fetchData(searchValue, 1);
     }
+    */
 
     function formatDateForDisplay(dateString) {
         if (!dateString) return '';
@@ -576,32 +584,16 @@
     function ExportList(isPDF) {
         const startDate = formatDate($('#startDate').val());
         const endDate = formatDate($('#endDate').val());
+        const searchValue = $('#searchInput').val() || '';
 
         if (isPDF) {
-            const url = `/Report/SchedulerLogs_PDF?startDate=${startDate}&endDate=${endDate}`;
+            $('#loader').removeClass('hidden').addClass('flex');
+            const url = `/Report/SchedulerLogs_PDF?startDate=${startDate}&endDate=${endDate}&searchValue=${searchValue}`;
             $('#pdfExportFrame').attr('src', url);
         } else {
-            $('#loader').removeClass('hidden').addClass('flex');
-            $.ajax({
-                type: "GET",
-                url: "/Report/SchedulerLogsExportReport/",
-                data: {
-                    IsPDF: isPDF,
-                    startDate: startDate,
-                    endDate: endDate
-                },
-                success: function () {
-                    window.location = '/Report/SchedulerLogsExportReport?IsPDF=' + isPDF + 
-                        '&startDate=' + startDate + 
-                        '&endDate=' + endDate;
-                },
-                error: function () {
-                    alert('error');
-                },
-                complete: function () {
-                    $('#loader').addClass('hidden').removeClass('flex');
-                }
-            });
+            const url = `/Report/SchedulerLogsExportReport?isPDF=${isPDF}&startDate=${startDate}&endDate=${endDate}&searchValue=${searchValue}`;
+            window.location.href = url;
+            setTimeout(() => $('#loader').addClass('hidden'), 2000);
         }
     }
 </script>

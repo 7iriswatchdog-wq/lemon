@@ -963,6 +963,63 @@ namespace AML.Web.Controllers.ClientCase
         {
             return View(model);
         }
+
+        [HttpGet("ClientCase/DataLoad_PDF")]
+        public async Task<IActionResult> DataLoad_PDF(string FromDate, string ToDate, string MatchType, string Customer, string searchValue)
+        {
+            ETLReport model = new ETLReport();
+            model.FromDate = string.IsNullOrEmpty(FromDate) ? DateTime.Now : DateTime.Parse(FromDate);
+            model.ToDate = string.IsNullOrEmpty(ToDate) ? DateTime.Now : DateTime.Parse(ToDate);
+            if (Enum.TryParse<MatchingType>(MatchType, out var m)) model.MatchType = m;
+            model.Customer = Customer;
+            model.ClientId = _clientHandler.GetClientId();
+
+            ETLDataLoadReportDTO dto = _mapper.Map<ETLDataLoadReportDTO>(model);
+            List<EtlBatchModel> dataList = _mapper.Map<List<EtlBatchModel>>(_customerCaseService.DataLoadReport(dto).Result);
+
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                searchValue = searchValue.ToLower();
+                dataList = dataList.Where(x => 
+                    (x.FileName != null && x.FileName.ToLower().Contains(searchValue)) ||
+                    (x.AddedUser != null && x.AddedUser.ToLower().Contains(searchValue))
+                ).ToList();
+            }
+
+            return View("DataLoad_PDF", dataList);
+        }
+
+        [HttpGet("ClientCase/DataLoad_CSV")]
+        public async Task<IActionResult> DataLoad_CSV(string FromDate, string ToDate, string MatchType, string Customer, string searchValue)
+        {
+            ETLReport model = new ETLReport();
+            model.FromDate = string.IsNullOrEmpty(FromDate) ? DateTime.Now : DateTime.Parse(FromDate);
+            model.ToDate = string.IsNullOrEmpty(ToDate) ? DateTime.Now : DateTime.Parse(ToDate);
+            if (Enum.TryParse<MatchingType>(MatchType, out var m)) model.MatchType = m;
+            model.Customer = Customer;
+            model.ClientId = _clientHandler.GetClientId();
+
+            ETLDataLoadReportDTO dto = _mapper.Map<ETLDataLoadReportDTO>(model);
+            List<EtlBatchModel> dataList = _mapper.Map<List<EtlBatchModel>>(_customerCaseService.DataLoadReport(dto).Result);
+
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                searchValue = searchValue.ToLower();
+                dataList = dataList.Where(x => 
+                    (x.FileName != null && x.FileName.ToLower().Contains(searchValue)) ||
+                    (x.AddedUser != null && x.AddedUser.ToLower().Contains(searchValue))
+                ).ToList();
+            }
+
+            var builder = new System.Text.StringBuilder();
+            builder.AppendLine("File Name,Uploaded on,Uploaded By");
+            foreach (var item in dataList)
+            {
+                builder.AppendLine($"\"{item.FileName}\",\"{item.AddedOn:dd MMM yyyy HH:mm}\",\"{item.AddedUser}\"");
+            }
+
+            return File(System.Text.Encoding.UTF8.GetBytes(builder.ToString()), "text/csv", $"CustomerBulkUploadLogs_{DateTime.Now:yyyyMMddHHmmss}.csv");
+        }
         [HttpPost]
         public async Task<IActionResult> GeneratePdf(ETLReport model, int BatchID)
         {
