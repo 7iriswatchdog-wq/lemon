@@ -1337,7 +1337,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 }
 
                             }
-                            if (result.Version > 0)
+                            if (result.Version > 1)
                             {
                                 if (hit.Decision == "True Match" || hit.Decision == "Potential Match")
                                 {
@@ -1778,7 +1778,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                 }
 
                             }
-                            if (result.Version > 0)
+                            if (result.Version > 1)
                             {
                                 if (hit.Decision == "True Match" || hit.Decision == "Potential Match")
                                 {

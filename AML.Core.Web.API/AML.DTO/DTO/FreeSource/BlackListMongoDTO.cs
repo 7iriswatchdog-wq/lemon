@@ -38,6 +38,7 @@ namespace AML.DTO.DTO.FreeSource
             public List<ADDINFOLIST> ADDINFOLIST { get; set; }
             public string STATUS { get; set; }
             public string MOBILENO { get; set; }
+            public Double MATCHSCORE { get; set; }
         }
         public class PROGRAMLIST
         {
@@ -142,6 +143,8 @@ namespace AML.DTO.DTO.FreeSource
 			public int CLIENTID { get; set; }
 
             public string REMARKS { get; set; }
+
+            public Double MATCHSCORE { get; set; }
 
         }
 

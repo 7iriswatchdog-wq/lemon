@@ -429,6 +429,8 @@ namespace AML.Core.Repository.FreeSource
             log.Debug($"MongoDB,searching the name");
 			log.Debug(depF.CountDocuments());
             log.Debug(depF2.CountDocuments());
+            Console.WriteLine(depF == null ? "depF NULL" : "depF OK");
+            Console.WriteLine(depF2 == null ? "depF2 NULL" : "depF2 OK");
 
             if (depF.CountDocuments() > 0)
             {
@@ -439,8 +441,29 @@ namespace AML.Core.Repository.FreeSource
             /*Code added by sanjana*/
             if (depF2.CountDocuments() > 0)
             {
+                try
+                {
+                    var depF2List = depF2.ToList();
+                    if (depF2List.Any())
+                    {
+                        return (
+                            exists: true,
+                            response: depF?.ToList() ?? new List<NAMELIST>(),
+                            depF2: depF2List
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("ERROR: " + ex.Message);
+                    Console.WriteLine("STACK: " + ex.StackTrace);
+                    throw;
+                }
                 log.Debug($"exists:true");
+                
                 return (exists: true, response: depF.ToList(), depF2.ToList());
+                Console.WriteLine(depF == null);   // should be false
+                Console.WriteLine(depF2 == null);  // should be false
                 log.Debug($"after searching:");
             }
             log.Debug($"exists:false");
