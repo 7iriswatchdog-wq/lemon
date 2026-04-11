@@ -19,6 +19,6 @@ namespace AML.ViewModel.ViewModels.Report
         public int ClientId { get; set; }
 
         public string SchedulerTrackerId { get; set; }
-        public int TotalPending { get; set; }
+        public int CumulativeHits { get; set; }
     }
 }
