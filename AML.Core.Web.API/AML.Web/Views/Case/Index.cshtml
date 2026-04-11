@@ -675,32 +675,25 @@
 
         return `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${styles}">${status || ''}</span>`;
     }
-    
 
-     function formatCaseStatus(statusText) {
+        function formatCaseStatus(statusText) {
         if (!statusText) return '';
 
         function getStatusClass(text) {
-               
             const t = text.toLowerCase().trim();
 
             if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
             if (t.includes('hold')) return 'bg-yellow-100 text-yellow-800';
-            if (t.includes('approved')) return 'bg-green-700 text-white';     // dark green
+            if (t.includes('approved')) return 'bg-green-700 text-white';
             if (t.includes('white')) return 'bg-green-700 text-white';
-            if (t.includes('auto')) return 'bg-green-100 text-green-800'; 
-            // if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
-            // //if (t.includes('auto')) return     'bg-amber-100 text-amber-800';
-            // if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
+            if (t.includes('auto')) return 'bg-green-100 text-green-800';
             if (t.includes('transfer')) return 'bg-green-100 text-green-800';
             if (t.includes('rejected')) return 'bg-red-100 text-red-800';
 
             return 'bg-slate-100 text-slate-800';
         }
 
-     
-
-        // Corporate case
+        // ✅ Corporate case
         if (statusText.includes('| Shareholders:')) {
 
             const [corpStatus, shInfo] = statusText.split('|');
@@ -715,13 +708,38 @@
 
             const statusClass = getStatusClass(corpStatus);
 
+            // ✅ Build tooltip dynamically (hide 0 values)
+            const tooltipItems = [];
+
+            if (+auto > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">A:${auto}</span>`);
+            }
+            if (+approved > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white">AP:${approved}</span>`);
+            }
+            if (+pending > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">P:${pending}</span>`);
+            }
+            if (+rejected > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">R:${rejected}</span>`);
+            }
+            if (+onhold > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">OH:${onhold}</span>`);
+            }
+            if (+whitelist > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white">W:${whitelist}</span>`);
+            }
+
+            const showTooltip = tooltipItems.length > 0;
+
             return `
                 <div class="space-y-1 text-left">
-                    <div class="flex w-full items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+                    <div class="flex w-full items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
                         ${corpStatus.trim()}
-                    <div class="relative group">
+
+                        ${showTooltip ? `
+                        <div class="relative group">
                             <svg class="w-5 h-5 text-gray-800 dark:text-white cursor-pointer"
-                                 aria-hidden="true"
                                  xmlns="http://www.w3.org/2000/svg"
                                  fill="currentColor"
                                  viewBox="0 0 24 24">
@@ -730,39 +748,19 @@
                                       clip-rule="evenodd"/>
                             </svg>
 
-                            <!-- Hover tooltip -->
                             <div class="absolute left-1/2 top-full mt-2 -translate-x-1/2
                                         hidden group-hover:flex gap-2
                                         bg-white p-2 rounded-lg shadow-lg border z-50">
-
-                                            <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                   A:${auto}
-                                </span>
-                                         <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white">
-                                        AP:${approved}
-                                    </span>
-
-                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
-                                    P:${pending}
-                                </span>
-
-                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-                                    R:${rejected}
-                                </span>
-                                    <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
-                                        OH:${onhold}
-                                    </span>
-                                        <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white">
-                                        W:${whitelist}
-                                    </span>
+                                ${tooltipItems.join('')}
                             </div>
                         </div>
-                       </div>
-                     </div>
+                        ` : ''}
+                    </div>
+                </div>
             `;
         }
 
-        // Individual case
+        // ✅ Individual case
         const statusClass = getStatusClass(statusText);
 
         return `
@@ -771,6 +769,102 @@
             </span>
         `;
     }
+    
+
+    //  function formatCaseStatus(statusText) {
+    //     if (!statusText) return '';
+
+    //     function getStatusClass(text) {
+               
+    //         const t = text.toLowerCase().trim();
+
+    //         if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
+    //         if (t.includes('hold')) return 'bg-yellow-100 text-yellow-800';
+    //         if (t.includes('approved')) return 'bg-green-700 text-white';     // dark green
+    //         if (t.includes('white')) return 'bg-green-700 text-white';
+    //         if (t.includes('auto')) return 'bg-green-100 text-green-800'; 
+    //         // if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
+    //         // //if (t.includes('auto')) return     'bg-amber-100 text-amber-800';
+    //         // if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
+    //         if (t.includes('transfer')) return 'bg-green-100 text-green-800';
+    //         if (t.includes('rejected')) return 'bg-red-100 text-red-800';
+
+    //         return 'bg-slate-100 text-slate-800';
+    //     }
+
+     
+
+    //     // Corporate case
+    //     if (statusText.includes('| Shareholders:')) {
+
+    //         const [corpStatus, shInfo] = statusText.split('|');
+
+    //         const total = shInfo.match(/Total\s(\d+)/)?.[1] || 0;
+    //         const approved = shInfo.match(/Approved\s(\d+)/)?.[1] || 0;
+    //         const auto = shInfo.match(/Auto\s(\d+)/)?.[1] || 0;
+    //         const pending = shInfo.match(/Pending\s(\d+)/)?.[1] || 0;
+    //         const rejected = shInfo.match(/Rejected\s(\d+)/)?.[1] || 0;
+    //         const onhold = shInfo.match(/OnHold\s(\d+)/)?.[1] || 0;
+    //         const whitelist = shInfo.match(/Whitelist\s(\d+)/)?.[1] || 0;
+
+    //         const statusClass = getStatusClass(corpStatus);
+
+    //         return `
+    //             <div class="space-y-1 text-left">
+    //                 <div class="flex w-full items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+    //                     ${corpStatus.trim()}
+    //                 <div class="relative group">
+    //                         <svg class="w-5 h-5 text-gray-800 dark:text-white cursor-pointer"
+    //                              aria-hidden="true"
+    //                              xmlns="http://www.w3.org/2000/svg"
+    //                              fill="currentColor"
+    //                              viewBox="0 0 24 24">
+    //                             <path fill-rule="evenodd"
+    //                                   d="M12 6a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-1.5 8a4 4 0 0 0-4 4 2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-3Zm6.82-3.096a5.51 5.51 0 0 0-2.797-6.293 3.5 3.5 0 1 1 2.796 6.292ZM19.5 18h.5a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-1.1a5.503 5.503 0 0 1-.471.762A5.998 5.998 0 0 1 19.5 18ZM4 7.5a3.5 3.5 0 0 1 5.477-2.889 5.5 5.5 0 0 0-2.796 6.293A3.501 3.501 0 0 1 4 7.5ZM7.1 12H6a4 4 0 0 0-4 4 2 2 0 0 0 2 2h.5a5.998 5.998 0 0 1 3.071-5.238A5.505 5.505 0 0 1 7.1 12Z"
+    //                                   clip-rule="evenodd"/>
+    //                         </svg>
+
+    //                         <!-- Hover tooltip -->
+    //                         <div class="absolute left-1/2 top-full mt-2 -translate-x-1/2
+    //                                     hidden group-hover:flex gap-2
+    //                                     bg-white p-2 rounded-lg shadow-lg border z-50">
+
+    //                                         <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+    //                                A:${auto}
+    //                             </span>
+    //                                      <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white">
+    //                                     AP:${approved}
+    //                                 </span>
+
+    //                             <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+    //                                 P:${pending}
+    //                             </span>
+
+    //                             <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+    //                                 R:${rejected}
+    //                             </span>
+    //                                 <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+    //                                     OH:${onhold}
+    //                                 </span>
+    //                                     <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white">
+    //                                     W:${whitelist}
+    //                                 </span>
+    //                         </div>
+    //                     </div>
+    //                    </div>
+    //                  </div>
+    //         `;
+    //     }
+
+    //     // Individual case
+    //     const statusClass = getStatusClass(statusText);
+
+    //     return `
+    //         <span class="flex w-full items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+    //             ${statusText}
+    //         </span>
+    //     `;
+    // }
     function getRiskScoreClass(riskScore) {
              const score = (riskScore || '').toLowerCase().trim();
 

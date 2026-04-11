@@ -620,26 +620,20 @@
         if (!statusText) return '';
 
         function getStatusClass(text) {
-
             const t = text.toLowerCase().trim();
 
             if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
-            if (t.includes('hold')) return 'bg-yellow-400 text-black'; // matching main dashboard yellow
-            if (t.includes('approved')) return 'bg-green-700 text-white';     // dark green
-            if (t.includes('white')) return 'bg-green-700 text-white'; // dark green
+            if (t.includes('hold')) return 'bg-yellow-100 text-yellow-800';
+            if (t.includes('approved')) return 'bg-green-700 text-white';
+            if (t.includes('white')) return 'bg-green-700 text-white';
             if (t.includes('auto')) return 'bg-green-100 text-green-800';
-            // if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
-            // //if (t.includes('auto')) return     'bg-amber-100 text-amber-800';
-            // if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
             if (t.includes('transfer')) return 'bg-green-100 text-green-800';
             if (t.includes('rejected')) return 'bg-red-100 text-red-800';
 
             return 'bg-slate-100 text-slate-800';
         }
 
-
-
-        // Corporate case
+        // ✅ Corporate case
         if (statusText.includes('| Shareholders:')) {
 
             const [corpStatus, shInfo] = statusText.split('|');
@@ -654,13 +648,38 @@
 
             const statusClass = getStatusClass(corpStatus);
 
+            // ✅ Build tooltip dynamically (hide 0 values)
+            const tooltipItems = [];
+
+            if (+auto > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">A:${auto}</span>`);
+            }
+            if (+approved > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white">AP:${approved}</span>`);
+            }
+            if (+pending > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">P:${pending}</span>`);
+            }
+            if (+rejected > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">R:${rejected}</span>`);
+            }
+            if (+onhold > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">OH:${onhold}</span>`);
+            }
+            if (+whitelist > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white">W:${whitelist}</span>`);
+            }
+
+            const showTooltip = tooltipItems.length > 0;
+
             return `
                 <div class="space-y-1 text-left">
-                    <div class="flex w-full items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+                    <div class="flex w-full items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
                         ${corpStatus.trim()}
-                    <div class="relative group">
+
+                        ${showTooltip ? `
+                        <div class="relative group">
                             <svg class="w-5 h-5 text-gray-800 dark:text-white cursor-pointer"
-                                 aria-hidden="true"
                                  xmlns="http://www.w3.org/2000/svg"
                                  fill="currentColor"
                                  viewBox="0 0 24 24">
@@ -669,41 +688,19 @@
                                       clip-rule="evenodd"/>
                             </svg>
 
-                            <!-- Hover tooltip -->
                             <div class="absolute left-1/2 top-full mt-2 -translate-x-1/2
                                         hidden group-hover:flex gap-2
                                         bg-white p-2 rounded-lg shadow-lg border z-50">
-
-                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-800" title="Auto">
-                                   AU:${auto}
-                                </span>
-                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white" title="Approved">
-                                   A:${approved}
-                                </span>
-
-                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800" title="Pending">
-                                    P:${pending}
-                                </span>
-
-                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800" title="Rejected">
-                                    R:${rejected}
-                                </span>
-
-                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-400 text-black" title="On Hold">
-                                    OH:${onhold}
-                                </span>
-
-                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white" title="Whitelist">
-                                    W:${whitelist}
-                                </span>
+                                ${tooltipItems.join('')}
                             </div>
                         </div>
-                       </div>
-                     </div>
+                        ` : ''}
+                    </div>
+                </div>
             `;
         }
 
-        // Individual case
+        // ✅ Individual case
         const statusClass = getStatusClass(statusText);
 
         return `
