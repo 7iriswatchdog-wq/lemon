@@ -4,6 +4,7 @@ using AML.Core.Common.StaticResource;
 using AML.Core.DataContract.Authentication;
 using AML.Core.DataContract.Enum;
 using AML.Core.RepositoryContract.FreeSource;
+using AML.Core.RepositoryContract.InternalWatchList;
 using AML.Core.Service.UserGroup;
 using AML.Core.ServiceContract.CaseComment;
 using AML.Core.ServiceContract.CaseDocument;
@@ -122,13 +123,15 @@ namespace AML.Web.Controllers.Reports
         private IKycService _kycService;
         private ILovMasterService _lovMasterService;
         private IUserGroupService _UserGroupService;
+        private readonly IInternalWatchListMongoRepository _internalWatchListMongoRepository;
 
 
         public ReportController(IUserService userService, IMapper mapper, IReportService reportService,
          IHttpClientHandler clientHandler, ICaseCommentService caseCommentService, ICustomerCategoryService customerCategoryService,
         IViewRenderService viewRenderService, IExportDataService exportService, ICustomerScreeningService customerScreeningService, IUserGroupService UserGroupService,
         ICustomerCaseService customerCaseService, ICaseDocumentService caseDocumentService, IFreeSourceRepository freeSourceRepository, IKycService kycService, ILovMasterService lovMasterService, IRiskService RiskService,
-        ICountryService countryService, ICustomerMasterService customerMasterService, ITransactionScreeningService transactionScreeningService, IToastNotification toastNotification, ICommonService commonService)
+        ICountryService countryService, ICustomerMasterService customerMasterService, ITransactionScreeningService transactionScreeningService, IToastNotification toastNotification, ICommonService commonService,
+        IInternalWatchListMongoRepository internalWatchListMongoRepository)
         {
             _userService = userService;
             _mapper = mapper;
@@ -155,6 +158,7 @@ namespace AML.Web.Controllers.Reports
             _kycService = kycService;
             baseC6URL = clientDetails?.C6BaseUrl;
             _UserGroupService = UserGroupService;
+            _internalWatchListMongoRepository = internalWatchListMongoRepository;
 
 
         }
@@ -793,6 +797,37 @@ namespace AML.Web.Controllers.Reports
 
             }
         }
+
+        public IActionResult GetBlocklistUpdateLogs()
+        {
+            var model = new ReportLogSearchModel();
+            model.StartDate = DateTime.Now.AddDays(-7);
+            model.EndDate = DateTime.Now;
+            return View(model);
+        }
+
+        [HttpPost]
+        public JsonResult GetBlocklistUpdateList(DataTableModel model, string startDate, string endDate, string source, int orderColumn = 0, string orderDirection = "desc")
+        {
+            try
+            {
+                int totalRecords = 0;
+                var logs = _internalWatchListMongoRepository.GetBlockListLogs(startDate, endDate, source, model.start, model.length, out totalRecords);
+
+                return Json(new
+                {
+                    draw = model.draw,
+                    recordsTotal = totalRecords,
+                    recordsFiltered = totalRecords,
+                    data = logs
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = ex.Message });
+            }
+        }
+
         //public void CreateTerrorristList()
         //{
         //    TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);

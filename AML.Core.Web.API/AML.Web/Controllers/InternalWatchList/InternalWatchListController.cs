@@ -7,8 +7,11 @@ using AML.Core.DataContract.Enum;
 using AML.Core.RepositoryContract.EtlBatch;
 using AML.Core.ServiceContract.Country;
 using AML.Core.ServiceContract.CustomerCase;
+using AML.Core.RepositoryContract.InternalWatchList;
 using AML.Core.ServiceContract.InternalWatchList;
 using AML.Core.ServiceContract.Sanction;
+using AML.DTO.DTO.FreeSource;
+using static AML.DTO.DTO.FreeSource.BlackListMongoDTO;
 using AML.DTO.DTO.Common;
 using AML.DTO.DTO.EtlBatch;
 using AML.DTO.DTO.InternalWatchListExcel;
@@ -42,12 +45,14 @@ namespace AML.Web.Controllers.InternalWatchList
         private IInternalWatchListService _internalWatchListService;
         IEtlLogRepository _etlLogRepository;
         IFileUploader _fileUploader;
+        private readonly IInternalWatchListMongoRepository _mongoRepository;
         public InternalWatchListController(
             IMapper mapper,
             IToastNotification toastNotification,
             IHttpClientHandler clientHandler,
             ICountryService countryService, IEtlLogRepository etlLogRepository,
-            IFileUploader fileUploader, IInternalWatchListService internalWatchListService
+            IFileUploader fileUploader, IInternalWatchListService internalWatchListService,
+            IInternalWatchListMongoRepository mongoRepository
         )
         {
             _mapper = mapper;
@@ -57,6 +62,7 @@ namespace AML.Web.Controllers.InternalWatchList
             _internalWatchListService = internalWatchListService;
             _fileUploader = fileUploader;
             _etlLogRepository = etlLogRepository;
+            _mongoRepository = mongoRepository;
         }
         public IActionResult Index()
         {
@@ -138,36 +144,35 @@ namespace AML.Web.Controllers.InternalWatchList
                     //model.Nationality = _mapper.Map<CountryModel>(_countryService.GetDetails(model.NationalityId)).Name;
 
                     //var result = _sanctionService.Create(_mapper.Map<WatchListDTO>(model));
-                    if (!string.IsNullOrEmpty(apiresponse))
-                    {
-                        _toastNotification.AddSuccessToastMessage("Internal Watchlist added successfully");
-                        model.Nationalities = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)), "Name", "Name");
-                        return RedirectToAction("Create");
+                        var uid = model.UID ?? Guid.NewGuid().ToString();
+                        _mongoRepository.InsertBlockList(new NAMELIST
+                        {
+                            UID = uid,
+                            FULLNAME = model.FullName,
+                            NATIONALITY = model.Nationality,
+                            TYPE = model.Source,
+                            CATEGORY = model.Type,
+                            REMARKS = model.Remarks,
+                            IDDETAILS = new List<IDDETAIL> { new IDDETAIL { IDNUMBER = model.IdNumber } },
+                            DOB = new List<DOBLIST> { new DOBLIST { DOB = model.DOB } },
+                            STATUS = "A",
+                            CREATEDON = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss"),
+                            CREATEDDATE = DateTime.UtcNow,
+                            UPDATEDDATE = DateTime.UtcNow
+                        });
+
+                        return Json(new { success = true, message = "Internal Watchlist added successfully", uid = uid });
                     }
                     else
                     {
-                        _toastNotification.AddSuccessToastMessage("Something went wrong.please try again.");
-                        model.CreatedBy = _clientHandler.GetUserId();
-                        model.Nationalities = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)), "Name", "Name");
-                        return View(model);
+                        return Json(new { success = false, message = "Something went wrong with the API response." });
                     }
-
-
                 }
-                else
-                {
-                    model.CreatedBy = _clientHandler.GetUserId();
-                    model.Nationalities = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)), "Name", "Name");
-                    return View(model);
-                }
-                _toastNotification.AddSuccessToastMessage("Watch List added successfully");
-                return View(model);
+                return Json(new { success = false, message = "Invalid model state." });
             }
             catch (Exception ex)
             {
-                TempData["Message"] = ex.Message;
-                TempData["Status"] = 500;
-                return View(model);
+                return Json(new { success = false, message = ex.Message });
             }
         }
 
@@ -204,7 +209,21 @@ namespace AML.Web.Controllers.InternalWatchList
                                 model.Source = item.Source;
                                 totalrecords++;
 
-
+                                // Log to MongoDB (Fixed: Added missing logging for UAE IEC LIST)
+                                _mongoRepository.InsertBlockList(new NAMELIST
+                                {
+                                    UID = Guid.NewGuid().ToString(),
+                                    FULLNAME = item.FullName,
+                                    NATIONALITY = item.Nationality,
+                                    TYPE = item.Source,
+                                    CATEGORY = item.Type,
+                                    REMARKS = item.REMARKS,
+                                    DOB = new List<DOBLIST> { new DOBLIST { DOB = item.DOB } },
+                                    STATUS = "A",
+                                    CREATEDON = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"),
+                                    CREATEDDATE = DateTime.Now,
+                                    UPDATEDDATE = DateTime.Now
+                                });
                             }
 
 
@@ -213,6 +232,25 @@ namespace AML.Web.Controllers.InternalWatchList
                         {
                             var request = new { fullname = item.FullName, dob = item.DOB, nationality = item.Nationality, type = item.Source, category = item.Type, CLIENTID = clientId, REMARKS = item.REMARKS };
                             var apiresponse = _clientHandler.PostAsync(request, ScreeningService.ADDTOBLACKLIST).Result;
+
+                            if (!string.IsNullOrEmpty(apiresponse))
+                            {
+                                // Log to MongoDB
+                                _mongoRepository.InsertBlockList(new NAMELIST
+                                {
+                                    UID = Guid.NewGuid().ToString(),
+                                    FULLNAME = item.FullName,
+                                    NATIONALITY = item.Nationality,
+                                    TYPE = item.Source,
+                                    CATEGORY = item.Type,
+                                    REMARKS = item.REMARKS,
+                                    DOB = new List<DOBLIST> { new DOBLIST { DOB = item.DOB } },
+                                    STATUS = "A",
+                                    CREATEDON = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss"),
+                                    CREATEDDATE = DateTime.UtcNow,
+                                    UPDATEDDATE = DateTime.UtcNow
+                                });
+                            }
                         }
                     }
                     else
@@ -246,28 +284,16 @@ namespace AML.Web.Controllers.InternalWatchList
                     AddedBy = _documentsModel.AddedBy,
                     Type = (int)LogModulle.InternalWatchlist
                 };
-                int resp = _etlLogRepository.Create(_etlBatchDTO).Result;
                 if (resp > 0)
                 {
-                    _toastNotification.AddSuccessToastMessage("Bulk Watch List uploaded successfully");
-                    model.Nationalities = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)), "Name", "Name");
-                    return RedirectToAction("Create");
+                    return Json(new { success = true, total = totalrecords, message = "Bulk Watch List uploaded successfully" });
                 }
                 else
                 {
-                    _toastNotification.AddSuccessToastMessage("Something went wrong.please try again.");
-                    model.CreatedBy = _clientHandler.GetUserId();
-                    model.Nationalities = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)), "Id", "Name");
-                    return View(model);
+                    return Json(new { success = false, message = "Something went wrong during logs recording." });
                 }
-
-
-               
             }
-
-            return View("Create", watchlistModel);
-
-
+            return Json(new { success = false, message = "No document provided." });
         }
         [HttpGet]
         public ActionResult DownloadInternalWatchList(string filename)
@@ -335,8 +361,25 @@ namespace AML.Web.Controllers.InternalWatchList
                     //var result = _sanctionService.Create(_mapper.Map<WatchListDTO>(model));
                     if (!string.IsNullOrEmpty(apiresponse))
                     {
+                        // Log to MongoDB (Update history)
+                        _mongoRepository.InsertBlockList(new NAMELIST
+                        {
+                            UID = model.UID ?? Guid.NewGuid().ToString(),
+                            FULLNAME = model.FullName,
+                            NATIONALITY = model.Nationality,
+                            TYPE = model.Source,
+                            CATEGORY = model.Type,
+                            REMARKS = model.Remarks,
+                            IDDETAILS = new List<IDDETAIL> { new IDDETAIL { IDNUMBER = model.IdNumber } },
+                            DOB = new List<DOBLIST> { new DOBLIST { DOB = model.DOB } },
+                            STATUS = "A",
+                            CREATEDON = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"),
+                            CREATEDDATE = DateTime.Now,
+                            UPDATEDDATE = DateTime.Now
+                        });
+
                         _toastNotification.AddSuccessToastMessage("Internal Watchlist Updated successfully");
-                        return RedirectToAction("InternalWatchlistUpdateLogs", "Report");
+                        return RedirectToAction("GetBlocklistUpdateLogs", "Report");
                     }
                     else
                     {

@@ -331,6 +331,13 @@
 
                    helper("Reports");
           }
+       function toggleDropdownBlocklist() {
+           const dropdown = document.getElementById('blocklist-dropdown');
+           const dropdownArrow = document.getElementById('dropdown-arrow-blocklist');
+           dropdown.classList.toggle('hidden');
+           dropdownArrow.classList.toggle('rotate-180');
+           helper("blocklistModule");
+      }
 
           
 
@@ -378,6 +385,7 @@
                     var duediligence = Url.MakeActiveClass("Case", "Index");
                     var completedCase = Url.MakeActiveClass("Case", "CompletedCaseIndex");
                     var InstantSanction = Url.MakeActiveClass("SanctionScreening", "Index");
+                    var blocklistActive = Url.MakeActiveClass("InternalWatchList", "Create");
 
              
                     var duediligenceClass = duediligence == "active" ? "text-blue-600" : "text-slate-500";
@@ -390,7 +398,7 @@
 
 
 
-                    var nameScreeningActive = (individualActive == "active" || corporateActive == "active" || duediligence == "active" || completedCase == "active" || InstantSanctionClass == "active");
+                    var nameScreeningActive = (individualActive == "active" || corporateActive == "active" || blocklistActive == "active" || duediligence == "active" || completedCase == "active" || InstantSanctionClass == "active");
                     var parentClass = nameScreeningActive ? "text-blue-600" : "text-slate-500";
 
 
@@ -506,6 +514,43 @@
                         </ul>
                     </li>
                 }
+
+                @if (allowedModules.Contains(1) || allowedModules.Contains(3))
+                {
+                    var blocklistActive = Url.MakeActiveClass("InternalWatchList", "Create");
+                    var blocklistLogActive = Url.MakeActiveClass("Report", "GetBlocklistUpdateLogs");
+                    var blocklistModuleActive = (blocklistActive == "active" || blocklistLogActive == "active");
+                    var parentClass = blocklistModuleActive ? "text-blue-600" : "text-slate-500";
+
+                    <li class="flex flex-col hover:bg-[#F8FAFC] mb-1 rounded-md transition-colors @parentClass hover:text-slate-800">
+                        <div class="inline-flex items-center p-4 cursor-pointer justify-between" onclick="toggleDropdownBlocklist()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-alert"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                            <span id="blocklistModule" class="ml-1 md:inline-flex items-center w-28 truncate text-ellipsis whitespace-normal font-medium text-[15px]">Blocklist</span>
+                            <svg id="dropdown-arrow-blocklist" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down ml-1 transition-transform duration-200 @(blocklistModuleActive ? "rotate-180" : "")">
+                                <path d="m6 9 6 6 6-6"></path>
+                            </svg>
+                        </div>
+                        <ul id="blocklist-dropdown" class="@(blocklistModuleActive ? "" : "hidden") pl-8 mb-1">
+                            <a class="dropdown-item @blocklistActive" asp-controller="InternalWatchList" asp-action="Create">
+                                <li class="p-2 hover:bg-gray-100 rounded-md mr-1">
+                                    <div class="flex items-center gap-4 cursor-pointer">
+                                        <div class="w-1 h-6 @(blocklistActive == "active" ? "bg-blue-600" : "text-slate-500") rounded-full"></div>
+                                        <span class="@(blocklistActive == "active" ? "text-blue-600 font-bold" : "text-slate-500") text-[14px]">Management</span>
+                                    </div>
+                                </li>
+                            </a>
+                            <a class="dropdown-item @blocklistLogActive" asp-controller="Report" asp-action="GetBlocklistUpdateLogs">
+                                <li class="p-2 hover:bg-gray-100 rounded-md mr-1">
+                                    <div class="flex items-center gap-4 cursor-pointer">
+                                        <div class="w-1 h-6 @(blocklistLogActive == "active" ? "bg-blue-600" : "text-slate-500") rounded-full"></div>
+                                        <span class="@(blocklistLogActive == "active" ? "text-blue-600 font-bold" : "text-slate-500") text-[14px]">Update Logs</span>
+                                    </div>
+                                </li>
+                            </a>
+                        </ul>
+                    </li>
+                }
+
                 @if (allowedModules.Contains(4))
                 {
                     var caseReportActive = @Url.MakeActiveClass("Report", "CaseReport");
