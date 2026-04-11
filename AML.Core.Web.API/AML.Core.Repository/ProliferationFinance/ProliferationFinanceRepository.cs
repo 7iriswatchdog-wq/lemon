@@ -192,5 +192,25 @@ namespace AML.Core.Repository.ProliferationFinance
             }
             return serviceResponse;
         }
+
+        public ServiceResponse<List<ProliferationFinanceCaseDTO>> GetCaseHistory(string corporateId, int clientId)
+        {
+            ServiceResponse<List<ProliferationFinanceCaseDTO>> serviceResponse = new ServiceResponse<List<ProliferationFinanceCaseDTO>>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_CorporateId", corporateId);
+                parameters.Add("@p_ClientId", clientId);
+                serviceResponse.Result = Get<ProliferationFinanceCaseDTO>("sp_GetProliferationFinanceHistory", parameters, commandType: CommandType.StoredProcedure).ToList();
+                serviceResponse.Status = 200;
+                serviceResponse.Message = "Success";
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Status = 500;
+                serviceResponse.Message = ex.Message;
+            }
+            return serviceResponse;
+        }
     }
 }

@@ -91,6 +91,11 @@ namespace AML.Core.Service.ProliferationFinance
             return _repository.UpdateSearchHits(caseId, hitDetails);
         }
 
+        public ServiceResponse<List<ProliferationFinanceCaseDTO>> GetCaseHistory(string corporateId, int clientId)
+        {
+            return _repository.GetCaseHistory(corporateId, clientId);
+        }
+
         public ServiceResponse<bool> SyncSearchResultsToMongo(int caseId, string productName, List<UAEControlListDTO> chemicalHits, string pdfHits)
         {
             try

@@ -45,5 +45,6 @@ namespace AML.DTO.DTO.ProliferationFinance
         public string MatchedChemicalName { get; set; }
         [Column("SearchHitDetails")]
         public string SearchHitDetails { get; set; }
+        public int Version { get; set; }
     }
 }

@@ -488,7 +488,7 @@ namespace AML.Web.Controllers
                 riskmodel.RiskScoreCount = a;
                 riskmodel.ClientId = model.ClientId;
                 riskmodel.CreatedBy = model.CreatedBy;
-                riskmodel.version = 2;
+                riskmodel.version = model.Version == 0 ? 1 : model.Version;
                 var result = _riskService.Create(_mapper.Map<RiskDTO>(riskmodel));
                 res = new RiskAPIResultModel
                 {
@@ -611,7 +611,7 @@ namespace AML.Web.Controllers
                 riskmodel.RiskScoreCount = a;
                 riskmodel.ClientId = model.ClientId;
                 riskmodel.CreatedBy = model.CreatedBy;
-                riskmodel.version = 2;
+                riskmodel.version = model.Version == 0 ? 1 : model.Version;
                 var result = _riskService.CreateCorpCustomerRisk(_mapper.Map<RiskCorpCustomerDTO>(riskmodel));
                 res = new RiskAPIResultModel
                 {

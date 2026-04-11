@@ -18,6 +18,7 @@ namespace AML.ViewModel.ViewModels.RiskAPI
         [Required(ErrorMessage = "Company Name required")]
         public string CompanyName { get; set; }
         public int CreatedBy { get; set; }
+        public int Version { get; set; }
     }
     public class RiskTypeCategoryListModel
     {
