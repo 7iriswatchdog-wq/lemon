@@ -10,9 +10,21 @@ async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.p
         return;
     }
 
-    // Show loader if available
-    const loader = document.getElementById('loadingeffect') || document.getElementById('processLoader');
-    if (loader) loader.style.display = 'flex';
+    // Show loader if available (checking both current and parent context)
+    const getLoader = () => {
+        const ids = ['loadingeffect', 'processLoader', 'loader', 'loadingCaseDetails', 'loadingOverlay'];
+        for (const id of ids) {
+            const el = document.getElementById(id) || (window.parent ? window.parent.document.getElementById(id) : null);
+            if (el) return el;
+        }
+        return null;
+    };
+
+    const loader = getLoader();
+    if (loader) {
+        loader.style.setProperty('display', 'flex', 'important');
+        loader.classList.remove('hidden');
+    }
 
     try {
         // --- STEP 1: PRE-CAPTURE DATA FROM ORIGINAL ---
@@ -143,6 +155,9 @@ async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.p
         console.error('PDF Generation failed:', error);
         if (typeof toastr !== 'undefined') toastr.error('Failed to generate PDF');
     } finally {
-        if (loader) loader.style.display = 'none';
+        if (loader) {
+            loader.style.display = 'none';
+            loader.classList.add('hidden');
+        }
     }
 }

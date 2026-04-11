@@ -192,6 +192,7 @@
 
                     <input type="text" id="startDate" name="StartDate"
                            placeholder="dd/MM/yyyy"
+                           value="@Model.StartDate.ToString("yyyy-MM-dd")"
                            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
                     <span id="formattedDate" hidden></span>
                 </div>
@@ -201,6 +202,7 @@
                     <label class="text-[12px] font-bold text-slate-500">End Date</label>
                     <input type="text" id="endDate" name="EndDate"
                            placeholder="dd/MM/yyyy"
+                           value="@Model.EndDate.ToString("yyyy-MM-dd")"
                            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
                     <span id="formattedEndDate" hidden></span>
                     @*  <input type="date" id="endDate" asp-for="EndDate" max="@(DateTime.Now.ToString("yyyy/MM/dd"))"
@@ -432,7 +434,7 @@
                 </div>
             </div>
         </div>
-
+        <iframe id="pdfExportFrame" style="position: absolute; left: -9999px; visibility: hidden; width: 1024px; height: 100%;"></iframe>
 </body>
 </html>
 
@@ -506,7 +508,7 @@
         document.getElementById("extraFilters").classList.add("hidden");
 
         document.getElementById("filterBtn").classList.remove("hidden");
-        //document.getElementById("resetBtn").classList.add("hidden");
+        //document.getElementById("resetBtn").classList.hidden("hidden");
 
         document.getElementById("columnFilter").value = "";
 
@@ -1131,25 +1133,37 @@
 
 
         function ExportList(isPDF) {
-
-        $("#loadingCaseDetails").show();
-
-        window.location =
-            '/Report/ExportCaseReport?' +
-            'startDate=' + $('#startDate').val() +
-            '&endDate=' + $('#endDate').val() +
-            '&cust_type=' + $('#customertype').val() +
-            '&createdBy=' + $('#user').val() +
-            '&matchScore=' + $('#screeningScore').val() +
-            '&caseStatus=' + $('#caseStatus').val() +
-            '&caseStatusChange=' + $('#caseStatusChange').val() +
-            '&riskLevel=' + $('#riskScore').val() +
-            '&searchValue='  + ($('#searchInput').val() || '') +
-            '&isPDF=' + isPDF;
-
-
-        $("#loadingCaseDetails").hide();
-    }
+            if (isPDF) {
+                $('#loader').removeClass('hidden').addClass('flex');
+                const url = '/Report/CaseReport_PDF?' +
+                    'startDate=' + $('#startDate').val() +
+                    '&endDate=' + $('#endDate').val() +
+                    '&cust_type=' + $('#customertype').val() +
+                    '&createdBy=' + $('#user').val() +
+                    '&matchScore=' + $('#screeningScore').val() +
+                    '&caseStatus=' + $('#caseStatus').val() +
+                    '&caseStatusChange=' + $('#caseStatusChange').val() +
+                    '&riskLevel=' + $('#riskScore').val() +
+                    '&searchValue=' + ($('#searchInput').val() || '');
+                
+                $('#pdfExportFrame').attr('src', url);
+            } else {
+                $("#loadingCaseDetails").show();
+                window.location =
+                    '/Report/ExportCaseReport?' +
+                    'startDate=' + $('#startDate').val() +
+                    '&endDate=' + $('#endDate').val() +
+                    '&cust_type=' + $('#customertype').val() +
+                    '&createdBy=' + $('#user').val() +
+                    '&matchScore=' + $('#screeningScore').val() +
+                    '&caseStatus=' + $('#caseStatus').val() +
+                    '&caseStatusChange=' + $('#caseStatusChange').val() +
+                    '&riskLevel=' + $('#riskScore').val() +
+                    '&searchValue=' + ($('#searchInput').val() || '') +
+                    '&isPDF=' + isPDF;
+                $("#loadingCaseDetails").hide();
+            }
+        }
 
         function checkFilterValues() {
 
@@ -1223,11 +1237,15 @@
             });
         }
 
-        // ✅ Start Date → 1 year back, max today
-        const startPicker = initDatePicker("#startDate", new Date().fp_incr(-365));
+        // Get initial values from inputs (bound to Model)
+        const initialStartDate = document.querySelector("#startDate").value;
+        const initialEndDate = document.querySelector("#endDate").value;
 
-        // ✅ End Date → today, min today
-        const endPicker = initDatePicker("#endDate", new Date(), true);
+        // ✅ Start Date → Use model value or 1 year back
+        const startPicker = initDatePicker("#startDate", initialStartDate || new Date().fp_incr(-365));
+
+        // ✅ End Date → Use model value or today
+        const endPicker = initDatePicker("#endDate", initialEndDate || new Date(), true);
 
     });
         function setRowType(element) {

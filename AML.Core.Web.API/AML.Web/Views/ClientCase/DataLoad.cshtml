@@ -110,9 +110,29 @@
                 <button type="submit" id="btnSearch" onclick="showLoader()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold h-10 px-5 rounded-md text-sm transition shadow-sm">
                     Apply
                 </button>
+
+                <!-- Export Dropdown -->
+                <div class="relative inline-block text-left group">
+                    <button type="button" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-4 rounded-md text-sm transition focus:outline-none shadow-sm">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                        Export
+                        <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                    </button>
+                    <div class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200" role="menu" aria-orientation="vertical">
+                        <div class="py-1" role="none">
+                            <button type="button" onclick="ExportList(true);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
+                                Export PDF
+                            </button>
+                            <button type="button" onclick="ExportList(false);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         </form>
+        <iframe id="pdfExportFrame" style="position: absolute; left: -9999px; visibility: hidden; width: 1024px; height: 100%;"></iframe>
         <input id="hdnBatchId" type="hidden" />
 
         <!-- Table UI -->
@@ -148,9 +168,13 @@
                     <table class="w-full text-sm text-left whitespace-nowrap">
                         <thead class="text-[10px] text-slate-500 bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 0)">File Name</th>
+                                @* <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 0)">File Name</th>
                                 <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 1)">Uploaded on</th>
-                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 2)">Uploaded By</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 2)">Uploaded By</th> *@
+
+                                <th class="px-4 py-4 font-semibold h-12">File Name</th>
+                                <th class="px-4 py-4 font-semibold h-12">Uploaded on</th>
+                                <th class="px-4 py-4 font-semibold h-12">Uploaded By</th>
                             </tr>
                         </thead>
                         <tbody id="table1Body" class="divide-y divide-slate-100" style="font-size: 12px;">
@@ -163,7 +187,7 @@
                     <table class="w-full text-sm text-left whitespace-nowrap">
                         <thead class="text-[10px] text-slate-500 bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th class="px-4 py-4 font-semibold h-12 w-[50px] sortable" onclick="sortTable('table2', 0)">#</th>
+                                @* <th class="px-4 py-4 font-semibold h-12 w-[50px] sortable" onclick="sortTable('table2', 0)">#</th>
                                 <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 1)">Customer Id</th>
                                 <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 2)">Customer Name</th>
                                 <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 3)">Nationality</th>
@@ -171,7 +195,17 @@
                                 <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 5)">Matched</th>
                                 <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 6)">Source</th>
                                 <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 7)">Uid</th>
-                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 8)">Date</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 8)">Date</th> *@
+
+                                <th class="px-4 py-4 font-semibold h-12 w-[50px]">#</th>
+                                <th class="px-4 py-4 font-semibold h-12">Customer Id</th>
+                                <th class="px-4 py-4 font-semibold h-12">Customer Name</th>
+                                <th class="px-4 py-4 font-semibold h-12">Nationality</th>
+                                <th class="px-4 py-4 font-semibold h-12">Date Of Birth</th>
+                                <th class="px-4 py-4 font-semibold h-12">Matched</th>
+                                <th class="px-4 py-4 font-semibold h-12">Source</th>
+                                <th class="px-4 py-4 font-semibold h-12">Uid</th>
+                                <th class="px-4 py-4 font-semibold h-12">Date</th>
                             </tr>
                         </thead>
                         <tbody id="table2Body" class="divide-y divide-slate-100" style="font-size: 12px;">
@@ -394,6 +428,7 @@
         updatePagination(activeData.length);
     }
 
+    /*
     function sortTable(tbl, colIdx) {
         if(colIdx === sortCol) {
             sortAsc = !sortAsc;
@@ -410,6 +445,7 @@
         });
         filterTableActive();
     }
+    */
 
     function updatePagination(totalRecords) {
         const start = totalRecords === 0 ? 0 : (currentPage - 1) * size + 1;
@@ -480,6 +516,25 @@
         if(batchId) {
             $('#pdfBatchId').val(batchId);
             $('#btnPdf').click();
+        }
+    }
+
+    function ExportList(isPDF) {
+        const fromDate = $('#startDate').val();
+        const toDate = $('#endDate').val();
+        const matchType = $('#MatchType').val();
+        const customer = $('#Customer').val();
+        const searchValue = $('#searchInput').val() || '';
+
+        if (isPDF) {
+            showLoader();
+            const url = `/ClientCase/DataLoad_PDF?FromDate=${fromDate}&ToDate=${toDate}&MatchType=${matchType}&Customer=${customer}&searchValue=${searchValue}`;
+            $('#pdfExportFrame').attr('src', url);
+        } else {
+            showLoader();
+            const url = `/ClientCase/DataLoad_CSV?FromDate=${fromDate}&ToDate=${toDate}&MatchType=${matchType}&Customer=${customer}&searchValue=${searchValue}`;
+            window.location.href = url;
+            setTimeout(() => $('#loader').addClass('hidden'), 2000);
         }
     }
 </script>
