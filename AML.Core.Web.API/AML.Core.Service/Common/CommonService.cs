@@ -825,7 +825,7 @@ namespace AML.Core.Service.Common
             screeningrq.CUSTOMERMOBILENUMBER = _CustomerCaseDTO.Mobile.IsNotNullOrEmpty() ? _CustomerCaseDTO.Mobile : string.Empty;
             screeningrq.CUSTOMERTYPE = _CustomerCaseDTO.CustomerType.IsNotNullOrEmpty() ? _CustomerCaseDTO.CustomerType : string.Empty;
             screeningrq.UPDATEDON = string.Empty;
-            screeningrq.WHITELISTINGDATE = _CustomerCaseDTO.DateOfWhitelisting.ToString();
+            screeningrq.WHITELISTINGDATE = _CustomerCaseDTO.DateOfWhitelisting?.ToString("dd/MM/yyyy");
             screeningrq.WHITELISTING = _CustomerCaseDTO.IsWhiteListed;
             checkThreshold = _CustomerCaseDTO.Threshold;
             if (_CustomerCaseDTO.Status == 2 || _CustomerCaseDTO.Status == 5)
@@ -868,7 +868,7 @@ namespace AML.Core.Service.Common
                 {
                     _CustomerCaseDTO.RiskScore = apiResp.riskScore;
                     _CustomerCaseDTO.MatchCategory = apiResp.data.matchcategory;
-                    _CustomerCaseDTO.Source = (_CustomerCaseDTO.IsWhiteListed != "YES") ? apiResp.data.matchtype : "WHITELIST";
+                    _CustomerCaseDTO.Source =  apiResp.data.matchtype;
                     _CustomerCaseDTO.SourceUniqueId = apiResp.data.matchuid;
                     _CustomerCaseDTO.MatchScore = Convert.ToInt32(apiResp.data.matchscore);
                     _CustomerCaseDTO.MatchType = apiResp.data.matchtype;

@@ -142,12 +142,12 @@ namespace AML.Web.Controllers.InternalWatchList
                             uploadLogsDTO.Corporate = "0";
 
                             // ? Based on Type
-                            if (model.Type == "Individual")
+                            if (model.Type == "INDIVIDUAL")
                             {
                                 uploadLogsDTO.Delta = "+1";
                                 uploadLogsDTO.Individual = "+1";
                             }
-                            else if (model.Type == "Corporate")
+                            else if (model.Type == "CORPORATE")
                             {
                                 uploadLogsDTO.Delta = "+1";
                                 uploadLogsDTO.Corporate = "+1";
