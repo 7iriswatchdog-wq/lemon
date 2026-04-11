@@ -4,6 +4,7 @@ using AML.ViewModel.ViewModels.CaseDocument;
 using AML.ViewModel.ViewModels.Corporate;
 using AML.ViewModel.ViewModels.CustomerCase;
 using AML.ViewModel.ViewModels.Kyc;
+using AML.ViewModel.ViewModels.ProliferationFinance;
 using AML.ViewModel.ViewModels.Risk;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
@@ -26,6 +27,8 @@ namespace AML.ViewModel.ViewModels.CaseProcess
         public SelectList DocumentCategories { get; set; }
         public SelectList Users { get; set; }
         public List<DataListModel> DataList { get; set; }
+
+        public List<ProliferationFinanceModel> ProliferationFinanceData { get; set; }
         public string Url { get; set; }
         public List<ApiResultModel> apiResultModels { get; set; }
 

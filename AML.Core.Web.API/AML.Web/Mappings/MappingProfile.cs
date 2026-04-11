@@ -16,6 +16,7 @@ using AML.DTO.DTO.InternalWatchListExcel;
 using AML.DTO.DTO.Kyc;
 using AML.DTO.DTO.LovMaster;
 using AML.DTO.DTO.ProdMaster;
+using AML.DTO.DTO.ProliferationFinance;
 using AML.DTO.DTO.Report;
 using AML.DTO.DTO.Risk;
 using AML.DTO.DTO.RiskV2;
@@ -46,6 +47,7 @@ using AML.ViewModel.ViewModels.InternalWathcList;
 using AML.ViewModel.ViewModels.Kyc;
 using AML.ViewModel.ViewModels.LovMasterModel;
 using AML.ViewModel.ViewModels.ProductMaster;
+using AML.ViewModel.ViewModels.ProliferationFinance;
 using AML.ViewModel.ViewModels.Report;
 using AML.ViewModel.ViewModels.Risk;
 using AML.ViewModel.ViewModels.RiskAPI;
@@ -268,6 +270,9 @@ namespace AML.Web.Mappings
             CreateMap<TMSNewRulesNamesModel, TMSNewRulesNamesDTO>();
             CreateMap<TMSFieldsmodelDTO, TMSFieldsNamesmodel>();
             CreateMap<TMSFieldsNamesmodel, TMSFieldsmodelDTO>();
+
+            CreateMap<ProliferationFinanceCaseDTO, ProliferationFinanceModel>();
+            CreateMap<ProliferationFinanceModel, ProliferationFinanceCaseDTO>();
 
 
 

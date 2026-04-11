@@ -2,6 +2,7 @@ namespace AML.ViewModel.ViewModels.ProliferationFinance
 {
     public class ProliferationFinanceModel
     {
+        public int Id { get; set; }
         public string CustomerType { get; set; } // Chemical or NonChemical
         public string CorporateId { get; set; }
         public string CompanyName { get; set; }

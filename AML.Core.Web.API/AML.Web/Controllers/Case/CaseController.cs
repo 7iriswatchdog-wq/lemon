@@ -31,6 +31,7 @@ using AML.DTO.DTO.CustomerCase;
 using AML.DTO.DTO.CustomerScreening;
 using AML.DTO.DTO.FreeSource;
 using AML.DTO.DTO.Kyc;
+using AML.DTO.DTO.ProliferationFinance;
 using AML.DTO.DTO.Risk;
 using AML.ViewModel.ViewModels.CaseAssignment;
 using AML.ViewModel.ViewModels.CaseComment;
@@ -47,6 +48,7 @@ using AML.ViewModel.ViewModels.CustomerCategory;
 using AML.ViewModel.ViewModels.DataTable;
 using AML.ViewModel.ViewModels.IdentityType;
 using AML.ViewModel.ViewModels.Kyc;
+using AML.ViewModel.ViewModels.ProliferationFinance;
 using AML.ViewModel.ViewModels.Report;
 using AML.ViewModel.ViewModels.Risk;
 using AML.ViewModel.ViewModels.RiskAPI;
@@ -1411,6 +1413,8 @@ namespace AML.Web.Controllers.Case
                 model.CaseDocuments = _mapper.Map<List<CaseDocumentModel>>(caseDocumentbyId);
                 List<CustomerCaseDTO> _CustomerCaseshareholders = _customerCaseService.GetShareHoldersByCompanyCode(_CustomerCaseDTO.CustomerId);
                 model.ShareholdersData = _mapper.Map<List<CaseModel>>(_CustomerCaseshareholders);
+                List<ProliferationFinanceCaseDTO> proliferationData = _customerCaseService.GetProliferationData(_CustomerCaseDTO.CustomerId);
+                model.ProliferationFinanceData = _mapper.Map<List<ProliferationFinanceModel>>(proliferationData);
                 List<RiskReportModel> riskReports = _mapper.Map<List<RiskReportModel>>(_riskService.GetLastestRiskVersion(_CustomerCaseDTO.CustomerId,_CustomerCaseDTO.CustomerType));
                 model.RiskVersionData= _mapper.Map<List<RiskReportModel>>(riskReports);
 

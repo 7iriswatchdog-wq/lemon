@@ -1,15 +1,16 @@
 using AML.Core.Common.StaticResource;
+using AML.DTO.DTO.CodesMaster;
+using AML.DTO.DTO.Common;
 using AML.DTO.DTO.CustomerCase;
 using AML.DTO.DTO.EtlBatch;
+using AML.DTO.DTO.ProliferationFinance;
+using AML.ViewModel.ViewModels.ApiAuthentication;
+using AML.ViewModel.ViewModels.Kyc;
+using Microsoft.AspNetCore.Razor.Language.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using AML.DTO.DTO.Common;
-using AML.DTO.DTO.CodesMaster;
-using AML.ViewModel.ViewModels.ApiAuthentication;
 using System.Threading.Tasks;
-using AML.ViewModel.ViewModels.Kyc;
-using Microsoft.AspNetCore.Razor.Language.Extensions;
 
 namespace AML.Core.RepositoryContract.CustomerCase
 {
@@ -30,6 +31,8 @@ namespace AML.Core.RepositoryContract.CustomerCase
         ServiceResponse<string> GetDualGoodsStatus(string customerId);
 
         ServiceResponse<List<CustomerCaseDTO>> GetShareHoldersByCompanyCode(string Id);
+
+        ServiceResponse<List<ProliferationFinanceCaseDTO>> GetProliferationData(string Id);
 
         ServiceResponse<List<CustomerCaseDTO>> GetShareHoldersByParentCode(string Id);
         int GetCaseId(string CustId);

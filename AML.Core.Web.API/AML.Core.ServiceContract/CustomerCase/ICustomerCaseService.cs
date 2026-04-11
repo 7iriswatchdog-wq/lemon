@@ -3,6 +3,7 @@ using AML.DTO.DTO.CodesMaster;
 using AML.DTO.DTO.Common;
 using AML.DTO.DTO.CustomerCase;
 using AML.DTO.DTO.EtlBatch;
+using AML.DTO.DTO.ProliferationFinance;
 using AML.ViewModel.ViewModels.ApiAuthentication;
 using AML.ViewModel.ViewModels.Kyc;
 using AML.ViewModel.ViewModels.RiskAPI;
@@ -32,6 +33,8 @@ namespace AML.Core.ServiceContract.CustomerCase
         string GetDualGoodsStatus(string customerId);
 
         List<CustomerCaseDTO> GetShareHoldersByCompanyCode(string Id);
+
+        List<ProliferationFinanceCaseDTO> GetProliferationData(string Id);
         List<CustomerCaseDTO> GetShareHoldersByParentCode(string Id);
         List<CustomerMasterDTO> GetUnscreenedCustomers();
         int GetCaseId(string custId);

@@ -6,6 +6,7 @@ using AML.DTO.DTO.CodesMaster;
 using AML.DTO.DTO.Common;
 using AML.DTO.DTO.CustomerCase;
 using AML.DTO.DTO.EtlBatch;
+using AML.DTO.DTO.ProliferationFinance;
 using AML.ViewModel.ViewModels.ApiAuthentication;
 using AML.ViewModel.ViewModels.Kyc;
 using Dapper;
@@ -284,6 +285,24 @@ namespace AML.Core.Repository.CustomerCase
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_id", Id);
                 serviceResponse.Result = Get<CustomerCaseDTO>("get_all_customercase_by_companycode", parameters, commandType: CommandType.StoredProcedure).ToList();
+                serviceResponse.Message = "Customer cases fetched successfully.";
+                serviceResponse.Status = StaticResource.SuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Message = ex.Message;
+                serviceResponse.Status = StaticResource.FailStatusCode;
+            }
+            return serviceResponse;
+        }
+        public ServiceResponse<List<ProliferationFinanceCaseDTO>> GetProliferationData(string Id)
+        {
+            ServiceResponse<List<ProliferationFinanceCaseDTO>> serviceResponse = new ServiceResponse<List<ProliferationFinanceCaseDTO>>();
+            try
+            {
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@p_id", Id);
+                serviceResponse.Result = Get<ProliferationFinanceCaseDTO>("get_all_proliferations_data", parameters, commandType: CommandType.StoredProcedure).ToList();
                 serviceResponse.Message = "Customer cases fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
             }

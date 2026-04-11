@@ -21,6 +21,7 @@ using AML.DTO.DTO.CorporateShareholder;
 using AML.DTO.DTO.CustomerCase;
 using AML.DTO.DTO.CustomerScreening;
 using AML.DTO.DTO.EtlBatch;
+using AML.DTO.DTO.ProliferationFinance;
 using AML.DTO.DTO.Risk;
 using AML.ViewModel.ViewModels.ApiAuthentication;
 using AML.ViewModel.ViewModels.CaseComment;
@@ -522,6 +523,11 @@ namespace AML.Core.Service.CustomerCase
         {
             //Perform business requirements here
             return _CustomerCaseRepository.GetShareHoldersByCompanyCode(Id).Result;
+        }
+        public List<ProliferationFinanceCaseDTO> GetProliferationData(string Id)
+        {
+            //Perform business requirements here
+            return _CustomerCaseRepository.GetProliferationData(Id).Result;
         }
         public List<CustomerCaseDTO> GetShareHoldersByParentCode(string Id)
         {
