@@ -3315,7 +3315,7 @@ namespace AML.Web.Controllers.Case
                     if (MoredualusegoodsId != "0")
                     {
                         var riskType14 = new RiskTypeListModel();
-                        riskType14.Id = Convert.ToString(dualusegoodslovId);
+                        riskType14.Id = Convert.ToString(MoredualusegoodslovId);
                         var riskItem14 = new RiskItemListModel();
                         riskItem14.Id = MoredualusegoodsId.ToString();//Convert.ToString(1);
                         var riskItemList14 = new List<RiskItemListModel>();
@@ -3681,7 +3681,7 @@ namespace AML.Web.Controllers.Case
                         if (MoredualusegoodsId != "0")
                         {
                             var riskType14 = new RiskTypeListModel();
-                            riskType14.Id = Convert.ToString(dualusegoodslovId);
+                            riskType14.Id = Convert.ToString(MoredualusegoodslovId);
                             var riskItem14 = new RiskItemListModel();
                             riskItem14.Id = MoredualusegoodsId.ToString();//Convert.ToString(1);
                             var riskItemList14 = new List<RiskItemListModel>();
