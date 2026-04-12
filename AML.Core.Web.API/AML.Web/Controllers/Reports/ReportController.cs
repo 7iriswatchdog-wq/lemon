@@ -58,6 +58,9 @@ using iTextSharp.text.pdf;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
+using System.Drawing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.CodeAnalysis.Operations;
@@ -70,8 +73,6 @@ using MongoDB.Driver.Core.Events;
 using MySqlX.XDevAPI;
 using Newtonsoft.Json;
 using NToastNotify;
-using SixLabors.ImageSharp;
-using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -795,6 +796,97 @@ namespace AML.Web.Controllers.Reports
                 Console.WriteLine($"exception in calling place {ex.InnerException + ex.Message}");
                 return Json(null);
 
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> InternalWatchlist_Excel(string StartDate, string EndDate, string SourceType)
+        {
+            try
+            {
+                var clientId = _clientHandler.GetClientId();
+                dynamic response;
+                if (SourceType == "UAE IEC LIST")
+                {
+                    response = await _clientHandler.PostAsync(new { StartDate = DateTime.Parse(StartDate).ToString("dd/MM/yyyy"), EndDate = DateTime.Parse(EndDate).ToString("dd/MM/yyyy"), Type = SourceType }, ScreeningService.INTERNALWATCHLISTREPORT);
+                }
+                else
+                {
+                    response = await _clientHandler.PostAsync(new { StartDate = DateTime.Parse(StartDate).ToString("dd/MM/yyyy"), EndDate = DateTime.Parse(EndDate).ToString("dd/MM/yyyy"), Type = SourceType, client_id = clientId }, ScreeningService.INTERNALWATCHLISTREPORT);
+                }
+
+                var json = JsonConvert.SerializeObject(response);
+                var logs = JsonConvert.DeserializeObject<List<dynamic>>(json);
+
+                using (var package = new ExcelPackage())
+                {
+                    // Sheet 1: Summary
+                    var sheet1 = package.Workbook.Worksheets.Add("Summary");
+                    sheet1.Cells["A1"].Value = "Report";
+                    sheet1.Cells["B1"].Value = "Internal Watchlist Update Logs";
+                    sheet1.Cells["A2"].Value = "Date Range";
+                    sheet1.Cells["B2"].Value = $"{StartDate} to {EndDate}";
+                    sheet1.Cells["A3"].Value = "Source";
+                    sheet1.Cells["B3"].Value = SourceType;
+                    sheet1.Cells["A4"].Value = "Total Records";
+                    sheet1.Cells["B4"].Value = logs?.Count ?? 0;
+
+                    using (var range = sheet1.Cells["A1:A4"])
+                    {
+                        range.Style.Font.Bold = true;
+                        range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                        range.Style.Fill.BackgroundColor.SetColor(global::System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                    }
+                    sheet1.Cells[sheet1.Dimension.Address].AutoFitColumns();
+
+                    // Sheet 2: Details
+                    var sheet2 = package.Workbook.Worksheets.Add("Details");
+                    string[] headers = { "UID", "Type", "Name", "Nationality/Country", "DOB", "ID Number", "Source", "Remarks", "Created On" };
+                    for (int i = 0; i < headers.Length; i++)
+                    {
+                        sheet2.Cells[1, i + 1].Value = headers[i];
+                    }
+
+                    using (var range = sheet2.Cells[1, 1, 1, headers.Length])
+                    {
+                        range.Style.Font.Bold = true;
+                        range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                        range.Style.Fill.BackgroundColor.SetColor(global::System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                        range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                        range.Style.Border.Bottom.Color.SetColor(global::System.Drawing.Color.White);
+                    }
+
+                    int row = 2;
+                    if (logs != null)
+                    {
+                        foreach (var r in logs)
+                        {
+                            sheet2.Cells[row, 1].Value = r.uid;
+                            sheet2.Cells[row, 2].Value = r.category;
+                            sheet2.Cells[row, 3].Value = r.fullname;
+                            sheet2.Cells[row, 4].Value = (r.nationality == "" || r.nationality == "0") ? "-" : r.nationality;
+                            sheet2.Cells[row, 5].Value = (r.dob == "" || r.dob == "0") ? "-" : r.dob;
+                            sheet2.Cells[row, 6].Value = string.IsNullOrEmpty((string)r.idnumber) ? "-" : r.idnumber;
+                            sheet2.Cells[row, 7].Value = r.type;
+                            sheet2.Cells[row, 8].Value = string.IsNullOrEmpty((string)r.remarks) ? "-" : r.remarks;
+                            sheet2.Cells[row, 9].Value = r.createdon;
+                            row++;
+                        }
+                    }
+
+                    if (row > 2)
+                    {
+                        sheet2.Cells[sheet2.Dimension.Address].AutoFitColumns();
+                        sheet2.View.FreezePanes(2, 1);
+                    }
+
+                    var fileBytes = package.GetAsByteArray();
+                    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"InternalWatchlistLogs_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Error generating excel: " + ex.Message);
             }
         }
 
@@ -3927,42 +4019,173 @@ namespace AML.Web.Controllers.Reports
 
 
         [HttpGet("Report/SchedulerLogsExportReport")]
-        public async Task<IActionResult> SchedulerLogsExportReport(bool isPDF, string startDate = null, string endDate = null, string searchValue = null)
+        public async Task<IActionResult> SchedulerLogsExportReport(string startDate = null, string endDate = null, string searchValue = null)
         {
             var clientId = _clientHandler.GetClientId();
-            List<DigiSchedulerLogModel> abc;
+            List<DigiSchedulerLogModel> logs;
 
             if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate))
             {
-                abc = _mapper.Map<List<DigiSchedulerLogModel>>(_reportService.GetDigiSchedulerList(clientId, startDate, endDate));
+                logs = _mapper.Map<List<DigiSchedulerLogModel>>(_reportService.GetDigiSchedulerList(clientId, startDate, endDate));
             }
             else
             {
-                abc = _mapper.Map<List<DigiSchedulerLogModel>>(_reportService.GetDigiSchedulerList(clientId));
+                logs = _mapper.Map<List<DigiSchedulerLogModel>>(_reportService.GetDigiSchedulerList(clientId));
             }
 
             if (!string.IsNullOrEmpty(searchValue))
             {
                 searchValue = searchValue.ToLower();
-                abc = abc.Where(x => x.Source != null && x.Source.ToLower().Contains(searchValue)).ToList();
+                logs = logs.Where(x => x.Source != null && x.Source.ToLower().Contains(searchValue)).ToList();
             }
 
-            SchedulerlogsReportExcelModel excelModel = new SchedulerlogsReportExcelModel();
-            List<SchedulerlogsReportExcelModel> excelData = new List<SchedulerlogsReportExcelModel>();
-            string details = "Report               :   Scheduler Log Report" + "\r\n" + "Date Range       :   " + (startDate ?? "All") + "  to  " + (endDate ?? "All");
-            excelModel.Details = details;
+            using (var package = new ExcelPackage())
+            {
+                var sheet = package.Workbook.Worksheets.Add("Scheduler Log Report");
+                string[] headers = { "Source Name", "Total Hits", "Total Records", "Created On" };
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    sheet.Cells[1, i + 1].Value = headers[i];
+                }
 
-            excelData = (from res in abc
-                         select new SchedulerlogsReportExcelModel
-                         {
-                             Source = res.Source,
-                             TotalHits = res.TotalHits,
-                             TotalRecords = res.TotalRecords,
-                             createdOn = res.CreatedOn
-                         }).ToList();
-            excelData.Add(excelModel);
+                using (var range = sheet.Cells[1, 1, 1, headers.Length])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(global::System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                    range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Color.SetColor(global::System.Drawing.Color.White);
+                }
 
-            return new ExcelResult<SchedulerlogsReportExcelModel>((excelData), "Scheduler Log Report", "scheduler_log_report_" + DateTime.Now.Ticks);
+                int row = 2;
+                foreach (var log in logs)
+                {
+                    sheet.Cells[row, 1].Value = log.Source;
+                    sheet.Cells[row, 2].Value = log.TotalHits;
+                    sheet.Cells[row, 3].Value = log.TotalRecords;
+                    sheet.Cells[row, 4].Value = log.CreatedOn;
+                    row++;
+                }
+
+                if (row > 2)
+                {
+                    sheet.Cells[1, 1, row - 1, headers.Length].AutoFitColumns();
+                    sheet.View.FreezePanes(2, 1);
+                }
+
+                return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Scheduler_Log_Report_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+            }
+        }
+
+        [HttpGet("Report/BlocklistUpdateLogsExportExcel")]
+        public async Task<IActionResult> BlocklistUpdateLogsExportExcel(string startDate, string endDate, string source, string searchValue = null)
+        {
+            int totalRecords = 0;
+            var logs = _internalWatchListMongoRepository.GetBlockListLogs(startDate, endDate, source, 0, -1, out totalRecords);
+
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                searchValue = searchValue.ToLower();
+                logs = logs.Where(x => x.FULLNAME != null && x.FULLNAME.ToLower().Contains(searchValue)).ToList();
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                var sheet = package.Workbook.Worksheets.Add("Blocklist Update Logs");
+                string[] headers = { "Category", "Full Name", "Nationality", "DOB", "ID Number", "Source", "Created On" };
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    sheet.Cells[1, i + 1].Value = headers[i];
+                }
+
+                using (var range = sheet.Cells[1, 1, 1, headers.Length])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(global::System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                    range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Color.SetColor(global::System.Drawing.Color.White);
+                }
+
+                int row = 2;
+                foreach (var log in logs)
+                {
+                    var idNumber = log.IDDETAILS != null && log.IDDETAILS.Count > 0 ? log.IDDETAILS[0].IDNUMBER : "-";
+                    var dob = log.DOB != null && log.DOB.Count > 0 ? log.DOB[0].DOB : "-";
+
+                    sheet.Cells[row, 1].Value = log.CATEGORY;
+                    sheet.Cells[row, 2].Value = log.FULLNAME;
+                    sheet.Cells[row, 3].Value = log.NATIONALITY;
+                    sheet.Cells[row, 4].Value = dob;
+                    sheet.Cells[row, 5].Value = idNumber;
+                    sheet.Cells[row, 6].Value = log.TYPE;
+                    sheet.Cells[row, 7].Value = log.CREATEDON;
+                    row++;
+                }
+
+                if (row > 2)
+                {
+                    sheet.Cells[1, 1, row - 1, headers.Length].AutoFitColumns();
+                    sheet.View.FreezePanes(2, 1);
+                }
+
+                return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Blocklist_Update_Logs_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+            }
+        }
+
+        [HttpGet("Report/SanctionDBUploadLogsExportExcel")]
+        public async Task<IActionResult> SanctionDBUploadLogsExportExcel(string startDate = null, string endDate = null, string match = null)
+        {
+            var data = _mapper.Map<List<UploadLogsListModel>>(_reportService.GetUploadLogstList());
+
+            if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate))
+            {
+                var start = DateTime.Parse(startDate);
+                var end = DateTime.Parse(endDate).AddDays(1);
+                data = data.Where(x => DateTime.Parse(x.CreatedOn) >= start && DateTime.Parse(x.CreatedOn) < end).ToList();
+            }
+
+            if (!string.IsNullOrEmpty(match))
+            {
+                data = data.Where(x => x.Source?.Contains(match, StringComparison.OrdinalIgnoreCase) ?? false).ToList();
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                var sheet = package.Workbook.Worksheets.Add("Sanction DB Upload Logs");
+                string[] headers = { "ID", "Source", "Uploaded On", "Total Records" };
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    sheet.Cells[1, i + 1].Value = headers[i];
+                }
+
+                using (var range = sheet.Cells[1, 1, 1, headers.Length])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(global::System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                    range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Color.SetColor(System.Drawing.Color.White);
+                }
+
+                int row = 2;
+                foreach (var log in data)
+                {
+                    sheet.Cells[row, 1].Value = log.Id;
+                    sheet.Cells[row, 2].Value = log.Source;
+                    sheet.Cells[row, 3].Value = log.CreatedOn;
+                    sheet.Cells[row, 4].Value = log.totalrecords;
+                    row++;
+                }
+
+                if (row > 2)
+                {
+                    sheet.Cells[1, 1, row - 1, headers.Length].AutoFitColumns();
+                    sheet.View.FreezePanes(2, 1);
+                }
+
+                return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Sanction_DB_Upload_Logs_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+            }
         }
 
         [HttpGet("Report/GetScreeningDatabaseLogs")]
@@ -4268,11 +4491,11 @@ namespace AML.Web.Controllers.Reports
             }
         }
         [HttpGet("Report/DatasetUpdateLogsExportReport")]
-        public async Task<IActionResult> DatasetUpdateLogsExportReport(bool isPDF, string startDate, string endDate, string datasets, string searchValue = null)
+        public async Task<IActionResult> DatasetUpdateLogsExportReport(string startDate, string endDate, string datasets, string searchValue = null)
         {
             var clientId = _clientHandler.GetClientId();
             var clientDetails = _customerCaseService.GetClientDetailsByID(clientId);
-            var logs = _reportService.GetDatasetUpdateLogs(new CaseReportRequestDTO()
+            var logsData = _reportService.GetDatasetUpdateLogs(new CaseReportRequestDTO()
             {
                 StartDate = startDate,
                 EndDate = endDate,
@@ -4282,55 +4505,94 @@ namespace AML.Web.Controllers.Reports
             if (clientId > 0 && clientDetails != null && clientDetails.ApplicationStartDate.HasValue)
             {
                 DateTime clientContractStartDate = clientDetails.ApplicationStartDate.Value;
-                logs = logs.Where(log => log.UpdatedDate >= clientContractStartDate).ToList();
+                logsData = logsData.Where(log => log.UpdatedDate >= clientContractStartDate).ToList();
             }
 
             if (!string.IsNullOrEmpty(searchValue))
             {
                 searchValue = searchValue.ToLower();
-                logs = logs.Where(x => x.Datasets != null && x.Datasets.ToLower().Contains(searchValue)).ToList();
+                logsData = logsData.Where(x => x.Datasets != null && x.Datasets.ToLower().Contains(searchValue)).ToList();
             }
 
-            List<DatasetUpdateLogsModel> abc = _mapper.Map<List<DatasetUpdateLogsModel>>(logs);
-
-            List<DatasetUpdateLogsExcelModel> excelData = abc.Select(res => new DatasetUpdateLogsExcelModel
+            using (var package = new ExcelPackage())
             {
-                UpdatedDate = res.UpdatedDate,
-                Datasets = res.Datasets,
-                Delta = res.Delta,
-                Individual = res.Individual,
-                Corporate = res.Corporate,
-                Cumulative = res.Cumulative
-            }).ToList();
+                var sheet = package.Workbook.Worksheets.Add("Dataset Update Logs");
+                string[] headers = { "Updated Date", "Dataset Name", "Delta", "Individual", "Corporate", "Cumulative" };
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    sheet.Cells[1, i + 1].Value = headers[i];
+                }
 
-            return new ExcelResult<DatasetUpdateLogsExcelModel>(excelData, "Dataset Update Logs", "dataset_update_logs_" + DateTime.Now.Ticks);
+                using (var range = sheet.Cells[1, 1, 1, headers.Length])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(global::System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                    range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Color.SetColor(global::System.Drawing.Color.White);
+                }
+
+                int row = 2;
+                foreach (var log in logsData)
+                {
+                    sheet.Cells[row, 1].Value = log.UpdatedDate.ToString("dd MMM yyyy");
+                    sheet.Cells[row, 2].Value = log.Datasets;
+                    sheet.Cells[row, 3].Value = log.Delta;
+                    sheet.Cells[row, 4].Value = log.Individual;
+                    sheet.Cells[row, 5].Value = log.Corporate;
+                    sheet.Cells[row, 6].Value = log.Cumulative;
+                    row++;
+                }
+
+                sheet.Cells[sheet.Dimension.Address].AutoFitColumns();
+                sheet.View.FreezePanes(2, 1);
+
+                return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"DatasetUpdateLogs_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+            }
         }
 
-        public async Task<IActionResult> ScreeningDatabaseLogsExportReport(string startDate, string endDate, bool IsPDF)
+        [HttpGet("Report/ScreeningDatabaseLogsExportReport")]
+        public async Task<IActionResult> ScreeningDatabaseLogsExportReport(string startDate, string endDate)
         {
-            var clientId = _clientHandler.GetClientId();
-            List<ScreeningDatabaseLogsModel> abc = _mapper.Map<List<ScreeningDatabaseLogsModel>>(_reportService.GetScreeningDatabaseLogs(new CaseReportRequestDTO()
+            var logs = _reportService.GetScreeningDatabaseLogs(new CaseReportRequestDTO()
             {
                 StartDate = startDate,
                 EndDate = endDate
-            }));
+            });
 
-            ScreeningDatabaselogsReportExcelModel excelModel = new ScreeningDatabaselogsReportExcelModel();
-            List<ScreeningDatabaselogsReportExcelModel> excelData = new List<ScreeningDatabaselogsReportExcelModel>();
-            string details = "Report               :   Screening Database Logs Report" + "\r\n" + "Date Range       :   " + (startDate ?? "All") + "  to  " + (endDate ?? "All");
-            excelModel.Details = details;
+            using (var package = new ExcelPackage())
+            {
+                var sheet = package.Workbook.Worksheets.Add("Screening Database Logs");
+                string[] headers = { "Updated Date", "Individual", "Corporate", "Deleted" };
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    sheet.Cells[1, i + 1].Value = headers[i];
+                }
 
-            excelData = (from res in abc
-                         select new ScreeningDatabaselogsReportExcelModel
-                         {
-                             UpdatedDate = DateTime.Parse(res.UpdatedDate).ToString("yyyy-MM-dd"),
-                             Individual = res.Individual,
-                             Corporate = res.Corporate,
-                             Deleted = res.Deleted
-                         }).ToList();
-            excelData.Add(excelModel);
+                using (var range = sheet.Cells[1, 1, 1, headers.Length])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(global::System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                    range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Color.SetColor(global::System.Drawing.Color.White);
+                }
 
-            return new ExcelResult<ScreeningDatabaselogsReportExcelModel>((excelData), "Screening Database Log Report", "screening_database_log_report_" + DateTime.Now.Ticks);
+                int row = 2;
+                foreach (var log in logs)
+                {
+                    sheet.Cells[row, 1].Value = (log.UpdatedDate.Length > 10) ? log.UpdatedDate.Substring(0, 10) : log.UpdatedDate;
+                    sheet.Cells[row, 2].Value = log.Individual;
+                    sheet.Cells[row, 3].Value = log.Corporate;
+                    sheet.Cells[row, 4].Value = log.Deleted;
+                    row++;
+                }
+
+                sheet.Cells[sheet.Dimension.Address].AutoFitColumns();
+                sheet.View.FreezePanes(2, 1);
+
+                return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"ScreeningDatabaseLogs_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+            }
         }
 
 

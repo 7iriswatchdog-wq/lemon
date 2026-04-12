@@ -226,32 +226,55 @@ namespace AML.Web.Controllers.ProliferationFinance
 
                 if (!isPDF)
                 {
-                    var excelData = data.Select(x => new PFReportExcelModel
+                    using (var package = new ExcelPackage())
                     {
-                        CaseId = "PF-" + x.Id,
-                        CreatedDate = x.CreatedOn.ToString("dd/MM/yyyy HH:mm:ss"),
-                        CorporateId = x.CorporateId,
-                        CompanyName = x.CompanyName,
-                        CustomerType = x.CustomerType,
-                        ChemicalName = x.ChemicalName,
-                        HsCode = x.HsCode,
-                        CasNumber = x.CasNumber,
-                        Status = x.Status,
-                        Remarks = x.StatusReason
-                    }).ToList();
+                        var worksheet = package.Workbook.Worksheets.Add("Proliferation Finance Report");
 
-                    string typeLabel = (customerType == "0" || string.IsNullOrEmpty(customerType)) ? "All" : customerType;
-                    string statusLabel = (status == "0" || string.IsNullOrEmpty(status)) ? "All" : status;
-                    string filterStr = $"Dataset: {typeLabel}, Status: {statusLabel}";
-                    if (!string.IsNullOrEmpty(searchValue)) filterStr += $", Search: {searchValue}";
+                        // Styling
+                        Action<ExcelRange> applyHeaderStyle = (range) => {
+                            range.Style.Font.Bold = true;
+                            range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                            range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                            range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                            range.Style.Border.Bottom.Color.SetColor(System.Drawing.Color.White);
+                            range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                        };
 
-                    var headerModel = new PFReportExcelModel
-                    {
-                        Details = $"Report               :   Proliferation Finance Case Report\r\nDate Range       :   {startDate?.ToString("dd/MM/yyyy") ?? "All"} to {endDate?.ToString("dd/MM/yyyy") ?? "All"}\r\nFilters Applied  :   {filterStr}"
-                    };
-                    excelData.Insert(0, headerModel);
+                        // Data Table Headers
+                        string[] headers = { "Case ID", "Created Date", "Corporate ID", "Company Name", "Customer Type", "Product / Chemical Name", "HS Code", "CAS Number", "Score", "Status", "Remarks" };
+                        for (int i = 0; i < headers.Length; i++)
+                        {
+                            worksheet.Cells[1, i + 1].Value = headers[i];
+                        }
+                        applyHeaderStyle(worksheet.Cells[1, 1, 1, headers.Length]);
 
-                    return new ExcelResult<PFReportExcelModel>(excelData, "Proliferation Finance Report", "PF_Case_Report_" + DateTime.Now.Ticks);
+                        // Data Rows
+                        int row = 2;
+                        foreach (var item in data)
+                        {
+                            worksheet.Cells[row, 1].Value = "PF-" + item.Id;
+                            worksheet.Cells[row, 2].Value = item.CreatedOn.ToString("dd/MM/yyyy HH:mm:ss");
+                            worksheet.Cells[row, 3].Value = item.CorporateId;
+                            worksheet.Cells[row, 4].Value = item.CompanyName;
+                            worksheet.Cells[row, 5].Value = item.CustomerType;
+                            worksheet.Cells[row, 6].Value = item.ChemicalName;
+                            worksheet.Cells[row, 7].Value = item.HsCode;
+                            worksheet.Cells[row, 8].Value = item.CasNumber;
+                            worksheet.Cells[row, 9].Value = item.Score ?? "0";
+                            worksheet.Cells[row, 10].Value = item.Status;
+                            worksheet.Cells[row, 11].Value = item.StatusReason;
+                            row++;
+                        }
+
+                        if (row > 2)
+                        {
+                            worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+                            worksheet.View.FreezePanes(2, 1);
+                        }
+
+                        var fileBytes = package.GetAsByteArray();
+                        return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"PF_Case_Report_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+                    }
                 }
 
                 // PDF Export using iTextSharp

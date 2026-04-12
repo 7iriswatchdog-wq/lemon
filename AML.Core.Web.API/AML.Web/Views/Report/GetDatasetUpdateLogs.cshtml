@@ -333,7 +333,7 @@
                                     Export PDF
                                 </button>
                                 <button onclick="ExportList(false);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                    Export CSV
+                                    Export Excel
                                 </button>
                             </div>
                         </div>
@@ -593,6 +593,7 @@
         };
     }
 
+
     function ExportList(isPDF) {
         const startDate = formatDate($('#startDate').val());
         const endDate = formatDate($('#endDate').val());
@@ -604,65 +605,11 @@
             const url = `/Report/DatasetUpdateLogs_PDF?startDate=${startDate}&endDate=${endDate}&datasets=${datasets}&searchValue=${searchValue}`;
             $('#pdfExportFrame').attr('src', url);
         } else {
-            const url = `/Report/DatasetUpdateLogsExportReport?isPDF=${isPDF}&startDate=${startDate}&endDate=${endDate}&datasets=${datasets}&searchValue=${searchValue}`;
+            const url = `/Report/DatasetUpdateLogsExportReport?startDate=${startDate}&endDate=${endDate}&datasets=${datasets}&searchValue=${encodeURIComponent(searchValue)}`;
             window.location.href = url;
         }
     }
 
-    function exportTableToCSV(filename) {
-
-        // We will fetch all data from backend for export to get the complete dataset
-        $("#loadingCaseDetails").removeClass("hidden");
-        $.ajax({
-            url: '/Report/DatasetUpdateLogsCustompagination',
-            type: 'POST',
-            data: {
-                draw: 1,
-                start: 0,
-                length: -1, // Fetch all records for export if supported, otherwise just current total
-                orderColumn: orderColumn,
-                orderDirection: orderDirection,
-                search: { value: $('#searchInput').val() },
-                startDate: formatDate($('#startDate').val()),
-                endDate: formatDate($('#endDate').val()),
-                datasets: $('#datasetsFilter').val()
-            },
-            success: function (resp) {
-                let csv = [];
-                let headers = ['Updated Date', 'Datasets', 'Delta', 'Cumulative', 'Action'];
-                csv.push(headers.join(','));
-
-                console.log(resp);
-                console.log(resp.data);
-
-                resp.data.forEach(row => {
-                    const updated = formatDateTime(row.updatedDate);
-                    
-
-                    let r = [
-                        updated?.date ? `="${updated.date}"` : '',
-                        row.datasets ?? '',
-                        row.delta ?? '',
-                        row.humiliated ?? '',
-                        row.action ?? ''
-                    ];
-                    csv.push(r.join(','));
-                });
-
-                let csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
-                let downloadLink = document.createElement('a');
-                downloadLink.download = filename;
-                downloadLink.href = window.URL.createObjectURL(csvFile);
-                downloadLink.style.display = 'none';
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-            },
-            complete: function() {
-                $("#loadingCaseDetails").addClass("hidden");
-            }
-        });
-    }
 
     function sortTable(columnIndex, element) {
         $('.sortable').removeClass('active asc desc');

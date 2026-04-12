@@ -126,8 +126,8 @@
                             <button onclick="exportPdf()" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
                                 Export PDF
                             </button>
-                            <button onclick="exportTableToCSV('Clients.csv')" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                Export CSV
+                            <button onclick="exportExcel()" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
+                                Export Excel
                             </button>
                         </div>
                     </div>
@@ -231,74 +231,23 @@
         loadData();
     }
 
-    function exportTableToCSV(filename) {
-        // We will fetch all data from backend for export to get the complete dataset
-        $('#loader').removeClass('hidden').addClass('flex');
-        $.ajax({
-            url: '/adminmanagement/custompagination',
-            type: 'POST',
-            data: {
-                draw: 1,
-                start: 0,
-                length: -1, // Fetch all records for export if supported, otherwise just current total
-                orderColumn: orderColumn,
-                orderDirection: orderDirection,
-                search: { value: $('#searchInput').val() },
-                subStatus: $('#subStatusFilter').val(),
-                isBlocked: $('#isBlockedFilter').val()
-            },
-            success: function (resp) {
-                let csv = [];
-                let headers = ['Client ID', 'Client Name', 'Prefix', 'Users', 'Limit', 'Usage', 'Expiry', 'Status'];
-                csv.push(headers.join(','));
-                
-                resp.data.forEach(row => {
-                    const expDate = row.applicationEndDate ? new Date(row.applicationEndDate).toLocaleDateString('en-GB') : '-';
-                    const isExpired = row.applicationEndDate ? new Date(row.applicationEndDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0) : false;
-                    
-                    let stat = isExpired ? 'Expired' : 'Active';
-                    let r = [
-                        row.clientId,
-                        `"${(row.clientName || '').replace(/"/g, '""')}"`,
-                        `"${(row.prefix || '').replace(/"/g, '""')}"`,
-                        row.userCount || 0,
-                        row.searchCount || 0,
-                        row.totalUsageCount || 0,
-                        expDate,
-                        stat
-                    ];
-                    csv.push(r.join(','));
-                });
-                
-                let csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
-                let downloadLink = document.createElement('a');
-                downloadLink.download = filename;
-                downloadLink.href = window.URL.createObjectURL(csvFile);
-                downloadLink.style.display = 'none';
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-            },
-            complete: function() {
-                $('#loader').addClass('hidden').removeClass('flex');
-            }
-        });
+    function exportExcel() {
+        const searchValue = $('#searchInput').val() || '';
+        const subStatus = $('#subStatusFilter').val() || '';
+        const isBlocked = $('#isBlockedFilter').val() || '';
+        
+        window.location.href = `/AdminManagement/AdminManagement_Excel?searchValue=${encodeURIComponent(searchValue)}&subStatus=${encodeURIComponent(subStatus)}&isBlocked=${encodeURIComponent(isBlocked)}`;
     }
 
     function exportPdf() {
-        const searchValue = encodeURIComponent($('#searchInput').val() || '');
+        const searchValue = $('#searchInput').val() || '';
         const subStatus = $('#subStatusFilter').val() || '';
         const isBlocked = $('#isBlockedFilter').val() || '';
-
-        const url = `/AdminManagement/AdminManagement_PDF?searchValue=${searchValue}&subStatus=${subStatus}&isBlocked=${isBlocked}`;
         
-        $('#loader').removeClass('hidden').addClass('flex');
+        const url = `/AdminManagement/AdminManagement_PDF?searchValue=${encodeURIComponent(searchValue)}&subStatus=${encodeURIComponent(subStatus)}&isBlocked=${encodeURIComponent(isBlocked)}`;
         $('#pdfFrame').attr('src', url);
-
-        // Hide loader after a delay
-        setTimeout(() => {
-            $('#loader').addClass('hidden').removeClass('flex');
-        }, 5000);
+        $('#loader').removeClass('hidden').addClass('flex');
+        setTimeout(() => { $('#loader').addClass('hidden').removeClass('flex'); }, 5000);
     }
 
 
