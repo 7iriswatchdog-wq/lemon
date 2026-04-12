@@ -1,0 +1,1150 @@
+@using AML.ViewModel.ViewModels.Sanction
+@using AML.ViewModel.ViewModels.CustomerCase
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Customer Upload (Bulk Upload Listing)";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = Context.Session.GetString("SessLogoUrl");
+    var companyName = Context.Session.GetString("SessCompanyName");
+    var clientId = Context.Session.GetString("SessClientId");
+    var currentUserName = Context.Session.GetString("SessUsername");
+}
+
+@model AML.ViewModel.ViewModels.Sanction.ScreeningSearchModel
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Upload - WatchDog</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .dt-loader {
+            position: relative;
+            width: 80px;
+            height: 20px;
+        }
+
+            .dt-loader div {
+                position: absolute;
+                top: 8px;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: #2563eb;
+                animation-timing-function: cubic-bezier(0,1,1,0);
+            }
+
+                .dt-loader div:nth-child(1) {
+                    left: 8px;
+                    animation: dt-anim1 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(2) {
+                    left: 8px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(3) {
+                    left: 32px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(4) {
+                    left: 56px;
+                    animation: dt-anim3 0.6s infinite;
+                }
+
+        @@keyframes dt-anim1 {
+            0% {
+                transform: scale(0);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @@keyframes dt-anim2 {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(24px);
+            }
+        }
+
+        @@keyframes dt-anim3 {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(0);
+            }
+        }
+
+        th.sortable {
+            cursor: pointer;
+            position: relative;
+            padding-right: 20px;
+        }
+
+            th.sortable::after {
+                content: "▲\A▼";
+                white-space: pre;
+                font-size: 10px;
+                position: absolute;
+                right: 6px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #bbb;
+                line-height: 1;
+                text-align: center;
+            }
+
+            th.sortable.active.asc::after {
+                content: "▲";
+                color: #000;
+            }
+
+            th.sortable.active.desc::after {
+                content: '\A▼';
+                color: #000;
+            }
+
+        .flatpickr-wrapper {
+            width: 100% !important;
+        }
+
+        .flatpickr-alt-input {
+            width: 100% !important;
+            display: block !important;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen text-slate-900">
+    <div id="loadingCaseDetails" class="fixed inset-0 bg-white/75 items-center justify-center z-[9999] hidden">
+        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+    </div>
+
+
+    <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
+        <div class="flex items-center gap-2 text-slate-500 text-xs mb-2">
+            <span class="text-slate-900 font-medium">Reports</span>
+            <i data-lucide="chevron-right" class="h-3 w-3"></i>
+            <span class="text-slate-900 font-medium">UAEIEC UN NAS Match</span>
+        </div>
+
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">UAEIEC UN NAS Match</h1>
+            </div>
+            @* <div class="text-sm md:text-base text-right flex items-center gap-3">
+                <img  alt="Client Logo" width="50" class="rounded-sm shadow-sm border border-slate-200" />
+            </div> *@
+        </div>
+
+        <!-- Form for API Submission -->
+        <form id="sanctionScreening" role="form" asp-action="SearchList" asp-controller="SanctionScreening" class="form-horizontal" enctype="multipart/form-data" method="post">
+            
+            
+            <!-- Filters Section -->
+            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                <div class="flex items-center justify-between mb-5">
+                    <h3 class="text-sm font-bold text-slate-800 tracking-tight">Search</h3>
+                    <button type="button" onclick="clearFilters()" id="resetBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-4 rounded-md text-sm transition">
+                        Reset
+                    </button>
+                </div>
+ 
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <!-- Customer -->
+                    <div class="space-y-2">
+                        <label class="text-[12px] font-bold text-slate-500">Name</label><span class="text-red-500">*</span>
+                        <input type="text" id="name" placeholder="Customer" asp-for="Name" class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                        <span id="nameError" class="text-red-500 text-xs h-4 block invisible">Name is required</span>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[12px] font-bold text-slate-500">Nationality</label>
+                        <select id="nationality" asp-items="@Model.Nationalities" asp-for="Nationality"
+                                class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                            <option value="">--SELECT--</option>
+                        </select>
+                        <span id="Nationalityerror" class="text-red-500 text-xs h-4 block invisible"></span>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[12px] font-bold text-slate-500">Date Of Birth</label>
+                        <input type="text" id="DOB" name="dob"
+                               placeholder="dd/MM/yyyy"
+                               class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                        <span id="formattedEndDate" hidden></span>
+                        <span id="doberror" class="text-red-500 text-xs h-4 block invisible"></span>
+                        
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[12px] font-bold text-slate-500">Customer Type</label><span class="text-red-500">*</span>
+                    <select id="customertype" asp-items="@Model.CustomerCategories" asp-for="customerType"
+                            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                        <option value="0">--SELECT--</option>
+                    </select>
+                        <span id="typeError" class="text-red-500 text-xs h-4 block invisible">Customer Type is required</span>
+                </div>
+                   
+                </div>
+
+                <div class="mt-5 flex items-center justify-end gap-3 w-full">
+                    <!-- Submit Form button representing existing API behavior -->
+                    <button type="submit" id="btnSearch" onclick="showLoader()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold h-10 px-5 rounded-md text-sm transition shadow-sm">
+                        Search
+                    </button>
+                </div>
+            </div>
+        </form>
+        <input id="hdnBatchId" type="hidden" />
+
+        <!-- Table UI -->
+        <div class="space-y-4">
+
+            <div class="flex items-center gap-4 border-b border-slate-200 pb-2">
+                <button type="button" onclick="showTable('table1', this)" class="nav-btn font-semibold text-sm pb-2 border-b-2 border-blue-600 text-blue-600">Search Results</button>
+                <button type="button" onclick="showTable('table2', this)" class="nav-btn font-semibold text-sm pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700">Search History</button>
+                <button type="button" onclick="showTable('table3', this)" class="nav-btn font-semibold text-sm pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700">Existing Case Match</button>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 items-center w-full">
+                <!-- Search -->
+                <div class="relative flex-1 w-full">
+                    <i data-lucide="search" class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                    <input type="text" id="searchInput" placeholder="Search by Customer Name/ID" onkeyup="filterTableActive()"
+                           class="pl-10 h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 shadow-sm transition-all placeholder:text-slate-500">
+                </div>
+                @* <button onclick="filterTableActive()" id="searchButton" class="h-11 px-5 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm">
+                    Search
+                </button> *@
+                <form method="post" action="/SanctionScreening/DownloadPDFs" id="pdfForm" class="hidden">
+                    <input type="hidden" name="activeTable" id="pdfActiveTable" />
+                    <input type="hidden" name="Name" id="pdfName" />
+                    <input type="hidden" name="Nationality" id="pdfNationality" />
+                    <input type="hidden" name="DOB" id="pdfDOB" />
+                    <input type="hidden" name="customerType" id="pdfCustomerType" />
+                    <button type="submit" id="btnPdf"></button>
+                </form>
+                
+                <div class="relative inline-block text-left group">
+                    <button type="button" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-11 px-5 rounded-md text-sm transition focus:outline-none shadow-sm">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                        Export
+                        <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                    </button>
+                    <div class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200" role="menu" aria-orientation="vertical">
+                        <div class="py-1" role="none">
+                            <button onclick="ExportList(true);" id="exportPdfBtnStandard" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
+                                Export PDF
+                            </button>
+                            <button onclick="ExportList(false);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <!-- Table 1: File Details -->
+                <div id="table1-container" class="overflow-x-auto">
+                    <table class="w-full text-sm text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-slate-500 bg-slate-50 border-b border-slate-200">
+                            @*
+                            <tr>
+                                
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 0)">Type</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 1)">Category</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 2)">Name</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 3)">Nationality</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 4)">DOB</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 5)">Score</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 6)">Id No</th>
+                                
+                            </tr>
+                            *@
+                            <tr>
+                                <th class="px-4 py-4 font-semibold h-12">Searched On</th>
+                                <th class="px-4 py-4 font-semibold h-12">Datasets</th>
+                                <th class="px-4 py-4 font-semibold h-12">Customer Type</th>
+                                <th class="px-4 py-4 font-semibold h-12">Customer Name</th>
+                                <th class="px-4 py-4 font-semibold h-12">Nationality</th>
+                                <th class="px-4 py-4 font-semibold h-12">DOB</th>
+                                <th class="px-4 py-4 font-semibold h-12">Score</th>
+                                <!-- <th class="px-4 py-4 font-semibold h-12">Customer Cif No</th> -->
+                                <th class="px-4 py-4 font-semibold h-12">Searched By</th>
+                                
+                            </tr>
+                        </thead>
+                        <tbody id="table1Body" class="divide-y divide-slate-100" style="font-size: 12px;">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Table 2: Customer Details -->
+                <div id="table2-container" class="overflow-x-auto hidden">
+                    <table class="w-full text-sm text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-slate-500 bg-slate-50 border-b border-slate-200">
+                            @*
+                            <tr>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 0)">Searched On</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 1)">Customer Type</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 2)">Customer Name</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 3)">Nationality</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 4)">DOB</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 5)">Searched By</th>
+                            </tr>
+                            *@
+                            <tr>
+                                <th class="px-4 py-4 font-semibold h-12">Searched On</th>
+                                <th class="px-4 py-4 font-semibold h-12">Datasets</th>
+                                <th class="px-4 py-4 font-semibold h-12">Customer Type</th>
+                                <th class="px-4 py-4 font-semibold h-12">Customer Name</th>
+                                <th class="px-4 py-4 font-semibold h-12">Nationality</th>
+                                <th class="px-4 py-4 font-semibold h-12">DOB</th>
+                                <th class="px-4 py-4 font-semibold h-12">Score</th>
+                                <th class="px-4 py-4 font-semibold h-12">Searched By</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table2Body" class="divide-y divide-slate-100" style="font-size: 12px;">
+                        </tbody>
+                    </table>
+                </div>
+                <div id="table3-container" class="overflow-x-auto hidden">
+                    <table class="w-full text-sm text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-slate-500 bg-slate-50 border-b border-slate-200">
+                            @*
+                            <tr>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table3', 1)">Customer Id</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 2)">Created On</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 3)">Updated On</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 4)">Customer Type</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 5)">Customer Name</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 6)">Datasets</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 7)">Screening Score</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 8)">Risk Rating</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 9)">User</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 10)">Status</th>
+                            </tr>
+                            *@
+                            <tr>
+                                <th class="px-4 py-4 font-semibold h-12">Customer Id</th>
+                                <th class="px-4 py-4 font-semibold h-12">Created On</th>
+                                <th class="px-4 py-4 font-semibold h-12">Updated On</th>
+                                <th class="px-4 py-4 font-semibold h-12">Customer Type</th>
+                                <th class="px-4 py-4 font-semibold h-12">Customer Name</th>
+                                <th class="px-4 py-4 font-semibold h-12">Datasets</th>
+                                <th class="px-4 py-4 font-semibold h-12">Screening Score</th>
+                                <th class="px-4 py-4 font-semibold h-12">Risk Rating</th>
+                                <th class="px-4 py-4 font-semibold h-12">User</th>
+                                <th class="px-4 py-4 font-semibold h-12">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table3Body" class="divide-y divide-slate-100" style="font-size: 12px;">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex items-center justify-between px-4 py-4 border-t border-slate-200 bg-white">
+                    <div class="flex items-center gap-2 text-sm">
+                        <select id="pageSize" class="h-8 rounded-md border border-slate-200 bg-white px-2 pr-7 text-sm" onchange="changePageSize()">
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <label class="text-slate-600 font-medium">Entries per page</label>
+                    </div>
+                    <div class="text-sm text-slate-500">
+                        Showing <span id="showingStart" class="font-medium text-slate-900">0</span> to <span id="showingEnd" class="font-medium text-slate-900">0</span> of <span id="totalCases" class="font-medium text-slate-900">0</span> cases
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="prevBtn" onclick="previousPage()" class="h-8 px-3 text-sm font-medium border border-slate-200 bg-white rounded-md text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50">
+                            Previous
+                        </button>
+                        <button id="nextBtn" onclick="nextPage()" class="h-8 px-3 text-sm font-medium border border-slate-200 bg-white rounded-md text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+<script type="text/javascript">
+           document.getElementById("sanctionScreening").addEventListener("submit", function (e) {
+
+        let name = document.getElementById("name").value.trim();
+        let customerType = document.getElementById("customertype").value;
+
+        let isValid = true;
+
+            document.getElementById("nameError").classList.add("invisible");
+    document.getElementById("typeError").classList.add("invisible");
+
+        if (!name) {
+                document.getElementById("nameError").classList.remove("invisible");
+            isValid = false;
+        }
+
+        if (!customerType || customerType === "0") {
+                document.getElementById("typeError").classList.remove("invisible");
+            isValid = false;
+        }
+
+        // ❌ STOP completely if invalid
+        if (!isValid) {
+            e.preventDefault();
+            e.stopImmediatePropagation(); // 🔥 important
+            return;
+        }
+
+        // ✅ Only runs when valid
+        $('#loadingCaseDetails').removeClass('hidden').addClass('flex');
+    });
+     lucide.createIcons();
+              
+
+        let rawData1 = @Html.Raw(JsonConvert.SerializeObject(Model.DataList ?? new List<ApiResultModel>()));
+
+        console.log("rawData1",rawData1);
+        let rawData2 = @Html.Raw(JsonConvert.SerializeObject(Model.SearchLogs ?? new List<SanctionScreeningLogModel>()));
+        console.log("rawData2",rawData2);
+        let rawData3 = @Html.Raw(JsonConvert.SerializeObject(Model.CaseLogs ?? new List<CaseModel>()));
+console.log("rawData3",rawData3);
+
+        let filteredData1 = [];
+        let filteredData2 = [];
+        let filteredData3 = [];
+
+        const currentUserName = '@currentUserName';
+
+        let currentPage = 1;
+        let size = 10;
+
+        let activeTable = 'table1';
+        let sortCol = -1;
+        let sortAsc = true;
+
+        $(document).ready(function () {
+            const savedSize = localStorage.getItem('pageSize');
+            if (savedSize) {
+                size = parseInt(savedSize);
+                $('#pageSize').val(savedSize);
+            }
+
+            // Clear search fields if data is populated
+            if (rawData1.length > 0) {
+                $('#name').val('');
+                $('#nationality').val('');
+                $('#customertype').val('0');
+                if (document.querySelector("#DOB") && document.querySelector("#DOB")._flatpickr) {
+                    document.querySelector("#DOB")._flatpickr.clear();
+                } else {
+                    $('#DOB').val('');
+                }
+            }
+
+            loadData1();
+        });
+
+        // function showLoader() {
+        //     $('#loadingCaseDetails').removeClass('hidden').addClass('flex');
+        // }
+
+        function clearFilters() {
+            $('#name').val('');
+            $('#nationality').val('');
+            $('#customertype').val('0');
+            if (document.querySelector("#DOB") && document.querySelector("#DOB")._flatpickr) {
+                document.querySelector("#DOB")._flatpickr.clear();
+            } else {
+                $('#DOB').val('');
+            }
+            $('#searchInput').val('');
+
+            // Clear local data
+            rawData1 = [];
+            rawData2 = [];
+            rawData3 = [];
+            filteredData1 = [];
+            filteredData2 = [];
+            filteredData3 = [];
+
+            // Reset to Search Results tab
+            const btn1 = document.querySelectorAll('.nav-btn')[0];
+            if(btn1) showTable('table1', btn1);
+
+            currentPage = 1;
+                const noDataRow = `<tr>
+        <td colspan="9" class="h-24 text-center">
+            <div class="text-slate-500">No results found.</div>
+        </td>
+    </tr>`;
+                $('#table1Body').html(noDataRow);
+                $('#table2Body').html(noDataRow);
+                $('#table3Body').html(noDataRow);
+            updatePagination(0);
+        }
+
+        /* Table 1 Data */
+        function loadData1() {
+            activeTable = 'table1';
+            let searchVal = $('#searchInput').val()?.toLowerCase() || '';
+
+            filteredData1 = rawData1.filter(x =>
+                !searchVal ||
+                (x.matchname && x.matchname.toLowerCase().includes(searchVal)) ||
+                (x.matchtype && x.matchtype.toLowerCase().includes(searchVal)) ||
+                (x.matchnationality && x.matchnationality.toLowerCase().includes(searchVal)) ||
+                (x.matchidnumber && String(x.matchidnumber).toLowerCase().includes(searchVal)) ||
+                (x.matchcategory && x.matchcategory.toLowerCase().includes(searchVal))
+            );
+
+            if (sortCol >= 0) {
+                filteredData1.sort((a,b) => {
+                    let v1 = sortCol === 0 ? a.matchname : sortCol === 1 ? a.matchtype : a.matchtype;
+                    let v2 = sortCol === 0 ? b.matchname : sortCol === 1 ? b.matchtype : b.matchtype;
+                    return sortAsc ? String(v1).localeCompare(String(v2)) : String(v2).localeCompare(String(v1));
+                });
+            }
+
+            renderTable();
+        }
+
+        /* Table 2 Data */
+        function loadData2() {
+            activeTable = 'table2';
+            let searchVal = $('#searchInput').val()?.toLowerCase() || '';
+
+            filteredData2 = rawData2.filter(x =>
+                !searchVal ||
+                (x.CustomerName && String(x.CustomerName).toLowerCase().includes(searchVal)) ||
+                (x.Nationality && String(x.Nationality).toLowerCase().includes(searchVal)) ||
+                (x.CustomerType && String(x.CustomerType).toLowerCase().includes(searchVal))
+            );
+
+            if (sortCol >= 0) {
+                filteredData2.sort((a,b) => {
+                    let keys = ['slno','customerId','firstName','nationality','dob','isMatched','source','uid','createdOnDB'];
+                    let v1 = a[keys[sortCol]];
+                    let v2 = b[keys[sortCol]];
+                    return sortAsc ? String(v1).localeCompare(String(v2)) : String(v2).localeCompare(String(v1));
+                });
+            }
+
+            renderTable();
+        }
+            function loadData3() {
+                activeTable = 'table3';
+                let searchVal = $('#searchInput').val()?.toLowerCase() || '';
+
+                filteredData3 = rawData3.filter(x =>
+                    !searchVal ||
+                    (x.CustomerId && String(x.CustomerId).toLowerCase().includes(searchVal)) ||
+                    (x.FirstName && String(x.FirstName).toLowerCase().includes(searchVal)) ||
+                    (x.LastName && String(x.LastName).toLowerCase().includes(searchVal)) ||
+                    (x.CustomerType && String(x.CustomerType).toLowerCase().includes(searchVal)) ||
+                    (x.CaseStatus && String(x.CaseStatus).toLowerCase().includes(searchVal))
+                );
+
+                if (sortCol >= 0) {
+                    filteredData3.sort((a,b) => {
+                        let keys = ['slno','customerId','firstName','nationality','dob','isMatched','source','uid','createdOnDB'];
+                        let v1 = a[keys[sortCol]];
+                        let v2 = b[keys[sortCol]];
+                        return sortAsc ? String(v1).localeCompare(String(v2)) : String(v2).localeCompare(String(v1));
+                    });
+                }
+
+                renderTable();
+            }
+
+                function formatCaseStatus(statusText) {
+            if (!statusText) return '';
+
+            function getStatusClass(text) {
+
+                const t = text.toLowerCase().trim();
+
+                if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
+                if (t.includes('approved')) return 'bg-green-700 text-white';     // dark green
+                if (t.includes('auto')) return 'bg-green-100 text-green-800';
+                // if (t.includes('approved')) return 'bg-blue-100 text-blue-800';
+                // //if (t.includes('auto')) return     'bg-amber-100 text-amber-800';
+                // if (t.includes('auto')) return 'bg-orange-100 text-orange-800';
+                if (t.includes('transfer')) return 'bg-green-100 text-green-800';
+                if (t.includes('rejected')) return 'bg-red-100 text-red-800';
+
+                return 'bg-slate-100 text-slate-800';
+            }
+
+
+
+            // Corporate case
+            if (statusText.includes('| Shareholders:')) {
+
+                const [corpStatus, shInfo] = statusText.split('|');
+
+                const total = shInfo.match(/Total\s(\d+)/)?.[1] || 0;
+                const approved = shInfo.match(/Approved\s(\d+)/)?.[1] || 0;
+                const auto = shInfo.match(/Auto\s(\d+)/)?.[1] || 0;
+                const pending = shInfo.match(/Pending\s(\d+)/)?.[1] || 0;
+                const rejected = shInfo.match(/Rejected\s(\d+)/)?.[1] || 0;
+
+                const statusClass = getStatusClass(corpStatus);
+
+                return `
+                    <div class="space-y-1 text-left">
+                        <div class="flex w-full items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+                            ${corpStatus.trim()}
+                        <div class="relative group">
+                                <svg class="w-5 h-5 text-gray-800 dark:text-white cursor-pointer"
+                                     aria-hidden="true"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     fill="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd"
+                                          d="M12 6a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-1.5 8a4 4 0 0 0-4 4 2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-3Zm6.82-3.096a5.51 5.51 0 0 0-2.797-6.293 3.5 3.5 0 1 1 2.796 6.292ZM19.5 18h.5a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-1.1a5.503 5.503 0 0 1-.471.762A5.998 5.998 0 0 1 19.5 18ZM4 7.5a3.5 3.5 0 0 1 5.477-2.889 5.5 5.5 0 0 0-2.796 6.293A3.501 3.501 0 0 1 4 7.5ZM7.1 12H6a4 4 0 0 0-4 4 2 2 0 0 0 2 2h.5a5.998 5.998 0 0 1 3.071-5.238A5.505 5.505 0 0 1 7.1 12Z"
+                                          clip-rule="evenodd"/>
+                                </svg>
+
+                                <!-- Hover tooltip -->
+                                <div class="absolute left-1/2 top-full mt-2 -translate-x-1/2
+                                            hidden group-hover:flex gap-2
+                                            bg-white p-2 rounded-lg shadow-lg border z-50">
+
+                                                <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                       A:${auto}
+                                    </span>
+                                             <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white">
+                                            AP:${approved}
+                                        </span>
+
+                                    <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                        P:${pending}
+                                    </span>
+
+                                    <span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                        R:${rejected}
+                                    </span>
+                                </div>
+                            </div>
+                           </div>
+                         </div>
+                `;
+            }
+
+            // Individual case
+            const statusClass = getStatusClass(statusText);
+
+            return `
+                <span class="flex w-full items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+                    ${statusText}
+                </span>
+            `;
+        }
+
+            function getRiskScoreClass(riskScore) {
+                 const score = (riskScore || '').toLowerCase().trim();
+
+            if (score.includes('low')) return 'text-green-500';
+            if (score.includes('medium')) return 'text-yellow-400';
+            if (score.includes('high')) return 'text-red-500';
+
+                return 'text-black';
+        }
+
+        function formatDate(value) {
+            if (!value) return null;
+
+            // ✅ Already in yyyy-MM-dd
+            if (value.includes('-') && value.split('-')[0].length === 4) {
+                return value;
+            }
+
+            // ✅ Convert dd/MM/yyyy → yyyy-MM-dd
+            if (value.includes('/')) {
+                let parts = value.split('/');
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+
+            return null;
+        }
+            function formatDateTime(dateStr) {
+            if (!dateStr) return { date: '-', time: '-' };
+
+            const d = new Date(dateStr);
+
+            return {
+                date: d.toLocaleDateString('en-GB'), // 20/02/2026
+                time: d.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',   // ✅ added
+                    hour12: true
+                }) // 06:43:15 PM
+            };
+        }
+            function formatDateTime1(dateString) {
+        if (!dateString) return '';
+
+        const parts = dateString.split('-'); // ["1964","01","10"]
+
+        if (parts.length !== 3) return '';
+
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+        function filterTableActive() {
+            currentPage = 1;
+            if(activeTable === 'table1') loadData1();
+                else if(activeTable === 'table2') loadData2();
+                    else loadData3();
+        }
+
+        function renderTable() {
+                let activeData =
+        activeTable === 'table1' ? filteredData1 :
+        activeTable === 'table2' ? filteredData2 :
+        filteredData3;
+
+    let tbodyId =
+        activeTable === 'table1' ? 'table1Body' :
+        activeTable === 'table2' ? 'table2Body' :
+        'table3Body';
+            const tbody = document.getElementById(tbodyId);
+
+            let startIdx = (currentPage - 1) * size;
+            let endIdx = Math.min(startIdx + size, activeData.length);
+            let pageData = activeData.slice(startIdx, endIdx);
+
+            if (!pageData.length) {
+                tbody.innerHTML = `<tr><td colspan="9" class="h-24 text-center"><div class="text-slate-500">No results found.</div></td></tr>`;
+            } else {
+                
+                if (activeTable === 'table1') {
+                   tbody.innerHTML = pageData.map(item => {
+                                const dob = formatDateTime1(item.matchdob);
+                                    
+                                         const searchedOnFormatted = formatDateTime(new Date());
+                                
+                        return `
+                            <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50">
+                                    <td class="px-4 py-4 font-medium text-slate-600"><div class="text-xs text-slate-700">
+                                        <div>${searchedOnFormatted?.date || '-'}</div>
+                                    <div class="ml-2">
+                                                ${searchedOnFormatted?.time ? searchedOnFormatted.time.replace(/\s?(AM|PM)/i, '') : ''}
+                                    </div>
+                                </div></td>
+                                <td class="px-4 py-4 font-medium text-slate-600">${item.matchtype || '-'}</td>
+                                <td class="px-4 py-4 font-medium text-slate-600">${item.matchcategory || '-'}</td>
+                                <td class="px-4 py-4 font-medium text-slate-600">${item.matchname || '-'}</td>
+                                    <td class="px-4 py-4 font-medium text-slate-600">${item.matchnationality || '-'}</td>
+                                <td class="px-4 py-4 font-medium text-slate-600">${dob || '-'}</td>
+                                <td class="px-4 py-4 font-medium text-slate-600">${item.matchscore || '-'}</td>
+                                <td class="px-4 py-4 font-medium text-slate-600">${currentUserName || '-'}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else if (activeTable === 'table2') 
+                {
+                    tbody.innerHTML = pageData.map((v, i) => 
+                    {
+                        const created = formatDateTime(v.CreatedOn);
+                        return `
+                             <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50">
+                              <td class="px-4 py-4">
+                            <!-- Created -->
+                            <div class="text-xs text-slate-700">
+                                <div>${created?.date || '-'}</div>
+                                <div class="ml-2">
+                                    ${created?.time ? created.time.replace(/\s?(AM|PM)/i, '') : ''}
+                                </div>
+                            </div>
+                        </td>
+                            <td class="px-4 py-4">${v.MatchType || '-'}</td>
+                            <td class="px-4 py-4">${v.CustomerType || '-'}</td>
+                            <td class="px-4 py-4">${v.CustomerName || '-'}</td>
+                            <td class="px-4 py-4">${v.Nationality || '-'}</td>
+                            <td class="px-4 py-4">
+    ${ (v.dob && v.dob !== "0001-01-01T00:00:00") 
+        ? formatDateTime1(v.dob) 
+        : (v.DOB && v.DOB !== "0001-01-01T00:00:00") 
+            ? formatDateTime1(v.DOB) 
+            : '-' }
+</td>
+                            <td class="px-4 py-4">${v.MatchScore || '-'}</td>
+                            <td class="px-4 py-4">${v.CreatedUser || '-'}</td>
+                        </tr>
+                        `;
+                    }).join('');
+                }else{
+                            tbody.innerHTML = pageData.map((caseItem, i) =>
+                        {
+                                const created = formatDateTime(caseItem.CreatedOn);
+                                        const updated = formatDateTime(caseItem.UpdatedOnDB);
+                              const customerName = `${caseItem.FirstName || ''} ${caseItem.MiddleName || ''} ${caseItem.LastName || ''}`.trim();
+                   const riskScore= caseItem.CustomerType === 'I' ? caseItem.Individual_final_risk_score || '' : caseItem.corporate_final_risk_score || '';
+                // const riskClass = getRiskScoreClass(caseItem.riskScore);
+                        const type = (caseItem.type || "").toLowerCase();
+                            return `
+                                 <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50">
+                                         <td class="px-2 py-4 font-medium text-slate-600">${caseItem.CustomerId}</td>
+
+
+                            <td class="px-2 py-4">
+                                <!-- Created -->
+                                <div class="text-xs text-slate-700">
+                                    <div>${created?.date || '-'}</div>
+                                    <div class="ml-2">
+                                        ${created?.time ? created.time.replace(/\s?(AM|PM)/i, '') : ''}
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="px-2 py-4">
+                                <!-- Updated (only if exists) -->
+                                ${updated ? `
+                                    <div class="text-xs text-slate-700">
+                                        <div>${updated?.date || '-'}</div>
+                                        <div class="ml-2">
+                                            ${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </td>
+
+    
+                    <td class="px-2 py-4">
+                        <div class="flex items-center gap-2">
+                                <i data-lucide="${caseItem.Type === 'Individual' ? 'user' : 'building-2'}" class="h-4 w-4 text-slate-400"></i>
+                                ${caseItem.Type}
+                        </div>
+                    </td>
+
+                           <td class="px-2 py-4 ">${customerName || '-'}</td>
+
+                        <td class="px-2 py-4 w-[120px] min-w-[120px] whitespace-normal break-words leading-relaxed">${caseItem.CaseChangeStatus}</td>
+
+                        <td class="px-2 py-4 ${
+                                caseItem.MatchScore < 70 ? 'text-green-600 font-semibold' :
+                                caseItem.MatchScore < 85 ? 'text-orange-500 font-semibold' :
+                            'text-red-600 font-semibold'
+                        }">
+                                ${caseItem.MatchScore}
+                        </td>
+                                   <td class="px-2 py-4">
+        <span class="font-bold ${
+            getRiskScoreClass(caseItem.riskScore)
+        }">
+            ${
+            caseItem.riskScore
+                ? (
+                    caseItem.riskScore.toLowerCase().includes("high") &&
+                    caseItem.riskOverride?.toLowerCase() === "override"
+                )
+                    ? "High(O)"
+                    : caseItem.riskScore.replace(" Risk", "").replace("High (O)", "High(O)")
+                : ""
+        }
+        </span>
+        </td>
+                        <td class="px-2 py-4">${caseItem.CreatedUser}</td>
+                        <td class="px-2 py-4">${formatCaseStatus(caseItem.CaseStatus)}</td>
+
+                            </tr>
+                            `;
+                        }).join('');
+                     
+                }
+            }
+
+            updatePagination(activeData.length);
+        }
+
+        function sortTable(tbl, colIdx) {
+            if(colIdx === sortCol) {
+                sortAsc = !sortAsc;
+            } else {
+                sortCol = colIdx;
+                sortAsc = true;
+            }
+
+            document.querySelectorAll(`#${tbl}-container th.sortable`).forEach((th, i) => {
+                th.classList.remove('active', 'asc', 'desc');
+                if (i === colIdx) {
+                    th.classList.add('active', sortAsc ? 'asc' : 'desc');
+                }
+            });
+            filterTableActive();
+        }
+
+        function updatePagination(totalRecords) {
+            const start = totalRecords === 0 ? 0 : (currentPage - 1) * size + 1;
+            const end = Math.min(currentPage * size, totalRecords);
+
+            $('#showingStart').text(start);
+            $('#showingEnd').text(end);
+            $('#totalCases').text(totalRecords);
+
+            $('#prevBtn').prop('disabled', currentPage === 1);
+            $('#nextBtn').prop('disabled', end >= totalRecords || totalRecords === 0);
+        }
+
+        function previousPage() { if (currentPage > 1) { currentPage--; renderTable(); } }
+        function nextPage() { currentPage++; renderTable(); }
+
+        function changePageSize() {
+            size = parseInt($('#pageSize').val());
+            localStorage.setItem('pageSize', size);
+            currentPage = 1;
+            renderTable();
+        }
+
+        function showTable(tableId, btn) {
+            activeTable = tableId;
+            currentPage = 1;
+
+            $('.nav-btn').removeClass('border-blue-600 text-blue-600').addClass('border-transparent text-slate-500 hover:text-slate-700');
+            $(btn).removeClass('border-transparent text-slate-500 hover:text-slate-700').addClass('border-blue-600 text-blue-600');
+
+            $('#table1-container').toggleClass('hidden', tableId !== 'table1');
+            $('#table2-container').toggleClass('hidden', tableId !== 'table2');
+            $('#table3-container').toggleClass('hidden', tableId !== 'table3');
+
+            $('#searchInput').attr('placeholder', tableId === 'table1' ? "Search by Customer Name/ID" : "Search by Customer Name/ID");
+            $('#searchInput').val('');
+
+            filterTableActive();
+
+        }
+
+        // function fetchCustomerData(batchId) {
+        //     $('#hdnBatchId').val(batchId);
+        //     showLoader();
+
+        //     $.ajax({
+        //         type: "GET",
+        //         url: "/ClientCase/ViewCustomerData?BatchID=" + batchId,
+        //         success: function (result) {
+        //             rawData2 = result || [];
+        //             const btn2 = document.querySelectorAll('.nav-btn')[1];
+        //             showTable('table2', btn2);
+        //             $('#loader').addClass('hidden');
+        //         },
+        //         error: function () {
+        //             $('#loader').addClass('hidden');
+        //             alert("Failed to load customer details");
+        //         }
+        //     });
+        // }
+
+        function exportPdf() {
+            // Populate form with current filters
+            $('#pdfName').val($('#name').val());
+            $('#pdfNationality').val($('#nationality').val());
+            $('#pdfDOB').val($('#DOB').val());
+            $('#pdfCustomerType').val($('#customertype').val());
+            $('#pdfActiveTable').val(activeTable);
+
+            // Trigger submit safely
+            const form = document.getElementById('pdfForm');
+            if (form) {
+                document.getElementById('btnPdf').click();
+            }
+        }
+
+        function initDatePicker(selector, defaultDate, options = {}) {
+
+                const elements = document.querySelectorAll(selector);
+
+                elements.forEach(el => {
+
+                    // ✅ prevent duplicate initialization
+                    if (el._flatpickr) return;
+
+                    flatpickr(el, {
+                        dateFormat: "Y-m-d",
+                        altInput: true,
+                        altFormat: "d/m/Y",
+                        altInputClass: "block w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium",
+                        allowInput: true,
+                        defaultDate: defaultDate,
+                        ...options,
+
+                        // ✅ Attach events AFTER input is created
+                        onReady: function (selectedDates, dateStr, instance) {
+
+                            const input = instance.altInput;
+
+                            // Restrict keys
+                            input.addEventListener("keydown", function (e) {
+                                const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+
+                                if (
+                                    allowedKeys.includes(e.key) ||
+                                    (e.key >= "0" && e.key <= "9")
+                                ) return;
+
+                                e.preventDefault();
+                            });
+
+                            // Auto format
+                            input.addEventListener("input", function () {
+                                let value = input.value.replace(/\D/g, '');
+
+                                if (value.length > 8) value = value.substring(0, 8);
+
+                                let formatted = '';
+                                if (value.length > 0) formatted += value.substring(0, 2);
+                                if (value.length >= 3) formatted += '/' + value.substring(2, 4);
+                                if (value.length >= 5) formatted += '/' + value.substring(4, 8);
+
+                                input.value = formatted;
+                            });
+                        },
+
+                        // ✅ Sync with Alpine (IMPORTANT)
+                        onChange: function (selectedDates, dateStr, instance) {
+                            if (el._x_model) {
+                                el._x_model.set(dateStr);
+                            }
+                        },
+
+                        // ✅ Final validation
+                        onClose: function (selectedDates, dateStr, instance) {
+
+                            if (selectedDates.length > 0) return;
+
+                            let val = instance.altInput.value;
+                            if (!val) return;
+
+                            let regex = /^\d{2}\/\d{2}\/\d{4}$/;
+
+                            if (!regex.test(val)) {
+                                instance.clear();
+                                return;
+                            }
+
+                            let parts = val.split('/');
+                            let dd = parseInt(parts[0], 10);
+                            let mm = parseInt(parts[1], 10);
+                            let yyyy = parseInt(parts[2], 10);
+
+                            let date = new Date(yyyy, mm - 1, dd);
+
+                            if (
+                                date.getFullYear() !== yyyy ||
+                                date.getMonth() !== mm - 1 ||
+                                date.getDate() !== dd
+                            ) {
+                                instance.clear();
+                                return;
+                            }
+
+                            instance.setDate(`${yyyy}-${parts[1]}-${parts[0]}`, true);
+                        }
+                    });
+
+                });
+            }
+            
+        function ExportList(isPDF) {
+            if (isPDF) {
+                exportPdf();
+            } else {
+                exportToCSV();
+            }
+        }
+
+        function formatDateString(dateStr) {
+            if (!dateStr) return '';
+            const dt = formatDateTime(dateStr);
+            return `${dt.date} ${dt.time}`;
+        }
+
+        function exportToCSV() {
+            let data = [];
+            let headers = [];
+            let fileName = '';
+
+            if (activeTable === 'table1') {
+                data = filteredData1;
+                headers = ['Type', 'Category', 'Name', 'Nationality', 'DOB', 'Score', 'Id No'];
+                fileName = 'SearchResults.csv';
+            } else if (activeTable === 'table2') {
+                data = filteredData2;
+                headers = ['Searched On', 'Customer Type', 'Customer Name', 'Nationality', 'DOB', 'Searched By'];
+                fileName = 'SearchLogs.csv';
+            } else {
+                data = filteredData3;
+                headers = ['Customer Id', 'Created On', 'Updated On', 'Customer Type', 'Customer Name', 'Case Status', 'Screening Score', 'Risk Rating', 'User', 'Status'];
+                fileName = 'CaseLogs.csv';
+            }
+
+            if(data.length === 0) return;
+
+            let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+            data.forEach(row => {
+                let rowData = [];
+                if (activeTable === 'table1') {
+                    rowData = [row.matchtype, row.matchcategory, row.matchname, row.matchnationality, formatDateTime1(row.matchdob), row.matchscore, row.matchidnumber];
+                } else if (activeTable === 'table2') {
+                    rowData = [formatDateString(row.CreatedOn), row.CustomerType, row.CustomerName, row.Nationality, row.dob, row.CreatedUser];
+                } else {
+                    rowData = [row.CustomerId, formatDateString(row.CreatedOn), formatDateString(row.UpdatedOnDB), row.CustomerType, `${row.FirstName || ''} ${row.LastName || ''}`.trim(), row.CaseChangeStatus, row.MatchScore, row.riskScore, row.CreatedUser, row.CaseStatus];
+                }
+                
+                rowData = rowData.map(v => v ? '"' + String(v).replace(/"/g, '""') + '"' : '');
+                csvContent += rowData.join(",") + "\n";
+            });
+
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+                // DOB → no future dates
+                const dobPicker = initDatePicker("#DOB", null, {
+                    maxDate: "today",
+                    static: true
+                });
+        });
+</script>
+
