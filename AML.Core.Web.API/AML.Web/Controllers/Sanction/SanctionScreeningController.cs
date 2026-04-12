@@ -348,5 +348,43 @@ namespace AML.Web.Controllers.Sanction
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> SanctionScreening_PDF(string name, string nationality, string dob, string customerType)
+        {
+            var model = new ScreeningSearchModel
+            {
+                Name = name,
+                Nationality = nationality,
+                DOB = dob,
+                customerType = customerType,
+                clientId = clientId
+            };
+
+            var searchType = "F"; 
+
+            // 1. Fetch search results (Tab 1)
+            string dataValue = _clientHandler.PostAsync(new DTO.DTO.Sanction.ScreeningSearchDTO
+            {
+                customerdob = model.DOB,
+                customerfullname = model.Name,
+                customernationality = model.Nationality,
+                searchtype = searchType,
+                customertype = model.customerType
+            }, ScreeningService.BACKLIST_SCREENING).Result;
+
+            if (!string.IsNullOrEmpty(dataValue))
+            {
+                model.DataList = JsonConvert.DeserializeObject<List<ApiResultModel>>(dataValue);
+            }
+
+            // 2. Fetch search history (Tab 2)
+            model.SearchLogs = _mapper.Map<List<SanctionScreeningLogModel>>(_customerScreeningService.GetSanctionScreeningLogs(model.Name, model.Nationality, model.DOB, model.customerType, clientId));
+
+            // 3. Fetch case logs (Tab 3)
+            model.CaseLogs = _mapper.Map<List<CaseModel>>(_customerScreeningService.GetCaseLogs(model.Name, model.Nationality, model.DOB, model.customerType, clientId));
+
+            return View("SanctionScreening_PDF", model);
+        }
     }
 }
+

@@ -965,7 +965,7 @@ namespace AML.Web.Controllers.ClientCase
         }
 
         [HttpGet("ClientCase/DataLoad_PDF")]
-        public async Task<IActionResult> DataLoad_PDF(string FromDate, string ToDate, string MatchType, string Customer, string searchValue)
+        public async Task<IActionResult> DataLoad_PDF(string FromDate, string ToDate, string MatchType, string Customer, string searchValue, int? batchId)
         {
             ETLReport model = new ETLReport();
             model.FromDate = string.IsNullOrEmpty(FromDate) ? DateTime.Now : DateTime.Parse(FromDate);
@@ -975,18 +975,24 @@ namespace AML.Web.Controllers.ClientCase
             model.ClientId = _clientHandler.GetClientId();
 
             ETLDataLoadReportDTO dto = _mapper.Map<ETLDataLoadReportDTO>(model);
-            List<EtlBatchModel> dataList = _mapper.Map<List<EtlBatchModel>>(_customerCaseService.DataLoadReport(dto).Result);
+            model.DataList = _mapper.Map<List<EtlBatchModel>>(_customerCaseService.DataLoadReport(dto).Result);
 
             if (!string.IsNullOrEmpty(searchValue))
             {
                 searchValue = searchValue.ToLower();
-                dataList = dataList.Where(x => 
+                model.DataList = model.DataList.Where(x => 
                     (x.FileName != null && x.FileName.ToLower().Contains(searchValue)) ||
                     (x.AddedUser != null && x.AddedUser.ToLower().Contains(searchValue))
                 ).ToList();
             }
 
-            return View("DataLoad_PDF", dataList);
+            if (batchId.HasValue && batchId.Value > 0)
+            {
+                model.CustomerData = _mapper.Map<List<CaseModel>>(_customerCaseService.DataLoadReportByBatch(batchId.Value, model.ClientId).Result);
+                ViewBag.SelectedBatch = model.DataList.FirstOrDefault(x => x.Id == batchId.Value);
+            }
+
+            return View("DataLoad_PDF", model);
         }
 
         [HttpGet("ClientCase/DataLoad_CSV")]

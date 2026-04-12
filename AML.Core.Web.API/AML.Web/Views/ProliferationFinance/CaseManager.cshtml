@@ -187,6 +187,7 @@
         </div>
     </div>
 </div>
+<iframe id="pdfFrame" style="position: fixed; top: 0; left: -9999px; width: 1200px; height: 100vh; border: none; opacity: 0; pointer-events: none;"></iframe>
 
 <!-- View Details Modal -->
 <div id="detailsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
@@ -635,18 +636,19 @@
         const status = $('#statusFilter').val() || "0";
         const searchValue = encodeURIComponent($('#searchInput').val() || "");
         
-        let url = `/ProliferationFinance/ExportPFCaseReport?startDate=${startDate}&endDate=${endDate}&customerType=${customerType}&status=${status}&searchValue=${searchValue}&isPDF=${isPDF}`;
-        
-        // Show loader
-        $('#tableLoader').removeClass('hidden').addClass('flex');
-        
-        // Trigger download
-        window.location.href = url;
-        
-        // Hide loader after a delay since file download doesn't trigger page reload
-        setTimeout(function() {
-            $('#tableLoader').addClass('hidden').removeClass('flex');
-        }, 5000);
+        const params = `startDate=${startDate}&endDate=${endDate}&customerType=${customerType}&status=${status}&searchValue=${searchValue}`;
+
+        if (isPDF) {
+            const url = `/ProliferationFinance/CaseManager_PDF?${params}`;
+            $('#tableLoader').removeClass('hidden').addClass('flex');
+            $('#pdfFrame').attr('src', url);
+            setTimeout(function() {
+                $('#tableLoader').addClass('hidden').removeClass('flex');
+            }, 5000);
+        } else {
+            const url = `/ProliferationFinance/ExportPFCaseReport?${params}&isPDF=false`;
+            window.location.href = url;
+        }
     }
 </script>
 

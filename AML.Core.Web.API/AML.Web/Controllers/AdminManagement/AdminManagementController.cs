@@ -316,5 +316,122 @@ namespace AML.Web.Controllers.AdminManagement
             if (sortProperty == null) return input;
             return dir == "asc" ? input.OrderBy(p => sortProperty.GetValue(p, null)).ToList() : input.OrderByDescending(p => sortProperty.GetValue(p, null)).ToList();
         }
+        [HttpGet]
+        public async Task<IActionResult> AdminManagement_PDF(string searchValue, string subStatus, string isBlocked)
+        {
+            try
+            {
+                TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+                string url = baseC6URL + "users";
+                var apiUsers = await _clientHandler.GetAsync(token, url);
+                var users = JsonConvert.DeserializeObject<List<dynamic>>(apiUsers);
+
+                var userUsageDict = ((IEnumerable<dynamic>)users)
+                    .GroupBy(x => ((string)x.username).ToLower())
+                    .ToDictionary(
+                        g => g.Key,
+                        g => (int)g.First().individualUsageCount + (int)g.First().corporateUsageCount
+                    );
+
+                var result = _customerCaseService.GetAllAdminClients();
+
+                // Apply Filters
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    searchValue = searchValue.ToLower();
+                    result = result.Where(x => 
+                        (x.ClientName != null && x.ClientName.ToLower().Contains(searchValue)) ||
+                        (x.Prefix != null && x.Prefix.ToLower().Contains(searchValue)) ||
+                        (x.ClientId.ToString().Contains(searchValue))
+                    ).ToList();
+                }
+
+                if (!string.IsNullOrEmpty(subStatus))
+                {
+                    var today = DateTime.Today;
+                    if (subStatus == "active")
+                        result = result.Where(x => x.ApplicationEndDate >= today).ToList();
+                    else if (subStatus == "expired")
+                        result = result.Where(x => x.ApplicationEndDate < today).ToList();
+                }
+
+                if (!string.IsNullOrEmpty(isBlocked))
+                {
+                    int blockedStatus = int.Parse(isBlocked);
+                    result = result.Where(x => x.isActive == blockedStatus).ToList();
+                }
+
+                var clients = result.Select(dto =>
+                {
+                    int usageCount = 0;
+                    if (!string.IsNullOrEmpty(dto.C6Username) &&
+                        userUsageDict.TryGetValue(dto.C6Username.ToLower(), out int apiUsage))
+                    {
+                        usageCount = apiUsage;
+                    }
+
+                    return new ClientMaster
+                    {
+                        ClientId = dto.ClientId,
+                        ClientName = dto.ClientName,
+                        Prefix = dto.Prefix,
+                        C6Username = dto.C6Username,
+                        ApplicationStartDate = dto.ApplicationStartDate,
+                        ApplicationEndDate = dto.ApplicationEndDate,
+                        SearchCount = dto.SearchCount,
+                        TotalUsageCount = usageCount,
+                        UserCount = dto.UserCount,
+                        isActive = dto.isActive
+                    };
+                }).ToList();
+
+                return View("AdminManagement_PDF", clients);
+            }
+            catch
+            {
+                var result = _customerCaseService.GetAllAdminClients();
+
+                // Apply Filters in Catch block as well
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    searchValue = searchValue.ToLower();
+                    result = result.Where(x => 
+                        (x.ClientName != null && x.ClientName.ToLower().Contains(searchValue)) ||
+                        (x.Prefix != null && x.Prefix.ToLower().Contains(searchValue)) ||
+                        (x.ClientId.ToString().Contains(searchValue))
+                    ).ToList();
+                }
+
+                if (!string.IsNullOrEmpty(subStatus))
+                {
+                    var today = DateTime.Today;
+                    if (subStatus == "active")
+                        result = result.Where(x => x.ApplicationEndDate >= today).ToList();
+                    else if (subStatus == "expired")
+                        result = result.Where(x => x.ApplicationEndDate < today).ToList();
+                }
+
+                if (!string.IsNullOrEmpty(isBlocked))
+                {
+                    int blockedStatus = int.Parse(isBlocked);
+                    result = result.Where(x => x.isActive == blockedStatus).ToList();
+                }
+
+                var clients = result.Select(dto => new ClientMaster
+                {
+                    ClientId = dto.ClientId,
+                    ClientName = dto.ClientName,
+                    Prefix = dto.Prefix,
+                    C6Username = dto.C6Username,
+                    ApplicationStartDate = dto.ApplicationStartDate,
+                    ApplicationEndDate = dto.ApplicationEndDate,
+                    SearchCount = dto.SearchCount,
+                    UserCount = dto.UserCount,
+                    isActive = dto.isActive
+                }).ToList();
+                return View("AdminManagement_PDF", clients);
+            }
+        }
     }
 }
+

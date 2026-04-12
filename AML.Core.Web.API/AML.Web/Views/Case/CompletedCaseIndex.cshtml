@@ -494,6 +494,7 @@
             </div>
         </div>
     </div>
+    <iframe id="pdfFrame" style="position: fixed; top: 0; left: -9999px; width: 1200px; height: 100vh; border: none; opacity: 0; pointer-events: none;"></iframe>
 </body>
 </html>
 <script>
@@ -1460,12 +1461,9 @@
     //     });
     // }
     function ExportList(isPDF) {
-
         $("#loadingCaseDetails").show();
-
-        window.location =
-            '/Report/ExportCompletedCasesReport?' +
-            'startDate=' + $('#startDate').val() +
+        
+        const params = 'startDate=' + $('#startDate').val() +
             '&endDate=' + $('#endDate').val() +
             '&cust_type=' + $('#customertype').val() +
             '&createdBy=' + $('#user').val() +
@@ -1473,11 +1471,16 @@
             '&caseStatus=' + $('#caseStatus').val() +
             '&caseStatusChange=' + $('#caseStatusChange').val() +
             '&riskLevel=' + $('#riskScore').val() +
-            '&searchValue=' + ($('#searchInput').val() || '') +
-            '&IsPDF=' + isPDF;
+            '&searchValue=' + ($('#searchInput').val() || '');
 
-
-        $("#loadingCaseDetails").hide();
+        if (isPDF) {
+            const url = '/Case/CompletedCases_PDF?' + params;
+            $('#pdfFrame').attr('src', url);
+            setTimeout(() => { $("#loadingCaseDetails").hide(); }, 5000);
+        } else {
+            window.location = '/Report/ExportCompletedCasesReport?' + params + '&IsPDF=false';
+            $("#loadingCaseDetails").hide();
+        }
     }
         function checkFilterValues() {
 

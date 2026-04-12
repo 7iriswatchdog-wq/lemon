@@ -68,9 +68,6 @@
     th.sortable.active.desc::after { content: '\A▼'; color: #2563eb; }
 </style>
 
-<div id="loader" class="fixed inset-0 bg-white bg-opacity-75 items-center justify-center z-50 hidden">
-    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
-</div>
 
 <div class="bg-slate-50 min-h-screen text-slate-900">
     <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
@@ -117,10 +114,24 @@
                         <option value="0">Blocked</option>
                     </select>
                 </div>
-                <!-- Export Option -->
-                <button onclick="exportTableToCSV('Clients.csv')" class="h-11 px-6 inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-md transition-colors border border-slate-200">
-                    Export
-                </button>
+                <!-- Unified Export Dropdown -->
+                <div class="relative inline-block text-left group">
+                    <button type="button" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-11 px-6 rounded-md text-sm transition focus:outline-none shadow-sm">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                        Export
+                        <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                    </button>
+                    <div class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200" role="menu" aria-orientation="vertical">
+                        <div class="py-1" role="none">
+                            <button onclick="exportPdf()" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
+                                Export PDF
+                            </button>
+                            <button onclick="exportTableToCSV('Clients.csv')" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <button onclick="resetFilters()" class="h-11 px-6 inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-md transition-colors border border-slate-200">
                     Reset
                 </button>
@@ -187,6 +198,7 @@
         </div>
     </div>
 </div>
+<iframe id="pdfFrame" style="position: fixed; top: 0; left: -9999px; width: 1200px; height: 100vh; border: none; opacity: 0; pointer-events: none;"></iframe>
 
 <script>
     let pageSize = 10;
@@ -272,6 +284,23 @@
             }
         });
     }
+
+    function exportPdf() {
+        const searchValue = encodeURIComponent($('#searchInput').val() || '');
+        const subStatus = $('#subStatusFilter').val() || '';
+        const isBlocked = $('#isBlockedFilter').val() || '';
+
+        const url = `/AdminManagement/AdminManagement_PDF?searchValue=${searchValue}&subStatus=${subStatus}&isBlocked=${isBlocked}`;
+        
+        $('#loader').removeClass('hidden').addClass('flex');
+        $('#pdfFrame').attr('src', url);
+
+        // Hide loader after a delay
+        setTimeout(() => {
+            $('#loader').addClass('hidden').removeClass('flex');
+        }, 5000);
+    }
+
 
     function sortTable(columnIndex, element) {
         $('.sortable').removeClass('active asc desc');

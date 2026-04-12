@@ -1,0 +1,148 @@
+@model List<AML.DTO.DTO.ProliferationFinance.ProliferationFinanceCaseDTO>
+@using Microsoft.AspNetCore.Http
+@{
+    Layout = null;
+    var companyName = Context.Session.GetString("SessCompanyName") ?? "AML Systems";
+    var clientDetails = ViewBag.ClientDetails as AML.DTO.DTO.Common.ClientMasterDTO;
+    var logoUrl = clientDetails != null ? "/img/" + clientDetails.DocumentFileName : "";
+    var auditDate = DateTime.UtcNow.AddHours(4).ToString("dd MMM yyyy, HH:mm") + " GST";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PF Case Manager Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @@media print {
+            .no-print { display: none !important; }
+            tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 text-[9px] p-8">
+    <div id="pdf-container" class="max-w-[1024px] mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+        <!-- Header -->
+        <div class="flex justify-between items-start border-b border-slate-200 pb-6 mb-8">
+            <div>
+                <h1 class="text-2xl font-black tracking-tight text-slate-900 uppercase">PF Case Manager Report</h1>
+                <p class="text-slate-500 font-medium mt-1 uppercase tracking-widest text-[8px]">Proliferation Finance Monitoring</p>
+                <div class="mt-4 text-[8px] text-slate-400 space-y-0.5 font-bold uppercase tracking-tight">
+                    <p>Extraction Date: @auditDate</p>
+                    <p>Date Range: @(ViewBag.StartDate?.ToString("dd/MM/yyyy") ?? "All") to @(ViewBag.EndDate?.ToString("dd/MM/yyyy") ?? "All")</p>
+                    <p>Dataset: @(ViewBag.CustomerType == "0" ? "All" : ViewBag.CustomerType) | Status: @(ViewBag.Status == "0" ? "All" : ViewBag.Status)</p>
+                </div>
+            </div>
+            <div class="text-right flex flex-col items-end">
+                @if (!string.IsNullOrEmpty(logoUrl))
+                {
+                    <img src="@logoUrl" class="h-10 w-auto object-contain mb-2" alt="Logo" />
+                }
+                <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Company</div>
+                <div class="text-lg font-black text-blue-600">@companyName</div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b-2 border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[8px]">
+                        <th class="px-2 py-3 w-28">Corporate Id</th>
+                        <th class="px-2 py-3 w-16">ID</th>
+                        <th class="px-2 py-3 w-24">Created on</th>
+                        <th class="px-2 py-3 w-24">Updated on</th>
+                        <th class="px-2 py-3">Search Detail</th>
+                        <th class="px-2 py-3 w-20">Datasets</th>
+                        <th class="px-2 py-3 w-28 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-2 py-3 text-slate-600 font-medium border-l-2 border-slate-100 uppercase text-[8px]">@item.CorporateId</td>
+                                <td class="px-2 py-3 font-bold text-slate-900 whitespace-nowrap">PF-@item.Id</td>
+                                <td class="px-2 py-3">
+                                    <div class="text-slate-700">
+                                        <div class="font-medium">@item.CreatedOn.ToString("dd MMM yyyy")</div>
+                                        <div class="text-slate-400 font-normal">@item.CreatedOn.ToString("HH:mm:ss")</div>
+                                    </div>
+                                </td>
+                                <td class="px-2 py-3">
+                                    <div class="text-slate-700">
+                                        <div class="font-medium">@(item.UpdatedOn?.ToString("dd MMM yyyy") ?? "-")</div>
+                                        <div class="text-slate-400 font-normal">@(item.UpdatedOn?.ToString("HH:mm:ss") ?? "")</div>
+                                    </div>
+                                </td>
+                                <td class="px-2 py-3 text-slate-700 font-bold italic">
+                                    @{
+                                        var detail = new List<string> { item.ChemicalName, item.HsCode, item.CasNumber }.FirstOrDefault(x => !string.IsNullOrEmpty(x) && x != "-" && x != "N/A");
+                                    }
+                                    @detail
+                                </td>
+                                <td class="px-2 py-3">
+                                    @{
+                                        var datasets = new List<string>();
+                                        if (!string.IsNullOrEmpty(item.ChemicalName) && item.ChemicalName != "-" && item.ChemicalName != "N/A") datasets.Add("Chemical");
+                                        if (!string.IsNullOrEmpty(item.SearchHitDetails) && item.SearchHitDetails.Trim() != "") datasets.Add("Non-Chemical");
+                                        if (datasets.Count == 0) datasets.Add("Chemical");
+                                    }
+                                    @foreach(var ds in datasets)
+                                    {
+                                        <span class="inline-block px-1.5 py-0.5 rounded-full text-[7px] font-bold bg-blue-50 text-blue-700 border border-blue-100 mr-1">@ds</span>
+                                    }
+                                </td>
+                                <td class="px-2 py-3 text-center">
+                                    @{
+                                        var s = (item.Status ?? "").ToLower();
+                                        var statusClass = "bg-slate-100 text-slate-800 border-slate-200";
+                                        if (s.Contains("pending")) statusClass = "bg-yellow-100 text-yellow-800 border-yellow-200";
+                                        else if (s.Contains("approved") || s.Contains("true match")) statusClass = "bg-blue-100 text-blue-800 border-blue-200";
+                                        else if (s.Contains("transfer")) statusClass = "bg-green-100 text-green-800 border-green-200";
+                                        else if (s.Contains("rejected") || s.Contains("false match")) statusClass = "bg-red-100 text-red-800 border-red-200";
+                                    }
+                                    <span class="inline-flex w-full items-center justify-center px-1.5 py-1 rounded-full text-[7px] font-bold @statusClass border uppercase tracking-tighter">@item.Status</span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="px-2 py-12 text-center text-slate-400 italic font-medium">No PF case records found matching filters.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-12 pt-6 border-t border-slate-100 text-center text-slate-400">
+            <p class="text-[8px] font-bold tracking-widest uppercase">
+                COMPUTER GENERATED REPORT - NO SIGNATURE REQUIRED
+                <br />
+                WatchDog Compliance System - @companyName &copy; @DateTime.Now.Year
+            </p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="/js/pdf-export.js"></script>
+    <script>
+        window.onload = function() {
+            setTimeout(() => {
+                downloadPageAsPDF('#pdf-container', 'PF_Case_Manager_@DateTime.Now.ToString("yyyyMMdd")' + '.pdf');
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

@@ -4213,5 +4213,61 @@ namespace AML.Web.Controllers.Case
         
         
 
+    [HttpGet]
+    public async Task<IActionResult> DueDiligence_PDF(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string riskLevel)
+    {
+        var userId = _clientHandler.GetUserId();
+        var clientId = _clientHandler.GetClientId();
+        var GroupId = _clientHandler.GetGroupId();
+        var _userGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+
+        if (string.IsNullOrEmpty(endDate)) endDate = DateTime.Now.ToString();
+        if (cust_type == "CORPORATE") cust_type = "C";
+        else if (cust_type == "INDIVIDUAL") cust_type = "I";
+
+        if (riskLevel == "1") riskLevel = "Low Risk";
+        else if (riskLevel == "2") riskLevel = "Medium Risk";
+        else if (riskLevel == "3") riskLevel = "High Risk";
+
+        List<CaseModel> cases = new List<CaseModel>();
+        if (!string.IsNullOrEmpty(searchValue))
+        {
+            cases = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, _userGroupModel.Name, clientId));
+        }
+        else
+        {
+            cases = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAll(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel, _userGroupModel.Name, clientId));
+        }
+
+        return View("DueDiligence_PDF", cases);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CompletedCases_PDF(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string riskLevel)
+    {
+        var userId = _clientHandler.GetUserId();
+        var clientId = _clientHandler.GetClientId();
+
+        if (string.IsNullOrEmpty(endDate)) endDate = DateTime.Now.ToString();
+        if (cust_type == "CORPORATE") cust_type = "C";
+        else if (cust_type == "INDIVIDUAL") cust_type = "I";
+
+        if (riskLevel == "1") riskLevel = "Low Risk";
+        else if (riskLevel == "2") riskLevel = "Medium Risk";
+        else if (riskLevel == "3") riskLevel = "High Risk";
+
+        List<CaseModel> cases = new List<CaseModel>();
+        if (!string.IsNullOrEmpty(searchValue))
+        {
+            cases = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, clientId));
+        }
+        else
+        {
+            cases = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel, clientId));
+        }
+
+        return View("CompletedCases_PDF", cases);
     }
 }
+}
+

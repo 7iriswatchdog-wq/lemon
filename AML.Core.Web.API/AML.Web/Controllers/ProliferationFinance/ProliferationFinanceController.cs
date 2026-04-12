@@ -1,4 +1,4 @@
-﻿using AML.Core.Common.StaticResource;
+using AML.Core.Common.StaticResource;
 using AML.Core.Service.Kyc;
 using AML.Core.Service.Risk;
 using AML.Core.ServiceContract.CaseComment;
@@ -339,6 +339,76 @@ namespace AML.Web.Controllers.ProliferationFinance
                     document.Close();
                     return File(ms.ToArray(), "application/pdf", $"PF_Case_Report_{DateTime.Now:yyyyMMdd}.pdf");
                 }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Error generating report: " + ex.Message);
+            }
+        }
+
+        [HttpGet("/ProliferationFinance/CaseManager_PDF")]
+        public IActionResult CaseManager_PDF(DateTime? startDate, DateTime? endDate, string customerType, string status, string searchValue)
+        {
+            try
+            {
+                var clientId = _clientHandler.GetClientId();
+                var response = _proliferationFinanceService.GetAllCases(clientId);
+                if (response.Status != 200) return BadRequest("Failed to fetch data");
+
+                var data = response.Result;
+
+                // Standardized filtering
+                if (startDate.HasValue) data = data.FindAll(x => x.CreatedOn >= startDate.Value);
+                if (endDate.HasValue) data = data.FindAll(x => x.CreatedOn <= endDate.Value.AddDays(1).AddSeconds(-1));
+                
+                if (!string.IsNullOrEmpty(customerType) && customerType != "0")
+                {
+                    if (customerType == "Chemical")
+                    {
+                        data = data.FindAll(x => 
+                            (!string.IsNullOrEmpty(x.ChemicalName) && x.ChemicalName != "-" && x.ChemicalName != "N/A") ||
+                            (!string.IsNullOrEmpty(x.HsCode) && x.HsCode != "-" && x.HsCode != "N/A") ||
+                            (!string.IsNullOrEmpty(x.CasNumber) && x.CasNumber != "-" && x.CasNumber != "N/A") ||
+                            (!string.IsNullOrEmpty(x.Eccn) && x.Eccn != "-" && x.Eccn != "N/A") ||
+                            (!string.IsNullOrEmpty(x.SynonymName) && x.SynonymName != "-" && x.SynonymName != "N/A")
+                        );
+                    }
+                    else if (customerType == "Non-Chemical")
+                    {
+                        data = data.FindAll(x => !string.IsNullOrEmpty(x.SearchHitDetails) && x.SearchHitDetails.Trim() != "");
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(status) && status != "0") data = data.FindAll(x => x.Status == status);
+
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    searchValue = searchValue.ToLower();
+                    data = data.FindAll(x =>
+                        (x.CorporateId != null && x.CorporateId.ToLower().Contains(searchValue)) ||
+                        (x.CompanyName != null && x.CompanyName.ToLower().Contains(searchValue)) ||
+                        (x.ChemicalName != null && x.ChemicalName.ToLower().Contains(searchValue)) ||
+                        (x.HsCode != null && x.HsCode.ToLower().Contains(searchValue)) ||
+                        (x.CasNumber != null && x.CasNumber.ToLower().Contains(searchValue)) ||
+                        (x.Id.ToString().Contains(searchValue))
+                    );
+                }
+
+                // Service Group Filter
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+                if (_UserGroupModel.Name != "Senior Management")
+                {
+                    data = data.FindAll(x => x.Status != "Submit to Senior Management");
+                }
+
+                ViewBag.ClientDetails = _customerCaseService.GetClientDetailsByID(clientId);
+                ViewBag.StartDate = startDate;
+                ViewBag.EndDate = endDate;
+                ViewBag.CustomerType = customerType;
+                ViewBag.Status = status;
+
+                return View("CaseManager_PDF", data);
             }
             catch (Exception ex)
             {

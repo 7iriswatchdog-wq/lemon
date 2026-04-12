@@ -1,0 +1,292 @@
+@using AML.ViewModel.ViewModels.Sanction
+@using AML.ViewModel.ViewModels.CustomerCase
+@using Microsoft.AspNetCore.Http
+@model AML.ViewModel.ViewModels.Sanction.ScreeningSearchModel
+@{
+    Layout = null;
+    var companyName = Context.Session.GetString("SessCompanyName") ?? "AML Systems";
+    var auditDate = DateTime.UtcNow.AddHours(4).ToString("dd MMM yyyy, HH:mm") + " GST";
+}
+
+@functions {
+    public class StatusFragment { public string Label { get; set; } public string Class { get; set; } public string Count { get; set; } }
+    public class StatusInfo { public string MainStatus { get; set; } public List<StatusFragment> Shareholders { get; set; } }
+
+    public StatusInfo ParseStatus(string statusText)
+    {
+        if (string.IsNullOrEmpty(statusText)) return new StatusInfo { MainStatus = "-", Shareholders = new List<StatusFragment>() };
+        if (!statusText.Contains("| Shareholders:")) return new StatusInfo { MainStatus = statusText, Shareholders = new List<StatusFragment>() };
+
+        var parts = statusText.Split(new[] { "| Shareholders:" }, StringSplitOptions.None);
+        var main = parts[0].Trim();
+        var shPart = parts[1];
+        var info = new StatusInfo { MainStatus = main, Shareholders = new List<StatusFragment>() };
+
+        var patterns = new[] { "Total", "Approved", "Auto", "Pending", "Rejected", "OnHold", "Waitlist", "Whitelist" };
+        var counts = new Dictionary<string, string>();
+        foreach (var p in patterns)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(shPart, p + @"\s+(\d+)");
+            if (match.Success && int.Parse(match.Groups[1].Value) > 0) counts[p] = match.Groups[1].Value;
+        }
+
+        if (counts.ContainsKey("Auto")) info.Shareholders.Add(new StatusFragment { Label = "A", Class = "bg-green-100 text-green-800", Count = counts["Auto"] });
+        if (counts.ContainsKey("Approved")) info.Shareholders.Add(new StatusFragment { Label = "AP", Class = "bg-green-700 text-white", Count = counts["Approved"] });
+        if (counts.ContainsKey("Pending")) info.Shareholders.Add(new StatusFragment { Label = "P", Class = "bg-yellow-100 text-yellow-800", Count = counts["Pending"] });
+        if (counts.ContainsKey("Rejected")) info.Shareholders.Add(new StatusFragment { Label = "R", Class = "bg-red-100 text-red-800", Count = counts["Rejected"] });
+        if (counts.ContainsKey("OnHold")) info.Shareholders.Add(new StatusFragment { Label = "OH", Class = "bg-orange-500 text-white", Count = counts["OnHold"] });
+        if (counts.ContainsKey("Waitlist")) info.Shareholders.Add(new StatusFragment { Label = "W", Class = "bg-indigo-600 text-white", Count = counts["Waitlist"] });
+        if (counts.ContainsKey("Whitelist")) info.Shareholders.Add(new StatusFragment { Label = "WL", Class = "bg-indigo-600 text-white", Count = counts["Whitelist"] });
+
+        return info;
+    }
+
+    public string GetStatusClass(string text)
+    {
+        var t = text.ToLower().Trim();
+        if (t.Contains("approved")) return "bg-green-700 text-white";
+        if (t.Contains("pending")) return "bg-yellow-100 text-yellow-800";
+        if (t.Contains("hold")) return "bg-orange-500 text-white";
+        if (t.Contains("white")) return "bg-indigo-600 text-white";
+        if (t.Contains("wait")) return "bg-indigo-600 text-white";
+        if (t.Contains("auto")) return "bg-green-100 text-green-800";
+        if (t.Contains("transfer")) return "bg-green-100 text-green-800";
+        if (t.Contains("rejected")) return "bg-red-100 text-red-800";
+        return "bg-slate-100 text-slate-800";
+    }
+
+    public string GetRiskClass(string risk)
+    {
+        var r = (risk ?? "").ToLower();
+        if (r.Contains("high")) return "text-red-700 font-black";
+        if (r.Contains("medium")) return "text-amber-700 font-black";
+        if (r.Contains("low")) return "text-emerald-700 font-black";
+        return "text-slate-900";
+    }
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UAEIEC Consolidated Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @@media print {
+            .no-print { display: none !important; }
+            tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+            .page-break { page-break-before: always; }
+        }
+        .table-header { px-2 py-3 bg-slate-50 border-b-2 border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[7px]; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 text-[10px] p-8">
+    <div id="pdf-container" class="max-w-[1024px] mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+        <!-- Header -->
+        <div class="flex justify-between items-start border-b border-slate-200 pb-6 mb-8">
+            <div>
+                <h1 class="text-2xl font-black tracking-tight text-slate-900 uppercase">UAEIEC Consolidated Report</h1>
+                <p class="text-slate-500 font-medium mt-1 uppercase tracking-widest text-[8px]">Sanction Screening & Search History</p>
+                <div class="mt-4 text-[8px] text-slate-400 space-y-0.5 font-bold uppercase tracking-tight">
+                    <p>Extraction Date: @auditDate</p>
+                    <p>Search Query: @Model.Name | Type: @Model.customerType | Nationality: @Model.Nationality | DOB: @Model.DOB</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Company</div>
+                <div class="text-lg font-black text-blue-600">@companyName</div>
+            </div>
+        </div>
+
+        <!-- Section 1: Search Results -->
+        <div class="mb-10">
+            <h2 class="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-4 border-l-4 border-blue-600 pl-3">1. Search Results</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b-2 border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[7px]">
+                            <th class="px-2 py-3">Searched On</th>
+                            <th class="px-2 py-3">Datasets</th>
+                            <th class="px-2 py-3">Customer Type</th>
+                            <th class="px-2 py-3">Customer Name</th>
+                            <th class="px-2 py-3">Nationality</th>
+                            <th class="px-2 py-3">DOB</th>
+                            <th class="px-2 py-3">Score</th>
+                            <th class="px-2 py-3">Searched By</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @if (Model.DataList != null && Model.DataList.Any())
+                        {
+                            var now = DateTime.UtcNow.AddHours(4);
+                            foreach (var item in Model.DataList)
+                            {
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-2 py-3 text-slate-500 whitespace-nowrap">@now.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td class="px-2 py-3 text-slate-600 font-medium">@item.matchtype</td>
+                                    <td class="px-2 py-3 text-slate-600">@item.matchcategory</td>
+                                    <td class="px-2 py-3 font-bold text-slate-900 text-[8px]">@item.matchname</td>
+                                    <td class="px-2 py-3 text-slate-600 text-center">@(item.matchnationality ?? "-")</td>
+                                    <td class="px-2 py-3 text-slate-600 whitespace-nowrap">@item.matchdob</td>
+                                    <td class="px-2 py-3 font-black text-blue-600 text-center">@item.matchscore%</td>
+                                    <td class="px-2 py-3 text-slate-600 whitespace-nowrap">@(Context.Session.GetString("SessUsername") ?? "-")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="8" class="px-2 py-8 text-center text-slate-400 italic font-medium">No live search results matches found.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 2: Search History -->
+        <div class="mb-10 page-break">
+            <h2 class="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-4 border-l-4 border-amber-500 pl-3">2. Search History</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b-2 border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[7px]">
+                            <th class="px-2 py-3">Searched On</th>
+                            <th class="px-2 py-3">Datasets</th>
+                            <th class="px-2 py-3">Customer Type</th>
+                            <th class="px-2 py-3">Customer Name</th>
+                            <th class="px-2 py-3">Nationality</th>
+                            <th class="px-2 py-3">DOB</th>
+                            <th class="px-2 py-3">Score</th>
+                            <th class="px-2 py-3">Searched By</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @if (Model.SearchLogs != null && Model.SearchLogs.Any())
+                        {
+                            foreach (var item in Model.SearchLogs)
+                            {
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-2 py-3 text-slate-500 whitespace-nowrap">@item.CreatedOn.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td class="px-2 py-3 text-slate-600 font-medium">@item.MatchType</td>
+                                    <td class="px-2 py-3 text-slate-600">@item.CustomerType</td>
+                                    <td class="px-2 py-3 font-bold text-slate-900 text-[8px]">@item.CustomerName</td>
+                                    <td class="px-2 py-3 text-slate-600 text-center">@item.Nationality</td>
+                                    <td class="px-2 py-3 text-slate-600 whitespace-nowrap">@item.DOB.ToString("dd MMM yyyy")</td>
+                                    <td class="px-2 py-3 font-black text-blue-600 text-center">@item.MatchScore%</td>
+                                    <td class="px-2 py-3 text-slate-600 whitespace-nowrap">@item.CreatedUser</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="8" class="px-2 py-8 text-center text-slate-400 italic font-medium">No search history found.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 3: Existing Case Match -->
+        <div class="mb-10 page-break">
+            <h2 class="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-4 border-l-4 border-emerald-500 pl-3">3. Existing Case Match</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b-2 border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[7px]">
+                            <th class="px-2 py-3">Customer Id</th>
+                            <!-- <th class="px-2 py-3">Created On</th>
+                            <th class="px-2 py-3">Updated On</th>
+                            <th class="px-2 py-3">Customer Type</th> -->
+                            <th class="px-2 py-3">Customer Name</th>
+                            <th class="px-2 py-3">Datasets</th>
+                            <!-- <th class="px-2 py-3">Screening Score</th> -->
+                            <th class="px-2 py-3">Risk Rating</th>
+                            <th class="px-2 py-3">User</th>
+                            <th class="px-2 py-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @if (Model.CaseLogs != null && Model.CaseLogs.Any())
+                        {
+                            foreach (var item in Model.CaseLogs)
+                            {
+                                var statusInfo = ParseStatus(item.CaseStatus);
+                                var statusClass = GetStatusClass(statusInfo.MainStatus);
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-2 py-3 font-bold text-slate-900 border-l-2 border-slate-100 uppercase">@item.CustomerId</td>
+                                    
+                                    @* <td class="px-2 py-3 text-slate-500 whitespace-nowrap">@item.CreatedOn</td>
+                                    <td class="px-2 py-3 text-slate-500 whitespace-nowrap">@item.UpdatedOnDB</td>
+                                    <td class="px-2 py-3 text-slate-600 font-medium">@item.CustomerType</td> *@
+                                    
+                                    <td class="px-2 py-3 font-bold text-slate-800 text-[8px]">@($"{item.FirstName} {item.LastName}")</td>
+                                    <td class="px-2 py-3 text-slate-600">
+                                        <span class="inline-block px-1 py-0.5 rounded bg-slate-100 text-slate-500 text-[6px] font-bold">@item.CaseChangeStatus</span>
+                                    </td>
+                                    
+                                    @* <td class="px-2 py-3 font-black text-blue-600 text-center">@item.MatchScore%</td> *@
+                                    
+                                    <td class="px-2 py-3">
+                                        @{
+                                            var riskRaw = item.Individual_final_risk_score ?? item.corporate_final_risk_score ?? "Low Risk";
+                                            var isOverride = (item.CustomerType == "Individual" && item.Individual_Risk_Override?.ToLower() == "override") ||
+                                                             (item.CustomerType != "Individual" && item.Corporate_Risk_Override?.ToLower() == "override");
+                                            var riskDisplay = isOverride ? riskRaw.Replace(" Risk", "") + "(O)" : riskRaw;
+                                            var riskClass = GetRiskClass(riskRaw);
+                                        }
+                                        <span class="@riskClass">@riskDisplay</span>
+                                    </td>
+                                    <td class="px-2 py-3 text-slate-600 whitespace-nowrap">@item.CreatedUser</td>
+                                    <td class="px-2 py-3">
+                                        <div class="flex flex-col items-center gap-1">
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[6px] font-bold @statusClass border uppercase tracking-tighter">
+                                                @statusInfo.MainStatus
+                                            </span>
+                                            @if (statusInfo.Shareholders.Any())
+                                            {
+                                                <div class="flex gap-0.5 mt-0.5">
+                                                    @foreach (var sh in statusInfo.Shareholders)
+                                                    {
+                                                        <span class="px-1 py-0.5 rounded text-[5px] font-bold @sh.Class">@sh.Label:@sh.Count</span>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="10" class="px-2 py-8 text-center text-slate-400 italic font-medium">No existing case matches found.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-12 pt-6 border-t border-slate-100 text-center text-slate-400">
+            <p class="text-[8px] font-black tracking-widest uppercase">
+                CONFIDENTIAL AUDIT LOG - @companyName &copy; @DateTime.Now.Year
+                <br />
+                Computer generated report; hence no signature is required.
+            </p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="/js/pdf-export.js"></script>
+    <script>
+        window.onload = function() {
+            setTimeout(() => {
+                downloadPageAsPDF('#pdf-container', 'UAEIEC_Sanction_Report_@DateTime.Now.ToString("yyyyMMdd")' + '.pdf');
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
