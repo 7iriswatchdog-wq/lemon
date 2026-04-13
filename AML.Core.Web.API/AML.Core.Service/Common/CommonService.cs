@@ -898,6 +898,28 @@ namespace AML.Core.Service.Common
                     {
                         _CustomerCaseDTO.Status = 6;
                         _CustomerCaseDTO.ScheduelerTrackerId = schedulerRunId;
+                        //if(_CustomerCaseDTO.Type != "Individual" && _CustomerCaseDTO.Type != "Corporate")
+                        //{
+                        //    int companyId = _customerCaseService.GetCaseId(_CustomerCaseDTO.CompanyCode);
+                        //    CustomerCaseDTO _CompanyCustomerCaseDTO = _customerCaseService.GetDetails(companyId);
+                        //    _CompanyCustomerCaseDTO.Status = 0;
+                        //    _CompanyCustomerCaseDTO.UpdatedBy = 1;
+                        //    _CompanyCustomerCaseDTO.UpdatedOn = Convert.ToString(DateTime.Now);
+                            
+
+                        //    var result1 = _customerCaseService.Update(_CompanyCustomerCaseDTO);
+
+                        //    int Companyid = _customerCaseService.GetCaseId(_CustomerCaseDTO.CustomerId);
+
+                        //    CaseCommentModel CompanyremarkModel = new CaseCommentModel();
+                        //    CompanyremarkModel.CaseId = Convert.ToInt32(Companyid);
+                        //    CompanyremarkModel.Comment = _CustomerCaseDTO.FlagType + " is Updated from Daily Scheduler"; // ? FIXED
+                        //    CompanyremarkModel.CommentType = "Daily Scheduler";
+                        //    CompanyremarkModel.CreatedBy = 1;
+
+                        //    var CompanyremarkResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(CompanyremarkModel));
+
+                        //}
                     }
                     
                         int id = _customerCaseService.GetCaseId(_CustomerCaseDTO.CustomerId);
@@ -922,6 +944,7 @@ namespace AML.Core.Service.Common
 
             
             var updateRespose = _customerCaseService.Update(_CustomerCaseDTO);
+           
             if (_CustomerCaseDTO.IsMatched == 1 && _CustomerCaseDTO.Status == 6)
             {
                 try

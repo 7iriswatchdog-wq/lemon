@@ -185,13 +185,14 @@
                     <table class="w-full text-sm text-left whitespace-nowrap table-fixed">
                         <thead class="text-[10px] text-slate-500 bg-slate-50/50 border-b border-slate-200">
                             <tr>
-                                <th class="px-6 py-4 font-bold h-12">Type</th>
-                                <th class="px-6 py-4 font-bold h-12">Name</th>
+                                <th class="px-6 py-4 font-bold h-12">Created On</th>
+                                <th class="px-6 py-4 font-bold h-12">Customer Type</th>
+                                <th class="px-6 py-4 font-bold h-12">Customer Name</th>
                                 <th class="px-6 py-4 font-bold h-12">Nationality</th>
                                 <th class="px-6 py-4 font-bold h-12">DOB</th>
-                                <th class="px-6 py-4 font-bold h-12">ID Number</th>
-                                <th class="px-6 py-4 font-bold h-12">Source</th>
-                                <th class="px-6 py-4 font-bold h-12">Created On</th>
+                                @* <th class="px-6 py-4 font-bold h-12">ID Number</th> *@
+                                <th class="px-6 py-4 font-bold h-12">Datasets</th>
+                                
                                 <th class="px-6 py-4 font-bold h-12 text-right">Action</th>
                             </tr>
                         </thead>
@@ -255,6 +256,36 @@
             loadData();
         });
 
+        function formatDate(dateString) {
+            if (!dateString) return { date: '', time: '' };
+
+            const date = new Date(dateString);
+
+            return {
+                date: date.toLocaleDateString('en-GB'),
+                time: date.toLocaleTimeString('en-GB', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                })
+            };
+        }
+        function formatDateTime(dateStr) {
+        if (!dateStr) return { date: '-', time: '-' };
+
+        const d = new Date(dateStr);
+
+        return {
+            date: d.toLocaleDateString('en-GB'), // 20/02/2026
+            time: d.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',   // ✅ added
+                hour12: true
+            }) // 06:43:15 PM
+        };
+    }
+
         function applyFilters() {
             currentPage = 1;
             loadData();
@@ -304,24 +335,37 @@
                 tbody.append('<tr><td colspan="8" class="h-24 text-center text-slate-500">No client records found.</td></tr>');
                 return;
             }
-
+            console.log(data);
             data.forEach(row => {
                 const idNumber = row.iddetails && row.iddetails.length > 0 ? row.iddetails[0].idnumber : '-';
                 const dob = row.doblist && row.doblist.length > 0 ? row.doblist[0].dob : '-';
+                 const { date, time } = formatDate(row.createddate);
+            const created = formatDateTime(row.createddate);
                 
                 tbody.append(`
                     <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${row.category === 'INDIVIDUAL' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'}">
-                                ${row.category || '-'}
+                        
+
+                        <td class="px-6 py-4 text-slate-400">
+                        <div class="text-xs text-slate-700">
+                                <div>${created?.date || '-'}</div>
+                                <div class="ml-2">
+                                    ${created?.time ? created.time.replace(/\s?(AM|PM)/i, '') : ''}
+                                </div>
+                            </div>
+                            </td>
+                         <td class="px-6 py-4">
+                           <span class="px-2 py-1 rounded-md text-[10px] tracking-wider">
+                                ${row.category 
+                                    ? row.category.charAt(0).toUpperCase() + row.category.slice(1).toLowerCase() 
+                                    : '-'}
                             </span>
                         </td>
-                        <td class="px-6 py-4 font-bold text-slate-900">${row.fullname || '-'}</td>
-                        <td class="px-6 py-4 text-slate-600">${row.nationality || '-'}</td>
-                        <td class="px-6 py-4 text-slate-500">${dob}</td>
-                        <td class="px-6 py-4 text-slate-500 font-mono">${idNumber}</td>
-                        <td class="px-6 py-4 font-bold text-blue-600">${row.type || '-'}</td>
-                        <td class="px-6 py-4 text-slate-400">${row.createdon || '-'}</td>
+                            <td class="px-6 py-4 ">${row.fullname || '-'}</td>
+                            <td class="px-6 py-4 ">${row.nationality || '-'}</td>
+                            <td class="px-6 py-4 ">${dob}</td>
+                            <td class="px-6 py-4">${row.type || '-'}</td>
+                        
                         <td class="px-6 py-4 text-right">
                             <a href="/InternalWatchList/Edit/${row.uid}" class="text-blue-600 hover:text-blue-700 font-bold text-xs uppercase tracking-wider">Edit</a>
                         </td>

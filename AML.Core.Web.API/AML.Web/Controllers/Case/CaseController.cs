@@ -2580,6 +2580,43 @@ namespace AML.Web.Controllers.Case
             _CustomerCaseDTO.Comments = model.Comment;
 
             var result = _customerCaseService.Update(_CustomerCaseDTO);
+            if(_CustomerCaseDTO.Type !="Individual" && _CustomerCaseDTO.Type != "Corporate")
+            {
+                
+                
+                int companyId= _customerCaseService.GetCaseId(_CustomerCaseDTO.CompanyCode);
+                CustomerCaseDTO _CompanyCustomerCaseDTO = _customerCaseService.GetDetails(companyId);
+                _CompanyCustomerCaseDTO.Status = 0;
+                _CompanyCustomerCaseDTO.UpdatedBy = _clientHandler.GetUserId();
+                _CompanyCustomerCaseDTO.UpdatedOn = Convert.ToString(DateTime.Now);
+                _CompanyCustomerCaseDTO.Comments = model.Comment;
+
+                var result1 = _customerCaseService.Update(_CompanyCustomerCaseDTO);
+                CaseCommentModel CompanycommentModel = new CaseCommentModel();
+                CompanycommentModel.CaseId = companyId;
+                CompanycommentModel.Comment = _CustomerCaseDTO.FlagType +" case has been on hold";// ✅ FIXED
+                CompanycommentModel.CommentType = "Related Parties On Hold";
+                CompanycommentModel.CreatedBy = _clientHandler.GetUserId();
+                var CompanycommentResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(CompanycommentModel));
+                if(_CustomerCaseDTO.ParentID != null) 
+                {
+                    int parentId = _customerCaseService.GetCaseId(_CustomerCaseDTO.ParentID);
+                    //CustomerCaseDTO _parentCustomerCaseDTO = _customerCaseService.GetDetails(parentId);
+                    //_parentCustomerCaseDTO.Status = 0;
+                    //_parentCustomerCaseDTO.UpdatedBy = _clientHandler.GetUserId();
+                    //_parentCustomerCaseDTO.UpdatedOn = Convert.ToString(DateTime.Now);
+                    //_parentCustomerCaseDTO.Comments = model.Comment;
+
+                    var result2 = _customerCaseService.Update(_CompanyCustomerCaseDTO);
+                    CaseCommentModel parentIdcommentModel = new CaseCommentModel();
+                    parentIdcommentModel.CaseId = parentId;
+                    parentIdcommentModel.Comment = _CustomerCaseDTO.FlagType + " case has been on hold";// ✅ FIXED
+                    parentIdcommentModel.CommentType = "Related Parties On Hold";
+                    parentIdcommentModel.CreatedBy = _clientHandler.GetUserId();
+                    var parentIdcommentResult = _caseCommentService.Create(_mapper.Map<CaseCommentDTO>(parentIdcommentModel));
+
+                }
+            }
             if (model.Comment != "" && model.Comment != null)
             {
                 CaseCommentModel remarkModel = new CaseCommentModel();

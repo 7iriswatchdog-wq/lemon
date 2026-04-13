@@ -1405,7 +1405,7 @@ namespace AML.Web.Controllers.Reports
                 abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportListBySchedulerTrackerId(new CaseReportRequestDTO
                 {
                     //User = userID,
-                    SchedulerTrackerId = schedulerTrackerId,
+                    //SchedulerTrackerId = schedulerTrackerId,
                     ClientId = _clientHandler.GetClientId()
 
                 }));
