@@ -828,7 +828,7 @@ namespace AML.Core.Service.Common
             screeningrq.WHITELISTINGDATE = _CustomerCaseDTO.DateOfWhitelisting?.ToString("dd/MM/yyyy");
             screeningrq.WHITELISTING = _CustomerCaseDTO.IsWhiteListed;
             checkThreshold = _CustomerCaseDTO.Threshold;
-            if (_CustomerCaseDTO.Status == 2 || _CustomerCaseDTO.Status == 5)
+            if (_CustomerCaseDTO.Status == 2 || _CustomerCaseDTO.Status == 5 || _CustomerCaseDTO.Status == 1)
             {
                 CaseFromSchedulerStatus = true;
             }
