@@ -1920,7 +1920,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                                                     imodel.ModeOfPayment = riskType.ItemTxt;
                                                     break;
                                                 case "dual use goods match":
-                                                    corpModel.DualUseGoods = riskType.ItemTxt;
+                                                    imodel.DualUseGoods = riskType.ItemTxt;
                                                     break;
                                             }
                                         }

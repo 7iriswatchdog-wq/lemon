@@ -133,7 +133,7 @@ namespace AML.Core.Repository.Report
                 //var UpdatedByUserId = String.IsNullOrEmpty(requestModel.UpdatedByUserId) ? "0" : requestModel.UpdatedByUserId;
                 
                 DynamicParameters parameters = new DynamicParameters();
-                //parameters.Add("@c_schedulertrackerid", requestModel.SchedulerTrackerId);
+                parameters.Add("@c_schedulertrackerid", requestModel.SchedulerTrackerId);
                 parameters.Add("@c_clientId", requestModel.ClientId);
                 
                     serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_report_by_scheudlertrackerId", parameters, commandType: CommandType.StoredProcedure).ToList();
