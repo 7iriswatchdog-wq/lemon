@@ -966,7 +966,7 @@ namespace AML.Web.Controllers.ClientCase
 
 
         [HttpGet("ClientCase/DataLoad_Excel")]
-        public async Task<IActionResult> DataLoad_Excel(string FromDate, string ToDate, string MatchType, string Customer, string searchValue, int? batchId)
+        public async Task<IActionResult> DataLoad_Excel(string FromDate, string ToDate, string MatchType, string Customer, string searchValue, int? batchId, string selectedColumns = null, string orientation = "portrait")
         {
             ETLReport model = new ETLReport();
             if (!string.IsNullOrEmpty(FromDate))
@@ -1040,21 +1040,45 @@ namespace AML.Web.Controllers.ClientCase
                 
                 // Sheet 2: Customer Details
                 var sheet2 = package.Workbook.Worksheets.Add("Customer Details");
-                for (int i = 0; i < detailHeaders.Length; i++) sheet2.Cells[1, i + 1].Value = detailHeaders[i];
-                applyHeaderStyle(sheet2.Cells[1, 1, 1, detailHeaders.Length]);
+                
+                var colMap = new List<(string id, string label)> {
+                    ("batchId", "Batch ID"),
+                    ("customerId", "Customer ID"),
+                    ("name", "Name"),
+                    ("nationality", "Nationality"),
+                    ("dob", "DOB"),
+                    ("source", "Source"),
+                    ("matched", "Matched"),
+                    ("status", "Status"),
+                    ("createdOn", "Created On")
+                };
+
+                var selectedCols = string.IsNullOrEmpty(selectedColumns) 
+                    ? colMap.Select(x => x.id).ToList() 
+                    : selectedColumns.Split(',').ToList();
+
+                var activeCols = colMap.Where(x => selectedCols.Contains(x.id)).ToList();
+
+                for (int i = 0; i < activeCols.Count; i++) sheet2.Cells[1, i + 1].Value = activeCols[i].label;
+                if (activeCols.Count > 0) applyHeaderStyle(sheet2.Cells[1, 1, 1, activeCols.Count]);
 
                 int detailRow = 2;
                 foreach (var cust in allCustomers)
                 {
-                    sheet2.Cells[detailRow, 1].Value = cust.CaseRefId;
-                    sheet2.Cells[detailRow, 2].Value = cust.CustomerId;
-                    sheet2.Cells[detailRow, 3].Value = cust.FirstName + " " + cust.LastName;
-                    sheet2.Cells[detailRow, 4].Value = cust.Nationality;
-                    sheet2.Cells[detailRow, 5].Value = (cust.DOB == "0" || string.IsNullOrEmpty(cust.DOB)) ? "-" : cust.DOB;
-                    sheet2.Cells[detailRow, 6].Value = cust.Source;
-                    sheet2.Cells[detailRow, 7].Value = cust.IsMatched == 1 ? "Yes" : "No";
-                    sheet2.Cells[detailRow, 8].Value = cust.CaseStatus;
-                    sheet2.Cells[detailRow, 9].Value = cust.CreatedOn;
+                    for (int i = 0; i < activeCols.Count; i++)
+                    {
+                        var colId = activeCols[i].id;
+                        var cell = sheet2.Cells[detailRow, i + 1];
+                        if (colId == "batchId") cell.Value = cust.CaseRefId;
+                        else if (colId == "customerId") cell.Value = cust.CustomerId;
+                        else if (colId == "name") cell.Value = cust.FirstName + " " + cust.LastName;
+                        else if (colId == "nationality") cell.Value = cust.Nationality;
+                        else if (colId == "dob") cell.Value = (cust.DOB == "0" || string.IsNullOrEmpty(cust.DOB)) ? "-" : cust.DOB;
+                        else if (colId == "source") cell.Value = cust.Source;
+                        else if (colId == "matched") cell.Value = cust.IsMatched == 1 ? "Yes" : "No";
+                        else if (colId == "status") cell.Value = cust.CaseStatus;
+                        else if (colId == "createdOn") cell.Value = cust.CreatedOn;
+                    }
                     detailRow++;
                 }
                 if (detailRow > 2) { sheet2.Cells[sheet2.Dimension.Address].AutoFitColumns(); sheet2.View.FreezePanes(2, 1); }
@@ -1086,7 +1110,7 @@ namespace AML.Web.Controllers.ClientCase
         }
 
         [HttpGet("ClientCase/DataLoad_PDF")]
-        public async Task<IActionResult> DataLoad_PDF(string FromDate, string ToDate, string MatchType, string Customer, string searchValue, int? batchId)
+        public async Task<IActionResult> DataLoad_PDF(string FromDate, string ToDate, string MatchType, string Customer, string searchValue, int? batchId, string selectedColumns = null, string orientation = "portrait")
         {
             var clientId = _clientHandler.GetClientId();
             
@@ -1124,63 +1148,10 @@ namespace AML.Web.Controllers.ClientCase
                 var customers = _mapper.Map<List<CaseModel>>(_customerCaseService.DataLoadReportByBatch(batch.BatchId, clientId).Result);
                 foreach (var c in customers) { c.CaseRefId = batch.BatchId.ToString(); allCustomers.Add(c); }
             }
+            ViewBag.SelectedColumns = selectedColumns;
+            ViewBag.Orientation = orientation ?? "portrait";
 
-            var clientData = _customerCaseService.GetClientDetailsByID(clientId);
-            string companyName = clientData?.ClientName ?? "AML Report";
-
-            using (MemoryStream ms = new MemoryStream())
-            {
-                iTextSharp.text.Document document = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4.Rotate(), 15, 15, 15, 15);
-                iTextSharp.text.pdf.PdfWriter writer = iTextSharp.text.pdf.PdfWriter.GetInstance(document, ms);
-                document.Open();
-
-                // Logo/Header
-                iTextSharp.text.pdf.PdfPTable logoTable = new iTextSharp.text.pdf.PdfPTable(1);
-                logoTable.WidthPercentage = 100;
-                iTextSharp.text.pdf.PdfPCell cell = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(companyName, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 18, iTextSharp.text.Font.BOLD)));
-                cell.Border = 0; cell.HorizontalAlignment = 1; logoTable.AddCell(cell);
-                document.Add(logoTable);
-                document.Add(new iTextSharp.text.Paragraph("\n"));
-
-                iTextSharp.text.pdf.PdfPTable infoTable = new iTextSharp.text.pdf.PdfPTable(1);
-                infoTable.WidthPercentage = 100;
-                string reportTitle = batchId.HasValue ? $"Report: Customer List - Batch {batchId.Value}" : "Report: Bulk Upload Customer List";
-                infoTable.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(reportTitle)) { Border = 0 });
-                infoTable.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase($"Date Range: {model.FromDate:dd/MM/yyyy} to {model.ToDate:dd/MM/yyyy}")) { Border = 0 });
-                document.Add(infoTable);
-                document.Add(new iTextSharp.text.Paragraph("\n"));
-
-                iTextSharp.text.pdf.PdfPTable table = new iTextSharp.text.pdf.PdfPTable(9);
-                table.WidthPercentage = 100;
-                float[] widths = new float[] { 0.5f, 1f, 2f, 1f, 1f, 1.5f, 0.5f, 1f, 1f };
-                table.SetWidths(widths);
-
-                string[] headers = { "#", "ID", "Name", "Nationality", "DOB", "Source", "Hit", "Status", "Date" };
-                foreach (var h in headers)
-                {
-                    var hCell = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(h, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 10, iTextSharp.text.Font.BOLD)));
-                    hCell.BackgroundColor = new iTextSharp.text.BaseColor(233, 239, 253);
-                    hCell.HorizontalAlignment = iTextSharp.text.Element.ALIGN_CENTER; table.AddCell(hCell);
-                }
-
-                int count = 1;
-                foreach (var c in allCustomers)
-                {
-                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(count++.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))) { HorizontalAlignment = iTextSharp.text.Element.ALIGN_CENTER });
-                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.CustomerId ?? "", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
-                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase((c.FirstName ?? "") + " " + (c.LastName ?? ""), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
-                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.Nationality ?? "", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
-                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.DOB ?? "", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
-                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.Source ?? "", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
-                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.IsMatched == 1 ? "Y" : "N", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))) { HorizontalAlignment = iTextSharp.text.Element.ALIGN_CENTER });
-                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.Status.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
-                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.CreatedOn.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
-                }
-
-                document.Add(table);
-                document.Close();
-                return File(ms.ToArray(), "application/pdf", $"CustomerBulkUploadLogs_{DateTime.Now:yyyyMMddHHmmss}.pdf");
-            }
+            return View("DataLoad_PDF", allCustomers);
         }
 
         [HttpPost]

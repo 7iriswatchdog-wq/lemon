@@ -145,7 +145,7 @@ namespace AML.Web.Controllers.AdminManagement
                             SearchCount = dto.SearchCount,
                             TotalUsageCount = usageCount,   // API total usage
                             UserCount = dto.UserCount,
-                            isActive = dto.isActive
+                            isActive = (dto.isActive == 1 ? 1 : 0)
                         };
                     }).ToList();
 
@@ -319,8 +319,10 @@ namespace AML.Web.Controllers.AdminManagement
             return dir == "asc" ? input.OrderBy(p => sortProperty.GetValue(p, null)).ToList() : input.OrderByDescending(p => sortProperty.GetValue(p, null)).ToList();
         }
         [HttpGet]
-        public async Task<IActionResult> AdminManagement_PDF(string searchValue, string subStatus, string isBlocked)
+        public async Task<IActionResult> AdminManagement_PDF(string searchValue, string subStatus, string isBlocked, string selectedColumns, string orientation)
         {
+            ViewBag.SelectedColumns = selectedColumns;
+            ViewBag.Orientation = orientation;
             try
             {
                 TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
@@ -360,7 +362,7 @@ namespace AML.Web.Controllers.AdminManagement
                 if (!string.IsNullOrEmpty(isBlocked))
                 {
                     int blockedStatus = int.Parse(isBlocked);
-                    result = result.Where(x => x.isActive == blockedStatus).ToList();
+                    result = result.Where(x => (blockedStatus == 1 ? x.isActive == 1 : x.isActive == 0)).ToList();
                 }
 
                 var clients = result.Select(dto =>
@@ -383,7 +385,7 @@ namespace AML.Web.Controllers.AdminManagement
                         SearchCount = dto.SearchCount,
                         TotalUsageCount = usageCount,
                         UserCount = dto.UserCount,
-                        isActive = dto.isActive
+                        isActive = (dto.isActive == 1 ? 1 : 0)
                     };
                 }).ToList();
 
@@ -416,7 +418,7 @@ namespace AML.Web.Controllers.AdminManagement
                 if (!string.IsNullOrEmpty(isBlocked))
                 {
                     int blockedStatus = int.Parse(isBlocked);
-                    result = result.Where(x => x.isActive == blockedStatus).ToList();
+                    result = result.Where(x => (blockedStatus == 1 ? x.isActive == 1 : x.isActive == 0)).ToList();
                 }
 
                 var clients = result.Select(dto => new ClientMaster
@@ -429,7 +431,7 @@ namespace AML.Web.Controllers.AdminManagement
                     ApplicationEndDate = dto.ApplicationEndDate,
                     SearchCount = dto.SearchCount,
                     UserCount = dto.UserCount,
-                    isActive = dto.isActive
+                    isActive = (dto.isActive == 1 ? 1 : 0)
                 }).ToList();
                 return View("AdminManagement_PDF", clients);
             }

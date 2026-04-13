@@ -1,9 +1,18 @@
 @using AML.Web.Controllers.Reports
 @using Microsoft.AspNetCore.Http
 @model List<DatasetUpdateLogsModel>
+@functions {
+    public bool ShowColumn(string colId)
+    {
+        var selectedColumns = ViewBag.SelectedColumns as string;
+        if (string.IsNullOrEmpty(selectedColumns)) return true;
+        return selectedColumns.Split(',').Contains(colId);
+    }
+}
 @{
     Layout = null;
     var companyName = Context.Session.GetString("SessCompanyName") ?? "AML Systems";
+    var orientation = ViewBag.Orientation as string ?? "portrait";
 }
 
 <!DOCTYPE html>
@@ -23,7 +32,7 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 text-[10px] p-8">
-    <div id="pdf-container" class="max-w-[1024px] mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+    <div id="pdf-container" class="max-w-[@(orientation == "landscape" ? "1280px" : "1024px")] mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
         <!-- Header -->
         <div class="flex justify-between items-start border-b border-slate-200 pb-6 mb-6">
             <div>
@@ -42,28 +51,31 @@
                 <thead>
                     <tr class="border-b-2 border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[9px]">
                         <th class="px-2 py-3">#</th>
-                        <th class="px-2 py-3">Updated Date</th>
-                        <th class="px-2 py-3">Datasets</th>
-                        <th class="px-2 py-3">Delta</th>
-                        <th class="px-2 py-3">Individual</th>
-                        <th class="px-2 py-3">Corporate</th>
-                        <th class="px-2 py-3">Cumulative</th>
+                        @if (ShowColumn("updatedDate")) { <th class="px-2 py-3">Updated Date</th> }
+                        @if (ShowColumn("datasets")) { <th class="px-2 py-3">Datasets</th> }
+                        @if (ShowColumn("delta")) { <th class="px-2 py-3">Delta</th> }
+                        @if (ShowColumn("individual")) { <th class="px-2 py-3">Individual</th> }
+                        @if (ShowColumn("corporate")) { <th class="px-2 py-3">Corporate</th> }
+                        @if (ShowColumn("cumulative")) { <th class="px-2 py-3">Cumulative</th> }
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                    @if (Model != null && Model.Any())
+                    @{
+                        var items = Model as List<DatasetUpdateLogsModel>;
+                    }
+                    @if (items != null && items.Any())
                     {
                         int index = 1;
-                        foreach (var item in Model)
+                        foreach (var item in items)
                         {
                             <tr class="hover:bg-slate-50 transition-colors">
                                 <td class="px-2 py-3 text-slate-400 font-medium">@index</td>
-                                <td class="px-2 py-3 font-bold text-slate-900">@item.UpdatedDate</td>
-                                <td class="px-2 py-3 text-slate-600">@item.Datasets</td>
-                                <td class="px-2 py-3 font-semibold text-blue-600">@item.Delta</td>
-                                <td class="px-2 py-3 text-slate-700">@item.Individual</td>
-                                <td class="px-2 py-3 text-slate-700">@item.Corporate</td>
-                                <td class="px-2 py-3 font-black text-slate-900">@item.Cumulative</td>
+                                @if (ShowColumn("updatedDate")) { <td class="px-2 py-3 font-bold text-slate-900">@item.UpdatedDate</td> }
+                                @if (ShowColumn("datasets")) { <td class="px-2 py-3 text-slate-600">@item.Datasets</td> }
+                                @if (ShowColumn("delta")) { <td class="px-2 py-3 font-semibold text-blue-600">@item.Delta</td> }
+                                @if (ShowColumn("individual")) { <td class="px-2 py-3 text-slate-700">@item.Individual</td> }
+                                @if (ShowColumn("corporate")) { <td class="px-2 py-3 text-slate-700">@item.Corporate</td> }
+                                @if (ShowColumn("cumulative")) { <td class="px-2 py-3 font-black text-slate-900">@item.Cumulative</td> }
                             </tr>
                             index++;
                         }
@@ -91,7 +103,7 @@
     <script>
         window.onload = function() {
             setTimeout(() => {
-                downloadPageAsPDF('#pdf-container', 'Dataset_Update_Logs_@DateTime.Now.ToString("yyyyMMdd")' + '.pdf');
+                downloadPageAsPDF('#pdf-container', 'Dataset_Update_Logs_@DateTime.Now.ToString("yyyyMMdd")' + '.pdf', '@orientation');
             }, 1000);
         };
     </script>

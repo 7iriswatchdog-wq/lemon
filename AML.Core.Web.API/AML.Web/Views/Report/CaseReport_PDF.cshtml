@@ -1,9 +1,18 @@
 @using AML.ViewModel.ViewModels.Report
 @using Microsoft.AspNetCore.Http
 @model List<CaseReportListModel>
+@functions {
+    public bool ShowColumn(string colId)
+    {
+        var selectedColumns = ViewBag.SelectedColumns as string;
+        if (string.IsNullOrEmpty(selectedColumns)) return true;
+        return selectedColumns.Split(',').Contains(colId);
+    }
+}
 @{
     Layout = null;
     var companyName = Context.Session.GetString("SessCompanyName") ?? "AML Systems";
+    var orientation = ViewBag.Orientation as string ?? "portrait";
 }
 
 <!DOCTYPE html>
@@ -23,7 +32,7 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 text-[10px] p-8">
-    <div id="pdf-container" class="max-w-[1024px] mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+    <div id="pdf-container" class="max-w-[@(orientation == "landscape" ? "1280px" : "1024px")] mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
         <!-- Header -->
         <div class="flex justify-between items-start border-b border-slate-200 pb-6 mb-6">
             <div>
@@ -42,60 +51,124 @@
                 <thead>
                     <tr class="border-b-2 border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[9px]">
                         <th class="px-2 py-3">#</th>
-                        <th class="px-2 py-3">Customer ID</th>
-                        <th class="px-2 py-3">Created Date</th>
-                        <th class="px-2 py-3">Type</th>
-                        <th class="px-2 py-3">Customer Name</th>
-                        <th class="px-2 py-3">Nationality</th>
-                        <th class="px-2 py-3">Status</th>
-                        <th class="px-2 py-3">Risk Score</th>
-                        <th class="px-2 py-3">Created By</th>
+                        @if (ShowColumn("customerID")) { <th class="px-2 py-3">Customer ID</th> }
+                        @if (ShowColumn("createdOn")) { <th class="px-2 py-3">Created On</th> }
+                        @if (ShowColumn("updatedOn")) { <th class="px-2 py-3">Updated On</th> }
+                        @if (ShowColumn("customerType")) { <th class="px-2 py-3">Type</th> }
+                        @if (ShowColumn("customerName")) { <th class="px-2 py-3">Customer Name</th> }
+                        @if (ShowColumn("nationality")) { <th class="px-2 py-3">Nationality</th> }
+                        @if (ShowColumn("status")) { <th class="px-2 py-3">Status</th> }
+                        @if (ShowColumn("screeningScore")) { <th class="px-2 py-3">Screening Score</th> }
+                        @if (ShowColumn("riskRating")) { <th class="px-2 py-3">Risk Rating</th> }
+                        @if (ShowColumn("user")) { <th class="px-2 py-3">User</th> }
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                    @if (Model != null && Model.Any())
+                    @{
+                        var items = Model as List<CaseReportListModel>;
+                    }
+                    @if (items != null && items.Any())
                     {
                         int index = 1;
-                        foreach (var item in Model)
+                        foreach (var item in items)
                         {
                             <tr class="hover:bg-slate-50 transition-colors">
                                 <td class="px-2 py-3 text-slate-400 font-medium">@index</td>
-                                <td class="px-2 py-3 font-bold text-slate-900">@item.CustomerID</td>
-                                <td class="px-2 py-3 text-slate-600">@item.CreatedOn</td>
-                                <td class="px-2 py-3">
-                                    <span class="px-2 py-0.5 rounded-full text-[8px] font-bold @(item.CustomerType == "I" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700")">
-                                        @(item.CustomerType == "I" ? "Individual" : "Corporate")
-                                    </span>
-                                </td>
-                                <td class="px-2 py-3 font-semibold text-slate-800">@(item.FirstName + " " + item.LastName)</td>
-                                <td class="px-2 py-3 text-slate-600">@item.Nationality</td>
-                                <td class="px-2 py-3 text-left">
-                                    @{
-                                        var status = item.CaseStatus ?? "";
-                                        if (status.Contains("| Shareholders:"))
+                                @if (ShowColumn("customerID"))
+                                {
+                                    <td class="px-2 py-3 font-bold text-slate-900">@item.CustomerID</td>
+                                }
+                                @if (ShowColumn("createdOn"))
+                                {
+                                    <td class="px-2 py-3 text-slate-600">
+                                        @if(DateTime.TryParse(item.CreatedOn, out DateTime dtCreate)) {
+                                            <div class="font-medium">@dtCreate.ToString("dd MMM yyyy")</div>
+                                            <div class="text-slate-400 text-[7px]">@dtCreate.ToString("HH:mm:ss tt")</div>
+                                        } else {
+                                            @item.CreatedOn
+                                        }
+                                    </td>
+                                }
+                                @if (ShowColumn("updatedOn"))
+                                {
+                                    <td class="px-2 py-3 text-slate-600">
+                                        @{
+                                            var updateDateStr = !string.IsNullOrEmpty(item.UpdatedOn) ? item.UpdatedOn : item.UpdatedOnDB;
+                                        }
+                                        @if(!string.IsNullOrEmpty(updateDateStr))
                                         {
-                                            var parts = status.Split('|');
-                                            var mainStatus = parts[0].Trim();
-                                            var shInfo = parts[1].Replace("Shareholders:", "").Trim();
-                                            var metrics = shInfo.Split(',').Select(m => m.Trim()).Where(m => !m.EndsWith(" 0")).ToList();
-
-                                            <div class="font-bold text-slate-900">@mainStatus</div>
-                                            <div class="text-[8px] text-slate-500 mt-1">
-                                                <div class="font-black text-slate-400 uppercase tracking-tighter">Shareholders</div>
-                                                @foreach (var metric in metrics)
-                                                {
-                                                    <div>@metric</div>
-                                                }
-                                            </div>
+                                            if(DateTime.TryParse(updateDateStr, out DateTime dtUpdate)) {
+                                                <div class="font-medium">@dtUpdate.ToString("dd MMM yyyy")</div>
+                                                <div class="text-slate-400 text-[7px]">@dtUpdate.ToString("HH:mm:ss tt")</div>
+                                            } else {
+                                                @updateDateStr
+                                            }
                                         }
                                         else
                                         {
-                                            <span class="font-bold text-slate-700">@status</span>
+                                            <span>-</span>
                                         }
-                                    }
-                                </td>
-                                <td class="px-2 py-3 font-black text-blue-600">@item.MatchScore</td>
-                                <td class="px-2 py-3 text-slate-500">@item.CreatedUser</td>
+                                    </td>
+                                }
+                                @if (ShowColumn("customerType"))
+                                {
+                                    <td class="px-2 py-3">
+                                        <span class="px-2 py-0.5 rounded-full text-[8px] font-bold @(item.CustomerType == "I" || item.CustomerType == "Individual" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700")">
+                                            @(item.CustomerType == "I" || item.CustomerType == "Individual" ? "Individual" : "Corporate")
+                                        </span>
+                                    </td>
+                                }
+                                @if (ShowColumn("customerName"))
+                                {
+                                    <td class="px-2 py-3 font-semibold text-slate-800">@(item.FirstName + " " + item.LastName)</td>
+                                }
+                                @if (ShowColumn("nationality"))
+                                {
+                                    <td class="px-2 py-3 text-slate-600">@item.Nationality</td>
+                                }
+                                @if (ShowColumn("status"))
+                                {
+                                    <td class="px-2 py-3 text-left">
+                                        @{
+                                            var status = item.CaseStatus ?? "";
+                                            if (status.Contains("| Shareholders:"))
+                                            {
+                                                var parts = status.Split('|');
+                                                var mainStatus = parts[0].Trim();
+                                                var shInfo = parts[1].Replace("Shareholders:", "").Trim();
+                                                var metrics = shInfo.Split(',').Select(m => m.Trim()).Where(m => !m.EndsWith(" 0")).ToList();
+
+                                                <div class="font-bold text-slate-900">@mainStatus</div>
+                                                @if (metrics.Any())
+                                                {
+                                                    <div class="text-[8px] text-slate-500 mt-1">
+                                                        <div class="font-black text-slate-400 uppercase tracking-tighter text-[7px]">Shareholders</div>
+                                                        @foreach (var metric in metrics)
+                                                        {
+                                                            <div>@metric</div>
+                                                        }
+                                                    </div>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="font-bold text-slate-700">@status</span>
+                                            }
+                                        }
+                                    </td>
+                                }
+                                @if (ShowColumn("screeningScore"))
+                                {
+                                    <td class="px-2 py-3 font-bold text-slate-900 text-center">@item.MatchScore</td>
+                                }
+                                @if (ShowColumn("riskRating"))
+                                {
+                                    <td class="px-2 py-3 font-black text-blue-600 text-center">@item.MatchScore</td>
+                                }
+                                @if (ShowColumn("user"))
+                                {
+                                    <td class="px-2 py-3 text-slate-500">@item.CreatedUser</td>
+                                }
                             </tr>
                             index++;
                         }
@@ -123,7 +196,7 @@
     <script>
         window.onload = function() {
             setTimeout(() => {
-                downloadPageAsPDF('#pdf-container', 'Case_Report_@DateTime.Now.ToString("yyyyMMdd")' + '.pdf');
+                downloadPageAsPDF('#pdf-container', 'Case_Report_@DateTime.Now.ToString("yyyyMMdd")' + '.pdf', '@orientation');
             }, 1000);
         };
     </script>

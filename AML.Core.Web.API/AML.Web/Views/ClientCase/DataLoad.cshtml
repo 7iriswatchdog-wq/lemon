@@ -107,24 +107,11 @@
                     Apply
                 </button>
 
-                <!-- Export Dropdown -->
-                <div class="relative inline-block text-left group">
-                    <button type="button" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-4 rounded-md text-sm transition focus:outline-none shadow-sm">
-                        <i data-lucide="download" class="h-4 w-4"></i>
-                        Export
-                        <i data-lucide="chevron-down" class="h-4 w-4"></i>
-                    </button>
-                    <div class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200" role="menu" aria-orientation="vertical">
-                        <div class="py-1" role="none">
-                            <button type="button" onclick="ExportList(true);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                Export PDF
-                            </button>
-                            <button type="button" onclick="ExportList(false);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                Export Excel
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <!-- Standardized Export Button -->
+                <button type="button" onclick="showExportOptions()" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-4 rounded-md text-sm transition focus:outline-none shadow-sm">
+                    <i data-lucide="download" class="h-4 w-4"></i>
+                    Export
+                </button>
             </div>
         </div>
         </form>
@@ -515,7 +502,33 @@
         }
     }
 
-    function ExportList(isPDF) {
+    function showExportOptions() {
+        const columns = [
+            // File Details Group
+            { id: "fileName", label: "File Name", tab: "File Details" },
+            { id: "uploadedOn", label: "Uploaded On", tab: "File Details" },
+            { id: "uploadedBy", label: "Uploaded By", tab: "File Details" },
+            
+            // Customer Details Group
+            { id: "customerId", label: "Customer ID", tab: "Customer Details" },
+            { id: "name", label: "Customer Name", tab: "Customer Details" },
+            { id: "nationality", label: "Nationality", tab: "Customer Details" },
+            { id: "dob", label: "Date of Birth", tab: "Customer Details" },
+            { id: "source", label: "Source", tab: "Customer Details" },
+            { id: "matched", label: "Matched", tab: "Customer Details" },
+            { id: "status", label: "Status", tab: "Customer Details" },
+            { id: "date", label: "Date", tab: "Customer Details" }
+        ];
+
+        openExportModal({
+            columns: columns,
+            onExport: (format, selectedColumns, orientation) => {
+                ExportList(format === 'pdf', selectedColumns, orientation);
+            }
+        });
+    }
+
+    function ExportList(isPDF, selectedColumns, orientation) {
         const fromDate = $('#startDate').val();
         const toDate = $('#endDate').val();
         const matchType = $('#MatchType').val();
@@ -523,13 +536,15 @@
         const searchValue = $('#searchInput').val() || '';
         const batchId = $('#hdnBatchId').val() || '';
 
+        const queryParams = `FromDate=${fromDate}&ToDate=${toDate}&MatchType=${matchType}&Customer=${customer}&searchValue=${searchValue}&selectedColumns=${selectedColumns}&orientation=${orientation}`;
+
         if (isPDF) {
             showLoader();
-            const url = `/ClientCase/DataLoad_PDF?FromDate=${fromDate}&ToDate=${toDate}&MatchType=${matchType}&Customer=${customer}&searchValue=${searchValue}`;
+            const url = `/ClientCase/DataLoad_PDF?${queryParams}`;
             $('#pdfExportFrame').attr('src', url);
         } else {
             showLoader();
-            const url = `/ClientCase/DataLoad_Excel?FromDate=${fromDate}&ToDate=${toDate}&MatchType=${matchType}&Customer=${customer}&searchValue=${searchValue}`;
+            const url = `/ClientCase/DataLoad_Excel?${queryParams}`;
             window.location.href = url;
             setTimeout(() => $('#loader').addClass('hidden'), 2000);
         }

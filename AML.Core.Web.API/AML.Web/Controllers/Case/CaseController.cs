@@ -99,6 +99,12 @@ using Font = iTextSharp.text.Font;
 using Formatting = Newtonsoft.Json.Formatting;
 using PageSize = iTextSharp.text.PageSize;
 using Paragraph = iTextSharp.text.Paragraph;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
+using System.Drawing;
+using Image = iTextSharp.text.Image;
+using Rectangle = iTextSharp.text.Rectangle;
+
 
 namespace AML.Web.Controllers.Case
 {
@@ -4251,7 +4257,7 @@ namespace AML.Web.Controllers.Case
         
 
     [HttpGet]
-    public async Task<IActionResult> DueDiligence_PDF(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string riskLevel)
+    public async Task<IActionResult> DueDiligence_PDF(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string riskLevel, string selectedColumns = null, string orientation = "portrait")
     {
         var userId = _clientHandler.GetUserId();
         var clientId = _clientHandler.GetClientId();
@@ -4276,11 +4282,13 @@ namespace AML.Web.Controllers.Case
             cases = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAll(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel, _userGroupModel.Name, clientId));
         }
 
+        ViewBag.SelectedColumns = selectedColumns;
+        ViewBag.Orientation = orientation;
         return View("DueDiligence_PDF", cases);
     }
 
     [HttpGet]
-    public async Task<IActionResult> CompletedCases_PDF(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string riskLevel)
+    public async Task<IActionResult> CompletedCases_PDF(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string riskLevel, string selectedColumns = null, string orientation = "portrait")
     {
         var userId = _clientHandler.GetUserId();
         var clientId = _clientHandler.GetClientId();
@@ -4303,8 +4311,203 @@ namespace AML.Web.Controllers.Case
             cases = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel, clientId));
         }
 
+        ViewBag.SelectedColumns = selectedColumns;
+        ViewBag.Orientation = orientation;
         return View("CompletedCases_PDF", cases);
+    }
+    [HttpGet]
+    public async Task<IActionResult> ExportDueDiligenceExcel(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string riskLevel, string selectedColumns = null)
+    {
+        var userId = _clientHandler.GetUserId();
+        var clientId = _clientHandler.GetClientId();
+        var GroupId = _clientHandler.GetGroupId();
+        var _userGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+
+        if (string.IsNullOrEmpty(endDate)) endDate = DateTime.Now.ToString("yyyy-MM-dd");
+        if (cust_type == "CORPORATE") cust_type = "C";
+        else if (cust_type == "INDIVIDUAL") cust_type = "I";
+
+        if (riskLevel == "1") riskLevel = "Low Risk";
+        else if (riskLevel == "2") riskLevel = "Medium Risk";
+        else if (riskLevel == "3") riskLevel = "High Risk";
+
+        List<CaseModel> cases = new List<CaseModel>();
+        if (!string.IsNullOrEmpty(searchValue))
+        {
+            cases = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, _userGroupModel.Name, clientId));
+        }
+        else
+        {
+            cases = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAll(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel, _userGroupModel.Name, clientId));
+        }
+
+        var columnMap = new Dictionary<string, (string Header, Func<CaseModel, object> Value)>
+        {
+            { "CustomerId", ("Customer ID", c => c.CustomerId) },
+            { "CreatedOn", ("Created On", c => c.CreatedOn.ToString("dd MMM yyyy HH:mm:ss")) },
+            { "UpdatedOnDB", ("Updated On", c => c.UpdatedOn) },
+            { "CustomerType", ("Customer Type", c => c.CustomerType == "I" ? "Individual" : "Corporate") },
+            { "CustomerName", ("Customer Name", c => (c.FirstName + " " + c.LastName).Trim()) },
+            { "CaseChangeStatus", ("Datasets", c => c.CaseChangeStatus) },
+            { "MatchScore", ("Screening Score", c => c.MatchScore) },
+            { "riskScore", ("Risk Rating", c => c.Individual_final_risk_score ?? c.corporate_final_risk_score ?? "Low Risk") },
+            { "CreatedUser", ("User", c => c.CreatedUser) },
+            { "CaseStatus", ("Status", c => FormatExcelStatus(c.CaseStatus)) }
+        };
+
+        var selectedCols = string.IsNullOrEmpty(selectedColumns) 
+            ? columnMap.Keys.ToList() 
+            : selectedColumns.Split(',').ToList();
+
+        using (var package = new ExcelPackage())
+        {
+            var sheet = package.Workbook.Worksheets.Add("Due Diligence Report");
+            int colIndex = 1;
+            foreach (var colId in selectedCols)
+            {
+                if (columnMap.ContainsKey(colId))
+                {
+                    sheet.Cells[1, colIndex].Value = columnMap[colId].Header;
+                    colIndex++;
+                }
+            }
+
+            using (var range = sheet.Cells[1, 1, 1, Math.Max(1, colIndex - 1)])
+            {
+                range.Style.Font.Bold = true;
+                range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+            }
+
+            int row = 2;
+            foreach (var item in cases)
+            {
+                colIndex = 1;
+                foreach (var colId in selectedCols)
+                {
+                    if (columnMap.ContainsKey(colId))
+                    {
+                        sheet.Cells[row, colIndex].Value = columnMap[colId].Value(item);
+                        colIndex++;
+                    }
+                }
+                row++;
+            }
+
+            sheet.Cells[sheet.Dimension.Address].AutoFitColumns();
+            return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"DueDiligence_Export_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportCompletedCasesExcel(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string riskLevel, string selectedColumns = null)
+    {
+        var userId = _clientHandler.GetUserId();
+        var clientId = _clientHandler.GetClientId();
+
+        if (string.IsNullOrEmpty(endDate)) endDate = DateTime.Now.ToString("yyyy-MM-dd");
+        if (cust_type == "CORPORATE") cust_type = "C";
+        else if (cust_type == "INDIVIDUAL") cust_type = "I";
+
+        if (riskLevel == "1") riskLevel = "Low Risk";
+        else if (riskLevel == "2") riskLevel = "Medium Risk";
+        else if (riskLevel == "3") riskLevel = "High Risk";
+
+        List<CaseModel> cases = new List<CaseModel>();
+        if (!string.IsNullOrEmpty(searchValue))
+        {
+            cases = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedBySearchValue(userId, startDate, endDate, cust_type, searchValue, matchScore, createdBy, caseStatus, riskLevel, clientId));
+        }
+        else
+        {
+            cases = _mapper.Map<List<CaseModel>>(_customerCaseService.GetAllCompletedCases(userId, startDate, endDate, cust_type, matchScore, createdBy, caseStatus, riskLevel, clientId));
+        }
+
+        var columnMap = new Dictionary<string, (string Header, Func<CaseModel, object> Value)>
+        {
+            { "CustomerId", ("Customer ID", c => c.CustomerId) },
+            { "CreatedOn", ("Created On", c => c.CreatedOn.ToString("dd MMM yyyy HH:mm:ss")) },
+            { "UpdatedOnDB", ("Updated On", c => c.UpdatedOn) },
+            { "CustomerType", ("Customer Type", c => c.CustomerType == "I" ? "Individual" : "Corporate") },
+            { "CustomerName", ("Customer Name", c => (c.FirstName + " " + c.LastName).Trim()) },
+            { "CaseChangeStatus", ("Datasets", c => c.CaseChangeStatus) },
+            { "MatchScore", ("Screening Score", c => c.MatchScore) },
+            { "riskScore", ("Risk Rating", c => c.Individual_final_risk_score ?? c.corporate_final_risk_score ?? "Low Risk") },
+            { "CreatedUser", ("User", c => c.CreatedUser) },
+            { "CaseStatus", ("Status", c => FormatExcelStatus(c.CaseStatus)) }
+        };
+
+        var selectedCols = string.IsNullOrEmpty(selectedColumns) 
+            ? columnMap.Keys.ToList() 
+            : selectedColumns.Split(',').ToList();
+
+        using (var package = new ExcelPackage())
+        {
+            var sheet = package.Workbook.Worksheets.Add("Completed Cases Report");
+            int colIndex = 1;
+            foreach (var colId in selectedCols)
+            {
+                if (columnMap.ContainsKey(colId))
+                {
+                    sheet.Cells[1, colIndex].Value = columnMap[colId].Header;
+                    colIndex++;
+                }
+            }
+
+            using (var range = sheet.Cells[1, 1, 1, Math.Max(1, colIndex - 1)])
+            {
+                range.Style.Font.Bold = true;
+                range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+            }
+
+            int row = 2;
+            foreach (var item in cases)
+            {
+                colIndex = 1;
+                foreach (var colId in selectedCols)
+                {
+                    if (columnMap.ContainsKey(colId))
+                    {
+                        sheet.Cells[row, colIndex].Value = columnMap[colId].Value(item);
+                        colIndex++;
+                    }
+                }
+                row++;
+            }
+
+            sheet.Cells[sheet.Dimension.Address].AutoFitColumns();
+            return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"CompletedCases_Export_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+        }
+    }
+
+    private string FormatExcelStatus(string status)
+    {
+        if (string.IsNullOrEmpty(status)) return "";
+        if (!status.Contains("| Shareholders:")) return status;
+
+        var parts = status.Split('|');
+        var mainStatus = parts[0].Trim();
+        var shInfo = parts[1].Replace("Shareholders:", "").Trim();
+        
+        var metrics = new List<string>();
+        var patterns = new Dictionary<string, string> { 
+            { "Approved", "AP" }, { "Auto", "A" }, { "Pending", "P" }, 
+            { "Rejected", "R" }, { "OnHold", "OH" }, { "Waitlist", "W" }, { "Whitelist", "W" } 
+        };
+
+        foreach (var p in patterns)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(shInfo, p.Key + @"\s+(\d+)");
+            if (match.Success && int.Parse(match.Groups[1].Value) > 0)
+            {
+                metrics.Add($"{p.Value}:{match.Groups[1].Value}");
+            }
+        }
+
+        return metrics.Count > 0 ? $"{mainStatus} ({string.Join(", ", metrics)})" : mainStatus;
     }
 }
 }
-

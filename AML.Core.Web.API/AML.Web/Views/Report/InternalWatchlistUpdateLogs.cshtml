@@ -132,6 +132,7 @@
     </div>
 </nav> *@
 <div class="max-w-screen h-full items-center">
+    @await Html.PartialAsync("_ExportModal")
     <nav class="flex items-center px-4 h-[72.8px] border-b w-full">
         <div class="flex items-center justify-between w-full">
             <!-- Title -->
@@ -185,8 +186,8 @@
                             </select>
                         <input type="text" id="searchInput" placeholder="Search anything..." class="h-10 border border-gray-300 rounded-md px-3 text-sm w-full " />
                     </div>
-                    <button onclick="ExportList();" class="px-6 py-2 bg-white border border-gray-400 rounded-md text-sm hover:bg-gray-100">
-                            <i class="fas fa-file-excel mr-1"></i> Export to Excel
+                    <button onclick="showExportOptions();" class="px-6 py-2 bg-white border border-gray-400 rounded-md text-sm hover:bg-gray-100 flex items-center gap-2">
+                            <i data-lucide="download" class="h-4 w-4"></i> Export
                     </button>
                 </div>
                 <div class="w-full overflow-x-auto">
@@ -313,13 +314,42 @@
         $.ajax({ url:`/branch/delete/${id}`, type:'DELETE', success:()=>fetchData($('#searchInput').val(), currentPage) });
       });
 
-      function ExportList() {
+      function showExportOptions() {
+        const columns = [
+          { id: "UID", label: "UID" },
+          { id: "Type", label: "Type" },
+          { id: "Name", label: "Name" },
+          { id: "Nationality/Country", label: "Nationality/Country" },
+          { id: "DOB", label: "DOB" },
+          { id: "IDNumber", label: "ID Number" },
+          { id: "Source", label: "Source" },
+          { id: "Remarks", label: "Remarks" },
+          { id: "CreatedOn", label: "Created On" }
+        ];
+
+        openExportModal({
+          getColumnsByActiveTab: () => columns,
+          onExport: (format, selectedColumns, orientation) => {
+            ExportList(format === 'pdf', selectedColumns, orientation);
+          }
+        });
+      }
+
+      function ExportList(isPDF, selectedColumns, orientation) {
         const q = $.param({
           StartDate:$('#dtStartDate').val(),
           EndDate:$('#dtEndDate').val(),
-          SourceType:$('#sourceTypeID').val()
+          SourceType:$('#sourceTypeID').val(),
+          selectedColumns: selectedColumns || '',
+          orientation: orientation || 'portrait'
         });
-        window.location='/Report/InternalWatchlist_Excel?'+q;
+        
+        if (isPDF) {
+          // Assuming a PDF endpoint exists or will be added
+          window.location='/Report/InternalWatchlist_PDF?'+q;
+        } else {
+          window.location='/Report/InternalWatchlist_Excel?'+q;
+        }
       }
 
       // init

@@ -73,7 +73,8 @@
     <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
 </div>
 
-<div class="bg-slate-50 min-h-screen text-slate-900">
+<div class="bg-slate-50 text-slate-900">
+    @await Html.PartialAsync("_ExportModal")
     <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
         <!-- Header Section -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -122,24 +123,12 @@
                         Apply
                     </button>
 
-                    <!-- Export -->
-                    <div class="relative inline-block text-left group">
-                        <button type="button" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-5 rounded-md text-sm transition focus:outline-none">
-                            <i data-lucide="download" class="h-4 w-4"></i>
-                            Export
-                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
-                        </button>
-                        <div class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200" role="menu" aria-orientation="vertical">
-                            <div class="py-1" role="none">
-                                <button onclick="ExportList(true);" class="w-full text-left font-medium text-slate-700 block px-4 py-2 text-sm hover:bg-slate-100 flex items-center gap-2 transition" role="menuitem">
-                                    Export PDF
-                                </button>
-                                <button onclick="ExportList(false);" class="w-full text-left font-medium text-slate-700 block px-4 py-2 text-sm hover:bg-slate-100 flex items-center gap-2 transition" role="menuitem">
-                                     Export CSV
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <button type="button" 
+                            onclick="showExportOptions()"
+                            class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-5 rounded-md text-sm transition focus:outline-none shadow-sm">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                        Export
+                    </button>
                 </div>
             </div>
         </div>
@@ -410,12 +399,11 @@
         const tbody = $('#filterTableBody').empty();
 
         if (!rows || rows.length === 0) {
-            tbody.append('<tr><td colspan="4" class="h-24 text-center text-slate-500">No data available</td></tr>');
+            tbody.append('<tr><td colspan="5" class="h-24 text-center text-slate-500">No data available</td></tr>');
             return;
         }
 
         rows.forEach(item => {
-             const { date, time } = formatDate(item.createdOn);
             const updated = formatDateTime(item.createdOn);
             tbody.append(`
                 <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
@@ -423,7 +411,7 @@
                     <td class="px-6 py-4 text-center text-slate-600">${item.totalRecords || ''}</td>
                     <td class="px-6 py-4 text-center text-slate-600">${item.totalHits}</td>
                     <td class="px-6 py-4 text-center text-slate-600">
-                        <a href="/Report/CaseReport?option=OnGoing&endDate=${item.createdOn}" class="text-blue-600 font-bold hover:underline transition-all">
+                        <a href="/Report/CaseReport?option=OnGoing&endDate=${item.createdOn}&schedulerTrackerId=${item.id}" class="text-blue-600 font-bold hover:underline transition-all">
                             ${item.cumulativeHits}
                         </a>
                     </td>
@@ -581,17 +569,35 @@
         return date.toLocaleDateString('en-GB') + ' ' + date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
 
-    function ExportList(isPDF) {
+    function showExportOptions() {
+        const columns = [
+            { id: "source", label: "Source" },
+            { id: "totalRecords", label: "Total Records" },
+            { id: "totalHits", label: "Total Hits" },
+            { id: "cumulativeHits", label: "Cumulative" },
+            { id: "createdOn", label: "Updated On" }
+        ];
+
+        openExportModal({
+            getColumnsByActiveTab: () => columns,
+            onExport: (format, selectedColumns, orientation) => {
+                ExportList(format === 'pdf', selectedColumns, orientation);
+            }
+        });
+    }
+
+    function ExportList(isPDF, selectedColumns, orientation) {
         const startDate = formatDate($('#startDate').val());
         const endDate = formatDate($('#endDate').val());
         const searchValue = $('#searchInput').val() || '';
+        const params = `startDate=${startDate}&endDate=${endDate}&searchValue=${encodeURIComponent(searchValue)}&selectedColumns=${selectedColumns || ''}&orientation=${orientation || 'portrait'}`;
 
         if (isPDF) {
             $('#loader').removeClass('hidden').addClass('flex');
-            const url = `/Report/SchedulerLogs_PDF?startDate=${startDate}&endDate=${endDate}&searchValue=${searchValue}`;
+            const url = `/Report/SchedulerLogs_PDF?${params}`;
             $('#pdfExportFrame').attr('src', url);
         } else {
-            const url = `/Report/SchedulerLogsExportReport?startDate=${startDate}&endDate=${endDate}&searchValue=${searchValue}`;
+            const url = `/Report/SchedulerLogsExportReport?${params}`;
             window.location.href = url;
             setTimeout(() => $('#loader').addClass('hidden'), 2000);
         }

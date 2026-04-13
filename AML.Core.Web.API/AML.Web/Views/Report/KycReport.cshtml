@@ -1,4 +1,4 @@
-﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
 @using Microsoft.AspNetCore.Http
 @using Newtonsoft.Json;
 @inject IHttpContextAccessor HttpContextAccessor
@@ -433,6 +433,7 @@
     }
 </style>
 <div class="page bg-gray-50">
+    @await Html.PartialAsync("_ExportModal")
     @* <div class="page-heading">
         <div class="sas-card rounded-card br-20 mb-2 bg-blue head-section">
             <div class="d-flex justify-content-between align-items-center">
@@ -653,8 +654,12 @@
                         </svg>
                     </div>
                     <div>
-                        <button type="button" onclick="ExportList(true);" class="sas-button p-8-25 bg-color-2 ml-2 export">Export PDF</button>
-                        <button type="button" onclick="ExportList(false);" class="sas-button p-8-25 bg-color-1 ml-3 export">Export CSV</button>
+                        <button type="button" 
+                                onclick="showExportOptions()"
+                                class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-11 px-6 rounded-md text-sm transition focus:outline-none shadow-sm">
+                            <i data-lucide="download" class="h-4 w-4"></i>
+                            Export
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1042,14 +1047,34 @@ function LoadTable() {
 
 
 
-        function ExportList(isPDF) {
+        function showExportOptions() {
+            const columns = [
+                { id: "customerID", label: "Customer ID" },
+                { id: "customerType", label: "Customer Type" },
+                { id: "customerName", label: "Customer Name" },
+                { id: "status", label: "Case Status" },
+                { id: "createdBy", label: "Created By" },
+                { id: "createdOn", label: "Creation Date" }
+            ];
+
+            openExportModal({
+                getColumnsByActiveTab: () => columns,
+                onExport: (format, selectedColumns, orientation) => {
+                    ExportList(format === 'pdf', selectedColumns, orientation);
+                }
+            });
+        }
+
+        function ExportList(isPDF, selectedColumns, orientation) {
             $('#loader').show();
             const params = $.param({
                 userID: $('#userID').val(),
                 startDate: $('#dtStartDate').val(),
                 endDate: $("#dtEndDate").val(),
                 status: $('#caseStatusID').val(),
-                IsPDF: isPDF
+                IsPDF: isPDF,
+                selectedColumns: selectedColumns || '',
+                orientation: orientation || 'portrait'
             });
 
             window.location = '/Report/ExportkycCaseReport?' + params;

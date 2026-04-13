@@ -8,6 +8,8 @@
 }
 <script src="~/plugins/jquery/jquery.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
     select {
@@ -294,6 +296,7 @@
     }
 </style>
 <div class="page bg-gray-50">
+    @await Html.PartialAsync("_ExportModal")
     <div class="custom-container aml-sanction-database-upload-logs">
         @* <div class="page-heading">
         <div class="sas-card rounded-card br-20 mb-2 bg-blue head-section">
@@ -332,8 +335,9 @@
                 </div>
                 <div class="flex-item flex items-center gap-2">
                     <input type="text" placeholder="Search anything..." class="search" />
-                    <button onclick="exportExcel()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-4 rounded-md text-sm transition shadow-sm">
-                        Export Excel
+                    <button onclick="showExportOptions()" class="bg-white border border-slate-200 shadow-sm hover:bg-slate-50 text-slate-700 font-bold h-10 px-4 rounded-md text-sm transition flex items-center gap-2">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                        Export
                     </button>
                 </div>
             </div>
@@ -547,16 +551,35 @@
     }
 
     $(document).ready(function () {
-
-
         fetchData('', 1);
+        lucide.createIcons();
     });
 
-    // Removed duplicate rowsPerPage change handler at the bottom
-    
-    function exportExcel() {
+    function showExportOptions() {
+        const columns = [
+            { id: "Id", label: "ID" },
+            { id: "Source", label: "Source" },
+            { id: "CreatedOn", label: "Uploaded On" },
+            { id: "totalrecords", label: "Total Records" }
+        ];
+
+        openExportModal({
+            getColumnsByActiveTab: () => columns,
+            onExport: (format, selectedColumns, orientation) => {
+                ExportList(format === 'pdf', selectedColumns, orientation);
+            }
+        });
+    }
+
+    function ExportList(isPDF, selectedColumns, orientation) {
         const searchValue = $('input[placeholder="Search anything..."]').val() || '';
-        toastr.info("Generating Excel report...");
-        window.location.href = `/Report/SanctionDBUploadLogsExportExcel?match=${searchValue}`;
+        if (isPDF) {
+            toastr.warning("PDF export is being standardized. Downloading Excel for now.");
+            // We can implement PDF later if needed, for now use Excel as the backend only supports Excel for this specific log
+            window.location.href = `/Report/SanctionDBUploadLogsExportExcel?match=${searchValue}&selectedColumns=${selectedColumns}`;
+        } else {
+            toastr.info("Generating Excel report...");
+            window.location.href = `/Report/SanctionDBUploadLogsExportExcel?match=${searchValue}&selectedColumns=${selectedColumns}`;
+        }
     }
 </script>

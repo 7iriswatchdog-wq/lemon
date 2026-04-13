@@ -1,9 +1,18 @@
 @using AML.DTO.DTO.FreeSource
 @using Microsoft.AspNetCore.Http
 @model List<BlackListMongoDTO.NAMELIST>
+@functions {
+    public bool ShowColumn(string colId)
+    {
+        var selectedColumns = ViewBag.SelectedColumns as string;
+        if (string.IsNullOrEmpty(selectedColumns)) return true;
+        return selectedColumns.Split(',').Contains(colId);
+    }
+}
 @{
     Layout = null;
     var companyName = Context.Session.GetString("SessCompanyName") ?? "AML Systems";
+    var orientation = ViewBag.Orientation as string ?? "portrait";
 }
 
 <!DOCTYPE html>
@@ -23,7 +32,7 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 text-[10px] p-8">
-    <div id="pdf-container" class="max-w-[1024px] mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+    <div id="pdf-container" class="max-w-[@(orientation == "landscape" ? "1280px" : "1024px")] mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
         <!-- Header -->
         <div class="flex justify-between items-start border-b border-slate-200 pb-6 mb-6">
             <div>
@@ -42,42 +51,51 @@
                 <thead>
                     <tr class="border-b-2 border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[9px]">
                         <th class="px-2 py-3">#</th>
-                        <th class="px-2 py-3">Type</th>
-                        <th class="px-2 py-3">Name</th>
-                        <th class="px-2 py-3">Nationality</th>
-                        <th class="px-2 py-3">DOB</th>
-                        <th class="px-2 py-3">ID Number</th>
-                        <th class="px-2 py-3">Source</th>
-                        <th class="px-2 py-3">Created On</th>
+                        @if (ShowColumn("Type")) { <th class="px-2 py-3">Type</th> }
+                        @if (ShowColumn("Name")) { <th class="px-2 py-3">Name</th> }
+                        @if (ShowColumn("Nationality")) { <th class="px-2 py-3">Nationality</th> }
+                        @if (ShowColumn("DOB")) { <th class="px-2 py-3">DOB</th> }
+                        @if (ShowColumn("IDNumber")) { <th class="px-2 py-3">ID Number</th> }
+                        @if (ShowColumn("Source")) { <th class="px-2 py-3">Source</th> }
+                        @if (ShowColumn("CreatedOn")) { <th class="px-2 py-3">Created On</th> }
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                    @if (Model != null && Model.Any())
+                    @{
+                        var items = Model as List<BlackListMongoDTO.NAMELIST>;
+                    }
+                    @if (items != null && items.Any())
                     {
                         int index = 1;
-                        foreach (var item in Model)
+                        foreach (var item in items)
                         {
                             <tr class="hover:bg-slate-50 transition-colors">
                                 <td class="px-2 py-3 text-slate-400 font-medium">@index</td>
-                                <td class="px-2 py-3 capitalize text-left">
-                                    <span class="font-bold text-slate-700">@item.CATEGORY</span>
-                                </td>
-                                <td class="px-2 py-3 font-bold text-slate-900">@item.FULLNAME</td>
-                                <td class="px-2 py-3 text-slate-600">@item.NATIONALITY</td>
-                                <td class="px-2 py-3 text-slate-600">
-                                    @if(item.DOB != null && item.DOB.Any())
-                                    {
-                                        @string.Join(", ", item.DOB.Select(d => d.DOB))
-                                    }
-                                </td>
-                                <td class="px-2 py-3 text-slate-600 font-medium">
-                                    @if(item.IDDETAILS != null && item.IDDETAILS.Any())
-                                    {
-                                        @string.Join(", ", item.IDDETAILS.Select(i => i.IDNUMBER))
-                                    }
-                                </td>
-                                <td class="px-2 py-3 text-blue-600 font-semibold italic">@item.SUBCATEGORY</td>
-                                <td class="px-2 py-3 text-slate-500">@item.CREATEDDATE.ToString("dd MMM yyyy HH:mm")</td>
+                                @if (ShowColumn("Type")) {
+                                    <td class="px-2 py-3 capitalize text-left">
+                                        <span class="font-bold text-slate-700">@item.CATEGORY</span>
+                                    </td>
+                                }
+                                @if (ShowColumn("Name")) { <td class="px-2 py-3 font-bold text-slate-900">@item.FULLNAME</td> }
+                                @if (ShowColumn("Nationality")) { <td class="px-2 py-3 text-slate-600">@item.NATIONALITY</td> }
+                                @if (ShowColumn("DOB")) {
+                                    <td class="px-2 py-3 text-slate-600">
+                                        @if(item.DOB != null && item.DOB.Any())
+                                        {
+                                            @string.Join(", ", item.DOB.Select(d => d.DOB))
+                                        }
+                                    </td>
+                                }
+                                @if (ShowColumn("IDNumber")) {
+                                    <td class="px-2 py-3 text-slate-600 font-medium">
+                                        @if(item.IDDETAILS != null && item.IDDETAILS.Any())
+                                        {
+                                            @string.Join(", ", item.IDDETAILS.Select(i => i.IDNUMBER))
+                                        }
+                                    </td>
+                                }
+                                @if (ShowColumn("Source")) { <td class="px-2 py-3 text-blue-600 font-semibold italic">@item.SUBCATEGORY</td> }
+                                @if (ShowColumn("CreatedOn")) { <td class="px-2 py-3 text-slate-500">@item.CREATEDDATE.ToString("dd MMM yyyy HH:mm")</td> }
                             </tr>
                             index++;
                         }
@@ -105,7 +123,7 @@
     <script>
         window.onload = function() {
             setTimeout(() => {
-                downloadPageAsPDF('#pdf-container', 'Blocklist_Update_Logs_@DateTime.Now.ToString("yyyyMMdd")' + '.pdf');
+                downloadPageAsPDF('#pdf-container', 'Blocklist_Update_Logs_@DateTime.Now.ToString("yyyyMMdd")' + '.pdf', '@orientation');
             }, 1000);
         };
     </script>

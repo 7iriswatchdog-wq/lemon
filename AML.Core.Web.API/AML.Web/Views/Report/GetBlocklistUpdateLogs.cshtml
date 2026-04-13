@@ -78,6 +78,7 @@
 </head>
 
 <body class="bg-slate-50 min-h-screen text-slate-900">
+    @await Html.PartialAsync("_ExportModal")
     <div id="loadingOverlay"
          class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-[9999] hidden">
         <div class="dt-loader">
@@ -145,24 +146,12 @@
                         Apply
                     </button>
 
-                    <!-- Export -->
-                    <div class="relative inline-block text-left group">
-                        <button type="button" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-5 rounded-md text-sm transition focus:outline-none">
-                            <i data-lucide="download" class="h-4 w-4"></i>
-                            Export
-                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
-                        </button>
-                        <div class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200" role="menu">
-                            <div class="py-1">
-                                <button onclick="exportPDF()" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2">
-                                    Export PDF
-                                </button>
-                                <button onclick="exportExcel()" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2">
-                                    Export Excel
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <button type="button" 
+                            onclick="showExportOptions()"
+                            class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-5 rounded-md text-sm transition focus:outline-none shadow-sm">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                        Export
+                    </button>
                 </div>
             </div>
         </div>
@@ -391,24 +380,47 @@
         function nextPage() { if (currentPage * pageSize < totalRecords) { currentPage++; loadData(); } }
         function changePageSize() { pageSize = parseInt($('#pageSize').val()); currentPage = 1; loadData(); }
 
-        function exportExcel() {
+        function showExportOptions() {
+            const columns = [
+                { id: "Type", label: "Type" },
+                { id: "Name", label: "Name" },
+                { id: "Nationality", label: "Nationality" },
+                { id: "DOB", label: "DOB" },
+                { id: "IDNumber", label: "ID Number" },
+                { id: "Source", label: "Source" },
+                { id: "CreatedOn", label: "Created On" }
+            ];
+
+            openExportModal({
+                getColumnsByActiveTab: () => columns,
+                onExport: (format, selectedColumns, orientation) => {
+                    if (format === 'pdf') {
+                        exportPDF(selectedColumns, orientation);
+                    } else {
+                        exportExcel(selectedColumns, orientation);
+                    }
+                }
+            });
+        }
+
+        function exportExcel(selectedColumns, orientation) {
             const startDate = formatDate($("#startDate").val());
             const endDate = formatDate($("#endDate").val());
             const source = $("#sourceFilter").val();
             const searchValue = $('#searchInput').val() || '';
 
             toastr.info("Generating Excel report...");
-            window.location.href = `/Report/BlocklistUpdateLogsExportExcel?startDate=${startDate}&endDate=${endDate}&source=${source}&searchValue=${searchValue}`;
+            window.location.href = `/Report/BlocklistUpdateLogsExportExcel?startDate=${startDate}&endDate=${endDate}&source=${source}&searchValue=${searchValue}&selectedColumns=${selectedColumns || ''}&orientation=${orientation || 'portrait'}`;
         }
 
-        function exportPDF() {
+        function exportPDF(selectedColumns, orientation) {
             const startDate = formatDate($("#startDate").val());
             const endDate = formatDate($("#endDate").val());
             const source = $("#sourceFilter").val();
             const searchValue = $('#searchInput').val() || '';
 
             $("#loadingOverlay").removeClass("hidden").addClass("flex");
-            const url = `/Report/BlocklistUpdateLogs_PDF?startDate=${startDate}&endDate=${endDate}&source=${source}&searchValue=${searchValue}`;
+            const url = `/Report/BlocklistUpdateLogs_PDF?startDate=${startDate}&endDate=${endDate}&source=${source}&searchValue=${searchValue}&selectedColumns=${selectedColumns || ''}&orientation=${orientation || 'portrait'}`;
             $('#pdfExportFrame').attr('src', url);
         }
     </script>

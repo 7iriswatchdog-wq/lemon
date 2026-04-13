@@ -168,7 +168,7 @@ namespace AML.Web.Controllers.ProliferationFinance
         }
 
         [HttpGet("/ProliferationFinance/ExportPFCaseReport")]
-        public async Task<IActionResult> ExportPFCaseReport(DateTime? startDate, DateTime? endDate, string customerType, string status, string searchValue, bool isPDF)
+        public async Task<IActionResult> ExportPFCaseReport(DateTime? startDate, DateTime? endDate, string customerType, string status, string searchValue, bool isPDF, string selectedColumns = null, string orientation = "portrait")
         {
             try
             {
@@ -240,29 +240,54 @@ namespace AML.Web.Controllers.ProliferationFinance
                             range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
                         };
 
+                        // Column Map
+                        var colMap = new List<(string id, string label)> {
+                            ("caseId", "Case ID"),
+                            ("createdOn", "Created Date"),
+                            ("corporateId", "Corporate ID"),
+                            ("companyName", "Company Name"),
+                            ("customerType", "Customer Type"),
+                            ("chemicalName", "Product / Chemical Name"),
+                            ("hsCode", "HS Code"),
+                            ("casNumber", "CAS Number"),
+                            ("score", "Score"),
+                            ("status", "Status"),
+                            ("remarks", "Remarks")
+                        };
+
+                        var selectedCols = string.IsNullOrEmpty(selectedColumns) 
+                            ? colMap.Select(x => x.id).ToList() 
+                            : selectedColumns.Split(',').ToList();
+
+                        var activeCols = colMap.Where(x => selectedCols.Contains(x.id)).ToList();
+
                         // Data Table Headers
-                        string[] headers = { "Case ID", "Created Date", "Corporate ID", "Company Name", "Customer Type", "Product / Chemical Name", "HS Code", "CAS Number", "Score", "Status", "Remarks" };
-                        for (int i = 0; i < headers.Length; i++)
+                        for (int i = 0; i < activeCols.Count; i++)
                         {
-                            worksheet.Cells[1, i + 1].Value = headers[i];
+                            worksheet.Cells[1, i + 1].Value = activeCols[i].label;
                         }
-                        applyHeaderStyle(worksheet.Cells[1, 1, 1, headers.Length]);
+                        if (activeCols.Count > 0) applyHeaderStyle(worksheet.Cells[1, 1, 1, activeCols.Count]);
 
                         // Data Rows
                         int row = 2;
                         foreach (var item in data)
                         {
-                            worksheet.Cells[row, 1].Value = "PF-" + item.Id;
-                            worksheet.Cells[row, 2].Value = item.CreatedOn.ToString("dd/MM/yyyy HH:mm:ss");
-                            worksheet.Cells[row, 3].Value = item.CorporateId;
-                            worksheet.Cells[row, 4].Value = item.CompanyName;
-                            worksheet.Cells[row, 5].Value = item.CustomerType;
-                            worksheet.Cells[row, 6].Value = item.ChemicalName;
-                            worksheet.Cells[row, 7].Value = item.HsCode;
-                            worksheet.Cells[row, 8].Value = item.CasNumber;
-                            worksheet.Cells[row, 9].Value = item.Score ?? "0";
-                            worksheet.Cells[row, 10].Value = item.Status;
-                            worksheet.Cells[row, 11].Value = item.StatusReason;
+                            for (int i = 0; i < activeCols.Count; i++)
+                            {
+                                var colId = activeCols[i].id;
+                                var cell = worksheet.Cells[row, i + 1];
+                                if (colId == "caseId") cell.Value = "PF-" + item.Id;
+                                else if (colId == "createdOn") cell.Value = item.CreatedOn.ToString("dd/MM/yyyy HH:mm:ss");
+                                else if (colId == "corporateId") cell.Value = item.CorporateId;
+                                else if (colId == "companyName") cell.Value = item.CompanyName;
+                                else if (colId == "customerType") cell.Value = item.CustomerType;
+                                else if (colId == "chemicalName") cell.Value = item.ChemicalName;
+                                else if (colId == "hsCode") cell.Value = item.HsCode;
+                                else if (colId == "casNumber") cell.Value = item.CasNumber;
+                                else if (colId == "score") cell.Value = item.Score ?? "0";
+                                else if (colId == "status") cell.Value = item.Status;
+                                else if (colId == "remarks") cell.Value = item.StatusReason;
+                            }
                             row++;
                         }
 
@@ -284,7 +309,8 @@ namespace AML.Web.Controllers.ProliferationFinance
 
                 using (MemoryStream ms = new MemoryStream())
                 {
-                    Document document = new Document(PageSize.A4.Rotate(), 15, 15, 15, 15);
+                    iTextSharp.text.Rectangle pageSize = orientation.ToLower() == "landscape" ? PageSize.A4.Rotate() : PageSize.A4;
+                    Document document = new Document(pageSize, 15, 15, 15, 15);
                     PdfWriter writer = PdfWriter.GetInstance(document, ms);
                     document.Open();
 
@@ -323,15 +349,35 @@ namespace AML.Web.Controllers.ProliferationFinance
                     document.Add(new Phrase($"Filters Applied  :   {filterStr}\n", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 11)));
                     document.Add(new Paragraph("\n"));
 
-                    // Data Table
-                    PdfPTable table = new PdfPTable(8);
-                    table.WidthPercentage = 100;
-                    table.SetWidths(new float[] { 0.4f, 0.8f, 1.2f, 1f, 1.8f, 1.8f, 0.6f, 0.8f });
+                    // Column Map for PDF
+                    var pdfColMap = new List<(string id, string label, float width)> {
+                        ("count", "#", 0.4f),
+                        ("caseId", "CASE ID", 0.8f),
+                        ("createdOn", "CREATED DATE", 1.2f),
+                        ("corporateId", "CORP ID", 1f),
+                        ("companyName", "COMPANY NAME", 1.8f),
+                        ("chemicalName", "CHEMICAL/PRODUCT", 1.8f),
+                        ("score", "SCORE", 0.6f),
+                        ("status", "STATUS", 0.8f),
+                        ("remarks", "REMARKS", 1.2f)
+                    };
 
-                    string[] headers = { "#", "CASE ID", "CREATED DATE", "CORPORATE ID", "COMPANY NAME", "PRODUCT / CHEMICAL", "SCORE", "STATUS" };
-                    foreach (var h in headers)
+                    var selectedPdfCols = string.IsNullOrEmpty(selectedColumns) 
+                        ? pdfColMap.Where(x => x.id != "remarks").Select(x => x.id).ToList() 
+                        : selectedColumns.Split(',').ToList();
+                    
+                    if (!selectedPdfCols.Contains("count")) selectedPdfCols.Insert(0, "count");
+
+                    var activePdfCols = pdfColMap.Where(x => selectedPdfCols.Contains(x.id)).ToList();
+
+                    // Data Table
+                    PdfPTable table = new PdfPTable(activePdfCols.Count);
+                    table.WidthPercentage = 100;
+                    table.SetWidths(activePdfCols.Select(x => x.width).ToArray());
+
+                    foreach (var col in activePdfCols)
                     {
-                        PdfPCell cell = new PdfPCell(new Phrase(h, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 10, iTextSharp.text.Font.BOLD)));
+                        PdfPCell cell = new PdfPCell(new Phrase(col.label, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9, iTextSharp.text.Font.BOLD)));
                         cell.BackgroundColor = BaseColor.LIGHT_GRAY;
                         cell.HorizontalAlignment = Element.ALIGN_CENTER;
                         cell.Padding = 5;
@@ -341,18 +387,27 @@ namespace AML.Web.Controllers.ProliferationFinance
                     int count = 1;
                     foreach (var item in data)
                     {
-                        table.AddCell(new Phrase(count++.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
-                        table.AddCell(new Phrase("PF-" + item.Id, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
-                        table.AddCell(new Phrase(item.CreatedOn.ToString("dd/MM/yyyy HH:mm"), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
-                        table.AddCell(new Phrase(item.CorporateId, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
-                        table.AddCell(new Phrase(item.CompanyName, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
-                        table.AddCell(new Phrase(item.ChemicalName, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
-                        table.AddCell(new Phrase(item.Score ?? "0", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
-                        table.AddCell(new Phrase(item.Status, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
+                        foreach (var col in activePdfCols)
+                        {
+                            var colId = col.id;
+                            string val = "";
+                            if (colId == "count") val = count.ToString();
+                            else if (colId == "caseId") val = "PF-" + item.Id;
+                            else if (colId == "createdOn") val = item.CreatedOn.ToString("dd/MM/yyyy HH:mm");
+                            else if (colId == "corporateId") val = item.CorporateId;
+                            else if (colId == "companyName") val = item.CompanyName;
+                            else if (colId == "chemicalName") val = item.ChemicalName;
+                            else if (colId == "score") val = item.Score ?? "0";
+                            else if (colId == "status") val = item.Status;
+                            else if (colId == "remarks") val = item.StatusReason;
+
+                            table.AddCell(new Phrase(val ?? "", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 8)));
+                        }
+                        count++;
                     }
 
                     document.Add(table);
-
+                    
                     // Footer
                     document.Add(new Paragraph("\n"));
                     document.Add(new iTextSharp.text.pdf.draw.LineSeparator(1f, 100f, BaseColor.BLACK, Element.ALIGN_LEFT, 1));
@@ -360,7 +415,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                     document.Add(new Phrase("Date of Extraction  :   " + DateTime.Now, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9)));
 
                     document.Close();
-                    return File(ms.ToArray(), "application/pdf", $"PF_Case_Report_{DateTime.Now:yyyyMMdd}.pdf");
+                    return File(ms.ToArray(), "application/pdf", $"PF_Case_Report_{DateTime.Now:yyyyMMddHHmmss}.pdf");
                 }
             }
             catch (Exception ex)
@@ -370,7 +425,7 @@ namespace AML.Web.Controllers.ProliferationFinance
         }
 
         [HttpGet("/ProliferationFinance/CaseManager_PDF")]
-        public IActionResult CaseManager_PDF(DateTime? startDate, DateTime? endDate, string customerType, string status, string searchValue)
+        public IActionResult CaseManager_PDF(DateTime? startDate, DateTime? endDate, string customerType, string status, string searchValue, string selectedColumns, string orientation)
         {
             try
             {
@@ -430,6 +485,8 @@ namespace AML.Web.Controllers.ProliferationFinance
                 ViewBag.EndDate = endDate;
                 ViewBag.CustomerType = customerType;
                 ViewBag.Status = status;
+                ViewBag.SelectedColumns = selectedColumns;
+                ViewBag.Orientation = orientation ?? "portrait";
 
                 return View("CaseManager_PDF", data);
             }
