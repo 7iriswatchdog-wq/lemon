@@ -1402,14 +1402,12 @@ namespace AML.Web.Controllers.Reports
             }
             if (option == "OnGoing")
             {
-                abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportListBySchedulerTrackerId(new CaseReportRequestDTO
+                abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportList(new CaseReportRequestDTO
                 {
-                    //User = userID,
-                    SchedulerTrackerId = schedulerTrackerId,
+                    StartDate = "2000-01-01", // Or some early default to capture all history up to endDate
+                    EndDate = endDate,
                     ClientId = _clientHandler.GetClientId()
-
                 }));
-
             }
             else
             {
