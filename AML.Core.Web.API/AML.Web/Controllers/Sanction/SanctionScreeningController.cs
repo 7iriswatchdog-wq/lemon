@@ -351,7 +351,7 @@ namespace AML.Web.Controllers.Sanction
         }
 
         [HttpGet]
-        public async Task<IActionResult> SanctionScreening_PDF(string name, string nationality, string dob, string customerType)
+        public async Task<IActionResult> SanctionScreening_PDF(string name, string nationality, string dob, string customerType, string selectedColumns, string orientation)
         {
             var model = new ScreeningSearchModel
             {
@@ -385,11 +385,14 @@ namespace AML.Web.Controllers.Sanction
             // 3. Fetch case logs (Tab 3)
             model.CaseLogs = _mapper.Map<List<CaseModel>>(_customerScreeningService.GetCaseLogs(model.Name, model.Nationality, model.DOB, model.customerType, clientId));
 
+            ViewBag.SelectedColumns = selectedColumns;
+            ViewBag.Orientation = orientation ?? "portrait";
             return View("SanctionScreening_PDF", model);
         }
 
         [HttpGet]
-        public async Task<IActionResult> ConsolidatedExportExcel(string name, string nationality, string dob, string customerType)
+        [HttpGet]
+        public async Task<IActionResult> ConsolidatedExportExcel(string name, string nationality, string dob, string customerType, string selectedColumns = null, string orientation = "portrait")
         {
             var searchType = "F";
             var clientId = _clientHandler.GetClientId();
@@ -428,24 +431,45 @@ namespace AML.Web.Controllers.Sanction
 
                 // Tab 1: Search Results
                 var sheet1 = package.Workbook.Worksheets.Add("Search Results");
-                string[] h1 = { "Type", "Category", "Name", "Nationality", "DOB", "Score", "UID", "ID Number" };
-                for (int i = 0; i < h1.Length; i++) sheet1.Cells[1, i + 1].Value = h1[i];
-                applyHeaderStyle(sheet1.Cells[1, 1, 1, h1.Length]);
+                var colMap1 = new List<(string id, string label)> {
+                    ("matchtype", "Type"),
+                    ("matchcategory", "Category"),
+                    ("matchname", "Name"),
+                    ("matchnationality", "Nationality"),
+                    ("matchdob", "DOB"),
+                    ("matchscore", "Score"),
+                    ("matchuid", "UID"),
+                    ("matchidnumber", "ID Number")
+                };
+
+                var selectedCols1 = string.IsNullOrEmpty(selectedColumns) 
+                    ? colMap1.Select(x => x.id).ToList() 
+                    : selectedColumns.Split(',').ToList();
+                
+                var activeCols1 = colMap1.Where(x => selectedCols1.Contains(x.id)).ToList();
+
+                for (int i = 0; i < activeCols1.Count; i++) sheet1.Cells[1, i + 1].Value = activeCols1[i].label;
+                if (activeCols1.Count > 0) applyHeaderStyle(sheet1.Cells[1, 1, 1, activeCols1.Count]);
 
                 int row1 = 2;
                 foreach (var item in dataList)
                 {
-                    sheet1.Cells[row1, 1].Value = item.matchtype;
-                    sheet1.Cells[row1, 2].Value = item.matchcategory;
-                    sheet1.Cells[row1, 3].Value = item.matchname;
-                    sheet1.Cells[row1, 4].Value = item.matchnationality;
-                    sheet1.Cells[row1, 5].Value = item.matchdob;
-                    sheet1.Cells[row1, 6].Value = item.matchscore;
-                    sheet1.Cells[row1, 7].Value = item.matchuid;
-                    sheet1.Cells[row1, 8].Value = item.matchidnumber;
+                    for (int i = 0; i < activeCols1.Count; i++)
+                    {
+                        var colId = activeCols1[i].id;
+                        var cell = sheet1.Cells[row1, i + 1];
+                        if (colId == "matchtype") cell.Value = item.matchtype;
+                        else if (colId == "matchcategory") cell.Value = item.matchcategory;
+                        else if (colId == "matchname") cell.Value = item.matchname;
+                        else if (colId == "matchnationality") cell.Value = item.matchnationality;
+                        else if (colId == "matchdob") cell.Value = item.matchdob;
+                        else if (colId == "matchscore") cell.Value = item.matchscore;
+                        else if (colId == "matchuid") cell.Value = item.matchuid;
+                        else if (colId == "matchidnumber") cell.Value = item.matchidnumber;
+                    }
                     row1++;
                 }
-                if (row1 > 2) { sheet1.Cells[row1-1, 1, row1-1, h1.Length].AutoFitColumns(); sheet1.View.FreezePanes(2, 1); }
+                if (row1 > 2) { sheet1.Cells[sheet1.Dimension.Address].AutoFitColumns(); sheet1.View.FreezePanes(2, 1); }
 
                 // Tab 2: Search History
                 var sheet2 = package.Workbook.Worksheets.Add("Search History");

@@ -1858,221 +1858,6 @@ namespace AML.Web.Controllers.Reports
         //    }
 
 
-        [HttpGet("Report/ExportCaseReport")]
-        public async Task<IActionResult> ExportCaseReport(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string caseStatusChange, string riskLevel, bool isPDF)
-        {
-            var BranchId = _clientHandler.GetBranchId();
-            var GroupId = _clientHandler.GetGroupId();
-            var clientId = _clientHandler.GetClientId();
-
-            var userId = _clientHandler.GetUserId();
-
-            // Date parsing for dd/MM/yyyy format
-            if (!string.IsNullOrEmpty(startDate) && startDate.Contains("/"))
-            {
-                if (DateTime.TryParseExact(startDate, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime pStart))
-                    startDate = pStart.ToString("yyyy-MM-dd");
-            }
-            if (!string.IsNullOrEmpty(endDate) && endDate.Contains("/"))
-            {
-                if (DateTime.TryParseExact(endDate, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime pEnd))
-                    endDate = pEnd.ToString("yyyy-MM-dd");
-            }
-
-
-            var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
-            if (string.IsNullOrEmpty(cust_type) || cust_type == "0")
-            {
-                cust_type = null;
-            }
-
-            if (riskLevel == "1")
-            {
-                riskLevel = "Low Risk";
-            }
-            else if (riskLevel == "2")
-            {
-                riskLevel = "Medium Risk";
-            }
-            else if (riskLevel == "3")
-            {
-                riskLevel = "High Risk";
-            }
-            if (caseStatusChange == "0")
-            {
-                caseStatusChange = null;
-            }
-            List<CaseReportListModel> abc = new List<CaseReportListModel>();
-
-            #region Dynamic Filter Summary
-            string filter = "None";
-            List<string> filterList = new List<string>();
-
-            if (createdBy != 0) filterList.Add("User: " + createdBy);
-            if (!string.IsNullOrEmpty(cust_type) && cust_type != "0")
-            {
-                filterList.Add("Customer Type: " + cust_type);
-            }
-            if (caseStatus != 10)
-            {
-                // Simple label mapping for status
-                string statusLabel = Enum.GetName(typeof(ReportsCaseStatus), caseStatus) ?? caseStatus.ToString();
-                filterList.Add("Status: " + statusLabel);
-            }
-            if (!string.IsNullOrEmpty(riskLevel)) filterList.Add("Risk: " + riskLevel);
-            if (!string.IsNullOrEmpty(matchScore)) filterList.Add("Score: " + matchScore);
-            if (!string.IsNullOrEmpty(searchValue)) filterList.Add("Search: " + searchValue);
-
-            if (filterList.Count > 0) filter = string.Join(", ", filterList);
-            #endregion
-
-            if (searchValue != "" && searchValue != null)
-            {
-                abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportListBySearch(new CaseReportRequestDTO
-                {
-                    //User = userID,
-                    StartDate = startDate,
-                    EndDate = endDate,
-                    caseStatus = caseStatus,
-                    Cust_type = cust_type,
-                    // UpdatedByUserId = updatedByUserID,
-                    ClientId = _clientHandler.GetClientId(),
-                    SearchValue = searchValue,
-                    User = createdBy.ToString(),
-                    matchscore = matchScore,
-                    riskLevel = riskLevel
-                }));
-            }
-            else
-            {
-                abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportList(new CaseReportRequestDTO
-                {
-                    //User = userID,
-                    StartDate = startDate,
-                    EndDate = endDate,
-                    caseStatus = caseStatus,
-                    Cust_type = cust_type,
-                    // UpdatedByUserId = updatedByUserID,
-                    ClientId = _clientHandler.GetClientId(),
-                    User = createdBy.ToString(),
-                    matchscore = matchScore,
-                    riskLevel = riskLevel
-                }));
-            }
-
-            //if (searchValue != "" && searchValue != null)
-            //{
-            //    abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseManagementSearchValueReportList(new CaseReportRequestDTO()
-            //    {
-            //        User = userId.ToString(),
-            //        StartDate = startDate,
-            //        EndDate = endDate,
-            //        Cust_type = cust_type,
-            //        ClientId = _clientHandler.GetClientId(),
-            //        matchscore = matchScore,
-            //        createdBy = createdBy,
-            //        caseStatus = caseStatus,
-            //        riskLevel = riskLevel,
-            //        usergroupName = _UserGroupModel.Name,
-            //        SearchValue=searchValue,
-            //    }));
-            //}
-            //else
-            //{
-            //    abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseManagementReportList(new CaseReportRequestDTO()
-            //    {
-            //        User = userId.ToString(),
-            //        StartDate = startDate,
-            //        EndDate = endDate,
-            //        Cust_type = cust_type,
-            //        ClientId = _clientHandler.GetClientId(),
-            //        matchscore = matchScore,
-            //        createdBy = createdBy,
-            //        caseStatus = caseStatus,
-            //        riskLevel = riskLevel,
-            //        usergroupName = _UserGroupModel.Name
-            //    }));
-            //}
-            int fileType = isPDF ? (int)OperationType.PDF : (int)OperationType.Excel;
-            CaseReportDownloadModel downloadModel = new CaseReportDownloadModel();
-            downloadModel.Data = abc;
-            downloadModel.TotalRows = abc.Count;
-            var clientData = _customerCaseService.GetClientDetailsByID(_clientHandler.GetClientId());
-
-            //string caseStatus = "";
-            //switch (status)
-            //{
-            //    case "0":
-            //        caseStatus = "Pending";
-            //        break;
-            //    case "1":
-            //        caseStatus = "Assigned";
-            //        break;
-            //    case "2":
-            //        caseStatus = "Approved";
-            //        break;
-            //    case "3":
-            //        caseStatus = "Rejected";
-            //        break;
-            //    case "4":
-            //        caseStatus = "Closed";
-            //        break;
-            //    case "5":
-            //        caseStatus = "Auto Approved";
-            //        break;
-            //    case "6":
-            //        caseStatus = "Pending Case Created From Daily Scheduler";
-            //        break;
-            //    case "10":
-            //        caseStatus = "All";
-            //        break;
-            //    default:
-            //        caseStatus = "";
-            //        break;
-            //}
-
-            //Excel Export
-            if (!isPDF)
-            {
-            CaseManagementReportExcelModel excelModel = new CaseManagementReportExcelModel();
-            List<CaseManagementReportExcelModel> excelData = new List<CaseManagementReportExcelModel>();
-                //List<CaseReportExcelModel> excelData1 = new List<CaseReportExcelModel>();
-            string details = "Report               :   Case Management Report" + "\r\n" + "Date Range       :   " + startDate + "  to  " + endDate + "\r\n" +
-                                     "Filters Applied  :   " + filter;
-            excelModel.Details = details;
-
-            excelData = (from res in abc
-                         select new CaseManagementReportExcelModel
-                         {
-                             CustomerId = res.CustomerID,
-                             CreationDate = Convert.ToDateTime(res.CreatedOn).ToString("dd/MM/yyyy HH:mm:ss"),
-                             UpdationDate = Convert.ToDateTime(res.UpdatedOn).ToString("dd/MM/yyyy HH:mm:ss"),
-                             CustomerType = res.CustomerType == "I" ? "Individual" : "Corporate",
-                             CustomerName = res.FirstName + " " + res.LastName,
-                             CaseStatusChangeReason = res.CaseChangeStatus,
-                             ScreeningScore = res.MatchScore,
-                             RiskScore = !string.IsNullOrEmpty(res.CustomerType == "I" ? res.Individual_final_risk_score : res.corporate_final_risk_score)
-                             ? (
-                                 ((res.CustomerType == "I" ? res.Individual_final_risk_score : res.corporate_final_risk_score) ?? "")
-                                 .ToLower().Contains("high")
-                                 && ((res.CustomerType == "I" ? res.Individual_Risk_Override : res.Corporate_Risk_Override) ?? "")
-                                 .ToLower() == "override"
-                                 ? "High(O)"
-                                 : ((res.CustomerType == "I" ? res.Individual_final_risk_score : res.corporate_final_risk_score) ?? "")
-                                 .Replace(" Risk", "")
-                               )
-                             : "",
-                             CreatedBy = res.CreatedUser,
-                             CaseStatus = res.CaseStatus
-                         }).ToList();
-
-            excelData.Add(excelModel);
-            return new ExcelResult<CaseManagementReportExcelModel>((excelData), "Case Management Report", "Case_Management_Report_" + DateTime.Now.Ticks);
-        }
-
-        return View();
-    }
-
         [HttpGet("Report/ExportCaseManagementReport")]
         public async Task<IActionResult> ExportCaseManagementReport(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string caseStatusChange, string riskLevel, bool isPDF)
         {
@@ -4134,7 +3919,7 @@ namespace AML.Web.Controllers.Reports
         }
 
         [HttpGet("Report/SanctionDBUploadLogsExportExcel")]
-        public async Task<IActionResult> SanctionDBUploadLogsExportExcel(string startDate = null, string endDate = null, string match = null)
+        public async Task<IActionResult> SanctionDBUploadLogsExportExcel(string startDate = null, string endDate = null, string match = null, string selectedColumns = null)
         {
             var data = _mapper.Map<List<UploadLogsListModel>>(_reportService.GetUploadLogstList());
 
@@ -4150,16 +3935,33 @@ namespace AML.Web.Controllers.Reports
                 data = data.Where(x => x.Source?.Contains(match, StringComparison.OrdinalIgnoreCase) ?? false).ToList();
             }
 
+            var columnMap = new Dictionary<string, (string Header, Func<UploadLogsListModel, object> Value)>
+            {
+                { "Id", ("ID", log => log.Id) },
+                { "Source", ("Source", log => log.Source) },
+                { "CreatedOn", ("Uploaded On", log => log.CreatedOn) },
+                { "totalrecords", ("Total Records", log => log.totalrecords) }
+            };
+
+            var selectedCols = string.IsNullOrEmpty(selectedColumns) 
+                ? columnMap.Keys.ToList() 
+                : selectedColumns.Split(',').ToList();
+
             using (var package = new ExcelPackage())
             {
                 var sheet = package.Workbook.Worksheets.Add("Sanction DB Upload Logs");
-                string[] headers = { "ID", "Source", "Uploaded On", "Total Records" };
-                for (int i = 0; i < headers.Length; i++)
+                
+                int colIndex = 1;
+                foreach (var colId in selectedCols)
                 {
-                    sheet.Cells[1, i + 1].Value = headers[i];
+                    if (columnMap.ContainsKey(colId))
+                    {
+                        sheet.Cells[1, colIndex].Value = columnMap[colId].Header;
+                        colIndex++;
+                    }
                 }
 
-                using (var range = sheet.Cells[1, 1, 1, headers.Length])
+                using (var range = sheet.Cells[1, 1, 1, Math.Max(1, colIndex - 1)])
                 {
                     range.Style.Font.Bold = true;
                     range.Style.Fill.PatternType = ExcelFillStyle.Solid;
@@ -4171,16 +3973,21 @@ namespace AML.Web.Controllers.Reports
                 int row = 2;
                 foreach (var log in data)
                 {
-                    sheet.Cells[row, 1].Value = log.Id;
-                    sheet.Cells[row, 2].Value = log.Source;
-                    sheet.Cells[row, 3].Value = log.CreatedOn;
-                    sheet.Cells[row, 4].Value = log.totalrecords;
+                    colIndex = 1;
+                    foreach (var colId in selectedCols)
+                    {
+                        if (columnMap.ContainsKey(colId))
+                        {
+                            sheet.Cells[row, colIndex].Value = columnMap[colId].Value(log);
+                            colIndex++;
+                        }
+                    }
                     row++;
                 }
 
                 if (row > 2)
                 {
-                    sheet.Cells[1, 1, row - 1, headers.Length].AutoFitColumns();
+                    sheet.Cells[1, 1, row - 1, Math.Max(1, colIndex - 1)].AutoFitColumns();
                     sheet.View.FreezePanes(2, 1);
                 }
 
@@ -4617,7 +4424,7 @@ namespace AML.Web.Controllers.Reports
         }
 
         [HttpGet("Report/CaseReport_PDF")]
-        public async Task<IActionResult> CaseReport_PDF(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string caseStatusChange, string riskLevel)
+        public async Task<IActionResult> CaseReport_PDF(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string caseStatusChange, string riskLevel, string selectedColumns, string orientation)
         {
             if (string.IsNullOrEmpty(cust_type) || cust_type == "0") cust_type = null;
 
@@ -4640,11 +4447,13 @@ namespace AML.Web.Controllers.Reports
             else
                 data = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportList(request));
 
+            ViewBag.SelectedColumns = selectedColumns;
+            ViewBag.Orientation = orientation;
             return View("CaseReport_PDF", data);
         }
 
         [HttpGet("Report/DatasetUpdateLogs_PDF")]
-        public async Task<IActionResult> DatasetUpdateLogs_PDF(string startDate, string endDate, string datasets, string searchValue = null)
+        public async Task<IActionResult> DatasetUpdateLogs_PDF(string startDate, string endDate, string datasets, string searchValue = null, string selectedColumns = null, string orientation = null)
         {
             var logs = _reportService.GetDatasetUpdateLogs(new CaseReportRequestDTO
             {
@@ -4667,11 +4476,13 @@ namespace AML.Web.Controllers.Reports
             }
 
             var model = _mapper.Map<List<DatasetUpdateLogsModel>>(logs);
+            ViewBag.SelectedColumns = selectedColumns;
+            ViewBag.Orientation = orientation;
             return View("DatasetUpdateLogs_PDF", model);
         }
 
         [HttpGet("Report/SchedulerLogs_PDF")]
-        public async Task<IActionResult> SchedulerLogs_PDF(string startDate, string endDate, string searchValue = null)
+        public async Task<IActionResult> SchedulerLogs_PDF(string startDate, string endDate, string searchValue = null, string selectedColumns = null, string orientation = null)
         {
             var logs = _reportService.GetDigiSchedulerList(_clientHandler.GetClientId(), startDate, endDate);
             if (!string.IsNullOrEmpty(searchValue))
@@ -4680,11 +4491,13 @@ namespace AML.Web.Controllers.Reports
                 logs = logs.Where(x => x.Source != null && x.Source.ToLower().Contains(searchValue)).ToList();
             }
             var model = _mapper.Map<List<DigiSchedulerLogModel>>(logs);
+            ViewBag.SelectedColumns = selectedColumns;
+            ViewBag.Orientation = orientation;
             return View("SchedulerLogs_PDF", model);
         }
 
         [HttpGet("Report/BlocklistUpdateLogs_PDF")]
-        public async Task<IActionResult> BlocklistUpdateLogs_PDF(string startDate, string endDate, string source, string searchValue = null)
+        public async Task<IActionResult> BlocklistUpdateLogs_PDF(string startDate, string endDate, string source, string searchValue = null, string selectedColumns = null, string orientation = null)
         {
             int totalRecords = 0;
             var logs = _internalWatchListMongoRepository.GetBlockListLogs(startDate, endDate, source, 0, -1, out totalRecords); // -1 length to get all
@@ -4694,7 +4507,118 @@ namespace AML.Web.Controllers.Reports
                 logs = logs.Where(x => x.FULLNAME != null && x.FULLNAME.ToLower().Contains(searchValue)).ToList();
             }
             var model = _mapper.Map<List<BlackListMongoDTO.NAMELIST>>(logs);
+            ViewBag.SelectedColumns = selectedColumns;
+            ViewBag.Orientation = orientation;
             return View("BlocklistUpdateLogs_PDF", model);
         }
+    [HttpGet("Report/ExportCaseReport")]
+    public async Task<IActionResult> ExportCaseReport(string startDate, string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string caseStatusChange, string riskLevel, string selectedColumns)
+    {
+        if (string.IsNullOrEmpty(cust_type) || cust_type == "0") cust_type = null;
+
+        CaseReportRequestDTO request = new CaseReportRequestDTO
+        {
+            StartDate = startDate,
+            EndDate = endDate,
+            caseStatus = caseStatus,
+            Cust_type = cust_type,
+            ClientId = _clientHandler.GetClientId(),
+            SearchValue = searchValue,
+            User = createdBy == 0 ? null : createdBy.ToString(),
+            matchscore = matchScore,
+            riskLevel = riskLevel == "1" ? "Low Risk" : riskLevel == "2" ? "Medium Risk" : riskLevel == "3" ? "High Risk" : null
+        };
+
+        List<CaseReportListModel> data = new List<CaseReportListModel>();
+        if (!string.IsNullOrEmpty(searchValue))
+            data = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportListBySearch(request));
+        else
+            data = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportList(request));
+
+        var columnMap = new Dictionary<string, (string Header, Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object> Value)>
+        {
+            { "CustomerId", (Header: "Customer ID", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.CustomerID)) },
+            { "CreatedOn", (Header: "Created On", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.CreatedOn)) },
+            { "UpdatedOnDB", (Header: "Updated On", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.UpdatedOnDB)) },
+            { "CustomerType", (Header: "Customer Type", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.CustomerType == "I" ? "Individual" : "Corporate")) },
+            { "CustomerName", (Header: "Customer Name", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.CustomerName)) },
+            { "CaseChangeStatus", (Header: "Datasets", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.CaseChangeStatus)) },
+            { "MatchScore", (Header: "Screening Score", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.MatchScore)) },
+            { "riskScore", (Header: "Risk Rating", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.Individual_final_risk_score ?? c.corporate_final_risk_score ?? "Low Risk")) },
+            { "CreatedUser", (Header: "User", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.CreatedBy)) },
+            { "CaseStatus", (Header: "Status", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => FormatExcelStatus(c.Match))) }
+        };
+
+        var selectedCols = string.IsNullOrEmpty(selectedColumns) 
+            ? columnMap.Keys.ToList() 
+            : selectedColumns.Split(',').ToList();
+
+        using (var package = new ExcelPackage())
+        {
+            var sheet = package.Workbook.Worksheets.Add("Case Management Report");
+            int colIndex = 1;
+            foreach (var colId in selectedCols)
+            {
+                if (columnMap.ContainsKey(colId))
+                {
+                    sheet.Cells[1, colIndex].Value = columnMap[colId].Header;
+                    colIndex++;
+                }
+            }
+
+            using (var range = sheet.Cells[1, 1, 1, Math.Max(1, colIndex - 1)])
+            {
+                range.Style.Font.Bold = true;
+                range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+            }
+
+            int row = 2;
+            foreach (var item in data)
+            {
+                colIndex = 1;
+                foreach (var colId in selectedCols)
+                {
+                    if (columnMap.ContainsKey(colId))
+                    {
+                        sheet.Cells[row, colIndex].Value = columnMap[colId].Value(item);
+                        colIndex++;
+                    }
+                }
+                row++;
+            }
+
+            sheet.Cells[sheet.Dimension.Address].AutoFitColumns();
+            return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"CaseReport_Export_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+        }
     }
+
+    private string FormatExcelStatus(string status)
+    {
+        if (string.IsNullOrEmpty(status)) return "";
+        if (!status.Contains("| Shareholders:")) return status;
+
+        var parts = status.Split('|');
+        var mainStatus = parts[0].Trim();
+        var shInfo = parts[1].Replace("Shareholders:", "").Trim();
+
+        var metrics = new List<string>();
+        var patterns = new Dictionary<string, string> {
+            { "Approved", "AP" }, { "Auto", "A" }, { "Pending", "P" },
+            { "Rejected", "R" }, { "OnHold", "OH" }, { "Waitlist", "W" }, { "Whitelist", "W" }
+        };
+
+        foreach (var p in patterns)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(shInfo, p.Key + @"\s+(\d+)");
+            if (match.Success && int.Parse(match.Groups[1].Value) > 0)
+            {
+                metrics.Add($"{p.Value}:{match.Groups[1].Value}");
+            }
+        }
+
+        return metrics.Count > 0 ? $"{mainStatus} ({string.Join(", ", metrics)})" : mainStatus;
+    }
+}
 }

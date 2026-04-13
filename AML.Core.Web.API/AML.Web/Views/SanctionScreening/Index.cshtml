@@ -241,23 +241,11 @@
                 </button> *@
                 <iframe id="pdfFrame" style="position: fixed; top: 0; left: -9999px; width: 1200px; height: 100vh; border: none; opacity: 0; pointer-events: none;"></iframe>
                 
-                <div class="relative inline-block text-left group">
-                    <button type="button" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-11 px-5 rounded-md text-sm transition focus:outline-none shadow-sm">
-                        <i data-lucide="download" class="h-4 w-4"></i>
-                        Export
-                        <i data-lucide="chevron-down" class="h-4 w-4"></i>
-                    </button>
-                    <div class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200" role="menu" aria-orientation="vertical">
-                        <div class="py-1" role="none">
-                            <button onclick="ExportList(true);" id="exportPdfBtnStandard" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                Export PDF
-                            </button>
-                            <button onclick="ExportList(false);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                Export Excel
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <!-- Standardized Export Button -->
+                <button type="button" onclick="showExportOptions()" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-11 px-5 rounded-md text-sm transition focus:outline-none shadow-sm">
+                    <i data-lucide="download" class="h-4 w-4"></i>
+                    Export
+                </button>
 
             </div>
 
@@ -1088,19 +1076,65 @@ console.log("rawData3",rawData3);
                 });
             }
             
-        function ExportList(isPDF) {
+        function showExportOptions() {
+            const columns = [
+                // Search Results
+                { id: "matchtype", label: "Match Type", tab: "Search Results" },
+                { id: "matchcategory", label: "Category", tab: "Search Results" },
+                { id: "matchname", label: "Name", tab: "Search Results" },
+                { id: "matchnationality", label: "Nationality", tab: "Search Results" },
+                { id: "matchdob", label: "Date of Birth", tab: "Search Results" },
+                { id: "matchscore", label: "Score", tab: "Search Results" },
+                { id: "matchidnumber", label: "ID Number", tab: "Search Results" },
+
+                // Search History
+                { id: "CreatedOn", label: "Searched On", tab: "Search History" },
+                { id: "CustomerType_Hist", label: "Customer Type", tab: "Search History" },
+                { id: "CustomerName_Hist", label: "Customer Name", tab: "Search History" },
+                { id: "Nationality_Hist", label: "Nationality", tab: "Search History" },
+                { id: "dob_Hist", label: "Date of Birth", tab: "Search History" },
+                { id: "CreatedUser_Hist", label: "Searched By", tab: "Search History" },
+
+                // Existing Cases
+                { id: "CustomerId", label: "Customer ID", tab: "Existing Cases" },
+                { id: "CreatedOn_Case", label: "Created On", tab: "Existing Cases" },
+                { id: "UpdatedOnDB", label: "Updated On", tab: "Existing Cases" },
+                { id: "CustomerType_Case", label: "Customer Type", tab: "Existing Cases" },
+                { id: "CustomerName_Case", label: "Customer Name", tab: "Existing Cases" },
+                { id: "CaseChangeStatus", label: "Case Status", tab: "Existing Cases" },
+                { id: "MatchScore_Case", label: "Screening Score", tab: "Existing Cases" },
+                { id: "riskScore", label: "Risk Rating", tab: "Existing Cases" },
+                { id: "CreatedUser_Case", label: "User", tab: "Existing Cases" },
+                { id: "CaseStatus", label: "Status", tab: "Existing Cases" }
+            ];
+
+            openExportModal({
+                columns: columns,
+                onExport: (format, selectedColumns, orientation) => {
+                    if (format === 'csv') {
+                         exportToCSV(); 
+                    } else {
+                         ExportList(format === 'pdf', selectedColumns, orientation);
+                    }
+                }
+            });
+        }
+
+        function ExportList(isPDF, selectedColumns, orientation) {
             const name = $('#name').val();
             const nationality = $('#nationality').val();
             const dob = $('#DOB').val();
             const customerType = $('#customertype').val();
 
+            const queryParams = `name=${encodeURIComponent(name)}&nationality=${encodeURIComponent(nationality || '')}&dob=${encodeURIComponent(dob || '')}&customerType=${encodeURIComponent(customerType || '0')}&selectedColumns=${selectedColumns || ''}&orientation=${orientation || 'portrait'}`;
+
             if (isPDF) {
                 showLoader();
-                const url = `/SanctionScreening/SanctionScreening_PDF?name=${encodeURIComponent(name)}&nationality=${encodeURIComponent(nationality || '')}&dob=${encodeURIComponent(dob || '')}&customerType=${encodeURIComponent(customerType || '0')}`;
+                const url = `/SanctionScreening/SanctionScreening_PDF?${queryParams}`;
                 $('#pdfFrame').attr('src', url);
             } else {
                 showLoader();
-                const url = `/SanctionScreening/ConsolidatedExportExcel?name=${encodeURIComponent(name)}&nationality=${encodeURIComponent(nationality || '')}&dob=${encodeURIComponent(dob || '')}&customerType=${encodeURIComponent(customerType || '0')}`;
+                const url = `/SanctionScreening/ConsolidatedExportExcel?${queryParams}`;
                 window.location.href = url;
                 setTimeout(() => hideLoader(), 2000);
             }

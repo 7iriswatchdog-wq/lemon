@@ -15,6 +15,7 @@
 <!-- Flatpickr JS -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
+@await Html.PartialAsync("_ExportModal")
 <div class="p-8 space-y-8 max-w-[1600px] mx-auto min-h-screen text-slate-900" style="font-family: 'Inter', sans-serif;">
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -88,23 +89,11 @@
                     Apply
                 </button>
 
-                <!-- Export Dropdown -->
-                <div class="relative group">
-                    <button class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold h-10 px-5 rounded-md text-sm transition shadow-sm">
-                        <i data-lucide="download" class="h-4 w-4"></i>
-                        Export <i data-lucide="chevron-down" class="h-3 w-3 ml-1"></i>
-                    </button>
-                    <div class="absolute right-0 top-full mt-1 w-40 bg-white border border-slate-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                        <div class="py-1">
-                            <button onclick="ExportList(true);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                Export PDF
-                            </button>
-                            <button onclick="ExportList(false);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                Export CSV
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <!-- Standardized Export Button -->
+                <button type="button" onclick="showExportOptions()" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold h-10 px-5 rounded-md text-sm transition shadow-sm">
+                    <i data-lucide="download" class="h-4 w-4"></i>
+                    Export
+                </button>
             </div>
         </div>
     </div>
@@ -627,14 +616,33 @@
         lucide.createIcons();
     });
 
-    function ExportList(isPDF) {
+    function showExportOptions() {
+        const columns = [
+            { id: "corporateId", label: "Corporate ID" },
+            { id: "caseId", label: "Case ID" },
+            { id: "createdOn", label: "Created Date" },
+            { id: "updatedOn", label: "Updated Date" },
+            { id: "searchDetail", label: "Search Detail" },
+            { id: "customerType", label: "Datasets" },
+            { id: "status", label: "Status" }
+        ];
+
+        openExportModal({
+            getColumnsByActiveTab: () => columns,
+            onExport: (format, selectedColumns, orientation) => {
+                ExportList(format === 'pdf', selectedColumns, orientation);
+            }
+        });
+    }
+
+    function ExportList(isPDF, selectedColumns, orientation) {
         const startDate = $('#startDate').val();
         const endDate = $('#endDate').val();
         const customerType = $('#customerTypeFilter').val() || "0";
         const status = $('#statusFilter').val() || "0";
         const searchValue = encodeURIComponent($('#searchInput').val() || "");
         
-        const params = `startDate=${startDate}&endDate=${endDate}&customerType=${customerType}&status=${status}&searchValue=${searchValue}`;
+        const params = `startDate=${startDate}&endDate=${endDate}&customerType=${customerType}&status=${status}&searchValue=${searchValue}&selectedColumns=${selectedColumns}&orientation=${orientation}`;
 
         showLoader();
         if (isPDF) {

@@ -167,6 +167,7 @@
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-900">
+    @await Html.PartialAsync("_ExportModal")
     <div id="loadingCaseDetails"
          class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-[9999] hidden">
         <div class="dt-loader">
@@ -184,7 +185,7 @@
 
             <div>
                 <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Dataset Update Logs</h1>
-                @* <p class="text-slate-500 text-sm mt-1">Manage and review all individual and corporate cases.</p> *@
+                <p class="text-slate-500 text-sm mt-1">Manage and review all individual and corporate cases.</p>
             </div>
             @*  <div class="flex items-center gap-3 w-full md:w-auto">
                 <button onclick="ExportList(false)" ;
@@ -320,24 +321,12 @@
                         Apply
                     </button>
 
-                    <!-- Export -->
-                    <div class="relative inline-block text-left group">
-                        <button type="button" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-5 rounded-md text-sm transition focus:outline-none">
-                            <i data-lucide="download" class="h-4 w-4"></i>
-                            Export
-                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
-                        </button>
-                        <div class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200" role="menu" aria-orientation="vertical">
-                            <div class="py-1" role="none">
-                                <button onclick="ExportList(true);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                    Export PDF
-                                </button>
-                                <button onclick="ExportList(false);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                    Export Excel
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <button type="button" 
+                            onclick="showExportOptions()"
+                            class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-5 rounded-md text-sm transition focus:outline-none shadow-sm">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                        Export
+                    </button>
 
 
                 </div>
@@ -594,18 +583,38 @@
     }
 
 
-    function ExportList(isPDF) {
+    function showExportOptions() {
+        const columns = [
+            { id: "updatedDate", label: "Updated Date" },
+            { id: "datasets", label: "Datasets" },
+            { id: "delta", label: "Delta" },
+            { id: "individual", label: "Individual" },
+            { id: "corporate", label: "Corporate" },
+            { id: "cumulative", label: "Cumulative" }
+        ];
+
+        openExportModal({
+            getColumnsByActiveTab: () => columns,
+            onExport: (format, selectedColumns, orientation) => {
+                const orientationValue = orientation || 'portrait';
+                ExportList(format === 'pdf', selectedColumns, orientationValue);
+            }
+        });
+    }
+
+    function ExportList(isPDF, selectedColumns, orientation) {
         const startDate = formatDate($('#startDate').val());
         const endDate = formatDate($('#endDate').val());
         const datasets = $('#datasetsFilter').val();
         const searchValue = $('#searchInput').val() || '';
+        const params = `startDate=${startDate}&endDate=${endDate}&datasets=${datasets}&searchValue=${encodeURIComponent(searchValue)}&selectedColumns=${selectedColumns || ''}&orientation=${orientation || 'portrait'}`;
         
         if (isPDF) {
             $('#loader').removeClass('hidden').addClass('flex');
-            const url = `/Report/DatasetUpdateLogs_PDF?startDate=${startDate}&endDate=${endDate}&datasets=${datasets}&searchValue=${searchValue}`;
+            const url = `/Report/DatasetUpdateLogs_PDF?${params}`;
             $('#pdfExportFrame').attr('src', url);
         } else {
-            const url = `/Report/DatasetUpdateLogsExportReport?startDate=${startDate}&endDate=${endDate}&datasets=${datasets}&searchValue=${encodeURIComponent(searchValue)}`;
+            const url = `/Report/DatasetUpdateLogsExportReport?${params}`;
             window.location.href = url;
         }
     }

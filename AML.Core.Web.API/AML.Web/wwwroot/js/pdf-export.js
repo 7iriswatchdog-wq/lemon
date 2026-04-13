@@ -3,7 +3,7 @@
  * Uses html2pdf.js (self-hosted in ~/lib/html2pdf/html2pdf.bundle.min.js)
  */
 
-async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.pdf') {
+async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.pdf', orientation = 'portrait') {
     const original = document.querySelector(containerSelector);
     if (!original) {
         console.error('Container not found:', containerSelector);
@@ -28,8 +28,6 @@ async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.p
 
     try {
         // --- STEP 1: PRE-CAPTURE DATA FROM ORIGINAL ---
-        // cloneNode doesn't capture current dynamic values/states well in all browsers/frameworks.
-        // We'll read the original elements and prepare data for the clone.
         const originalInputs = original.querySelectorAll('select, textarea, input:not([type="hidden"])');
         const capturedData = Array.from(originalInputs).map(el => {
             let val = '';
@@ -65,60 +63,43 @@ async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.p
             position: absolute;
             left: -9999px;
             top: 0;
-            width: 800px; 
-            background: white;
-            padding: 0;
+            width: ${orientation === 'landscape' ? '1280px' : '1024px'}; 
+            max-width: ${orientation === 'landscape' ? '1280px' : '1024px'}; 
+            min-width: ${orientation === 'landscape' ? '1280px' : '1024px'}; 
+            margin: 0 auto;
         `;
         tempContainer.appendChild(clone);
         document.body.appendChild(tempContainer);
 
         // --- STEP 3: TRANSFORM CLONE FOR PDF ---
-
-        // A. Layout Stability (Convert Flex to Block for PDF)
         clone.querySelectorAll('.flex-col, .flex-row, .flex, .grid').forEach(el => {
-            // We only convert major containers that might cause "gaps" in PDF renderers
             if (el.classList.contains('rounded-lg') || el.classList.contains('card') || el.classList.contains('rounded-xl')) {
                 el.style.display = 'block';
                 el.style.overflow = 'visible';
             }
         });
 
-        const leftCol = clone.querySelector('#leftColumn');
-        const rightCol = clone.querySelector('#rightColumn');
-        if (leftCol && rightCol) {
-            // If they are side-by-side but causing overflow, we can stack, 
-            // but for Process_PDF we expect them to be well-behaved.
-            // leftCol.parentElement.style.display = 'block'; 
-        }
-
-        // B. Clear All Loaders, Spinners, and Pagination artifacts
         const uiArtifacts = clone.querySelectorAll('.dt-loader, .spinner-grow, .loader, .loadingeffect, .slider-pagination, .no-pdf, button, .pagination, .loading-dots');
         uiArtifacts.forEach(el => el.remove());
 
-        // C. Clean Dynamic Inputs (keep local styles)
         clone.querySelectorAll('[data-pdf-val]').forEach(el => {
             const val = el.getAttribute('data-pdf-val');
             const replacement = document.createElement('span');
             replacement.innerText = val || '-';
-            // Inherit parent classes for minimal disruption
             if (el.className) replacement.className = el.className;
             el.parentNode.replaceChild(replacement, el);
         });
 
-        // D. Respect Existing Table Styles
         clone.querySelectorAll('table').forEach(table => {
             table.style.width = '100%';
-            // We trust Process_PDF for tableLayout, borderCollapse, padding, and font sizes
         });
 
-        // E. Expand all Overflow containers
         clone.querySelectorAll('.overflow-y-auto, .custom-scrollbar, .overflow-hidden').forEach(el => {
             el.style.overflow = 'visible';
             el.style.maxHeight = 'none';
             el.style.height = 'auto';
         });
 
-        // F. Page Break Optimization
         clone.querySelectorAll('tr, .info-box, .pl-6.relative, .timeline-item').forEach(el => {
             el.style.pageBreakInside = 'avoid';
             el.style.breakInside = 'avoid';
@@ -138,17 +119,14 @@ async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.p
                 scrollY: 0,
                 scrollX: 0
             },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: orientation },
             pagebreak: { mode: ['css', 'legacy'] }
         };
 
-        // G. Add a small delay for Lucide icons and Tailwind styles to settle in clone
         await new Promise(resolve => setTimeout(resolve, 500));
-
-        window.scrollTo(0, 0); // Ensure window is at top
+        window.scrollTo(0, 0);
         await html2pdf().set(opt).from(clone).save();
 
-        // Cleanup
         document.body.removeChild(tempContainer);
 
     } catch (error) {

@@ -144,12 +144,13 @@
 </head>
 
 <body class="bg-slate-50 min-h-screen text-slate-900">
+    @await Html.PartialAsync("_ExportModal")
     <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
         <!-- Header Section -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Completed Cases</h1>
-                @* <p class="text-slate-500 text-sm mt-1">review all completed individual and corporate cases.</p> *@
+                <p class="text-slate-500 text-sm mt-1">review all completed individual and corporate cases.</p>
             </div>
            @*  <div class="flex items-center gap-3 w-full md:w-auto">
                 <button onclick="ExportList(false)" ;
@@ -161,7 +162,7 @@
         </div>
 
         <!-- Filters Section -->
-        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div id="filterSection" class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
             <div class="flex items-center justify-between mb-5">
                 <h3 class="text-sm font-bold text-slate-800  tracking-tight">Case Filter</h3>
                 <div class="flex gap-2">
@@ -301,22 +302,12 @@
                         Apply
                     </button>
 
-                    <div class="relative inline-block text-left group">
-                        <button type="button" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-5 rounded-md text-sm transition focus:outline-none shadow-sm">
+                        <button type="button" 
+                                onclick="showExportOptions()"
+                                class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-5 rounded-md text-sm transition focus:outline-none shadow-sm">
                             <i data-lucide="download" class="h-4 w-4"></i>
                             Export
-                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
                         </button>
-                        <div class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200" role="menu" aria-orientation="vertical">
-                            <div class="py-1" role="none">
-                                <button onclick="ExportList(true);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                    Export PDF
-                                </button>
-                                <button onclick="ExportList(false);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                    Export CSV
-                                </button>
-                            </div>
-                        </div>
                     </div>
 
 
@@ -1460,7 +1451,29 @@
     //         }
     //     });
     // }
-    function ExportList(isPDF) {
+    function showExportOptions() {
+        const columns = [
+            { id: "CustomerId", label: "Customer ID" },
+            { id: "CreatedOn", label: "Created On" },
+            { id: "UpdatedOnDB", label: "Updated On" },
+            { id: "CustomerType", label: "Customer Type" },
+            { id: "CustomerName", label: "Customer Name" },
+            { id: "CaseChangeStatus", label: "Datasets" },
+            { id: "MatchScore", label: "Screening Score" },
+            { id: "riskScore", label: "Risk Rating" },
+            { id: "CreatedUser", label: "User" },
+            { id: "CaseStatus", label: "Status" }
+        ];
+
+        openExportModal({
+            getColumnsByActiveTab: () => columns,
+            onExport: (format, selectedColumns, orientation) => {
+                ExportList(format === 'pdf', selectedColumns, orientation);
+            }
+        });
+    }
+
+    function ExportList(isPDF, selectedColumns, orientation) {
         $("#loadingCaseDetails").show();
         
         const params = 'startDate=' + $('#startDate').val() +
@@ -1471,14 +1484,16 @@
             '&caseStatus=' + $('#caseStatus').val() +
             '&caseStatusChange=' + $('#caseStatusChange').val() +
             '&riskLevel=' + $('#riskScore').val() +
-            '&searchValue=' + ($('#searchInput').val() || '');
+            '&searchValue=' + ($('#searchInput').val() || '') +
+            '&selectedColumns=' + (selectedColumns || '') +
+            '&orientation=' + (orientation || 'portrait');
 
         if (isPDF) {
             const url = '/Case/CompletedCases_PDF?' + params;
             $('#pdfFrame').attr('src', url);
             setTimeout(() => { $("#loadingCaseDetails").hide(); }, 5000);
         } else {
-            window.location = '/Report/ExportCompletedCasesReport?' + params + '&IsPDF=false';
+            window.location = '/Case/ExportCompletedCasesExcel?' + params;
             $("#loadingCaseDetails").hide();
         }
     }
@@ -1516,21 +1531,21 @@
             }
         });
 
-        applyBtn.disabled = !hasValue;
-        exportBtn.disabled = !hasValue;
-                searchBtn.disabled = !hasValue;
+        if (applyBtn) applyBtn.disabled = !hasValue;
+        if (exportBtn) exportBtn.disabled = !hasValue;
+        if (searchBtn) searchBtn.disabled = !hasValue;
 
         if (!hasValue) {
-            applyBtn.classList.add("opacity-50","cursor-not-allowed");
-            exportBtn.classList.add("opacity-50","cursor-not-allowed");
-            searchBtn.classList.add("opacity-50","cursor-not-allowed");
+            if (applyBtn) applyBtn.classList.add("opacity-50","cursor-not-allowed");
+            if (exportBtn) exportBtn.classList.add("opacity-50","cursor-not-allowed");
+            if (searchBtn) searchBtn.classList.add("opacity-50","cursor-not-allowed");
         } else {
-            applyBtn.classList.remove("opacity-50","cursor-not-allowed");
-                exportBtn.classList.remove("opacity-50","cursor-not-allowed");
-                    searchBtn.classList.remove("opacity-50","cursor-not-allowed");
+            if (applyBtn) applyBtn.classList.remove("opacity-50","cursor-not-allowed");
+            if (exportBtn) exportBtn.classList.remove("opacity-50","cursor-not-allowed");
+            if (searchBtn) searchBtn.classList.remove("opacity-50","cursor-not-allowed");
         }
     }
-        document.querySelectorAll("input, select").forEach(el => {
+    document.querySelectorAll("#filterSection input, #filterSection select").forEach(el => {
         el.addEventListener("change", checkFilterValues);
         el.addEventListener("input", checkFilterValues);
     });
