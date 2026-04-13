@@ -14,8 +14,7 @@
 }
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -30,7 +29,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Due Diligence - WatchDog</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -225,10 +224,10 @@
                     </button>
 
                     <!-- Export -->
-                    <button onclick="exportTableToCSV('GetScreeningData.csv')" id="exportBtn"
+                    <button onclick="exportExcel()" id="exportBtn"
                             class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-5 rounded-md text-sm transition">
                         <i data-lucide="download" class="h-4 w-4"></i>
-                        Export
+                        Export Excel
                     </button>
 
                 </div>
@@ -447,57 +446,10 @@
         loadData();
     }
 
-    function exportTableToCSV(filename) {
-        // We will fetch all data from backend for export to get the complete dataset
-        $("#loadingCaseDetails").removeClass("hidden");
-        $.ajax({
-            url: '/Report/ScreeningDatabaseReportCustompagination',
-            type: 'POST',
-            data: {
-                draw: 1,
-                start: 0,
-                length: -1, // Fetch all records for export if supported, otherwise just current total
-                orderColumn: orderColumn,
-                orderDirection: orderDirection,
-                search: { value: $('#searchInput').val() },
-                startDate: formatDate($('#startDate').val()),
-                endDate: formatDate($('#endDate').val())
-            },
-            success: function (resp) {
-                let csv = [];
-                let headers = ['Update Date', 'Individual', 'Corporate', 'Deleted'];
-                csv.push(headers.join(','));
-
-                console.log(resp);
-                console.log(resp.data);
-
-                resp.data.forEach(row => {
-                    const updated = formatDateTime(row.updatedDate);
-                    
-
-                    
-                    let r = [
-                        updated?.date ? `="${updated.date}"` : '',
-                        row.individual ?? 0,
-                        row.corporate ?? 0,
-                        row.deleted ?? 0
-                    ];
-                    csv.push(r.join(','));
-                });
-
-                let csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
-                let downloadLink = document.createElement('a');
-                downloadLink.download = filename;
-                downloadLink.href = window.URL.createObjectURL(csvFile);
-                downloadLink.style.display = 'none';
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-            },
-            complete: function() {
-                $("#loadingCaseDetails").addClass("hidden");
-            }
-        });
+    function exportExcel() {
+        const startDate = formatDate($('#startDate').val());
+        const endDate = formatDate($('#endDate').val());
+        window.location.href = `/Report/ScreeningDatabaseLogsExportReport?startDate=${startDate}&endDate=${endDate}`;
     }
 
     function sortTable(columnIndex, element) {
@@ -646,40 +598,26 @@
     });
    
     function clearFilters() {
+        const today = new Date();
+        const lastYear = new Date();
+        lastYear.setFullYear(today.getFullYear() - 1);
 
-            const today = new Date();
-            const lastYear = new Date();
-            lastYear.setFullYear(today.getFullYear() - 1);
+        if (document.querySelector("#startDate")._flatpickr) {
+            document.querySelector("#startDate")._flatpickr.setDate(lastYear, true);
+        }
 
-            function formatDate(date) {
-                const yyyy = date.getFullYear();
-                const mm = String(date.getMonth() + 1).padStart(2, '0');
-                const dd = String(date.getDate()).padStart(2, '0');
-                return `${dd}/${mm}/${yyyy}`;
-            }
-
-            // Reset values with defaults
-                 if (document.querySelector("#startDate")._flatpickr) {
-                document.querySelector("#startDate")._flatpickr.setDate(lastYear, true);
-            }
-
-            if (document.querySelector("#endDate")._flatpickr) {
-                document.querySelector("#endDate")._flatpickr.setDate(today, true);
-            }
-        
-
-        // Show filter icon again
-        
-
-        //checkFilterValues();
+        if (document.querySelector("#endDate")._flatpickr) {
+            document.querySelector("#endDate")._flatpickr.setDate(today, true);
+        }
 
         loadData();
-
-      
-
     }
-     
+
+    function exportExcel() {
+        const startDate = $("#startDate").val();
+        const endDate = $("#endDate").val();
+
+        toastr.info("Generating Excel report...");
+        window.location.href = `/Report/ScreeningDatabaseLogsExportReport?startDate=${startDate}&endDate=${endDate}`;
+    }
 </script>
-
-
-

@@ -157,8 +157,8 @@
                                 <button onclick="exportPDF()" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2">
                                     Export PDF
                                 </button>
-                                <button onclick="exportCSV()" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2">
-                                    Export CSV
+                                <button onclick="exportExcel()" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2">
+                                    Export Excel
                                 </button>
                             </div>
                         </div>
@@ -347,61 +347,14 @@
         function nextPage() { if (currentPage * pageSize < totalRecords) { currentPage++; loadData(); } }
         function changePageSize() { pageSize = parseInt($('#pageSize').val()); currentPage = 1; loadData(); }
 
-        function exportCSV() {
-            toastr.info("Exporting data as CSV...");
-            $("#loadingOverlay").removeClass("hidden");
+        function exportExcel() {
+            const startDate = formatDate($("#startDate").val());
+            const endDate = formatDate($("#endDate").val());
+            const source = $("#sourceFilter").val();
+            const searchValue = $('#searchInput').val() || '';
 
-            $.ajax({
-                url: '/Report/GetBlocklistUpdateList',
-                type: 'POST',
-                data: {
-                    draw: 1,
-                    start: 0,
-                    length: -1, // Request all records
-                    search: { value: $('#searchInput').val() },
-                    startDate: formatDate($("#startDate").val()),
-                    endDate: formatDate($("#endDate").val()),
-                    source: $("#sourceFilter").val()
-                },
-                success: function (resp) {
-                    if (!resp.data || resp.data.length === 0) {
-                        toastr.warning("No data found to export.");
-                        return;
-                    }
-
-                    let csv = [];
-                    let headers = ['Type', 'Name', 'Nationality', 'DOB', 'ID Number', 'Source', 'Created On'];
-                    csv.push(headers.join(','));
-
-                    resp.data.forEach(row => {
-                        const idNumber = row.iddetails && row.iddetails.length > 0 ? row.iddetails[0].idnumber : '-';
-                        const dob = row.doblist && row.doblist.length > 0 ? row.doblist[0].dob : '-';
-                        
-                        let r = [
-                            `"${row.category || ''}"`,
-                            `"${row.fullname || ''}"`,
-                            `"${row.nationality || ''}"`,
-                            `"${dob}"`,
-                            `"${idNumber}"`,
-                            `"${row.type || ''}"`,
-                            `"${row.createdon || ''}"`
-                        ];
-                        csv.push(r.join(','));
-                    });
-
-                    let csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
-                    let downloadLink = document.createElement('a');
-                    downloadLink.download = `Blocklist_Logs_${new Date().toISOString().split('T')[0]}.csv`;
-                    downloadLink.href = window.URL.createObjectURL(csvFile);
-                    downloadLink.style.display = 'none';
-                    document.body.appendChild(downloadLink);
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
-                },
-                complete: function() {
-                    $("#loadingOverlay").addClass("hidden");
-                }
-            });
+            toastr.info("Generating Excel report...");
+            window.location.href = `/Report/BlocklistUpdateLogsExportExcel?startDate=${startDate}&endDate=${endDate}&source=${source}&searchValue=${searchValue}`;
         }
 
         function exportPDF() {

@@ -32,8 +32,9 @@ using MySqlX.XDevAPI;
 using Newtonsoft.Json;
 using NToastNotify;
 using OfficeOpenXml;
-using OfficeOpenXml;
+using OfficeOpenXml.Style;
 using System;
+using System.Drawing;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
@@ -104,7 +105,6 @@ namespace AML.Web.Controllers.ClientCase
         [HttpGet("customer/case-excel-upload")]
 		public IActionResult UploadExcel(string type)
 		{
-			//CaseModel model = new CaseModel();
 			var clientId = _clientHandler.GetClientId();
             DocumentUploadModel _docUpload = new DocumentUploadModel();
 
@@ -964,15 +964,141 @@ namespace AML.Web.Controllers.ClientCase
             return View(model);
         }
 
+
+        [HttpGet("ClientCase/DataLoad_Excel")]
+        public async Task<IActionResult> DataLoad_Excel(string FromDate, string ToDate, string MatchType, string Customer, string searchValue, int? batchId)
+        {
+            ETLReport model = new ETLReport();
+            if (!string.IsNullOrEmpty(FromDate))
+            {
+                if (DateTime.TryParseExact(FromDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d1)) model.FromDate = d1;
+                else if (DateTime.TryParse(FromDate, out d1)) model.FromDate = d1;
+            }
+            if (!string.IsNullOrEmpty(ToDate))
+            {
+                if (DateTime.TryParseExact(ToDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d2)) model.ToDate = d2;
+                else if (DateTime.TryParse(ToDate, out d2)) model.ToDate = d2;
+            }
+
+            if (global::System.Enum.TryParse<MatchingType>(MatchType, out var m)) model.MatchType = m;
+            model.Customer = Customer;
+            model.ClientId = _clientHandler.GetClientId();
+
+            ETLDataLoadReportDTO dto = _mapper.Map<ETLDataLoadReportDTO>(model);
+            List<EtlBatchModel> dataList = _mapper.Map<List<EtlBatchModel>>(_customerCaseService.DataLoadReport(dto).Result);
+
+            if (!string.IsNullOrEmpty(searchValue))
+            {
+                searchValue = searchValue.ToLower();
+                dataList = dataList.Where(x => 
+                    (x.FileName != null && x.FileName.ToLower().Contains(searchValue)) ||
+                    (x.AddedUser != null && x.AddedUser.ToLower().Contains(searchValue))
+                ).ToList();
+            }
+
+            if (batchId.HasValue && batchId.Value > 0)
+            {
+                dataList = dataList.Where(x => x.BatchId == batchId.Value).ToList();
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                // Styling Helper
+                Action<ExcelRange> applyHeaderStyle = (range) => {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(global::System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                    range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Color.SetColor(global::System.Drawing.Color.White);
+                };
+
+                // Sheet 1: File Details
+                var sheet1 = package.Workbook.Worksheets.Add("File Details");
+                string[] summaryHeaders = { "File Name", "Uploaded on", "Uploaded By" };
+                for (int i = 0; i < summaryHeaders.Length; i++) sheet1.Cells[1, i + 1].Value = summaryHeaders[i];
+                applyHeaderStyle(sheet1.Cells[1, 1, 1, summaryHeaders.Length]);
+
+                int row = 2;
+                foreach (var item in dataList)
+                {
+                    sheet1.Cells[row, 1].Value = item.FileName;
+                    sheet1.Cells[row, 2].Value = item.AddedOn.ToString("dd MMM yyyy HH:mm");
+                    sheet1.Cells[row, 3].Value = item.AddedUser;
+                    row++;
+                }
+                if (row > 2) { sheet1.Cells[sheet1.Dimension.Address].AutoFitColumns(); sheet1.View.FreezePanes(2, 1); }
+
+                // Collect all customers for other sheets
+                List<CaseModel> allCustomers = new List<CaseModel>();
+                foreach (var batch in dataList)
+                {
+                    var customers = _mapper.Map<List<CaseModel>>(_customerCaseService.DataLoadReportByBatch(batch.BatchId, model.ClientId).Result);
+                    foreach (var c in customers) { c.CaseRefId = batch.BatchId.ToString(); allCustomers.Add(c); }
+                }
+
+                string[] detailHeaders = { "Batch ID", "Customer ID", "Name", "Nationality", "DOB", "Source", "Matched", "Status", "Created On" };
+                
+                // Sheet 2: Customer Details
+                var sheet2 = package.Workbook.Worksheets.Add("Customer Details");
+                for (int i = 0; i < detailHeaders.Length; i++) sheet2.Cells[1, i + 1].Value = detailHeaders[i];
+                applyHeaderStyle(sheet2.Cells[1, 1, 1, detailHeaders.Length]);
+
+                int detailRow = 2;
+                foreach (var cust in allCustomers)
+                {
+                    sheet2.Cells[detailRow, 1].Value = cust.CaseRefId;
+                    sheet2.Cells[detailRow, 2].Value = cust.CustomerId;
+                    sheet2.Cells[detailRow, 3].Value = cust.FirstName + " " + cust.LastName;
+                    sheet2.Cells[detailRow, 4].Value = cust.Nationality;
+                    sheet2.Cells[detailRow, 5].Value = (cust.DOB == "0" || string.IsNullOrEmpty(cust.DOB)) ? "-" : cust.DOB;
+                    sheet2.Cells[detailRow, 6].Value = cust.Source;
+                    sheet2.Cells[detailRow, 7].Value = cust.IsMatched == 1 ? "Yes" : "No";
+                    sheet2.Cells[detailRow, 8].Value = cust.CaseStatus;
+                    sheet2.Cells[detailRow, 9].Value = cust.CreatedOn;
+                    detailRow++;
+                }
+                if (detailRow > 2) { sheet2.Cells[sheet2.Dimension.Address].AutoFitColumns(); sheet2.View.FreezePanes(2, 1); }
+
+                // Sheet 3: UAEIEC
+                var sheet3 = package.Workbook.Worksheets.Add("UAEIEC");
+                for (int i = 0; i < detailHeaders.Length; i++) sheet3.Cells[1, i + 1].Value = detailHeaders[i];
+                applyHeaderStyle(sheet3.Cells[1, 1, 1, detailHeaders.Length]);
+                
+                int uaeRow = 2;
+                foreach (var cust in allCustomers.Where(x => !string.IsNullOrEmpty(x.Source) && x.Source.Contains("UAE IEC", StringComparison.OrdinalIgnoreCase)))
+                {
+                    sheet3.Cells[uaeRow, 1].Value = cust.CaseRefId;
+                    sheet3.Cells[uaeRow, 2].Value = cust.CustomerId;
+                    sheet3.Cells[uaeRow, 3].Value = cust.FirstName + " " + cust.LastName;
+                    sheet3.Cells[uaeRow, 4].Value = cust.Nationality;
+                    sheet3.Cells[uaeRow, 5].Value = (cust.DOB == "0" || string.IsNullOrEmpty(cust.DOB)) ? "-" : cust.DOB;
+                    sheet3.Cells[uaeRow, 6].Value = cust.Source;
+                    sheet3.Cells[uaeRow, 7].Value = cust.IsMatched == 1 ? "Yes" : "No";
+                    sheet3.Cells[uaeRow, 8].Value = cust.CaseStatus;
+                    sheet3.Cells[uaeRow, 9].Value = cust.CreatedOn;
+                    uaeRow++;
+                }
+                if (uaeRow > 2) { sheet3.Cells[sheet3.Dimension.Address].AutoFitColumns(); sheet3.View.FreezePanes(2, 1); }
+
+                var fileBytes = package.GetAsByteArray();
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"CustomerBulkUploadLogs_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+            }
+        }
+
         [HttpGet("ClientCase/DataLoad_PDF")]
-        public async Task<IActionResult> DataLoad_PDF(string FromDate, string ToDate, string MatchType, string Customer, string searchValue)
+        public async Task<IActionResult> DataLoad_PDF(string FromDate, string ToDate, string MatchType, string Customer, string searchValue, int? batchId)
         {
+            var clientId = _clientHandler.GetClientId();
+            
+            // If batchId is provided, redirect to the single batch generator (which is GeneratePdf or similar logic)
+            // But since both were named DataLoad_PDF, let's merge the logic.
+            
             ETLReport model = new ETLReport();
             model.FromDate = string.IsNullOrEmpty(FromDate) ? DateTime.Now : DateTime.Parse(FromDate);
             model.ToDate = string.IsNullOrEmpty(ToDate) ? DateTime.Now : DateTime.Parse(ToDate);
-            if (Enum.TryParse<MatchingType>(MatchType, out var m)) model.MatchType = m;
+            if (global::System.Enum.TryParse<MatchingType>(MatchType, out var m)) model.MatchType = m;
             model.Customer = Customer;
-            model.ClientId = _clientHandler.GetClientId();
+            model.ClientId = clientId;
 
             ETLDataLoadReportDTO dto = _mapper.Map<ETLDataLoadReportDTO>(model);
             List<EtlBatchModel> dataList = _mapper.Map<List<EtlBatchModel>>(_customerCaseService.DataLoadReport(dto).Result);
@@ -986,40 +1112,77 @@ namespace AML.Web.Controllers.ClientCase
                 ).ToList();
             }
 
-            return View("DataLoad_PDF", dataList);
-        }
-
-        [HttpGet("ClientCase/DataLoad_CSV")]
-        public async Task<IActionResult> DataLoad_CSV(string FromDate, string ToDate, string MatchType, string Customer, string searchValue)
-        {
-            ETLReport model = new ETLReport();
-            model.FromDate = string.IsNullOrEmpty(FromDate) ? DateTime.Now : DateTime.Parse(FromDate);
-            model.ToDate = string.IsNullOrEmpty(ToDate) ? DateTime.Now : DateTime.Parse(ToDate);
-            if (Enum.TryParse<MatchingType>(MatchType, out var m)) model.MatchType = m;
-            model.Customer = Customer;
-            model.ClientId = _clientHandler.GetClientId();
-
-            ETLDataLoadReportDTO dto = _mapper.Map<ETLDataLoadReportDTO>(model);
-            List<EtlBatchModel> dataList = _mapper.Map<List<EtlBatchModel>>(_customerCaseService.DataLoadReport(dto).Result);
-
-            if (!string.IsNullOrEmpty(searchValue))
+            // If we have a batchId, we only process that specific batch
+            if (batchId.HasValue && batchId.Value > 0)
             {
-                searchValue = searchValue.ToLower();
-                dataList = dataList.Where(x => 
-                    (x.FileName != null && x.FileName.ToLower().Contains(searchValue)) ||
-                    (x.AddedUser != null && x.AddedUser.ToLower().Contains(searchValue))
-                ).ToList();
+                dataList = dataList.Where(x => x.BatchId == batchId.Value).ToList();
             }
 
-            var builder = new System.Text.StringBuilder();
-            builder.AppendLine("File Name,Uploaded on,Uploaded By");
-            foreach (var item in dataList)
+            List<CaseModel> allCustomers = new List<CaseModel>();
+            foreach (var batch in dataList)
             {
-                builder.AppendLine($"\"{item.FileName}\",\"{item.AddedOn:dd MMM yyyy HH:mm}\",\"{item.AddedUser}\"");
+                var customers = _mapper.Map<List<CaseModel>>(_customerCaseService.DataLoadReportByBatch(batch.BatchId, clientId).Result);
+                foreach (var c in customers) { c.CaseRefId = batch.BatchId.ToString(); allCustomers.Add(c); }
             }
 
-            return File(System.Text.Encoding.UTF8.GetBytes(builder.ToString()), "text/csv", $"CustomerBulkUploadLogs_{DateTime.Now:yyyyMMddHHmmss}.csv");
+            var clientData = _customerCaseService.GetClientDetailsByID(clientId);
+            string companyName = clientData?.ClientName ?? "AML Report";
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                iTextSharp.text.Document document = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4.Rotate(), 15, 15, 15, 15);
+                iTextSharp.text.pdf.PdfWriter writer = iTextSharp.text.pdf.PdfWriter.GetInstance(document, ms);
+                document.Open();
+
+                // Logo/Header
+                iTextSharp.text.pdf.PdfPTable logoTable = new iTextSharp.text.pdf.PdfPTable(1);
+                logoTable.WidthPercentage = 100;
+                iTextSharp.text.pdf.PdfPCell cell = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(companyName, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 18, iTextSharp.text.Font.BOLD)));
+                cell.Border = 0; cell.HorizontalAlignment = 1; logoTable.AddCell(cell);
+                document.Add(logoTable);
+                document.Add(new iTextSharp.text.Paragraph("\n"));
+
+                iTextSharp.text.pdf.PdfPTable infoTable = new iTextSharp.text.pdf.PdfPTable(1);
+                infoTable.WidthPercentage = 100;
+                string reportTitle = batchId.HasValue ? $"Report: Customer List - Batch {batchId.Value}" : "Report: Bulk Upload Customer List";
+                infoTable.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(reportTitle)) { Border = 0 });
+                infoTable.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase($"Date Range: {model.FromDate:dd/MM/yyyy} to {model.ToDate:dd/MM/yyyy}")) { Border = 0 });
+                document.Add(infoTable);
+                document.Add(new iTextSharp.text.Paragraph("\n"));
+
+                iTextSharp.text.pdf.PdfPTable table = new iTextSharp.text.pdf.PdfPTable(9);
+                table.WidthPercentage = 100;
+                float[] widths = new float[] { 0.5f, 1f, 2f, 1f, 1f, 1.5f, 0.5f, 1f, 1f };
+                table.SetWidths(widths);
+
+                string[] headers = { "#", "ID", "Name", "Nationality", "DOB", "Source", "Hit", "Status", "Date" };
+                foreach (var h in headers)
+                {
+                    var hCell = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(h, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 10, iTextSharp.text.Font.BOLD)));
+                    hCell.BackgroundColor = new iTextSharp.text.BaseColor(233, 239, 253);
+                    hCell.HorizontalAlignment = iTextSharp.text.Element.ALIGN_CENTER; table.AddCell(hCell);
+                }
+
+                int count = 1;
+                foreach (var c in allCustomers)
+                {
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(count++.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))) { HorizontalAlignment = iTextSharp.text.Element.ALIGN_CENTER });
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.CustomerId ?? "", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase((c.FirstName ?? "") + " " + (c.LastName ?? ""), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.Nationality ?? "", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.DOB ?? "", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.Source ?? "", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.IsMatched == 1 ? "Y" : "N", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))) { HorizontalAlignment = iTextSharp.text.Element.ALIGN_CENTER });
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.Status.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(c.CreatedOn.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                }
+
+                document.Add(table);
+                document.Close();
+                return File(ms.ToArray(), "application/pdf", $"CustomerBulkUploadLogs_{DateTime.Now:yyyyMMddHHmmss}.pdf");
+            }
         }
+
         [HttpPost]
         public async Task<IActionResult> GeneratePdf(ETLReport model, int BatchID)
         {
@@ -1028,223 +1191,97 @@ namespace AML.Web.Controllers.ClientCase
             ETLReportDownloadModel downloadModel = new ETLReportDownloadModel();
             downloadModel.Data = response;
             downloadModel.TotalRows = response.Count;
-            string body = string.Empty;
             var clientData = _customerCaseService.GetClientDetailsByID(clientId);
             var logos = "wwwroot/img/" + clientData.DocumentFileName;
             var companyName = clientData.ClientName;
-            string customer = "";
-            if (model.Customer != null)
-            {
-                customer = model.Customer;
-            }
-            else
-            {
-                customer = "NA";
-            }
+            
             using (System.IO.MemoryStream memoryStream = new System.IO.MemoryStream())
             {
-                Document document = new Document(PageSize.A4, 15, 15, 15, 15);
-                PdfWriter writer = PdfWriter.GetInstance(document, memoryStream);
+                iTextSharp.text.Document document = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4, 15, 15, 15, 15);
+                iTextSharp.text.pdf.PdfWriter writer = iTextSharp.text.pdf.PdfWriter.GetInstance(document, memoryStream);
                 document.Open();
 
-                document.Add(new Paragraph("\n"));
+                document.Add(new iTextSharp.text.Paragraph("\n"));
 
-                PdfPTable logo = new PdfPTable(2);
-                logo.TotalWidth = 550f;
+                iTextSharp.text.pdf.PdfPTable logoTbl = new iTextSharp.text.pdf.PdfPTable(2);
+                logoTbl.TotalWidth = 550f;
                 float[] logowidth = new float[] { 3f, 0.5f };
-                logo.SetWidths(logowidth);
-                logo.LockedWidth = true;
-                logo.HorizontalAlignment = 1;//0=Left, 1=Centre, 2=Right
-                logo.DefaultCell.VerticalAlignment = 1;
-                logo.DefaultCell.HorizontalAlignment = 1;
-                logo.SpacingBefore = 20f;
-                logo.SpacingAfter = 30f;
-                logo.DefaultCell.Border = 0;
-                PdfPCell compname = new PdfPCell(new Phrase(companyName.ToString(), new Font(Font.FontFamily.TIMES_ROMAN, 17, Font.BOLD)));
+                logoTbl.SetWidths(logowidth);
+                logoTbl.LockedWidth = true;
+                logoTbl.HorizontalAlignment = 1;
+                logoTbl.DefaultCell.VerticalAlignment = 1;
+                logoTbl.DefaultCell.HorizontalAlignment = 1;
+                logoTbl.SpacingBefore = 20f;
+                logoTbl.SpacingAfter = 30f;
+                logoTbl.DefaultCell.Border = 0;
+                
+                iTextSharp.text.pdf.PdfPCell compname = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(companyName.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 17, iTextSharp.text.Font.BOLD)));
                 compname.FixedHeight = 40f;
                 compname.VerticalAlignment = 1;
                 compname.HorizontalAlignment = 1;
                 compname.Border = 0;
-                logo.AddCell(compname);
-                string url = logos;
-                Image tif = Image.GetInstance(url);
-                tif.ScalePercent(1f);
-                tif.SpacingBefore = 20f;
-                logo.AddCell(tif);
-                document.Add(logo);
+                logoTbl.AddCell(compname);
+                
+                if (System.IO.File.Exists(logos)) {
+                    iTextSharp.text.Image tif = iTextSharp.text.Image.GetInstance(logos);
+                    tif.ScalePercent(1f);
+                    tif.SpacingBefore = 20f;
+                    logoTbl.AddCell(tif);
+                } else {
+                    logoTbl.AddCell("");
+                }
+                document.Add(logoTbl);
 
-
-                PdfPTable header = new PdfPTable(1);
-                header.TotalWidth = 550f;
-                header.LockedWidth = true;
-                header.HorizontalAlignment = Element.ALIGN_LEFT;//0=Left, 1=Centre, 2=Right
+                iTextSharp.text.pdf.PdfPTable header = new iTextSharp.text.pdf.PdfPTable(1);
+                header.WidthPercentage = 100;
                 header.SpacingAfter = 30f;
                 header.DefaultCell.Border = 0;
-                PdfPCell hd = new PdfPCell(new Phrase("Report                :   Customer Listing"));
-                PdfPCell _hd = new PdfPCell(new Phrase("\n"));
-                PdfPCell dateRange = new PdfPCell(new Phrase("Date Range        :   " + model.FromDate.ToString("dd/MM/yyyy") + "  to  " + model.ToDate.ToString("dd/MM/yyyy")));
-                PdfPCell _dateRange = new PdfPCell(new Phrase("\n"));
-                PdfPCell caseStat = new PdfPCell(new Phrase("Match Type        :   " + model.MatchType));
-                PdfPCell _caseStat = new PdfPCell(new Phrase("\n"));
-                PdfPCell createdBy = new PdfPCell(new Phrase("Created by         :   " + companyName));
-                PdfPCell _createdBy = new PdfPCell(new Phrase("\n"));
-                PdfPCell filters = new PdfPCell(new Phrase("Customer            :   " + model.Customer));
-                PdfPCell _filters = new PdfPCell(new Phrase("\n"));
-                hd.Border = 0;
-                dateRange.Border = 0;
-                createdBy.Border = 0;
-                caseStat.Border = 0;
-                _hd.Border = 0;
-                _dateRange.Border = 0;
-                _createdBy.Border = 0;
-                _caseStat.Border = 0;
-                header.AddCell(hd);
-                header.AddCell(_hd);
-                header.AddCell(dateRange);
-                header.AddCell(_dateRange);
-                header.AddCell(caseStat);
-                header.AddCell(_caseStat);
-                _filters.Border = 0;
-                filters.Border = 0;
-                header.AddCell(filters);
-                header.AddCell(_filters);
-                header.AddCell(createdBy);
-                header.AddCell(_createdBy);
                 
+                header.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase("Report: Customer Listing")) { Border = 0 });
+                header.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase($"Match Type: {model.MatchType}")) { Border = 0 });
+                header.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase($"Created By: {companyName}")) { Border = 0 });
                 document.Add(header);
 
-                PdfPTable table = new PdfPTable(9);
-                table.TotalWidth = 550f;
-                table.LockedWidth = true;
+                iTextSharp.text.pdf.PdfPTable table = new iTextSharp.text.pdf.PdfPTable(9);
+                table.WidthPercentage = 100;
                 float[] widths = new float[] { 0.5f, 1f, 1f, 2f, 1.5f, 1f, 1f, 1f, 1f };
                 table.SetWidths(widths);
-                table.HorizontalAlignment = 1;//0=Left, 1=Centre, 2=Right
-                table.SpacingAfter = 30f;
-                PdfPCell cell1 = new PdfPCell(new Phrase("#", new Font(Font.FontFamily.TIMES_ROMAN, 11, Font.NORMAL)));
-                cell1.HorizontalAlignment = 1;
-                cell1.VerticalAlignment = 1;
-                cell1.BackgroundColor = BaseColor.LIGHT_GRAY;
-                cell1.FixedHeight = 30f;
-                table.AddCell(cell1);
-                
-                PdfPCell cell2 = new PdfPCell(new Phrase("CUSTOMER ID", new Font(Font.FontFamily.TIMES_ROMAN, 11, Font.NORMAL)));
-                cell2.HorizontalAlignment = 1;
-                cell2.VerticalAlignment = 1;
-                cell2.BackgroundColor = BaseColor.LIGHT_GRAY;
-                cell2.FixedHeight = 30f;
-                table.AddCell(cell2);
-                PdfPCell cell3 = new PdfPCell(new Phrase("CUSTOMER NAME", new Font(Font.FontFamily.TIMES_ROMAN, 11, Font.NORMAL)));
-                cell3.HorizontalAlignment = 1;
-                cell3.VerticalAlignment = 1;
-                cell3.BackgroundColor = BaseColor.LIGHT_GRAY;
-                cell3.FixedHeight = 30f;
-                table.AddCell(cell3);
-                PdfPCell cell4 = new PdfPCell(new Phrase("NATIONALITY", new Font(Font.FontFamily.TIMES_ROMAN, 11, Font.NORMAL)));
-                cell4.HorizontalAlignment = 1;
-                cell4.VerticalAlignment = 1;
-                cell4.BackgroundColor = BaseColor.LIGHT_GRAY;
-                cell4.FixedHeight = 30f;
-                table.AddCell(cell4);
-                PdfPCell cell5 = new PdfPCell(new Phrase("DOB", new Font(Font.FontFamily.TIMES_ROMAN, 11, Font.NORMAL)));
-                cell5.HorizontalAlignment = 1;
-                cell5.VerticalAlignment = 1;
-                cell5.BackgroundColor = BaseColor.LIGHT_GRAY;
-                cell5.FixedHeight = 30f;
-                table.AddCell(cell5);
-                PdfPCell cell6 = new PdfPCell(new Phrase("MATCHED", new Font(Font.FontFamily.TIMES_ROMAN, 11, Font.NORMAL)));
-                cell6.HorizontalAlignment = 1;
-                cell6.VerticalAlignment = 1;
-                cell6.BackgroundColor = BaseColor.LIGHT_GRAY;
-                cell6.FixedHeight = 30f;
-                table.AddCell(cell6);
-                PdfPCell cell7 = new PdfPCell(new Phrase("SOURCE", new Font(Font.FontFamily.TIMES_ROMAN, 11, Font.NORMAL)));
-                cell7.HorizontalAlignment = 1;
-                cell7.VerticalAlignment = 1;
-                cell7.BackgroundColor = BaseColor.LIGHT_GRAY;
-                cell7.FixedHeight = 30f;
-                table.AddCell(cell7);
-                PdfPCell cell8 = new PdfPCell(new Phrase("UID", new Font(Font.FontFamily.TIMES_ROMAN, 11, Font.NORMAL)));
-                cell8.HorizontalAlignment = 1;
-                cell8.VerticalAlignment = 1;
-                cell8.BackgroundColor = BaseColor.LIGHT_GRAY;
-                cell8.FixedHeight = 30f;
-                table.AddCell(cell8);
-                PdfPCell cell9 = new PdfPCell(new Phrase("DATE", new Font(Font.FontFamily.TIMES_ROMAN, 11, Font.NORMAL)));
-                cell9.HorizontalAlignment = 1;
-                cell9.VerticalAlignment = 1;
-                cell9.BackgroundColor = BaseColor.LIGHT_GRAY;
-                cell9.FixedHeight = 30f;
-                table.AddCell(cell9);
+
+                string[] headerText = { "#", "CUSTOMER ID", "CUSTOMER NAME", "NATIONALITY", "DOB", "MATCHED", "SOURCE", "UID", "DATE" };
+                foreach (var h in headerText)
+                {
+                    iTextSharp.text.pdf.PdfPCell hCell = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(h, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 11, iTextSharp.text.Font.BOLD)));
+                    hCell.BackgroundColor = iTextSharp.text.BaseColor.LIGHT_GRAY;
+                    hCell.HorizontalAlignment = 1;
+                    table.AddCell(hCell);
+                }
+
                 for (int i = 0; i < downloadModel.Data.Count; i++)
                 {
-                    table.AddCell(new Phrase((i + 1).ToString(), new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-                    table.AddCell(new Phrase(downloadModel.Data[i].CustomerId, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-                    table.AddCell(new Phrase(downloadModel.Data[i].FirstName + " " + downloadModel.Data[i].MiddleName + " " + downloadModel.Data[i].LastName, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-                    table.AddCell(new Phrase(downloadModel.Data[i].Nationality, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-                    table.AddCell(new Phrase(downloadModel.Data[i].DOB, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-
-                    if (downloadModel.Data[i].IsMatched == 1)
-                    {
-                        table.AddCell(new Phrase("True", new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-                    }
-                    else
-                    {
-                        table.AddCell(new Phrase("False", new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-                    }
-                    table.AddCell(new Phrase(downloadModel.Data[i].Source, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-                    table.AddCell(new Phrase(downloadModel.Data[i].UID, new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-                    table.AddCell(new Phrase(downloadModel.Data[i].CreatedOn.ToString(), new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL)));
-
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase((i + 1).ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(downloadModel.Data[i].CustomerId, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(downloadModel.Data[i].FirstName + " " + downloadModel.Data[i].LastName, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(downloadModel.Data[i].Nationality, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(downloadModel.Data[i].DOB, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(downloadModel.Data[i].IsMatched == 1 ? "True" : "False", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(downloadModel.Data[i].Source, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(downloadModel.Data[i].UID, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
+                    table.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(downloadModel.Data[i].CreatedOn.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))));
                 }
+
                 document.Add(table);
+                document.Add(new iTextSharp.text.Paragraph("\n"));
+                document.Add(new iTextSharp.text.Chunk(new iTextSharp.text.pdf.draw.LineSeparator(1f, 100f, iTextSharp.text.BaseColor.BLACK, iTextSharp.text.Element.ALIGN_LEFT, 1)));
 
-
-
-
-                document.Add(new Paragraph("\n"));
-                iTextSharp.text.pdf.draw.LineSeparator line1 = new iTextSharp.text.pdf.draw.LineSeparator(1f, 100f, BaseColor.BLACK, Element.ALIGN_LEFT, 1);
-                document.Add(new Chunk(line1));
-
-                PdfPTable footer2 = new PdfPTable(1);
-                footer2.TotalWidth = 550f;
-                footer2.LockedWidth = true;
-                footer2.DefaultCell.Border = 0;
-                footer2.AddCell("Computer generated report; hence no signature is required. ");
-                footer2.AddCell("Date of Extraction :   " + DateTime.Now.ToString());
-                document.Add(footer2);
-
-                PdfContentByte content = writer.DirectContent;
-                Rectangle rectangle = new Rectangle(document.PageSize);
-                rectangle.Left += document.LeftMargin;
-                rectangle.Right -= document.RightMargin;
-                rectangle.Top -= document.TopMargin;
-                rectangle.Bottom += document.BottomMargin;
-                content.SetColorStroke(GrayColor.BLACK);
-                content.Rectangle(rectangle.Left, rectangle.Bottom, rectangle.Width, rectangle.Height);
-                content.Stroke();
-
+                iTextSharp.text.pdf.PdfPTable footer = new iTextSharp.text.pdf.PdfPTable(1);
+                footer.WidthPercentage = 100;
+                footer.DefaultCell.Border = 0;
+                footer.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase("Computer generated report; hence no signature is required. ", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))) { Border = 0 });
+                footer.AddCell(new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase("Date of Extraction : " + DateTime.Now.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.TIMES_ROMAN, 9))) { Border = 0 });
+                document.Add(footer);
 
                 document.Close();
-
-
-                byte[] data = memoryStream.ToArray();
-
-
-                var result = data.ToString();
-
-
-
-                List<ETLReport> list = new List<ETLReport>();
-
-                var file = _exportService.ExportDataWithHeader<ETLReport>(list, result, (int)OperationType.PDF, "ETL_Dataload_" + DateTime.Now.Ticks, data);
-                if (file != null)
-                {
-                    return file;
-                }
-                else
-                {
-                    return View("DataLoad");
-                }
+                return File(memoryStream.ToArray(), "application/pdf", $"CustomerReport_{BatchID}.pdf");
             }
         }
 
@@ -1393,12 +1430,9 @@ namespace AML.Web.Controllers.ClientCase
         public ActionResult DownloadCustomerUploadSample(string type)
         {
             var clientId = _clientHandler.GetClientId();
+            string culture = "en";
 
-            var Nationalities = new SelectList(
-                _mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)),
-                "Name",
-                "Name");
-
+            var Nationalities = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)), "Name", "Name");
             var NationalitiesList = Nationalities.Select(x => x.Value).ToList();
 
             string filePath;
@@ -1406,18 +1440,12 @@ namespace AML.Web.Controllers.ClientCase
 
             if (type == "I")
             {
-                filePath = Path.Combine(_env.ContentRootPath,
-                                        "Files",
-                                        "Data-Customer Bulk upload Sample.xlsx");
-
+                filePath = Path.Combine(_env.ContentRootPath, "Files", "Data-Customer Bulk upload Sample.xlsx");
                 fileName = "Customer_Bulk_Upload_Sample.xlsx";
             }
             else
             {
-                filePath = Path.Combine(_env.ContentRootPath,
-                                        "Files",
-                                        "Data-Corporate Bulk upload Sample.xlsx");
-
+                filePath = Path.Combine(_env.ContentRootPath, "Files", "Data-Corporate Bulk upload Sample.xlsx");
                 fileName = "Corporate_Bulk_Upload_Sample.xlsx";
             }
 
@@ -1426,102 +1454,51 @@ namespace AML.Web.Controllers.ClientCase
 
             using (var package = new ExcelPackage(new FileInfo(filePath)))
             {
-                var worksheet = package.Workbook.Worksheets.First();
+                var worksheet = package.Workbook.Worksheets[0];
 
-                // ---------- COMMON DROPDOWNS ----------
-                AddDropdown(package, worksheet, "C2:C51", NationalitiesList, "DropdownData", 1);
-
-                var productTypes = new SelectList(
-                    _mapper.Map<List<ProductType>>(
-                        _kycService.GetAllProduct(culture, type, clientId)),
-                    "ProductName",
-                    "ProductName");
-
+                var productTypes = new SelectList(_mapper.Map<List<ProductType>>(_kycService.GetAllProduct(culture, type, clientId)), "ProductName", "ProductName");
                 var productTypeList = productTypes.Select(x => x.Value).ToList();
-
-                var deliveryChannels = new SelectList(
-                    _mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(
-                        _kycService.GetAllDeliveryChannel(culture, type, clientId)),
-                    "DeliveryChannelName",
-                    "DeliveryChannelName");
-
+                var deliveryChannels = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.GetAllDeliveryChannel(culture, type, clientId)), "DeliveryChannelName", "DeliveryChannelName");
                 var deliveryChannelsList = deliveryChannels.Select(x => x.Value).ToList();
+                var modeofpayment = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.get_all_mode_of_payment(culture, clientId, type)), "DeliveryChannelName", "DeliveryChannelName");
+                var modeofpaymentList = modeofpayment.Select(x => x.Value).ToList();
 
-                var modeOfPayment = new SelectList(
-                    _mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(
-                        _kycService.get_all_mode_of_payment(culture,clientId,type)),
-                    "DeliveryChannelName",
-                    "DeliveryChannelName");
-
-                var modeOfPaymentList = modeOfPayment.Select(x => x.Value).ToList();
-
-
-                // ---------- INDIVIDUAL ----------
                 if (type == "I")
                 {
-                    var residentStatuses = new SelectList(
-                        _mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(
-                            _kycService.get_all_residence_status(culture, clientId, type)),
-                        "DeliveryChannelName",
-                        "DeliveryChannelName");
-
+                    var residentStatuses = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.get_all_residence_status(culture, clientId, type)), "DeliveryChannelName", "DeliveryChannelName");
                     var residentStatusesList = residentStatuses.Select(x => x.Value).ToList();
-
-                    var profession = new SelectList(
-                        _mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(
-                            _kycService.GetProfessionalStatus(culture, type, clientId)),
-                        "DeliveryChannelName",
-                        "DeliveryChannelName");
-
+                    var profession = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.GetProfessionalStatus(culture, type, clientId)), "DeliveryChannelName", "DeliveryChannelName");
                     var professionList = profession.Select(x => x.Value).ToList();
 
-                    Console.WriteLine("Profession count: " + professionList.Count);
-                    Console.WriteLine("Resident count: " + residentStatusesList.Count);
-                    Console.WriteLine("Product count: " + productTypeList.Count);
-                    Console.WriteLine("Delivery count: " + deliveryChannelsList.Count);
-                    Console.WriteLine("Mode Of  count: " + modeOfPaymentList.Count);
-
+                    AddDropdown(package, worksheet, "C2:C51", NationalitiesList, "DropdownData", 1);
                     AddDropdown(package, worksheet, "I2:I51", professionList, "DropdownData", 2);
-                    AddDropdown(package, worksheet, "J2:J51", NationalitiesList, "DropdownData", 3);
+                    AddDropdown(package, worksheet, "J2:J51", residentStatusesList, "DropdownData", 3);
                     AddDropdown(package, worksheet, "K2:K51", productTypeList, "DropdownData", 4);
                     AddDropdown(package, worksheet, "L2:L51", deliveryChannelsList, "DropdownData", 5);
-                    AddDropdown(package, worksheet, "M2:M51", modeOfPaymentList, "DropdownData", 6);
+                    AddDropdown(package, worksheet, "M2:M51", modeofpaymentList, "DropdownData", 6);
                 }
                 else
                 {
-                    // ---------- CORPORATE ----------
-                    var legalStatus = new SelectList(
-                        _mapper.Map<List<LegalStatusModel>>(
-                            _kycService.GetLegalStatus(culture, type, clientId)),
-                        "LegalStatus",
-                        "LegalStatus");
+                    var legalstatus = new SelectList(_mapper.Map<List<LegalStatusModel>>(_kycService.GetLegalStatus(culture, type, clientId)), "LegalStatus", "LegalStatus");
+                    var legalstatusList = legalstatus.Select(x => x.Value).ToList();
+                    var businesstype = new SelectList(_mapper.Map<List<BusinessNature>>(_kycService.GetBusinessType(culture, type, clientId)), "BusinessName", "BusinessName");
+                    var businesstypeList = businesstype.Select(x => x.Value).ToList();
 
-                    var legalStatusList = legalStatus.Select(x => x.Value).ToList();
-
-                    var businessType = new SelectList(
-                        _mapper.Map<List<BusinessNature>>(
-                            _kycService.GetBusinessType(culture, type, clientId)),
-                        "BusinessName",
-                        "BusinessName");
-
-                    var businessTypeList = businessType.Select(x => x.Value).ToList();
-
-                    AddDropdown(package, worksheet, "E2:E51", legalStatusList, "DropdownData", 2);
-                    AddDropdown(package, worksheet, "F2:F51", businessTypeList, "DropdownData", 3);
+                    AddDropdown(package, worksheet, "C2:C51", NationalitiesList, "DropdownData", 1);
+                    AddDropdown(package, worksheet, "E2:E51", legalstatusList, "DropdownData", 2);
+                    AddDropdown(package, worksheet, "F2:F51", businesstypeList, "DropdownData", 3);
                     AddDropdown(package, worksheet, "G2:G51", productTypeList, "DropdownData", 4);
                     AddDropdown(package, worksheet, "H2:H51", deliveryChannelsList, "DropdownData", 5);
-                    AddDropdown(package, worksheet, "I2:I51", modeOfPaymentList, "DropdownData", 6);
+                    AddDropdown(package, worksheet, "I2:I51", modeofpaymentList, "DropdownData", 6);
                 }
 
                 var stream = new MemoryStream();
                 package.SaveAs(stream);
                 stream.Position = 0;
-
-                return File(stream,
-                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                     fileName);
+                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
         }
+
         private void AddDropdown(ExcelPackage package, ExcelWorksheet worksheet,
     string cellRange, List<string> values, string hiddenSheetName, int hiddenColumn)
         {

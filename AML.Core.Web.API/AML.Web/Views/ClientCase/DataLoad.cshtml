@@ -11,8 +11,7 @@
 @model AML.ViewModel.ViewModels.CustomerCase.ETLReport
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -46,9 +45,6 @@
 </head>
 
 <body class="bg-slate-50 min-h-screen text-slate-900">
-    <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
-        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
-    </div>
 
     <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
         <div class="flex items-center gap-2 text-slate-500 text-xs mb-2">
@@ -124,7 +120,7 @@
                                 Export PDF
                             </button>
                             <button type="button" onclick="ExportList(false);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                Export CSV
+                                Export Excel
                             </button>
                         </div>
                     </div>
@@ -525,6 +521,7 @@
         const matchType = $('#MatchType').val();
         const customer = $('#Customer').val();
         const searchValue = $('#searchInput').val() || '';
+        const batchId = $('#hdnBatchId').val() || '';
 
         if (isPDF) {
             showLoader();
@@ -532,7 +529,7 @@
             $('#pdfExportFrame').attr('src', url);
         } else {
             showLoader();
-            const url = `/ClientCase/DataLoad_CSV?FromDate=${fromDate}&ToDate=${toDate}&MatchType=${matchType}&Customer=${customer}&searchValue=${searchValue}`;
+            const url = `/ClientCase/DataLoad_Excel?FromDate=${fromDate}&ToDate=${toDate}&MatchType=${matchType}&Customer=${customer}&searchValue=${searchValue}`;
             window.location.href = url;
             setTimeout(() => $('#loader').addClass('hidden'), 2000);
         }

@@ -27,15 +27,19 @@ using AutoMapper;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using NToastNotify;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
+using System.IO;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
+using System.Drawing;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Linq;
 
 namespace AML.Web.Controllers.AdminManagement
 {
@@ -252,9 +256,7 @@ namespace AML.Web.Controllers.AdminManagement
             ViewBag.totalcount = Convert.ToInt32(token.user.individualCount) + Convert.ToInt32(token.user.corporateCount);
             ViewBag.individualCount = Convert.ToInt32(token.user.individualCount);
             ViewBag.corporateCount =  Convert.ToInt32(token.user.corporateCount);
-            ViewBag.contractExpiryDate = token.user.contractExpiryDate != null
-    ? Convert.ToDateTime(token.user.contractExpiryDate)
-    : (DateTime?)null;
+            ViewBag.contractExpiryDate = token.user.contractExpiryDate;
             ViewBag.hundredemail =
      string.IsNullOrEmpty(token.user?.hundredemail) || token.user.hundredemail == "0"
      ? "--"
@@ -316,5 +318,236 @@ namespace AML.Web.Controllers.AdminManagement
             if (sortProperty == null) return input;
             return dir == "asc" ? input.OrderBy(p => sortProperty.GetValue(p, null)).ToList() : input.OrderByDescending(p => sortProperty.GetValue(p, null)).ToList();
         }
+        [HttpGet]
+        public async Task<IActionResult> AdminManagement_PDF(string searchValue, string subStatus, string isBlocked)
+        {
+            try
+            {
+                TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+                string url = baseC6URL + "users";
+                var apiUsers = await _clientHandler.GetAsync(token, url);
+                var users = JsonConvert.DeserializeObject<List<dynamic>>(apiUsers);
+
+                var userUsageDict = ((IEnumerable<dynamic>)users)
+                    .GroupBy(x => ((string)x.username).ToLower())
+                    .ToDictionary(
+                        g => g.Key,
+                        g => (int)g.First().individualUsageCount + (int)g.First().corporateUsageCount
+                    );
+
+                var result = _customerCaseService.GetAllAdminClients();
+
+                // Apply Filters
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    searchValue = searchValue.ToLower();
+                    result = result.Where(x => 
+                        (x.ClientName != null && x.ClientName.ToLower().Contains(searchValue)) ||
+                        (x.Prefix != null && x.Prefix.ToLower().Contains(searchValue)) ||
+                        (x.ClientId.ToString().Contains(searchValue))
+                    ).ToList();
+                }
+
+                if (!string.IsNullOrEmpty(subStatus))
+                {
+                    var today = DateTime.Today;
+                    if (subStatus == "active")
+                        result = result.Where(x => x.ApplicationEndDate >= today).ToList();
+                    else if (subStatus == "expired")
+                        result = result.Where(x => x.ApplicationEndDate < today).ToList();
+                }
+
+                if (!string.IsNullOrEmpty(isBlocked))
+                {
+                    int blockedStatus = int.Parse(isBlocked);
+                    result = result.Where(x => x.isActive == blockedStatus).ToList();
+                }
+
+                var clients = result.Select(dto =>
+                {
+                    int usageCount = 0;
+                    if (!string.IsNullOrEmpty(dto.C6Username) &&
+                        userUsageDict.TryGetValue(dto.C6Username.ToLower(), out int apiUsage))
+                    {
+                        usageCount = apiUsage;
+                    }
+
+                    return new ClientMaster
+                    {
+                        ClientId = dto.ClientId,
+                        ClientName = dto.ClientName,
+                        Prefix = dto.Prefix,
+                        C6Username = dto.C6Username,
+                        ApplicationStartDate = dto.ApplicationStartDate,
+                        ApplicationEndDate = dto.ApplicationEndDate,
+                        SearchCount = dto.SearchCount,
+                        TotalUsageCount = usageCount,
+                        UserCount = dto.UserCount,
+                        isActive = dto.isActive
+                    };
+                }).ToList();
+
+                return View("AdminManagement_PDF", clients);
+            }
+            catch
+            {
+                var result = _customerCaseService.GetAllAdminClients();
+
+                // Apply Filters in Catch block as well
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    searchValue = searchValue.ToLower();
+                    result = result.Where(x => 
+                        (x.ClientName != null && x.ClientName.ToLower().Contains(searchValue)) ||
+                        (x.Prefix != null && x.Prefix.ToLower().Contains(searchValue)) ||
+                        (x.ClientId.ToString().Contains(searchValue))
+                    ).ToList();
+                }
+
+                if (!string.IsNullOrEmpty(subStatus))
+                {
+                    var today = DateTime.Today;
+                    if (subStatus == "active")
+                        result = result.Where(x => x.ApplicationEndDate >= today).ToList();
+                    else if (subStatus == "expired")
+                        result = result.Where(x => x.ApplicationEndDate < today).ToList();
+                }
+
+                if (!string.IsNullOrEmpty(isBlocked))
+                {
+                    int blockedStatus = int.Parse(isBlocked);
+                    result = result.Where(x => x.isActive == blockedStatus).ToList();
+                }
+
+                var clients = result.Select(dto => new ClientMaster
+                {
+                    ClientId = dto.ClientId,
+                    ClientName = dto.ClientName,
+                    Prefix = dto.Prefix,
+                    C6Username = dto.C6Username,
+                    ApplicationStartDate = dto.ApplicationStartDate,
+                    ApplicationEndDate = dto.ApplicationEndDate,
+                    SearchCount = dto.SearchCount,
+                    UserCount = dto.UserCount,
+                    isActive = dto.isActive
+                }).ToList();
+                return View("AdminManagement_PDF", clients);
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AdminManagement_Excel(string searchValue, string subStatus, string isBlocked)
+        {
+            try
+            {
+                TokenRS token = AMLUtility.CreateC6Token(ScreeningService.C6AUTHENTICATION, baseC6URL, _c6Username);
+                string url = baseC6URL + "users";
+                var apiUsers = await _clientHandler.GetAsync(token, url);
+                var users = JsonConvert.DeserializeObject<List<dynamic>>(apiUsers);
+
+                var userUsageDict = ((IEnumerable<dynamic>)users)
+                    .GroupBy(x => ((string)x.username).ToLower())
+                    .ToDictionary(
+                        g => g.Key,
+                        g => (int)g.First().individualUsageCount + (int)g.First().corporateUsageCount
+                    );
+
+                var result = _customerCaseService.GetAllAdminClients();
+
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    searchValue = searchValue.ToLower();
+                    result = result.Where(x =>
+                        (x.ClientName != null && x.ClientName.ToLower().Contains(searchValue)) ||
+                        (x.Prefix != null && x.Prefix.ToLower().Contains(searchValue)) ||
+                        (x.ClientId.ToString().ToLower().Contains(searchValue))
+                    ).ToList();
+                }
+
+                if (!string.IsNullOrEmpty(subStatus))
+                {
+                    var today = DateTime.Today;
+                    if (subStatus == "active")
+                        result = result.Where(x => x.ApplicationEndDate >= today).ToList();
+                    else if (subStatus == "expired")
+                        result = result.Where(x => x.ApplicationEndDate < today).ToList();
+                }
+
+                if (!string.IsNullOrEmpty(isBlocked))
+                {
+                    int blockedStatus = int.Parse(isBlocked);
+                    result = result.Where(x => x.isActive == blockedStatus).ToList();
+                }
+
+                var clients = result.Select(dto =>
+                {
+                    int usageCount = 0;
+                    if (!string.IsNullOrEmpty(dto.C6Username) &&
+                        userUsageDict.TryGetValue(dto.C6Username.ToLower(), out int apiUsage))
+                    {
+                        usageCount = apiUsage;
+                    }
+
+                    return new ClientMaster
+                    {
+                        ClientId = dto.ClientId,
+                        ClientName = dto.ClientName,
+                        Prefix = dto.Prefix,
+                        C6Username = dto.C6Username,
+                        ApplicationStartDate = dto.ApplicationStartDate,
+                        ApplicationEndDate = dto.ApplicationEndDate,
+                        SearchCount = dto.SearchCount,
+                        TotalUsageCount = usageCount,
+                        UserCount = dto.UserCount,
+                        isActive = dto.isActive
+                    };
+                }).ToList();
+
+                using (var package = new ExcelPackage())
+                {
+                    var sheet = package.Workbook.Worksheets.Add("Clients");
+                    string[] headers = { "Client ID", "Client Name", "Prefix", "Users", "Limit", "Usage", "Start Date", "End Date", "Status", "Blocked" };
+                    for (int i = 0; i < headers.Length; i++)
+                    {
+                        sheet.Cells[1, i + 1].Value = headers[i];
+                    }
+
+                    using (var range = sheet.Cells[1, 1, 1, headers.Length])
+                    {
+                        range.Style.Font.Bold = true;
+                        range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                        range.Style.Fill.BackgroundColor.SetColor(global::System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                        range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                        range.Style.Border.Bottom.Color.SetColor(System.Drawing.Color.White);
+                    }
+
+                    int row = 2;
+                    foreach (var c in clients)
+                    {
+                        sheet.Cells[row, 1].Value = c.ClientId;
+                        sheet.Cells[row, 2].Value = c.ClientName;
+                        sheet.Cells[row, 3].Value = c.Prefix;
+                        sheet.Cells[row, 4].Value = c.UserCount;
+                        sheet.Cells[row, 5].Value = c.SearchCount;
+                        sheet.Cells[row, 6].Value = c.TotalUsageCount;
+                        sheet.Cells[row, 7].Value = c.ApplicationStartDate?.ToString("dd MMM yyyy");
+                        sheet.Cells[row, 8].Value = c.ApplicationEndDate?.ToString("dd MMM yyyy");
+                        sheet.Cells[row, 9].Value = (c.ApplicationEndDate >= DateTime.Today) ? "Active" : "Expired";
+                        sheet.Cells[row, 10].Value = (c.isActive == 1) ? "Unblocked" : "Blocked";
+                        row++;
+                    }
+
+                    sheet.Cells[sheet.Dimension.Address].AutoFitColumns();
+                    sheet.View.FreezePanes(2, 1);
+
+                    return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"AdminClients_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Error generating excel: " + ex.Message);
+            }
+        }
     }
 }
+

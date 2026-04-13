@@ -21,6 +21,8 @@ using AML.Web.Helper;
 using AutoMapper;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -348,5 +350,150 @@ namespace AML.Web.Controllers.Sanction
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> SanctionScreening_PDF(string name, string nationality, string dob, string customerType)
+        {
+            var model = new ScreeningSearchModel
+            {
+                Name = name,
+                Nationality = nationality,
+                DOB = dob,
+                customerType = customerType,
+                clientId = clientId
+            };
+
+            var searchType = "F"; 
+
+            // 1. Fetch search results (Tab 1)
+            string dataValue = _clientHandler.PostAsync(new DTO.DTO.Sanction.ScreeningSearchDTO
+            {
+                customerdob = model.DOB,
+                customerfullname = model.Name,
+                customernationality = model.Nationality,
+                searchtype = searchType,
+                customertype = model.customerType
+            }, ScreeningService.BACKLIST_SCREENING).Result;
+
+            if (!string.IsNullOrEmpty(dataValue))
+            {
+                model.DataList = JsonConvert.DeserializeObject<List<ApiResultModel>>(dataValue);
+            }
+
+            // 2. Fetch search history (Tab 2)
+            model.SearchLogs = _mapper.Map<List<SanctionScreeningLogModel>>(_customerScreeningService.GetSanctionScreeningLogs(model.Name, model.Nationality, model.DOB, model.customerType, clientId));
+
+            // 3. Fetch case logs (Tab 3)
+            model.CaseLogs = _mapper.Map<List<CaseModel>>(_customerScreeningService.GetCaseLogs(model.Name, model.Nationality, model.DOB, model.customerType, clientId));
+
+            return View("SanctionScreening_PDF", model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ConsolidatedExportExcel(string name, string nationality, string dob, string customerType)
+        {
+            var searchType = "F";
+            var clientId = _clientHandler.GetClientId();
+
+            // 1. Fetch Search Results
+            string dataValue = _clientHandler.PostAsync(new DTO.DTO.Sanction.ScreeningSearchDTO
+            {
+                customerdob = dob,
+                customerfullname = name,
+                customernationality = nationality,
+                searchtype = searchType,
+                customertype = customerType
+            }, ScreeningService.BACKLIST_SCREENING).Result;
+
+            var dataList = !string.IsNullOrEmpty(dataValue) 
+                ? JsonConvert.DeserializeObject<List<ApiResultModel>>(dataValue) 
+                : new List<ApiResultModel>();
+
+            // 2. Fetch Search History
+            var searchLogs = _mapper.Map<List<SanctionScreeningLogModel>>(_customerScreeningService.GetSanctionScreeningLogs(name, nationality, dob, customerType, clientId));
+
+            // 3. Fetch Case Logs
+            var caseLogs = _mapper.Map<List<CaseModel>>(_customerScreeningService.GetCaseLogs(name, nationality, dob, customerType, clientId));
+
+            using (var package = new ExcelPackage())
+            {
+                // Styling Helper
+                Action<ExcelRange> applyHeaderStyle = (range) => {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(0xE9, 0xEF, 0xFD));
+                    range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Color.SetColor(System.Drawing.Color.White);
+                    range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                };
+
+                // Tab 1: Search Results
+                var sheet1 = package.Workbook.Worksheets.Add("Search Results");
+                string[] h1 = { "Type", "Category", "Name", "Nationality", "DOB", "Score", "UID", "ID Number" };
+                for (int i = 0; i < h1.Length; i++) sheet1.Cells[1, i + 1].Value = h1[i];
+                applyHeaderStyle(sheet1.Cells[1, 1, 1, h1.Length]);
+
+                int row1 = 2;
+                foreach (var item in dataList)
+                {
+                    sheet1.Cells[row1, 1].Value = item.matchtype;
+                    sheet1.Cells[row1, 2].Value = item.matchcategory;
+                    sheet1.Cells[row1, 3].Value = item.matchname;
+                    sheet1.Cells[row1, 4].Value = item.matchnationality;
+                    sheet1.Cells[row1, 5].Value = item.matchdob;
+                    sheet1.Cells[row1, 6].Value = item.matchscore;
+                    sheet1.Cells[row1, 7].Value = item.matchuid;
+                    sheet1.Cells[row1, 8].Value = item.matchidnumber;
+                    row1++;
+                }
+                if (row1 > 2) { sheet1.Cells[row1-1, 1, row1-1, h1.Length].AutoFitColumns(); sheet1.View.FreezePanes(2, 1); }
+
+                // Tab 2: Search History
+                var sheet2 = package.Workbook.Worksheets.Add("Search History");
+                string[] h2 = { "Searched On", "Datasets", "Cust Type", "Name", "Nationality", "DOB", "Score", "User" };
+                for (int i = 0; i < h2.Length; i++) sheet2.Cells[1, i + 1].Value = h2[i];
+                applyHeaderStyle(sheet2.Cells[1, 1, 1, h2.Length]);
+
+                int row2 = 2;
+                foreach (var log in searchLogs)
+                {
+                    sheet2.Cells[row2, 1].Value = log.CreatedOn.ToString("dd/MM/yyyy HH:mm");
+                    sheet2.Cells[row2, 2].Value = log.MatchCategory;
+                    sheet2.Cells[row2, 3].Value = log.CustomerType;
+                    sheet2.Cells[row2, 4].Value = log.CustomerName;
+                    sheet2.Cells[row2, 5].Value = log.Nationality;
+                    sheet2.Cells[row2, 6].Value = log.DOB.ToString("dd/MM/yyyy");
+                    sheet2.Cells[row2, 7].Value = log.MatchScore;
+                    sheet2.Cells[row2, 8].Value = log.CreatedUser;
+                    row2++;
+                }
+                if (row2 > 2) { sheet2.Cells[row2-1, 1, row2-1, h2.Length].AutoFitColumns(); sheet2.View.FreezePanes(2, 1); }
+
+                // Tab 3: Existing Case Match
+                var sheet3 = package.Workbook.Worksheets.Add("Case Logs");
+                string[] h3 = { "Cust ID", "Created", "Updated", "Type", "Name", "Score", "Risk", "User", "Status" };
+                for (int i = 0; i < h3.Length; i++) sheet3.Cells[1, i + 1].Value = h3[i];
+                applyHeaderStyle(sheet3.Cells[1, 1, 1, h3.Length]);
+
+                int row3 = 2;
+                foreach (var c in caseLogs)
+                {
+                    sheet3.Cells[row3, 1].Value = c.CustomerId;
+                    sheet3.Cells[row3, 2].Value = c.CreatedOn;
+                    sheet3.Cells[row3, 3].Value = c.UpdatedOnDB;
+                    sheet3.Cells[row3, 4].Value = c.CustomerType;
+                    sheet3.Cells[row3, 5].Value = $"{c.FirstName} {c.LastName}".Trim();
+                    sheet3.Cells[row3, 6].Value = c.MatchScore;
+                    sheet3.Cells[row3, 7].Value = c.RiskScore;
+                    sheet3.Cells[row3, 8].Value = c.CreatedUser;
+                    sheet3.Cells[row3, 9].Value = c.CaseStatus;
+                    row3++;
+                }
+                if (row3 > 2) { sheet3.Cells[row3-1, 1, row3-1, h3.Length].AutoFitColumns(); sheet3.View.FreezePanes(2, 1); }
+
+                var fileBytes = package.GetAsByteArray();
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"UAEIEC_Consolidated_Report_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+            }
+        }
     }
 }
+

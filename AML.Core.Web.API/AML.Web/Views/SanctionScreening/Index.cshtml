@@ -144,10 +144,6 @@
 </head>
 
 <body class="bg-slate-50 min-h-screen text-slate-900">
-    <div id="loadingCaseDetails" class="fixed inset-0 bg-white/75 items-center justify-center z-[9999] hidden">
-        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
-    </div>
-
 
     <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
         <div class="flex items-center gap-2 text-slate-500 text-xs mb-2">
@@ -243,14 +239,7 @@
                 @* <button onclick="filterTableActive()" id="searchButton" class="h-11 px-5 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm">
                     Search
                 </button> *@
-                <form method="post" action="/SanctionScreening/DownloadPDFs" id="pdfForm" class="hidden">
-                    <input type="hidden" name="activeTable" id="pdfActiveTable" />
-                    <input type="hidden" name="Name" id="pdfName" />
-                    <input type="hidden" name="Nationality" id="pdfNationality" />
-                    <input type="hidden" name="DOB" id="pdfDOB" />
-                    <input type="hidden" name="customerType" id="pdfCustomerType" />
-                    <button type="submit" id="btnPdf"></button>
-                </form>
+                <iframe id="pdfFrame" style="position: fixed; top: 0; left: -9999px; width: 1200px; height: 100vh; border: none; opacity: 0; pointer-events: none;"></iframe>
                 
                 <div class="relative inline-block text-left group">
                     <button type="button" class="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-11 px-5 rounded-md text-sm transition focus:outline-none shadow-sm">
@@ -264,7 +253,7 @@
                                 Export PDF
                             </button>
                             <button onclick="ExportList(false);" class="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition flex items-center gap-2" role="menuitem">
-                                Export CSV
+                                Export Excel
                             </button>
                         </div>
                     </div>
@@ -398,6 +387,13 @@
             </div>
         </div>
     </div>
+
+    <div id="loadingCaseDetails"
+         class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-[9999] hidden">
+        <div class="dt-loader">
+            <div></div><div></div><div></div><div></div>
+        </div>
+    </div>
 </body>
 </html>
 <script type="text/javascript">
@@ -477,9 +473,13 @@ console.log("rawData3",rawData3);
             loadData1();
         });
 
-        // function showLoader() {
-        //     $('#loadingCaseDetails').removeClass('hidden').addClass('flex');
-        // }
+        function showLoader() {
+            $('#loadingCaseDetails').removeClass('hidden').addClass('flex');
+        }
+
+        function hideLoader() {
+            $('#loadingCaseDetails').addClass('hidden').removeClass('flex');
+        }
 
         function clearFilters() {
             $('#name').val('');
@@ -970,18 +970,27 @@ console.log("rawData3",rawData3);
         // }
 
         function exportPdf() {
-            // Populate form with current filters
-            $('#pdfName').val($('#name').val());
-            $('#pdfNationality').val($('#nationality').val());
-            $('#pdfDOB').val($('#DOB').val());
-            $('#pdfCustomerType').val($('#customertype').val());
-            $('#pdfActiveTable').val(activeTable);
+            const name = $('#name').val();
+            const nationality = $('#nationality').val();
+            const dob = $('#DOB').val();
+            const customerType = $('#customertype').val();
 
-            // Trigger submit safely
-            const form = document.getElementById('pdfForm');
-            if (form) {
-                document.getElementById('btnPdf').click();
+            if (!name) {
+                $('#nameError').removeClass('invisible');
+                return;
             }
+
+            const url = `/SanctionScreening/SanctionScreening_PDF?name=${encodeURIComponent(name)}&nationality=${encodeURIComponent(nationality || '')}&dob=${encodeURIComponent(dob || '')}&customerType=${encodeURIComponent(customerType || 'I')}`;
+            
+            // Show loader while preparing PDF
+            $('#loadingCaseDetails').removeClass('hidden').addClass('flex');
+            
+            $('#pdfFrame').attr('src', url);
+
+            // Hide loader after a delay (since we can't easily detect iframe download completion)
+            setTimeout(() => {
+                $('#loadingCaseDetails').addClass('hidden').removeClass('flex');
+            }, 5000);
         }
 
         function initDatePicker(selector, defaultDate, options = {}) {
@@ -1080,10 +1089,20 @@ console.log("rawData3",rawData3);
             }
             
         function ExportList(isPDF) {
+            const name = $('#name').val();
+            const nationality = $('#nationality').val();
+            const dob = $('#DOB').val();
+            const customerType = $('#customertype').val();
+
             if (isPDF) {
-                exportPdf();
+                showLoader();
+                const url = `/SanctionScreening/SanctionScreening_PDF?name=${encodeURIComponent(name)}&nationality=${encodeURIComponent(nationality || '')}&dob=${encodeURIComponent(dob || '')}&customerType=${encodeURIComponent(customerType || '0')}`;
+                $('#pdfFrame').attr('src', url);
             } else {
-                exportToCSV();
+                showLoader();
+                const url = `/SanctionScreening/ConsolidatedExportExcel?name=${encodeURIComponent(name)}&nationality=${encodeURIComponent(nationality || '')}&dob=${encodeURIComponent(dob || '')}&customerType=${encodeURIComponent(customerType || '0')}`;
+                window.location.href = url;
+                setTimeout(() => hideLoader(), 2000);
             }
         }
 
@@ -1129,13 +1148,15 @@ console.log("rawData3",rawData3);
                 csvContent += rowData.join(",") + "\n";
             });
 
-            var encodedUri = encodeURI(csvContent);
+            var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            var url = URL.createObjectURL(blob);
             var link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
+            link.setAttribute("href", url);
             link.setAttribute("download", fileName);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
 
     document.addEventListener("DOMContentLoaded", function () {

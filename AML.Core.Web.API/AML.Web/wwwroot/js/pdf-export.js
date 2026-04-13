@@ -47,7 +47,7 @@ async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.p
 
         // --- STEP 2: CLONE AND PREPARE ---
         const clone = original.cloneNode(true);
-        
+
         // Apply captured data to clone
         const cloneInputs = clone.querySelectorAll('select, textarea, input:not([type="hidden"])');
         cloneInputs.forEach((el, idx) => {
@@ -126,20 +126,20 @@ async function downloadPageAsPDF(containerSelector, filename = 'ProcessDetails.p
 
         // --- STEP 4: GENERATE PDF ---
         const opt = {
-            margin:       [5, 12, 10, 12], 
-            filename:     filename,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { 
-                scale: 2, 
-                useCORS: true, 
+            margin: [5, 10, 10, 10],
+            filename: filename,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
                 letterRendering: true,
                 backgroundColor: '#ffffff',
                 logging: false,
                 scrollY: 0,
                 scrollX: 0
             },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak:    { mode: ['css', 'legacy'] }
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css', 'legacy'] }
         };
 
         // G. Add a small delay for Lucide icons and Tailwind styles to settle in clone

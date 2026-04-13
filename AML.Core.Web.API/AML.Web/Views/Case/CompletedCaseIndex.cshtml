@@ -14,8 +14,7 @@
 }
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <!DOCTYPE html>
@@ -25,7 +24,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Case Manager - WatchDog</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -495,6 +494,7 @@
             </div>
         </div>
     </div>
+    <iframe id="pdfFrame" style="position: fixed; top: 0; left: -9999px; width: 1200px; height: 100vh; border: none; opacity: 0; pointer-events: none;"></iframe>
 </body>
 </html>
 <script>
@@ -664,7 +664,9 @@
 
         switch ((status || '').toLowerCase()) {
             case 'approved': styles = "bg-blue-50 text-blue-600 border-blue-100"; break;
-            case 'onhold': styles = "bg-amber-50 text-amber-600 border-amber-100"; break;
+            case 'onhold': styles = "bg-orange-500 text-white border-orange-600"; break;
+            case 'waitlist': styles = "bg-indigo-600 text-white border-indigo-700"; break;
+            case 'white': styles = "bg-indigo-600 text-white border-indigo-700"; break;
             case 'rejected': styles = "bg-red-50 text-red-600 border-red-100"; break;
             case 'transferred': styles = "bg-green-50 text-green-600 border-green-100"; break;
             default: styles = "bg-slate-50 text-slate-500 border-slate-100";
@@ -680,9 +682,10 @@
                 const t = text.toLowerCase().trim();
 
                 if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
-                if (t.includes('hold')) return 'bg-yellow-100 text-yellow-800';
+                if (t.includes('hold')) return 'bg-orange-500 text-white';
                 if (t.includes('approved')) return 'bg-green-700 text-white';
-                if (t.includes('white')) return 'bg-green-700 text-white';
+                if (t.includes('white')) return 'bg-indigo-600 text-white';
+                if (t.includes('wait')) return 'bg-indigo-600 text-white';
                 if (t.includes('auto')) return 'bg-green-100 text-green-800';
                 if (t.includes('transfer')) return 'bg-green-100 text-green-800';
                 if (t.includes('rejected')) return 'bg-red-100 text-red-800';
@@ -721,10 +724,10 @@
                     tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">R:${rejected}</span>`);
                 }
                 if (+onhold > 0) {
-                    tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">OH:${onhold}</span>`);
+                    tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-orange-500 text-white">OH:${onhold}</span>`);
                 }
                 if (+whitelist > 0) {
-                    tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white">W:${whitelist}</span>`);
+                    tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-indigo-600 text-white">W:${whitelist}</span>`);
                 }
 
                 const showTooltip = tooltipItems.length > 0;
@@ -1458,12 +1461,9 @@
     //     });
     // }
     function ExportList(isPDF) {
-
         $("#loadingCaseDetails").show();
-
-        window.location =
-            '/Report/ExportCompletedCasesReport?' +
-            'startDate=' + $('#startDate').val() +
+        
+        const params = 'startDate=' + $('#startDate').val() +
             '&endDate=' + $('#endDate').val() +
             '&cust_type=' + $('#customertype').val() +
             '&createdBy=' + $('#user').val() +
@@ -1471,11 +1471,16 @@
             '&caseStatus=' + $('#caseStatus').val() +
             '&caseStatusChange=' + $('#caseStatusChange').val() +
             '&riskLevel=' + $('#riskScore').val() +
-            '&searchValue=' + ($('#searchInput').val() || '') +
-            '&IsPDF=' + isPDF;
+            '&searchValue=' + ($('#searchInput').val() || '');
 
-
-        $("#loadingCaseDetails").hide();
+        if (isPDF) {
+            const url = '/Case/CompletedCases_PDF?' + params;
+            $('#pdfFrame').attr('src', url);
+            setTimeout(() => { $("#loadingCaseDetails").hide(); }, 5000);
+        } else {
+            window.location = '/Report/ExportCompletedCasesReport?' + params + '&IsPDF=false';
+            $("#loadingCaseDetails").hide();
+        }
     }
         function checkFilterValues() {
 

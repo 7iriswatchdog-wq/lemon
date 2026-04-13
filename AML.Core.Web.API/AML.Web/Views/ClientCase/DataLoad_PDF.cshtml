@@ -1,9 +1,11 @@
-@using AML.ViewModel.ViewModels.EtlBatch
+@using AML.ViewModel.ViewModels.CustomerCase
 @using Microsoft.AspNetCore.Http
-@model List<EtlBatchModel>
+@model ETLReport
 @{
     Layout = null;
     var companyName = Context.Session.GetString("SessCompanyName") ?? "AML Systems";
+    var auditDate = DateTime.UtcNow.AddHours(4).ToString("dd MMM yyyy, HH:mm") + " GST";
+    var selectedBatch = ViewBag.SelectedBatch as AML.ViewModel.ViewModels.EtlBatch.EtlBatchModel;
 }
 
 <!DOCTYPE html>
@@ -19,16 +21,21 @@
         @@media print {
             .no-print { display: none !important; }
             tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+            .page-break { page-break-before: always; }
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 text-[10px] p-8">
     <div id="pdf-container" class="max-w-[1024px] mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
         <!-- Header -->
-        <div class="flex justify-between items-start border-b border-slate-200 pb-6 mb-6">
+        <div class="flex justify-between items-start border-b border-slate-200 pb-6 mb-8">
             <div>
-                <h1 class="text-2xl font-black tracking-tight text-slate-900">Customer Bulk Upload Logs</h1>
-                <p class="text-slate-500 font-medium mt-1">Generated on @DateTime.Now.ToString("dd MMM yyyy, HH:mm")</p>
+                <h1 class="text-2xl font-black tracking-tight text-slate-900 uppercase">Customer Bulk Upload Logs</h1>
+                <p class="text-slate-500 font-medium mt-1 uppercase tracking-widest text-[8px]">Consolidated Batch Processing Report</p>
+                <div class="mt-4 text-[8px] text-slate-400 space-y-0.5 font-bold uppercase tracking-tight">
+                    <p>Extraction Date: @auditDate</p>
+                    <p>Report Period: @Model.FromDate.ToString("dd MMM yyyy") - @Model.ToDate.ToString("dd MMM yyyy")</p>
+                </div>
             </div>
             <div class="text-right">
                 <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Company</div>
@@ -36,56 +43,130 @@
             </div>
         </div>
 
-        <!-- Table -->
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b-2 border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[9px]">
-                        <th class="px-2 py-3">#</th>
-                        <th class="px-2 py-3">File Name</th>
-                        <th class="px-2 py-3">Uploaded on</th>
-                        <th class="px-2 py-3">Uploaded By</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @if (Model != null && Model.Any())
-                    {
-                        int index = 1;
-                        foreach (var item in Model)
-                        {
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-2 py-3 text-slate-400 font-medium">@index</td>
-                                <td class="px-2 py-3 font-bold text-slate-900">@item.FileName</td>
-                                <td class="px-2 py-3 text-slate-500">@item.AddedOn.ToString("dd MMM yyyy HH:mm")</td>
-                                <td class="px-2 py-3 font-semibold text-slate-800">@item.AddedUser</td>
-                            </tr>
-                            index++;
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="4" class="px-2 py-12 text-center text-slate-400 italic font-medium">No customer bulk upload logs found.</td>
+        <!-- Section 1: File Details -->
+        <div class="mb-10">
+            <h2 class="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-4 border-l-4 border-blue-600 pl-3">1. File Upload Summary</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b-2 border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[8px]">
+                            <th class="px-2 py-3">File Name</th>
+                            <th class="px-2 py-3">Uploaded on</th>
+                            <th class="px-2 py-3">Uploaded By</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @if (Model.DataList != null && Model.DataList.Any())
+                        {
+                            foreach (var item in Model.DataList)
+                            {
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-2 py-3 font-bold text-slate-900 text-[9px]">@item.FileName</td>
+                                    <td class="px-2 py-3 text-slate-500">@item.AddedOn.ToString("dd MMM yyyy HH:mm:ss")</td>
+                                    <td class="px-2 py-3 font-semibold text-slate-800">@item.AddedUser</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="3" class="px-2 py-8 text-center text-slate-400 italic font-medium">No file upload logs found for the selected period.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 2: Customer Details -->
+        <div class="mb-10 page-break">
+            <h2 class="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-4 border-l-4 border-emerald-500 pl-3">2. Customer Processing Details</h2>
+            @if (selectedBatch != null)
+            {
+                <div class="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-100 flex justify-between items-center mr-4">
+                    <div>
+                        <p class="text-[7px] text-slate-400 font-bold uppercase tracking-widest">Selected Batch</p>
+                        <p class="text-[10px] font-black text-slate-900">@selectedBatch.FileName</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[7px] text-slate-400 font-bold uppercase tracking-widest">Process Information</p>
+                        <p class="text-[10px] font-medium text-slate-600">@Model.CustomerData?.Count Customers processed</p>
+                    </div>
+                </div>
+            }
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b-2 border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[8px]">
+                            <th class="px-2 py-3">#</th>
+                            <th class="px-2 py-3">Customer Id</th>
+                            <th class="px-2 py-3">Customer Name</th>
+                            <th class="px-2 py-3">Nationality</th>
+                            <th class="px-2 py-3 text-center">DOB</th>
+                            <th class="px-2 py-3">Matched</th>
+                            <th class="px-2 py-3">Source</th>
+                            <th class="px-2 py-3">Uid</th>
+                            <th class="px-2 py-3">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @if (Model.CustomerData != null && Model.CustomerData.Any())
+                        {
+                            int index = 1;
+                            foreach (var v in Model.CustomerData)
+                            {
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-2 py-3 text-slate-400 font-medium">@index</td>
+                                    <td class="px-2 py-3 font-bold text-slate-900 uppercase">@v.CustomerId</td>
+                                    <td class="px-2 py-3 font-semibold text-slate-800 text-[9px]">@($"{v.FirstName} {v.MiddleName} {v.LastName}")</td>
+                                    <td class="px-2 py-3 text-slate-600">@v.Nationality</td>
+                                    <td class="px-2 py-3 text-center text-slate-600 whitespace-nowrap">@((v.DOB != null && v.DOB.Contains("0001")) ? "NA" : (v.DOB != null  ? v.DOB.Split(' ')[0] : "-"))</td>
+                                    <td class="px-2 py-3">
+                                        @if (v.IsMatched == 1 || String.Equals(v.IsMatched.ToString(), "true", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <span class="inline-flex items-center rounded-full border border-amber-200 px-1.5 py-0.5 text-[7px] font-bold bg-amber-50 text-amber-700 uppercase">Pending</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="inline-flex items-center rounded-full border border-emerald-200 px-1.5 py-0.5 text-[7px] font-bold bg-emerald-50 text-emerald-700 uppercase">Auto</span>
+                                        }
+                                    </td>
+                                    <td class="px-2 py-3 text-slate-500 italic text-[8px]">@v.Source</td>
+                                    <td class="px-2 py-3 text-slate-500 text-[8px]">@v.UID</td>
+                                    <td class="px-2 py-3 text-slate-400 whitespace-nowrap">@v.CreatedOn.ToString("dd MMM yyyy HH:mm")</td>
+                                </tr>
+                                index++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="9" class="px-2 py-8 text-center text-slate-400 italic font-medium">
+                                    @(selectedBatch == null ? "Select a batch from the File Upload Summary (Table 1) to view detailed customer logs." : "No customer records found for the selected batch.")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Footer -->
-        <div class="mt-8 pt-6 border-t border-slate-100 text-center">
-            <p class="text-[9px] text-slate-400 font-medium">Customer Bulk Upload Progress Report - @companyName &copy; @DateTime.Now.Year</p>
+        <div class="mt-12 pt-6 border-t border-slate-100 text-center">
+            <p class="text-[8px] text-slate-400 font-bold tracking-widest uppercase">
+                CONFIDENTIAL AUDIT LOG - @companyName &copy; @DateTime.Now.Year
+                <br />
+                Computer generated report; hence no signature is required.
+            </p>
         </div>
     </div>
 
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="~/js/pdf-export.js"></script>
+    <script src="/js/pdf-export.js"></script>
     <script>
         window.onload = function() {
             setTimeout(() => {
-                downloadPageAsPDF('#pdf-container', 'Customer_Bulk_Upload_Logs_@DateTime.Now.ToString("yyyyMMdd")' + '.pdf');
+                downloadPageAsPDF('#pdf-container', 'Bulk_Upload_Report_@DateTime.Now.ToString("yyyyMMdd")' + '.pdf');
             }, 1000);
         };
     </script>
