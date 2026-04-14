@@ -319,7 +319,7 @@ namespace AML.Web.Controllers.TransactionScreening
 
 
             TranScreenDTO _CustomerCaseDTO = _transactionScreeningService.GetTranCaseByID(model.CaseId);
-            _CustomerCaseDTO.Status = model.Action != 1 ? model.Action : 2;
+            _CustomerCaseDTO.Status = model.Action;
             _CustomerCaseDTO.UpdatedBy = _clientHandler.GetUserId();
             _CustomerCaseDTO.UpdatedOn = Convert.ToString(DateTime.Now);
             _CustomerCaseDTO.Comments = model.Comment;

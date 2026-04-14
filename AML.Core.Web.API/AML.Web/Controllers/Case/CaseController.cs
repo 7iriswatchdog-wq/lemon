@@ -2689,7 +2689,7 @@ namespace AML.Web.Controllers.Case
             if (_UserGroupModel.Name .Contains("Compliance") && currentCase.Status == 4) { return Json("Edit access restricted for cases submitted to senior management."); }
 
             CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(model.CaseId);
-            _CustomerCaseDTO.Status = model.Action == 1 ? model.Action : 2;
+            _CustomerCaseDTO.Status = model.Action;
             _CustomerCaseDTO.UpdatedBy = _clientHandler.GetUserId();
             _CustomerCaseDTO.UpdatedOn = Convert.ToString(DateTime.Now);
             _CustomerCaseDTO.Comments = model.Comment;
