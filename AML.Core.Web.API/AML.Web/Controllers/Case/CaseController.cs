@@ -2429,23 +2429,24 @@ namespace AML.Web.Controllers.Case
             TokenRS token =  AMLUtility.CreateC6Token("users/authenticate", baseC6URL, _c6Username);
             using (HttpClient httpClient = new HttpClient())
             {
+                if (token == null || token.user == null || string.IsNullOrEmpty(token.user.token))
+                {
+                    _toastNotification.AddError("Unable to authenticate with C6 service.");
+                    return Redirect(string.IsNullOrEmpty(returnUrl) ? "/case/Process/" + CaseId : returnUrl);
+                }
 
                 if (category == "INDIVIDUAL")
                 {
-                    url = baseC6URL + "personal/person/" + id;
-
-
-
+                    url = baseC6URL.TrimEnd('/') + "/personal/person/" + Uri.EscapeDataString(id);
 
                     var request = new HttpRequestMessage(HttpMethod.Get, url);
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.user.token);
                     HttpResponseMessage response = await httpClient.SendAsync(request);
                     if (response.StatusCode != HttpStatusCode.OK)
                     {
-                        return Content(response.ToString());
+                        _toastNotification.AddError("Person details not found in C6 database (404).");
+                        return Redirect(string.IsNullOrEmpty(returnUrl) ? "/case/Process/" + CaseId : returnUrl);
                     }
-
-
 
                     var details = response.Content.ReadAsStringAsync();
                     UsersModel jsonList = JsonConvert.DeserializeObject<UsersModel>(details.Result);
@@ -2461,13 +2462,14 @@ namespace AML.Web.Controllers.Case
                 }
                 else
                 {
-                    url = baseC6URL + "business/person/" + id;
+                    url = baseC6URL.TrimEnd('/') + "/business/person/" + Uri.EscapeDataString(id);
                     var request = new HttpRequestMessage(HttpMethod.Get, url);
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.user.token);
                     HttpResponseMessage response = await httpClient.SendAsync(request);
                     if (response.StatusCode != HttpStatusCode.OK)
                     {
-                        return Content(response.ToString());
+                        _toastNotification.AddError("Business details not found in C6 database (404).");
+                        return Redirect(string.IsNullOrEmpty(returnUrl) ? "/case/Process/" + CaseId : returnUrl);
                     }
 
 

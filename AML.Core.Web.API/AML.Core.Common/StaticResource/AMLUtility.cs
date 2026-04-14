@@ -722,7 +722,8 @@ namespace AML.Core.Common.StaticResource
                 }
                 catch { }
                 client.BaseAddress = new Uri(baseURL);
-                HttpResponseMessage response = await client.PostAsync(baseURL + url, byteContent);
+                string fullUrl = baseURL.TrimEnd('/') + "/" + url.TrimStart('/');
+                HttpResponseMessage response = await client.PostAsync(fullUrl, byteContent);
                 if (response.IsSuccessStatusCode)
                 {
                     result = await response.Content.ReadAsStringAsync();
@@ -750,7 +751,8 @@ namespace AML.Core.Common.StaticResource
                 }
                 catch { }
                 client1.BaseAddress = new Uri(baseURL);
-                HttpResponseMessage response = await client1.PostAsync(baseURL + url, byteContent1);
+                string fullUrl = baseURL.TrimEnd('/') + "/" + url.TrimStart('/');
+                HttpResponseMessage response = await client1.PostAsync(fullUrl, byteContent1);
                 if (response.IsSuccessStatusCode)
                 {
                     result = await response.Content.ReadAsStringAsync();
@@ -779,7 +781,8 @@ namespace AML.Core.Common.StaticResource
             using (HttpClient client = new HttpClient())
             {
                 client.BaseAddress = new Uri(baseURL);
-                HttpResponseMessage response = client.PostAsync(baseURL + url, byteContent).Result;
+                string fullUrl = baseURL.TrimEnd('/') + "/" + url.TrimStart('/');
+                HttpResponseMessage response = client.PostAsync(fullUrl, byteContent).Result;
                 if (response.IsSuccessStatusCode)
                 {
                     result = response.Content.ReadAsStringAsync();

@@ -173,7 +173,8 @@ namespace AML.Web.Helper
                 }
                 client.BaseAddress = new Uri(baseURL);
                 Console.WriteLine(baseURL + url);
-                HttpResponseMessage response = await client.PostAsync(baseURL + url, byteContent);
+                string fullUrl = baseURL.TrimEnd('/') + "/" + url.TrimStart('/');
+                HttpResponseMessage response = await client.PostAsync(fullUrl, byteContent);
                 Console.WriteLine(response.StatusCode);
 
                 if (response.IsSuccessStatusCode)
@@ -220,7 +221,8 @@ namespace AML.Web.Helper
 
                 client.BaseAddress = new Uri(baseUrl);
                 Console.WriteLine(baseUrl + url);
-                response = client.PostAsync(baseUrl + url, byteContent).Result;
+                string fullUrl = (baseUrl ?? baseURL).TrimEnd('/') + "/" + url.TrimStart('/');
+                response = client.PostAsync(fullUrl, byteContent).Result;
                 log.Debug("AMLTracker {0}", response.StatusCode);
                 Console.WriteLine("AMLTracker {0}", response.StatusCode);
 
