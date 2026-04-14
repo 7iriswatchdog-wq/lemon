@@ -1364,7 +1364,7 @@ namespace AML.Web.Controllers.Reports
         }
         [HttpPost("Report/CaseReportCustompagination")]
         public JsonResult CustomPagination(DataTableModel model, string startDate,
-    string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string caseStatusChange, string riskLevel, string option, string schedulerTrackerId)
+    string endDate, string cust_type, string searchValue, int createdBy, string matchScore, int caseStatus, string caseStatusChange, string riskLevel, string option)
         {
             var BranchId = _clientHandler.GetBranchId();
             var GroupId = _clientHandler.GetGroupId();
@@ -1410,7 +1410,7 @@ namespace AML.Web.Controllers.Reports
 
                     //StartDate = "2000-01-01", // Or some early default to capture all history up to endDate
                     //EndDate = endDate,
-                    SchedulerTrackerId = schedulerTrackerId,
+                    //SchedulerTrackerId = schedulerTrackerId,
                     ClientId = _clientHandler.GetClientId()
                 }));
             }

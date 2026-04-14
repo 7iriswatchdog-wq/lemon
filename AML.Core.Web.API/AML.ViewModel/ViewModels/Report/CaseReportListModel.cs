@@ -149,6 +149,8 @@ namespace AML.ViewModel.ViewModels.Report
 
         public string Type { get; set; }
 
+        public string TrackerId { get; set; }
+
 
     }
 

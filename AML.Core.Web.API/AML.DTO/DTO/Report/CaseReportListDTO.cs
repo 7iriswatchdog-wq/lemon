@@ -175,6 +175,10 @@ namespace AML.DTO.DTO.Report
         public string Type { get; set; }
 
 
+        [Column("trackerId")]
+        public string TrackerId { get; set; }
+
+
 
 
 
