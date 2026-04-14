@@ -65,7 +65,7 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("p_riskLevel", riskLevel);
                 parameters.Add("p_clientId", clientId);
                 //parameters.Add("p_caseChangeStatus", caseStatusChange);
-                if (usergroupName == "Senior Management")
+                if (usergroupName == "Senior Management" || usergroupName.Contains("Compliance"))
                 {
                     serviceResponse.Result = Get<CustomerCaseDTO>("get_all_customercase_seniormanagement", parameters, commandType: CommandType.StoredProcedure).ToList();
                 }

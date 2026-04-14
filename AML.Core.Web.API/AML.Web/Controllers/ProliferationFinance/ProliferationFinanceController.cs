@@ -152,7 +152,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                     // Filter out cases submitted to senior management for regular users
                     var GroupId = _clientHandler.GetGroupId();
                     var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
-                    if (_UserGroupModel.Name != "Senior Management")
+                    if (_UserGroupModel.Name != "Senior Management" && _UserGroupModel.Name .Contains("Compliance") == false)
                     {
                         data = data.FindAll(x => x.Status != "Submit to Senior Management");
                     }
@@ -219,7 +219,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                 // Service Group Filter
                 var GroupId = _clientHandler.GetGroupId();
                 var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
-                if (_UserGroupModel.Name != "Senior Management")
+                if (_UserGroupModel.Name != "Senior Management" && _UserGroupModel.Name .Contains("Compliance") == false)
                 {
                     data = data.FindAll(x => x.Status != "Submit to Senior Management");
                 }
@@ -475,7 +475,7 @@ namespace AML.Web.Controllers.ProliferationFinance
                 // Service Group Filter
                 var GroupId = _clientHandler.GetGroupId();
                 var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
-                if (_UserGroupModel.Name != "Senior Management")
+                if (_UserGroupModel.Name != "Senior Management" && _UserGroupModel.Name .Contains("Compliance") == false)
                 {
                     data = data.FindAll(x => x.Status != "Submit to Senior Management");
                 }
@@ -914,8 +914,12 @@ namespace AML.Web.Controllers.ProliferationFinance
                 [HttpPost]
         public IActionResult UpdateStatus(int caseId, string status)
         {
-            try
-            {
+            try {
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+                var caseDetails = _proliferationFinanceService.GetCaseById(caseId);
+                if (_UserGroupModel.Name .Contains("Compliance") && caseDetails.Status == "Submit to Senior Management") { return Json(new { success = false, message = "Edit access restricted for cases submitted to senior management." }); }
+ 
                 var response = _proliferationFinanceService.UpdateCaseStatus(caseId, status);
                 
                 var userIdStr = _httpContextAccessor.HttpContext.Session.GetString("SessUserId");
@@ -941,8 +945,12 @@ namespace AML.Web.Controllers.ProliferationFinance
         [HttpPost]
         public IActionResult UpdateRemarks(int caseId, string remarks)
         {
-            try
-            {
+            try {
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+                var caseDetails = _proliferationFinanceService.GetCaseById(caseId);
+                if (_UserGroupModel.Name .Contains("Compliance") && caseDetails.Status == "Submit to Senior Management") { return Json(new { success = false, message = "Edit access restricted for cases submitted to senior management." }); }
+ 
                 var userId = int.Parse(_httpContextAccessor.HttpContext.Session.GetString("SessUserId") ?? "0");
                 
                 // 1. Update the main status reason for quick reference
@@ -985,8 +993,12 @@ namespace AML.Web.Controllers.ProliferationFinance
         [HttpPost]
         public IActionResult UploadDocument(int caseId, IFormFile file)
         {
-            try
-            {
+            try {
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+                var caseDetails = _proliferationFinanceService.GetCaseById(caseId);
+                if (_UserGroupModel.Name .Contains("Compliance") && caseDetails.Status == "Submit to Senior Management") { return Json(new { success = false, message = "Edit access restricted for cases submitted to senior management." }); }
+ 
                 if (file == null || file.Length == 0)
                     return Json(new { success = false, message = "No file uploaded." });
 
@@ -1041,6 +1053,10 @@ namespace AML.Web.Controllers.ProliferationFinance
                     MatchedChemicalName = caseDetails.MatchedChemicalName,
                     SearchHitDetails = caseDetails.SearchHitDetails
                 };
+                var GroupId = _clientHandler.GetGroupId();
+                var _UserGroupModel = _mapper.Map<AML.ViewModel.ViewModels.UserGroup.UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+                model.UserGroupName = _UserGroupModel.Name;
+                if (_UserGroupModel.Name .Contains("Compliance") && model.Status == "Submit to Senior Management") { model.IsReadOnly = true; ViewBag.HideChatbot = true; }
 
                 // If a specific chemical was selected from search results, override the case default fields
                 if (chemicalId.HasValue && chemicalId.Value > 0)

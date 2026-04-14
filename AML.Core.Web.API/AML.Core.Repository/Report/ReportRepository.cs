@@ -182,7 +182,7 @@ namespace AML.Core.Repository.Report
                 parameters.Add("p_createdBy", requestModel.createdBy);
                 parameters.Add("c_status", requestModel.caseStatus);
                 parameters.Add("p_riskLevel", requestModel.riskLevel);
-                if (requestModel.usergroupName == "Senior Management")
+                if (requestModel.usergroupName == "Senior Management" || requestModel.usergroupName.Contains("Compliance"))
                 {
                     serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_seniormanagement_excel_report", parameters, commandType: CommandType.StoredProcedure).ToList();
                 }
@@ -234,7 +234,7 @@ namespace AML.Core.Repository.Report
                 parameters.Add("c_status", requestModel.caseStatus);
                 parameters.Add("p_riskLevel", requestModel.riskLevel);
                 parameters.Add("p_searchvalue", requestModel.SearchValue);
-                if (requestModel.usergroupName == "Senior Management")
+                if (requestModel.usergroupName == "Senior Management" || requestModel.usergroupName.Contains("Compliance"))
                 {
                     serviceResponse.Result = Get<CaseReportListDTO>("get_all_customercase_seniormanagement_search_value_excel_report", parameters, commandType: CommandType.StoredProcedure).ToList();
                 }

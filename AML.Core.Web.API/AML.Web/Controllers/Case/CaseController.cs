@@ -1322,6 +1322,7 @@ namespace AML.Web.Controllers.Case
                 model.DualGoodsMatchStatus = dualMatchStatus;
                 model.Case = _mapper.Map<CaseModel>(_CustomerCaseDTO);
                 model.Case.UserGroupName = _UserGroupModel.Name;
+                if (_UserGroupModel.Name .Contains("Compliance") && _CustomerCaseDTO.Status == 4) { model.IsReadOnly = true; ViewBag.HideChatbot = true; }
                 var dob = model.Case.DOB;
                 var createddated = model.Case.CreatedOn;
                 string dobText;
@@ -2576,6 +2577,14 @@ namespace AML.Web.Controllers.Case
         {
             model.CreatedBy = _clientHandler.GetUserId();
             model.CreatedOn = DateTime.Now;
+
+            var GroupId = _clientHandler.GetGroupId();
+            var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+            CustomerCaseDTO currentCase = _customerCaseService.GetDetails(model.CaseId);
+            if (_UserGroupModel.Name .Contains("Compliance") && currentCase.Status == 4)
+            {
+                return Json("Edit access restricted for cases submitted to senior management.");
+            }
             
             var userName = HttpContext.Session.GetString("SessUsername");
             var comment = string.Format("Customer Case Onhold");
@@ -2674,7 +2683,10 @@ namespace AML.Web.Controllers.Case
         [HttpPost("/case/close")]
         public JsonResult Close(CaseCloseModel model)
         {
-
+            var GroupId = _clientHandler.GetGroupId();
+            var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+            CustomerCaseDTO currentCase = _customerCaseService.GetDetails(model.CaseId);
+            if (_UserGroupModel.Name .Contains("Compliance") && currentCase.Status == 4) { return Json("Edit access restricted for cases submitted to senior management."); }
 
             CustomerCaseDTO _CustomerCaseDTO = _customerCaseService.GetDetails(model.CaseId);
             _CustomerCaseDTO.Status = model.Action == 1 ? model.Action : 2;
@@ -2805,6 +2817,13 @@ namespace AML.Web.Controllers.Case
         [HttpPost]
         public JsonResult SaveRemark(int id,string customerid,string type, List<DataListModel> model)
         {
+            var GroupId = _clientHandler.GetGroupId();
+            var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+            CustomerCaseDTO currentCase = _customerCaseService.GetDetails(id);
+            if (_UserGroupModel.Name .Contains("Compliance") && currentCase.Status == 4)
+            {
+                return Json("Edit access restricted for cases submitted to senior management.");
+            }
 
             var userid = _clientHandler.GetUserId();
             var clientid = _clientHandler.GetClientId();
@@ -3887,6 +3906,8 @@ namespace AML.Web.Controllers.Case
         {
             var userId = _clientHandler.GetUserId();
             var clientId = _clientHandler.GetClientId();
+            var GroupId = _clientHandler.GetGroupId();
+            var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
             List<CaseModel> abc = new List<CaseModel>();
             if (endDate == null)
             {
