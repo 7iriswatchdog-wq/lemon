@@ -1315,10 +1315,11 @@ namespace AML.Web.Controllers.Reports
         }
 
         [HttpGet("Report/CaseReport")]
-        public IActionResult CaseReport(int type, string schedulerTrackerId, string option, string endDate = null)
+        public IActionResult CaseReport(int type, string schedulerTrackerId, string option, string endDate = null, int caseStatus = 10)
         {
             TempData["option"] = option;
             TempData["schedulerTrackerId"] = schedulerTrackerId;
+            TempData["caseStatus"] = caseStatus;
             var model = new ReportLogSearchModel();
             model.StartDate = System.DateTime.Now.AddYears(-1);
             //model.StartDate = System.DateTime.Now.AddDays(-7);

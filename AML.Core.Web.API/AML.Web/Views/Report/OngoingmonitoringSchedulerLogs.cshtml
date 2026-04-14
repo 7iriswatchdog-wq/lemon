@@ -193,6 +193,7 @@
                                 <th class="px-6 py-4 font-bold h-12 text-center">Total Records</th>
                                 <th class="px-6 py-4 font-bold h-12 text-center">Total Hits</th>
                                 <th class="px-6 py-4 font-bold h-12 text-center">Cumulative</th>
+                                <th class="px-6 py-4 font-bold h-12 text-center">Pending</th>
                                 <th class="px-6 py-4 font-bold h-12 text-center">Updated On</th>
                             </tr>
                         </thead>
@@ -409,18 +410,21 @@
             return;
         }
 
-        rows.forEach(item => {
+        rows.forEach((item, index) => {
             const updated = formatDateTime(item.createdOn);
+            
+            // Link ONLY for the first (most recent) row for pending
+            const pendingContent = (index === 0 && (currentPage === 1 || !currentPage))
+                ? `<a href="/Report/CaseReport?option=OnGoing&caseStatus=6" class="text-blue-600 font-bold hover:underline transition-all">${item.pending}</a>`
+                : item.pending;
+
             tbody.append(`
                 <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                     <td class="px-6 py-4 text-center text-slate-600 font-medium">${item.source || ''}</td>
                     <td class="px-6 py-4 text-center text-slate-600">${item.totalRecords || ''}</td>
                     <td class="px-6 py-4 text-center text-slate-600">${item.totalHits}</td>
-                    <td class="px-6 py-4 text-center text-slate-600">
-                        <a href="/Report/CaseReport?option=OnGoing" class="text-blue-600 font-bold hover:underline transition-all">
-                            ${item.cumulativeHits}
-                        </a>
-                    </td>
+                    <td class="px-6 py-4 text-center text-slate-600">${item.cumulativeHits}</td>
+                    <td class="px-6 py-4 text-center text-slate-600">${pendingContent}</td>
                     <td class="px-6 py-4 text-center text-slate-600">
                              <!-- Updated (only if exists) -->
                             ${updated ? `
@@ -581,6 +585,7 @@
             { id: "totalRecords", label: "Total Records" },
             { id: "totalHits", label: "Total Hits" },
             { id: "cumulativeHits", label: "Cumulative" },
+            { id: "pending", label: "Pending" },
             { id: "createdOn", label: "Updated On" }
         ];
 

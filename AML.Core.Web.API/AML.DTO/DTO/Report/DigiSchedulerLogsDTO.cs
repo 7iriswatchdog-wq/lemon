@@ -26,5 +26,7 @@ namespace AML.DTO.DTO.Report
         [Column("cumulative_hits")]
         public int CumulativeHits { get; set; }
 
+        public int Pending { get; set; }
+
     }
 }

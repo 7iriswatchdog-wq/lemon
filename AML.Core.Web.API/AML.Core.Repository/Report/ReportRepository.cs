@@ -454,7 +454,14 @@ namespace AML.Core.Repository.Report
             {
                 DynamicParameters parameters = new DynamicParameters();
                 parameters.Add("@p_clientId", clientId);
-                serviceResponse.Result = Get<DigiSchedulerLogsDTO>("get_all_digischeduler_logs", parameters, commandType: CommandType.StoredProcedure).ToList();
+                var logs = Get<DigiSchedulerLogsDTO>("get_all_digischeduler_logs", parameters, commandType: CommandType.StoredProcedure).ToList();
+                
+                // Fetch global pending count for cases created from daily scheduler (Status 6)
+                var pendingResponse = GetCustomerCaseCount(6, clientId);
+                var pendingCount = pendingResponse.Result;
+                logs.ForEach(x => x.Pending = pendingCount);
+
+                serviceResponse.Result = logs;
                 serviceResponse.Message = "Scheduler log details fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
             }
@@ -475,7 +482,14 @@ namespace AML.Core.Repository.Report
                 parameters.Add("@p_clientId", clientId);
                 parameters.Add("@p_startDate", startDate);
                 parameters.Add("@p_endDate", endDate);
-                serviceResponse.Result = Get<DigiSchedulerLogsDTO>("get_all_digischeduler_logs", parameters, commandType: CommandType.StoredProcedure).ToList();
+                var logs = Get<DigiSchedulerLogsDTO>("get_all_digischeduler_logs", parameters, commandType: CommandType.StoredProcedure).ToList();
+
+                // Fetch global pending count for cases created from daily scheduler (Status 6)
+                var pendingResponse = GetCustomerCaseCount(6, clientId);
+                var pendingCount = pendingResponse.Result;
+                logs.ForEach(x => x.Pending = pendingCount);
+
+                serviceResponse.Result = logs;
                 serviceResponse.Message = "Scheduler log details fetched successfully.";
                 serviceResponse.Status = StaticResource.SuccessStatusCode;
             }

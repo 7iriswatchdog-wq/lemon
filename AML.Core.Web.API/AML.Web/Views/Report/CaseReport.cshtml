@@ -351,8 +351,9 @@
                       focus-visible:ring-blue-500/20 focus-visible:border-blue-500
                       shadow-sm transition-all placeholder:text-slate-500">
                 </div>
-                <input type="hidden" id="pageoption" name="option" value=@TempData["option"] />
-                <input type="hidden" id="schedulerTrackerId" name="schedulerTrackerId" value=@TempData["schedulerTrackerId"] />
+                <input type="hidden" id="pageoption" name="option" value="@TempData["option"]" />
+                <input type="hidden" id="schedulerTrackerId" name="schedulerTrackerId" value="@TempData["schedulerTrackerId"]" />
+                <input type="hidden" id="tempCaseStatus" value="@TempData["caseStatus"]" />
                 <!-- Search button -->
                 <button onclick="searchCases()" id="searchButton"
                         class="h-11 px-5 rounded-md bg-blue-600 text-white text-sm font-semibold
@@ -1278,6 +1279,23 @@
 
         // ✅ End Date → Use model value or today
         const endPicker = initDatePicker("#endDate", initialEndDate || new Date(), true);
+
+        // ✅ Handle automated filtering from other pages (e.g. Scheduler Logs)
+        const tempStatus = document.getElementById("tempCaseStatus")?.value;
+        if (tempStatus && tempStatus !== "10" && tempStatus !== "") {
+            // Show the status field if it's hidden
+            document.getElementById("extraFilters").classList.remove("hidden");
+            document.getElementById("columnFilter").value = "Status";
+            Colunmfilterfunction();
+            
+            // Set the status value
+            document.getElementById("caseStatus").value = tempStatus;
+            
+            // Trigger search
+            setTimeout(() => {
+                searchCases();
+            }, 500);
+        }
 
     });
         function setRowType(element) {
