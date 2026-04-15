@@ -2233,6 +2233,9 @@ namespace AML.Web.Controllers.Reports
             var dob = model.Case.DOB;
             var createddated = model.Case.CreatedOn;
             string dobText;
+            var GroupId = _clientHandler.GetGroupId();
+            var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+            model.Case.UserGroupName = _UserGroupModel.Name;
 
             HttpContext.Session.SetString("CorporateId", _CustomerCaseDTO.CustomerId);
             HttpContext.Session.SetString("ReturnUrl", HttpContext.Request.Path + HttpContext.Request.QueryString);

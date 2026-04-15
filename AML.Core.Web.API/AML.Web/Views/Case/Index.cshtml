@@ -946,7 +946,8 @@
                     createdOn: r.createdOn,
                     updatedOnDB: r.updatedOnDB,
                     createdUser: r.createdUser,
-                    status: r.caseStatus || '',
+                    casestatus: r.caseStatus || '',
+                        status:r.status || '',
 
                     riskScore: r.customerType === 'I'
                         ? r.individual_final_risk_score || ''
@@ -1040,10 +1041,36 @@
             // const riskClass = getRiskScoreClass(caseItem.riskScore);
                     const type = (caseItem.type || "").toLowerCase();
 
-        const processUrl =
-            (type === "individual" || type === "corporate")
-                ? `/case/Process/${caseItem.id}`
-                : `/case/Shareholder/${caseItem.id}`;
+               var userRole = "@(Model.UserGroupName)";
+    var role = userRole.toLowerCase();
+        let rowType = 0;
+
+    //alert(role);
+
+    var processUrl = "";
+    var linkText = "Process";
+
+    if (role !== "senior management" && caseItem.status == 4) {
+
+        processUrl = (type === "individual" || type === "corporate")
+            ? `/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}`
+            : `/report/ViewShareholderCaseDetails?id=${caseItem.customerId}&type=${rowType}`;
+
+        linkText = "View";
+    }
+    else {
+
+        processUrl = (type === "individual" || type === "corporate")
+            ? `/case/Process/${caseItem.id}`
+            : `/case/Shareholder/${caseItem.id}`;
+
+        linkText = "Process";
+    }
+
+        // const processUrl =
+        //     (type === "individual" || type === "corporate")
+        //         ? `/case/Process/${caseItem.id}`
+        //         : `/case/Shareholder/${caseItem.id}`;
 
             return `
             <tr class="bg-white border-b border-slate-100 hover:bg-slate-50/50">
@@ -1109,13 +1136,13 @@
     </span>
     </td>
                 <td class="px-2 py-4">${caseItem.createdUser}</td>
-                <td class="px-2 py-4">${formatCaseStatus(caseItem.status)}</td>
-                <td class="px-2 py-4">
-                        <a href="${processUrl}"
-                       class="text-blue-600 font-bold text-xs underline">
-                        Process
-                    </a>
-                </td>
+                    <td class="px-2 py-4">${formatCaseStatus(caseItem.casestatus)}</td>
+                    <td class="px-2 py-4">
+        <a href="${processUrl}"
+           class="text-blue-600 font-bold text-xs underline">
+            ${linkText}
+        </a>
+    </td>
 
             </tr>`;
         }).join('');

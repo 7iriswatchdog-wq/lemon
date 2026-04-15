@@ -36,6 +36,8 @@ namespace AML.ViewModel.ViewModels.Report
         public List<string> CorporateNames { get; set; } = new List<string>();
         public DateTime ClientContractStartDate { get; set; }
 
+        public string UserGroupName { get; set; }
+
     }
     public class ReportInternalWatchListLogModel
     {

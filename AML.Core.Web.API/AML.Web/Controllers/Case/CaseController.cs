@@ -209,6 +209,10 @@ namespace AML.Web.Controllers.Case
     "Name"
 );
 
+            var GroupId = _clientHandler.GetGroupId();
+            var _UserGroupModel = _mapper.Map<UserGroupModel>(_UserGroupService.GetDetails(GroupId));
+            model.UserGroupName = _UserGroupModel.Name;
+
             IEnumerable<SelectListItem> userList = from s in _mapper.Map<List<UserModel>>(_userService.GetAll(clientId))
                                                    select new SelectListItem
                                                    {
@@ -2431,7 +2435,7 @@ namespace AML.Web.Controllers.Case
             {
                 if (token == null || token.user == null || string.IsNullOrEmpty(token.user.token))
                 {
-                    _toastNotification.AddError("Unable to authenticate with C6 service.");
+                    _toastNotification.AddErrorToastMessage("Unable to authenticate with C6 service.");
                     return Redirect(string.IsNullOrEmpty(returnUrl) ? "/case/Process/" + CaseId : returnUrl);
                 }
 
@@ -2444,7 +2448,7 @@ namespace AML.Web.Controllers.Case
                     HttpResponseMessage response = await httpClient.SendAsync(request);
                     if (response.StatusCode != HttpStatusCode.OK)
                     {
-                        _toastNotification.AddError("Person details not found in C6 database (404).");
+                        _toastNotification.AddErrorToastMessage("Person details not found in C6 database (404).");
                         return Redirect(string.IsNullOrEmpty(returnUrl) ? "/case/Process/" + CaseId : returnUrl);
                     }
 
@@ -2468,7 +2472,7 @@ namespace AML.Web.Controllers.Case
                     HttpResponseMessage response = await httpClient.SendAsync(request);
                     if (response.StatusCode != HttpStatusCode.OK)
                     {
-                        _toastNotification.AddError("Business details not found in C6 database (404).");
+                        _toastNotification.AddErrorToastMessage("Business details not found in C6 database (404).");
                         return Redirect(string.IsNullOrEmpty(returnUrl) ? "/case/Process/" + CaseId : returnUrl);
                     }
 

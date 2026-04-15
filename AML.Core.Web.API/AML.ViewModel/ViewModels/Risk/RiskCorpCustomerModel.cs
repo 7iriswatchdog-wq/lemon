@@ -43,5 +43,7 @@ namespace AML.ViewModel.ViewModels.Risk
         public string UserGroup { get; set; }
 
         public string RiskOverRide { get; set; }
+
+        public string Type { get; set; }
     }
 }

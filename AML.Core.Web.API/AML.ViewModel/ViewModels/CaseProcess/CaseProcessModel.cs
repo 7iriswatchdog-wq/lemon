@@ -83,6 +83,8 @@ namespace AML.ViewModel.ViewModels.CaseProcess
         public bool IsReadOnly { get; set; }
         public string DualGoodsMatchStatus { get; set; }
 
+        public string Type { get; set; }
+
         //public List<PassportDetails> passportDetails { get; set; }
     }
 }

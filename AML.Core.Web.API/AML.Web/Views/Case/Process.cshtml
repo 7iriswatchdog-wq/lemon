@@ -675,7 +675,7 @@
                                                             </span></div>
                                             <div class='col-span-2 text-right pr-2 text-blue-600 text-[11px] font-bold'>");
 
-                                if (child.Status == 5 || child.Status == 0 || child.Status == 6)
+                                if (child.Status == 5 || child.Status == 0 || child.Status == 6 || child.Status == 7)
                                     html.Append($"<a  href='/case/Shareholder/{child.Id}' class='hover:underline'>Process</a>");
                                 else
                                     html.Append($"<a  href='/report/ViewShareholderCaseDetails?id={child.CustomerId}&type=1' class='hover:underline'>View</a>");
@@ -761,7 +761,7 @@
                                                             </span>
                                                         </div>
                                                     <div class="col-span-2 text-right pr-2 text-blue-600 text-[11px] font-bold">
-                                                        @if (parent.Status == 5 || parent.Status == 0 || parent.Status == 6)
+                                                        @if (parent.Status == 5 || parent.Status == 0 || parent.Status == 6 ||  parent.Status == 7)
                                                         {
                                                             <a  href="/case/Shareholder/@parent.Id" class="hover:underline">Process</a>
                                                         }
@@ -934,10 +934,12 @@
                         }
 
                          @* //<input type="hidden" asp-for="RiskOverRide" id="OverrideRatingTxt" /> *@
-
+                                    
+                        
                         <div class="p-5 overflow-y-auto flex-1 custom-scrollbar">
 
-    
+                                        <select class="w-full h-8 text-[11px] border border-slate-200 bg-white px-2 font-medium text-slate-600 rounded-md" id="type" onchange="RiskRatingChange()" asp-for="Type"> <option value="0">--@localizer["EMPTY"]--</option> <option value="U">U</option> <option value="LRU">LRU</option> </select>
+                            
     @{
         
             int a = 0;
@@ -1897,6 +1899,17 @@
         //Initialize Lucide icons
         lucide.createIcons();
 
+                                $(document).ready(function () {
+
+                            var userRole = "@Model.Case.UserGroupName"; // or get from session / hidden field
+
+                                    alert(userRole);
+
+                               if (userRole !== "Senior Management") {
+                                $("#type").prop("disabled", true);
+                            }
+                        });
+
         // // Mock data
         // const mockSearchResults = [
         //     { name: 'JOHN DOE', score: 95, nationality: 'US', dob: '01/01/1980', matchType: 'True Positive', remark: 'Verified match' },
@@ -2190,6 +2203,8 @@
                                 const riskDetails = data
                                            console.log(riskDetails);
                                 applyRiskSelections(riskDetails)
+
+
                                 //applyRiskSelections(riskDetails.riskTypeCategoryDTO);
 
                                 // for (let i = 0; i <= riskDetails.riskTypeCategoryDTO.length - 1; i++) {
@@ -2528,7 +2543,8 @@
                     riskDetails.riskAssessmentRating ||
                     riskDetails.finalRiskScore ||
                     "";
-
+                                    let type=riskDetails.type || "";
+                                    $('#type').val(type);
                 let counter = 0;
 
                 for (let i = 0; i < riskData.length; i++) {
@@ -4167,6 +4183,27 @@
             $('#loadingeffect').hide();
             return true;
         }
+
+             function RiskRatingChange() {
+
+                 // alert("hai");
+
+                                    var type = $("#type").val();
+                    var currentRisk = $('#riskRatingBadge').text();
+
+
+                    if (type === "LRU") {
+                        // alert(type);
+                        //                 alert(currentRisk);
+
+                        if (currentRisk === "High Risk" || currentRisk === "High Risk (O)") {
+                                            updateRiskBadge('Low Risk');
+                                               $('#finalRiskScoreTxt').val('Low Risk');
+                               $('#riskAssessmentRatingTxt').val('Low Risk');
+
+                        }
+                    }
+                }
                </script>
 </body>
 </html>

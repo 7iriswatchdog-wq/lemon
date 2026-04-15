@@ -49,6 +49,8 @@ namespace AML.ViewModel.ViewModels.Risk
 
         public string RiskOverRide { get; set; }
 
+        public string Type { get; set; }
+
 
 
     }
