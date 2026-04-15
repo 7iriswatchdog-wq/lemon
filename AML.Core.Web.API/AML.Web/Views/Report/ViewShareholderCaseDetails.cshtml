@@ -545,10 +545,14 @@
                         </div>
 
                         <div class="flex gap-4">
+                            <div class="flex-col flex-1 gap-1">
                             <textarea id="commentText"
                                       name="Comment"
-                                      class="flex-1 min-h-[44px] h-[44px] py-2.5 bg-white border-slate-200 resize-none text-xs rounded-md border px-3"
+                                      oninput="document.getElementById('commentError').classList.add('hidden')"
+                                      class="w-full min-h-[44px] h-[44px] py-2.5 bg-white border-slate-200 resize-none text-xs rounded-md border px-3"
                                       placeholder="Enter Your Comments"></textarea>
+                            <span id="commentError" class="text-red-500 text-[10px] font-semibold hidden">Enter any remark</span>
+                        </div>
 
                             @* <button type="submit"
                                     class="h-[44px] px-8 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 border rounded-md">
@@ -695,7 +699,8 @@
             e.preventDefault(); // 🔥 Always first
 
             if ($('#commentText').val().trim() === '') {
-                alert("Enter any remark");
+                $('#loadingeffect').hide();
+                $('#commentError').removeClass('hidden');
                 return false;
             }
 
@@ -856,10 +861,16 @@
 
             let actionName = $(this).data("action");
 
-            console.log("Clicked Action =>", actionName);
+            // ✅ Remarks Validation
+            let commentValue = $('#commentText').val() || "";
+            if (actionName === "Submit To Senior Management" && commentValue.trim() === "") {
+                $('#loadingeffect').hide();
+                $('#commentError').removeClass('hidden');
+                return false;
+            }
 
-            // ✅ Remarks
-            $('#hdnRemark').val($('#txtCaseActionRemarks').val());
+            $('#commentError').addClass('hidden');
+            $('#hdnRemark').val(commentValue);
 
             // ✅ Map action to controller value
             switch (actionName) {
