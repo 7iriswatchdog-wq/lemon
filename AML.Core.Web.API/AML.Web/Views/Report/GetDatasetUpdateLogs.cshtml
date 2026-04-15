@@ -660,7 +660,7 @@
                    toastr.error('Error: ' + resp.error);
                     return;
                 }
-                console.log(resp.data);
+                window.datasetUpdateLogsData = resp.data; 
                 renderTable(resp.data);
                 totalRecords = resp.recordsFiltered;
                 updatePagination();
@@ -683,7 +683,8 @@
         }
 
         data.forEach(row => {
-             const { date, time } = formatDate(row.updatedDate);
+            //  const { date, time } = formatDate(row.updatedDate);
+            const formattedDate = formatDate(row.updatedDate);
             const updated = formatDateTime(row.updatedDate);
             
             tbody.append(`
@@ -692,7 +693,7 @@
                              <!-- Updated (only if exists) -->
                             ${updated ? `
                                 <div class="text-xs text-slate-700">
-                                    <div>${updated?.date || '-'}</div>
+                                    <div>${updated.date || '-'}</div>
                                     <div class="ml-2">
                                         ${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}
                                     </div>
@@ -706,17 +707,17 @@
                 <td class="px-6 py-4 ">${row.delta}</td>
                  <td class="px-6 py-4 ">
                     ${(row.datasets && row.datasets.toLowerCase().includes('kyc6')) || !row.individual || row.individual == 0 ? row.individual : `
-                        <a href="javascript:void(0)" onclick="openPopup('${updated?.date}','${row.datasets}', 'INDIVIDUAL')" class="text-blue-600 font-bold underline cursor-pointer">${row.individual}</a>
+                        <a href="javascript:void(0)" onclick="openPopup('${updated.date}','${row.datasets}', 'INDIVIDUAL')" class="text-blue-600 font-bold underline cursor-pointer">${row.individual}</a>
                     `}
                  </td>
                  <td class="px-6 py-4 ">
                     ${(row.datasets && row.datasets.toLowerCase().includes('kyc6')) || !row.corporate || row.corporate == 0 ? row.corporate : `
-                        <a href="javascript:void(0)" onclick="openPopup('${updated?.date}','${row.datasets}', 'CORPORATE')" class="text-green-600 font-bold underline cursor-pointer">${row.corporate}</a>
+                        <a href="javascript:void(0)" onclick="openPopup('${updated.date}','${row.datasets}', 'CORPORATE')" class="text-green-600 font-bold underline cursor-pointer">${row.corporate}</a>
                     `}
                  </td>
                  <td class="px-6 py-4 ">
-                    ${(row.datasets && row.datasets.toLowerCase().includes('kyc6')) || !row.deleted || row.deleted == 0 ? row.corporate : `
-                        <a href="javascript:void(0)" onclick="openDeletedPopup('${row.id}')" class="text-green-600 font-bold underline cursor-pointer">${row.deleted}</a>
+                    ${(row.datasets && row.datasets.toLowerCase().includes('kyc6')) || !row.deleted || row.deleted == 0 || row.deleted == "0" ? (row.deleted || row.deleted === 0 || row.deleted === "0" ? row.deleted : '-') : `
+                        <a href="javascript:void(0)" onclick="openDeletedPopup(${row.id})" class="text-red-600 font-bold underline cursor-pointer">${row.deleted || '-'}</a>
                     `}
                  </td>
                  <td class="px-6 py-4 ">${row.cumulative}</td>
@@ -807,7 +808,7 @@
         loadData();
     }
 
-            async function openPopup(date, dataset, category) {
+    async function openPopup(date, dataset, category) {
         const overlay = document.getElementById("nameModalOverlay");
         const dialog = document.getElementById("nameModalDialog");
         const modalLoader = document.getElementById("modalLoader");
@@ -1033,6 +1034,89 @@
             }
         }
     });
+
+    async function openDeletedPopup(id) {
+        const overlay = document.getElementById("nameModalOverlay");
+        const dialog = document.getElementById("nameModalDialog");
+        const modalLoader = document.getElementById("modalLoader");
+
+        // Step 1: Show overlay & modal immediately with loader
+        document.getElementById("modalRecordList").innerHTML = "";
+        document.getElementById("modalRecordCount").textContent = "0";
+        overlay.classList.remove("hidden");
+        modalLoader.classList.remove("hidden");
+
+        setTimeout(() => {
+            overlay.classList.remove("opacity-0");
+            dialog.classList.remove("scale-95", "opacity-0");
+            dialog.classList.add("scale-100", "opacity-100");
+        }, 10);
+
+        try {
+            // Find the row data from the already fetched data
+            const rowData = window.datasetUpdateLogsData.find(row => row.id == id);
+
+            if (!rowData) {
+                throw new Error("No data found for this record.");
+            }
+
+            // Handle both PascalCase and camelCase property names
+            const deletedNames = rowData.DeletedNames || rowData.deletedNames;
+
+            if (!deletedNames) {
+                throw new Error("No deleted names found for this record.");
+            }
+
+            let listHtml = "";
+            let recordCount = 0;
+            const maxRecords = 100;
+
+            // Assuming DeletedNames is a comma-separated string
+            const names = deletedNames.split(',').map(name => name.trim());
+
+            for (const name of names) {
+                const li = `<li class="py-2 px-3 border-b border-slate-100 last:border-0">${name}</li>`;
+                if (recordCount < maxRecords) listHtml += li;
+                recordCount++;
+            }
+
+            const recordList = document.getElementById("modalRecordList");
+            const modalCategoryTitle = document.getElementById("modalCategoryTitle");
+            const modalRecordCount = document.getElementById("modalRecordCount");
+
+            modalCategoryTitle.textContent = "Deleted";
+            modalRecordCount.textContent = recordCount;
+
+            // Set the modal styling for deleted records
+            const modalRecordContainer = document.getElementById("modalRecordContainer");
+            const modalRecordHeader = document.getElementById("modalRecordHeader");
+
+            modalRecordContainer.className = "flex flex-col h-full bg-red-50/30 border border-red-100 rounded-xl overflow-hidden shadow-sm";
+            modalRecordHeader.className = "px-5 py-3.5 bg-red-50/70 border-b border-red-100 flex justify-between items-center";
+            modalCategoryTitle.className = "font-bold text-sm text-red-800 uppercase tracking-widest";
+            modalRecordCount.className = "bg-red-200 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm";
+
+            if (recordCount > 0) {
+                recordList.innerHTML = listHtml;
+            } else {
+                recordList.innerHTML = `<li class="py-8 text-center text-slate-500 italic flex flex-col items-center gap-3"><i data-lucide="inbox" class="h-8 w-8 text-red-200"></i>No deleted records found</li>`;
+            }
+
+            // Re-initialize for empty states inbox icons
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+
+        } catch (err) {
+            console.error("Error fetching deleted name list:", err);
+            document.getElementById("modalRecordList").innerHTML = `<li class="text-red-500 text-center py-4 font-bold bg-red-50 rounded-lg">Error loading data</li>`;
+            if (typeof toastr !== 'undefined') {
+                toastr.error("Failed to load deleted records.");
+            }
+        } finally {
+            document.getElementById("modalLoader").classList.add("hidden");
+        }
+    }
 </script>
 
 

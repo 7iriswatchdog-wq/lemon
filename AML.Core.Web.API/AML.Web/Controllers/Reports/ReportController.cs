@@ -3250,6 +3250,10 @@ namespace AML.Web.Controllers.Reports
             public string Cumulative { get; set; }
 
             [IncludeInReport(Order = 7)]
+            [Display(Name = "Deleted")]
+            public string Deleted { get; set; }
+
+            [IncludeInReport(Order = 8)]
             [Display(Name = "Details")]
             public string Details { get; set; }
         }
@@ -4236,7 +4240,8 @@ namespace AML.Web.Controllers.Reports
                     abc = abc.Where(m =>
                         (m.Datasets != null && m.Datasets.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                         (m.Delta != null && m.Delta.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                        (m.Cumulative != null && m.Cumulative.ToString().Contains(search, StringComparison.OrdinalIgnoreCase))
+                        (m.Cumulative != null && m.Cumulative.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (m.Deleted != null && m.Deleted.ToString().Contains(search, StringComparison.OrdinalIgnoreCase))
                     ).ToList();
                 }
 
@@ -4263,10 +4268,16 @@ namespace AML.Web.Controllers.Reports
                             : abc.OrderByDescending(x => x.Delta);
                         break;
 
-                    case 3: // Humiliated
+                    case 3: // Cumulative
                         sortedData = orderDirection == "asc"
                             ? abc.OrderBy(x => x.Cumulative)
                             : abc.OrderByDescending(x => x.Cumulative);
+                        break;
+
+                    case 4: // Deleted
+                        sortedData = orderDirection == "asc"
+                            ? abc.OrderBy(x => x.Deleted)
+                            : abc.OrderByDescending(x => x.Deleted);
                         break;
 
                     default:
@@ -4284,12 +4295,24 @@ namespace AML.Web.Controllers.Reports
                 }
                 var pagedData = query.ToList();
 
+                // Store the data in a global variable for use in the openDeletedPopup function
+                var dataWithDeletedNames = pagedData.Select(log => new {
+                    log.Id,
+                    log.Datasets,
+                    log.Delta,
+                    log.Individual,
+                    log.Corporate,
+                    log.Deleted,
+                    log.Cumulative,
+                    log.DeletedNames
+                }).ToList();
+
                 return Json(new
                 {
                     draw = model.draw,
                     recordsTotal = recordsTotal,
                     recordsFiltered = recordsFiltered,
-                    data = pagedData
+                    data = dataWithDeletedNames
                 });
             }
             catch (Exception ex)
@@ -4331,7 +4354,7 @@ namespace AML.Web.Controllers.Reports
             using (var package = new ExcelPackage())
             {
                 var sheet = package.Workbook.Worksheets.Add("Dataset Update Logs");
-                string[] headers = { "Updated Date", "Dataset Name", "Delta", "Individual", "Corporate", "Cumulative" };
+                string[] headers = { "Updated Date", "Dataset Name", "Delta", "Individual", "Corporate", "Cumulative", "Deleted" };
                 for (int i = 0; i < headers.Length; i++)
                 {
                     sheet.Cells[1, i + 1].Value = headers[i];
@@ -4355,6 +4378,7 @@ namespace AML.Web.Controllers.Reports
                     sheet.Cells[row, 4].Value = log.Individual;
                     sheet.Cells[row, 5].Value = log.Corporate;
                     sheet.Cells[row, 6].Value = log.Cumulative;
+                    sheet.Cells[row, 7].Value = log.Deleted;
                     row++;
                 }
 
