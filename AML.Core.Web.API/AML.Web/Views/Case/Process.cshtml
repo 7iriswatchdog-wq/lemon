@@ -965,7 +965,7 @@
 
                 @for (int j = 0; j < Model.RiskTypeCategoryDTO[i].RiskTypes.Count; j++)
                 {
-                    <div class="flex items-center judtify-between gap-3">
+                    <div class="flex items-center judtify-between gap-3" id="RiskSubTable">
 
                         <!-- Label -->
                         <label class="text-[11px] w-full risk-type-label pl-3" data-risk-type-text="@Model.RiskTypeCategoryDTO[i].RiskTypes[j].RiskType">
@@ -2264,8 +2264,9 @@
 
 
            var OverRideVariables = [];
-           var b = $('#RiskSubTable tr').length;
+           var b = $('#RiskSubTable > div').length;
            for (i = 0; i <= b; i++) {
+               cosole.log("first for loop");
                OverRideVariables[i] = false
            }
            var OverRides = "false";
@@ -2348,55 +2349,15 @@
             OverRideVariables[a] = false;
         }
 
-               // if (selectedVal == 1) {
-               //     $('#clrScore_' + a).removeClass('btn btn-warning');
-               //     $('#clrScore_' + a).removeClass('btn btn-danger pulse-button');
-               //     $('#clrScore_' + a).addClass('btn btn-success');
-               //     $('#clrScore_' + a).text(selectedVal);
-               //     $('#clrScorehdn_' + a).val(selectedVal);
-               //     OverRideVariables[a] = false;
-               // }
-               // else if (selectedVal == 2) {
-
-               //     $('#clrScore_' + a).removeClass('btn btn-success');
-               //     $('#clrScore_' + a).removeClass('btn btn-danger pulse-button');
-               //     $('#clrScore_' + a).addClass('btn btn-warning');
-               //     $('#clrScore_' + a).text(selectedVal);
-               //     $('#clrScorehdn_' + a).val(selectedVal);
-               //     OverRideVariables[a] = false;
-               // }
-               // else if (selectedVal == 3) {
-               //     $('#clrScore_' + a).removeClass('btn btn-success');
-               //     $('#clrScore_' + a).removeClass('btn btn-warning');
-               //     $('#clrScore_' + a).text(selectedVal);
-               //     $('#clrScorehdn_' + a).val(selectedVal);
-               //     $('#clrScore_' + a).addClass('btn btn-danger');
-               //     if (overrideScore == 3) {
-               //         $('#clrScore_' + a).addClass('pulse-button');
-               //         OverRideVariables[a] = true;
-               //     } else {
-               //         $('#clrScore_' + a).removeClass('pulse-button');
-               //         OverRideVariables[a] = false;
-               //     }
-               // }
-               // else if (selectedVal == 0) {
-               //     $('#clrScore_' + a).removeClass('btn btn-success');
-               //     $('#clrScore_' + a).removeClass('btn btn-warning');
-               //     $('#clrScore_' + a).removeClass('btn btn-danger pulse-button');
-               //     $('#clrScore_' + a).addClass('btn btn-block btn-secondary');
-               //     $('#clrScore_' + a).text(0);
-               //     $('#clrScorehdn_' + a).val(0);
-               //     OverRideVariables[a] = false;
-               // }
-               // else {
-               //     OverRideVariables[a] = false;
-               // }
+              
                calculateTotal();
            }
            function calculateTotal() {
                var total = 0;
                var i = 0;
                var riskStatus = '@localizer["Low Risk"]';
+
+                var customerType = "@(Model.Case.CustomerType)";
 
 
 
@@ -2425,6 +2386,10 @@
                $('#lowTxt').text(lowScoreVal.toFixed(2));
                $('#mediumTxt').text(mediumScoreVal.toFixed(2));
                $('#highTxt').text(highscoreVal.toFixed(2));
+
+               // alert("high score",highscoreVal);
+               // alert("Low score",lowScoreVal);
+               // alert("Medium score",mediumScoreVal);
 
                if (total <= highscoreVal) {
                    riskStatus = '@localizer["High Risk"]';
@@ -2457,17 +2422,24 @@
                $('#riskScoreBeforeOverrideTxt').val(riskStatus);
                $('#riskAssessmentRatingWithoutOverrideTxt').val(riskStatus);
 
-               // var OverRides = "false";
+               
 
-               // for (x = 0; x <= b; x++) {
 
-               //     OverRides = OverRides + "||" + OverRideVariables[x];
-               //     if (OverRides.includes("true")) {
-               //         riskStatus = '@localizer["High Risk"]';
-               //         $('#btntotalscoretop').removeClass();
-               //         $('#btntotalscoretop').addClass('btn btn-danger form-control br-50');
-               //     }
-               // }
+
+               var OverRides = "false";
+
+               for (x = 0; x <= b; x++) {
+
+                   console.log("inside for condition");
+                   OverRides = OverRides + "||" + OverRideVariables[x];
+                   console.log(OverRides);
+                   if (OverRides.includes("true")) {
+                       console.log("inside if condition");
+                       riskStatus = '@localizer["High Risk"] (O)';
+                       $('#btntotalscoretop').removeClass();
+                       $('#btntotalscoretop').addClass('btn btn-danger form-control br-50');
+                   }
+               }
 
            let hasOverride = OverRideVariables.some(v => v === true);
           $('#OverrideRatingTxt').val('');
@@ -2477,14 +2449,18 @@
                 riskStatus = '@localizer["High Risk"] (O)';
             }
                //Set final risk score
+               //alert(riskStatus);
+               if(customerType == "I"){
                $('#finalRiskScoreTxt').val(riskStatus);
+               }else{
                $('#riskAssessmentRatingTxt').val(riskStatus);
+               }
 
-
+               updateRiskBadge(riskStatus);
 
                $('#btntotalscoretop').text(riskStatus);
 
-                           updateRiskBadge(riskStatus);
+                           
 
                $('#riskScoreSumTxt').val(total);
                $('#riskScoreCountTxt').val(i);
@@ -2496,6 +2472,8 @@
 
 
            function updateRiskBadge(riskStatus) {
+
+               //alert(riskStatus);
 
                 let badge = $('#riskRatingBadge');
 
@@ -2582,7 +2560,7 @@
                         if (!riskType.itemTxt || riskType.itemTxt.trim() === "") {
 
                             dropdown.val("0").trigger("change");
-
+                                
                             scoreCircle.text("0");
 
                             scoreCircle.removeClass().addClass(
