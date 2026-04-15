@@ -53,6 +53,8 @@ namespace AML.Core.DataContract.Enum
 
         [Display(Name = "Pending")]
         Pending = 0,
+        [Display(Name = "Pending With Senior Management")]
+        PendingWithSeniorManagement = 4,
 
         [Display(Name = "Pending Case Created From Daily Scheduler")]
         PendingCaseCreatedFromDailyScheduler = 6,
