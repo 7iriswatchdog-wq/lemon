@@ -416,7 +416,9 @@ namespace AML.Core.Repository.FreeSource
                                 ),
                                  Query2.Or(
                                         Query2.Eq("CATEGORY", isCorporate ? "CORPORATE" : "INDIVIDUAL"),
-                                       Query2.Eq("CATEGORY", isCorporate ? "ENTITY" : "INDIVIDUAL")
+                                       Query2.Eq("CATEGORY", isCorporate ? "ENTITY" : "INDIVIDUAL"),
+                                       Query2.Eq("CATEGORY", isCorporate ? "VESSEL" : "INDIVIDUAL"),
+                                       Query2.Eq("CATEGORY", isCorporate ? "AIRCRAFT" : "INDIVIDUAL")
                                 )
                                 
                         );
@@ -500,7 +502,7 @@ namespace AML.Core.Repository.FreeSource
                     Builders<NAMELIST>.Filter.In(
                         x => x.CATEGORY,
                         category.ToUpper() == "CORPORATE"
-                            ? new[] { "CORPORATE", "ENTITY" }
+                            ? new[] { "CORPORATE", "ENTITY", "VESSEL", "AIRCRAFT" }
                             : new[] { "INDIVIDUAL" }
                     )
                 );
