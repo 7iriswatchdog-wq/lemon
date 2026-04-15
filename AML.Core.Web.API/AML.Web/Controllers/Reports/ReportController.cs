@@ -4252,8 +4252,8 @@ namespace AML.Web.Controllers.Reports
                 {
                     case 0: // Updated Date
                         sortedData = orderDirection == "asc"
-                            ? abc.OrderBy(x => x.UpdatedDate)
-                            : abc.OrderByDescending(x => x.UpdatedDate);
+                            ? abc.OrderBy(x => x.Id)
+                            : abc.OrderByDescending(x => x.Id);
                         break;
 
                     case 1: // Datasets
@@ -4281,7 +4281,7 @@ namespace AML.Web.Controllers.Reports
                         break;
 
                     default:
-                        sortedData = abc.OrderByDescending(x => x.UpdatedDate);
+                        sortedData = abc.OrderByDescending(x => x.Id);
                         break;
                 }
 
@@ -4304,7 +4304,8 @@ namespace AML.Web.Controllers.Reports
                     log.Corporate,
                     log.Deleted,
                     log.Cumulative,
-                    log.DeletedNames
+                    log.DeletedNames,
+                    log.UpdatedDate
                 }).ToList();
 
                 return Json(new
