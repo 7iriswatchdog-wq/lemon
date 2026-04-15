@@ -301,11 +301,14 @@
                 <div class="space-y-4" x-data="{ comment: '' }">
                     <h3 class="text-sm font-bold text-slate-900">Case Comments</h3>
                     <div class="flex gap-4">
-                        <textarea id="caseComment" 
-                                  oninput="toggleSaveButton()"
-                                  @(Model.IsReadOnly ? "disabled" : "")
-                                  class="flex-1 h-[44px] py-2.5 bg-white border-slate-200 resize-none text-xs rounded-md border px-3 outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium disabled:bg-slate-50 disabled:text-slate-400" 
-                                  placeholder="Enter Your Comments"></textarea>
+                        <div class="flex-col flex-1 gap-1">
+                            <textarea id="caseComment" 
+                                      oninput="toggleSaveButton(); $('#caseCommentError').addClass('hidden');"
+                                      @(Model.IsReadOnly ? "disabled" : "")
+                                      class="w-full h-[44px] py-2.5 bg-white border-slate-200 resize-none text-xs rounded-md border px-3 outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium disabled:bg-slate-50 disabled:text-slate-400" 
+                                      placeholder="Enter Your Comments"></textarea>
+                            <span id="caseCommentError" class="text-red-500 text-[10px] font-semibold hidden">Enter any remark</span>
+                        </div>
                         <button id="btnSaveComment" 
                                 onclick="saveComment()" 
                                 @(Model.IsReadOnly ? "disabled" : "disabled") 
@@ -396,6 +399,13 @@
 
     function updateDecision(decision) {
         const comment = $('#caseComment').val();
+
+        if (decision === 'Submit to Senior Management' && !comment.trim()) {
+            $('#caseCommentError').removeClass('hidden');
+            return;
+        }
+
+        $('#caseCommentError').addClass('hidden');
 
         $.ajax({
             url: '/ProliferationFinance/UpdateStatus',
