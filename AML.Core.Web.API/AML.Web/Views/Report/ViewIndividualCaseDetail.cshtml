@@ -2061,8 +2061,7 @@
                     riskDetails.riskScoreBeforeOverride ||
                     "";
 
-                    let type=riskDetails.type || "0";
-
+                    let type = riskDetails.type || "0";
                      $('#type').val(type);
 
                 $('#btntotal').text(riskDetails.riskScoreCount);
@@ -2117,45 +2116,22 @@
                     }
                 }
 
-                let badge = $("#riskRatingBadge");
-
-                if (!badge.length) return;
-
-                badge.removeClass("bg-green-500 bg-yellow-400 bg-red-500 text-white");
-
-                badge.addClass("px-3 py-1 rounded-full text-xs font-bold text-white");
-
-           let displayRating = rating;
-
-                if ((rating || "").toLowerCase() === "high risk" && hasHighOverride) {
-                    displayRating = "High Risk(O)";
-                }
-
-               let ratingLower = (displayRating || "").toLowerCase();
-
-            if (ratingLower.includes("low risk")) {
-                            badge.removeClass("text-slate-600")
-                                        badge.addClass("bg-green-500 text-white-600");
+                               // Apply final badge status and color using the robust updateRiskBadge function
+            let displayRating = rating;
+            if (rating.toLowerCase().includes("high") && hasHighOverride && !rating.toLowerCase().includes("(o)")) {
+                displayRating = "High Risk (O)";
             }
-            else if (ratingLower.includes("medium risk")) {
-                            badge.removeClass("text-slate-600")
-                                        badge.addClass("bg-yellow-400 text-white-600");
-            }
-            else if (ratingLower.includes("high risk")) {
-                            badge.removeClass("text-slate-600")
-                                        badge.addClass("bg-red-500 text-white-600");   // ⭐ works for both High Risk and High Risk (O)
-            }
+            
+            updateRiskBadge(displayRating);
+        }
 
-                            badge.text(displayRating);
-                        }
-
-                function updateScoreCircle(counter, score, overrideScore) {
+        function updateScoreCircle(counter, score, overrideScore) {
             let el = $(`#clrScore_${counter}`);
             let scoreHidden = $(`#clrScorehdn_${counter}`);
 
             // Reset classes first
             el.removeClass();
-                        el.addClass("score-badge text-[10px] font-semibold inline-flex items-center justify-center w-12 h-6 rounded-full");
+            el.addClass("score-badge text-[10px] font-semibold inline-flex items-center justify-center w-12 h-6 rounded-full");
 
             // Update hidden input
             scoreHidden.val(score);
@@ -2184,8 +2160,38 @@
             }
         }
 
+        function updateRiskBadge(riskStatus) {
+            let badge = $('#riskRatingBadge');
+            if (!badge.length) return;
 
+            badge.removeClass();
+            badge.addClass("px-3 py-1 rounded-full text-xs font-bold text-white");
 
+            if (riskStatus.toLowerCase().includes("low")) {
+                badge.addClass("bg-green-500");
+            }
+            else if (riskStatus.toLowerCase().includes("medium")) {
+                badge.addClass("bg-yellow-400");
+            }
+            else if (riskStatus.toLowerCase().includes("high")) {
+                badge.addClass("bg-red-500");
+            }
+
+            badge.text(riskStatus);
+        }
+
+        function RiskRatingChange() {
+            var type = $("#type").val();
+            var currentRisk = $('#riskRatingBadge').text();
+
+            if (type === "LRU") {
+                if (currentRisk.toLowerCase().includes("high")) {
+                    updateRiskBadge('Low Risk');
+                    $('#finalRiskScoreTxt').val('Low Risk');
+                    $('#riskAssessmentRatingTxt').val('Low Risk');
+                }
+            }
+        }
 
 
              //         function applyRiskSelections(riskData) {
