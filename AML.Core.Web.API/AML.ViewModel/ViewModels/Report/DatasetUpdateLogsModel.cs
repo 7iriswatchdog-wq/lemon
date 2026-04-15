@@ -14,8 +14,11 @@ namespace AML.Web.Controllers.Reports
         
         public string Cumulative { get; set; }
 
+        public string Deleted { get; set; }
+
         public string Individual { get; set; }
 
+        public string DeletedNames { get; set; }
 
         public string Corporate { get; set; }
 

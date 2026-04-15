@@ -660,7 +660,7 @@
                    toastr.error('Error: ' + resp.error);
                     return;
                 }
-                console.log(resp.data);
+                window.datasetUpdateLogsData = resp.data; 
                 renderTable(resp.data);
                 totalRecords = resp.recordsFiltered;
                 updatePagination();
@@ -683,7 +683,8 @@
         }
 
         data.forEach(row => {
-             const { date, time } = formatDate(row.updatedDate);
+            //  const { date, time } = formatDate(row.updatedDate);
+            const formattedDate = formatDate(row.updatedDate);
             const updated = formatDateTime(row.updatedDate);
             
             tbody.append(`
@@ -692,7 +693,7 @@
                              <!-- Updated (only if exists) -->
                             ${updated ? `
                                 <div class="text-xs text-slate-700">
-                                    <div>${updated?.date || '-'}</div>
+                                    <div>${updated.date || '-'}</div>
                                     <div class="ml-2">
                                         ${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}
                                     </div>
@@ -706,17 +707,17 @@
                 <td class="px-6 py-4 ">${row.delta}</td>
                  <td class="px-6 py-4 ">
                     ${(row.datasets && row.datasets.toLowerCase().includes('kyc6')) || !row.individual || row.individual == 0 ? row.individual : `
-                        <a href="javascript:void(0)" onclick="openPopup('${updated?.date}','${row.datasets}', 'INDIVIDUAL')" class="text-blue-600 font-bold underline cursor-pointer">${row.individual}</a>
+                        <a href="javascript:void(0)" onclick="openPopup('${updated.date}','${row.datasets}', 'INDIVIDUAL')" class="text-blue-600 font-bold underline cursor-pointer">${row.individual}</a>
                     `}
                  </td>
                  <td class="px-6 py-4 ">
                     ${(row.datasets && row.datasets.toLowerCase().includes('kyc6')) || !row.corporate || row.corporate == 0 ? row.corporate : `
-                        <a href="javascript:void(0)" onclick="openPopup('${updated?.date}','${row.datasets}', 'CORPORATE')" class="text-green-600 font-bold underline cursor-pointer">${row.corporate}</a>
+                        <a href="javascript:void(0)" onclick="openPopup('${updated.date}','${row.datasets}', 'CORPORATE')" class="text-green-600 font-bold underline cursor-pointer">${row.corporate}</a>
                     `}
                  </td>
                  <td class="px-6 py-4 ">
-                    ${(row.datasets && row.datasets.toLowerCase().includes('kyc6')) || !row.deleted || row.deleted == 0 ? (row.deleted || '-') : `
-                        <a href="javascript:void(0)" onclick="openDeletedPopup('${row.id}')" class="text-red-600 font-bold underline cursor-pointer">${row.deleted || '-'}</a>
+                    ${(row.datasets && row.datasets.toLowerCase().includes('kyc6')) || !row.deleted || row.deleted == 0 || row.deleted == "0" ? (row.deleted || row.deleted === 0 || row.deleted === "0" ? row.deleted : '-') : `
+                        <a href="javascript:void(0)" onclick="openDeletedPopup(${row.id})" class="text-red-600 font-bold underline cursor-pointer">${row.deleted || '-'}</a>
                     `}
                  </td>
                  <td class="px-6 py-4 ">${row.cumulative}</td>
@@ -956,24 +957,31 @@
         }, 10);
 
         try {
-            const response = await fetch(`/GetDeletedNamesById?id=${id}`);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            // Find the row data from the already fetched data
+            const rowData = window.datasetUpdateLogsData.find(row => row.id == id);
+
+            if (!rowData) {
+                throw new Error("No data found for this record.");
             }
 
-            const data = await response.json();
+            // Handle both PascalCase and camelCase property names
+            const deletedNames = rowData.DeletedNames || rowData.deletedNames;
+
+            if (!deletedNames) {
+                throw new Error("No deleted names found for this record.");
+            }
 
             let listHtml = "";
             let recordCount = 0;
             const maxRecords = 100;
 
-            if (data && data.length > 0) {
-                for (const item of data) {
-                    const li = `<li class="py-2 px-3 border-b border-slate-100 last:border-0">${item.fullname}</li>`;
-                    if (recordCount < maxRecords) listHtml += li;
-                    recordCount++;
-                }
+            // Assuming DeletedNames is a comma-separated string
+            const names = deletedNames.split(',').map(name => name.trim());
+
+            for (const name of names) {
+                const li = `<li class="py-2 px-3 border-b border-slate-100 last:border-0">${name}</li>`;
+                if (recordCount < maxRecords) listHtml += li;
+                recordCount++;
             }
 
             const recordList = document.getElementById("modalRecordList");

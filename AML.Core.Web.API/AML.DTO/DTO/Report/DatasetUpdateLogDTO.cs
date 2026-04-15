@@ -23,7 +23,11 @@ namespace AML.Web.Controllers.Reports
         [Column("cumulative")]
         public string Cumulative { get; set; }
 
+        [Column("deleteddelta")]
+        public string Deleted { get; set; }
 
+        [Column("DeletedNames")]
+        public string DeletedNames { get; set; }
 
         [Column("createdon")]
         public DateTime UpdatedDate { get; set; }
