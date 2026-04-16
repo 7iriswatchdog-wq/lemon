@@ -20,8 +20,134 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    @* Redundant Alpine import removed to prevent layout conflicts *@
+    @* <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script> *@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('blocklistData', () => ({
+                selectedMethod: 'manual',
+                isLoading: false,
+                isDragging: false,
+                selectedFile: null,
+                isSuccessModalOpen: false,
+                modalTitle: '',
+                modalMessage: '',
+                refId: '',
+                isOpen: false, // Fallback for global scope issues
+
+                manualData: {
+                    Type: 'CORPORATE',
+                    FullName: '',
+                    Nationality: '0',
+                    DOB: '',
+                    Source: 'INTERNAL',
+                    IdNumber: '',
+                    Remarks: ''
+                },
+
+                init() {
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    if (window.location.search.includes('preview=true')) {
+                        this.selectedMethod = 'bulk';
+                    }
+                },
+
+                resetManualForm() {
+                    this.manualData = {
+                        Type: 'CORPORATE',
+                        FullName: '',
+                        Nationality: '0',
+                        DOB: '',
+                        Source: 'INTERNAL',
+                        IdNumber: '',
+                        Remarks: ''
+                    };
+                },
+
+                handleFileSelect(file) {
+                    if (!file) return;
+                    this.selectedFile = file;
+                    this.$nextTick(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); });
+                },
+
+                async submitManualForm() {
+                    this.isLoading = true;
+                    try {
+                        const formData = new FormData();
+                        for (let key in this.manualData) {
+                            formData.append(key, this.manualData[key]);
+                        }
+
+                        const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+                        if (tokenElement) {
+                            formData.append('__RequestVerificationToken', tokenElement.value);
+                        }
+
+                        const response = await fetch('/InternalWatchList/Create', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            this.modalTitle = 'Record Added!';
+                            this.modalMessage = 'The record has been successfully added to the blocklist.';
+                            this.isSuccessModalOpen = true;
+                            this.resetManualForm();
+                        } else {
+                            alert(result.message || 'Error occurred during submission.');
+                        }
+                    } catch (error) {
+                        console.error('Submission error:', error);
+                        alert('A server error occurred. Please try again.');
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                async submitBulkUpload() {
+                    if (!this.selectedFile) return;
+                    this.isLoading = true;
+                    try {
+                        const formData = new FormData();
+                        formData.append('Document.fileUpload', this.selectedFile);
+
+                        const response = await fetch('/InternalWatchList/Upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            this.modalTitle = 'Upload Complete!';
+                            this.modalMessage = `Processed ${result.total} records successfully into the system.`;
+                            this.isSuccessModalOpen = true;
+                            this.selectedFile = null;
+                        } else {
+                            alert(result.message || 'Error occurred during upload.');
+                        }
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                        alert('A server error occurred during the upload process.');
+                    } finally {
+                        this.isLoading = false;
+                        if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+                    }
+                },
+
+                // copyRefId() {
+                //     navigator.clipboard.writeText(this.refId);
+                // },
+                
+                downloadTemplate(url) {
+                    window.location.href = url;
+                }
+            }));
+        });
+    </script>
     <style>
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
         [x-cloak] { display: none !important; }
@@ -38,11 +164,20 @@
         @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
         @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+
+        .success-pulse {
+             animation: success-pulse-anim 2s infinite;
+        }
+        @@keyframes success-pulse-anim {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
     </style>
 </head>
 
-<body class="bg-[#f8fafc] text-slate-900 overflow-hidden" x-data="blocklistData()">
-    <div class="flex h-screen overflow-hidden">
+<body class="bg-[#f8fafc] text-slate-900 overflow-hidden">
+    <div class="flex h-screen overflow-hidden" x-data="blocklistData">
         <div id="loadingeffect" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50" x-show="isLoading" x-cloak>
             <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
         </div>
@@ -156,11 +291,10 @@
                                             <label class="text-[13px] font-bold text-slate-700">Data Source <span class="text-red-500">*</span></label>
                                             <select name="Source" x-model="manualData.Source" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" required>
                                                 <option value="CBWL">Central Bank Watch List</option>
-                                                <option value="BL">Black List</option>
                                                 <option value="INTERNAL">Block List</option>
                                                 @if (clientname == "National")
                                                 {
-                                                    <option value="UAE IEC LIST">UAE IEC LIST</option>
+                                                    <option value="UAE IEC LIST">UAE IEC</option>
                                                 }
                                             </select>
                                         </div>
@@ -208,15 +342,9 @@
                                         </div>
                                     </div>
                                     <div class="flex flex-wrap gap-2 justify-center">
-                                        <button x-on:click="downloadTemplate('/InternalWatchList/DownloadInternalWatchList')" class="px-6 h-11 bg-blue-600 text-white font-extrabold rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all text-sm flex items-center gap-2">
-                                            <i data-lucide="download" class="w-4 h-4"></i> Blocklist
+                                        <button x-on:click="downloadTemplate('/InternalWatchList/DownloadUAEIECLISTInternalWatchList')" class="px-6 h-11 bg-blue-600 text-white font-extrabold rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all text-sm flex items-center gap-2">
+                                            <i data-lucide="download" class="w-4 h-4"></i> Download
                                         </button>
-                                        @if (clientname == "National")
-                                        {
-                                            <button x-on:click="downloadTemplate('/InternalWatchList/DownloadUAEIECLISTInternalWatchList')" class="px-6 h-11 bg-white border border-blue-200 text-blue-600 font-extrabold rounded-xl hover:bg-blue-50 transition-all text-sm flex items-center gap-2">
-                                                <i data-lucide="download" class="w-4 h-4"></i> UAE IEC
-                                            </button>
-                                        }
                                     </div>
                                 </div>
 
@@ -329,148 +457,13 @@
                             class="h-14 bg-white border-2 border-slate-100 text-slate-600 font-extrabold rounded-2xl transition-all hover:bg-slate-50 flex items-center justify-center gap-2">
                          Add Another Record
                     </button>
-                </div>
             </div>
         </div>
     </div>
+</div>
 
     <script>
-        function blocklistData() {
-            return {
-                selectedMethod: 'manual',
-                isLoading: false,
-                isDragging: false,
-                selectedFile: null,
-                isSuccessModalOpen: false,
-                modalTitle: '',
-                modalMessage: '',
-                refId: '',
-                
-                manualData: {
-                    Type: 'CORPORATE',
-                    FullName: '',
-                    Nationality: '0',
-                    DOB: '',
-                    Source: 'INTERNAL',
-                    IdNumber: '',
-                    Remarks: ''
-                },
-                
-                init() {
-                    lucide.createIcons();
-                    if (window.location.search.includes('preview=true')) {
-                        this.selectedMethod = 'bulk';
-                    }
-                },
-                
-                resetManualForm() {
-                    this.manualData = {
-                        Type: 'CORPORATE',
-                        FullName: '',
-                        Nationality: '0',
-                        DOB: '',
-                        Source: 'INTERNAL',
-                        IdNumber: '',
-                        Remarks: ''
-                    };
-                },
-
-                handleFileSelect(file) {
-                    if (!file) return;
-                    this.selectedFile = file;
-                    lucide.createIcons();
-                },
-
-                async submitManualForm() {
-                    this.isLoading = true;
-                    try {
-                        const formData = new FormData();
-                        for (let key in this.manualData) {
-                            formData.append(key, this.manualData[key]);
-                        }
-                        
-                        // Add Anti-Forgery Token
-                        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-                        formData.append('__RequestVerificationToken', token);
-
-                        const response = await fetch('/InternalWatchList/Create', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        
-                        const result = await response.json();
-                        
-                        if (result.success) {
-                            this.modalTitle = 'Record Added!';
-                            this.modalMessage = 'The record has been successfully added to the blocklist.';
-                            this.refId = result.uid;
-                            this.isSuccessModalOpen = true;
-                            this.resetManualForm();
-                            this.$nextTick(() => lucide.createIcons());
-                        } else {
-                            alert(result.message || 'Error occurred during submission.');
-                        }
-                    } catch (error) {
-                        console.error('Submission error:', error);
-                        alert('A server error occurred. Please try again.');
-                    } finally {
-                        this.isLoading = false;
-                    }
-                },
-
-                async submitBulkUpload() {
-                    if (!this.selectedFile) return;
-                    this.isLoading = true;
-                    try {
-                        const formData = new FormData();
-                        formData.append('Document.fileUpload', this.selectedFile);
-                        
-                        const response = await fetch('/InternalWatchList/Upload', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        
-                        const result = await response.json();
-                        
-                        if (result.success) {
-                            this.modalTitle = 'Upload Complete!';
-                            this.modalMessage = `Processed ${result.total} records successfully into the system.`;
-                            this.refId = '';
-                            this.isSuccessModalOpen = true;
-                            this.selectedFile = null;
-                            this.$nextTick(() => lucide.createIcons());
-                        } else {
-                            alert(result.message || 'Error occurred during upload.');
-                        }
-                    } catch (error) {
-                        console.error('Upload error:', error);
-                        alert('A server error occurred during the upload process.');
-                    } finally {
-                        this.isLoading = false;
-                        if (this.$refs.fileInput) this.$refs.fileInput.value = '';
-                    }
-                },
-
-                copyRefId() {
-                    navigator.clipboard.writeText(this.refId);
-                },
-                
-                downloadTemplate(url) {
-                    window.location.href = url;
-                }
-            }
-        }
+        // blocklistData has been moved to <head> to ensure early availability
     </script>
-    <style>
-        [x-cloak] { display: none !important; }
-        .success-pulse {
-             animation: success-pulse-anim 2s infinite;
-        }
-        @@keyframes success-pulse-anim {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-    </style>
 </body>
 </html>

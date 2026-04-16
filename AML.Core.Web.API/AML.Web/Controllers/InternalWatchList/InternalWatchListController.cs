@@ -26,8 +26,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Newtonsoft.Json;
 using NToastNotify;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
+using OfficeOpenXml.DataValidation;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 using System.ComponentModel;
 using System.Data;
 using System.Linq;
@@ -210,142 +215,141 @@ namespace AML.Web.Controllers.InternalWatchList
         {
             var clientId = _clientHandler.GetClientId();
             WatchListModel watchlistModel = new WatchListModel();
-            if (model.Document!=null)
+            try
             {
-                DocumentsModel _documentsModel = _fileUploader.UploadFile(model.ClientId, ItemType.InternalWatchList, _clientHandler.GetBranchId(), model.Document.fileUpload);
-                _documentsModel.AddedBy = _clientHandler.GetUserId();
-                var totalrecords = 0;
-                var apiresponse2 = "";
-               
-                int individualCount = 0;
-                int corporateCount = 0;
-                string lastSource = "";
-
-                List<InternalWatcListExcelDTO> _custExcelDataResponse = _internalWatchListService.LoadInternalWatchExcelData(_documentsModel.DocFullPath, 1).Result;
-                foreach (var item in _custExcelDataResponse)
+                if (model.Document != null)
                 {
-                    if (item.Type == "INDIVIDUAL" || item.Type == "CORPORATE" || item.Type == "Individual" || item.Type == "Corporate")
+                    DocumentsModel _documentsModel = _fileUploader.UploadFile(model.ClientId, ItemType.InternalWatchList, _clientHandler.GetBranchId(), model.Document.fileUpload);
+                    _documentsModel.AddedBy = _clientHandler.GetUserId();
+                    var totalrecords = 0;
+                    var apiresponse2 = "";
+
+                    int individualCount = 0;
+                    int corporateCount = 0;
+                    string lastSource = "";
+
+                    List<InternalWatcListExcelDTO> _custExcelDataResponse = _internalWatchListService.LoadInternalWatchExcelData(_documentsModel.DocFullPath, 1).Result;
+                    foreach (var item in _custExcelDataResponse)
                     {
-                        if (item.Source == "UAE IEC LIST")
+                        // Map user-friendly Excel labels back to API internal codes
+                        if (!string.IsNullOrEmpty(item.Type))
                         {
-                            var request = new { fullname = item.FullName, dob = item.DOB, nationality = item.Nationality, type = item.Source, category = item.Type, REMARKS = item.REMARKS };
-                            apiresponse2 = _clientHandler.PostAsync(request, ScreeningService.ADDTOBLACKLIST).Result;
+                            if (item.Type.Equals("Corporate", StringComparison.OrdinalIgnoreCase)) item.Type = "CORPORATE";
+                            else if (item.Type.Equals("Individual", StringComparison.OrdinalIgnoreCase)) item.Type = "INDIVIDUAL";
+                        }
 
+                        if (!string.IsNullOrEmpty(item.Source))
+                        {
+                            if (item.Source.Equals("Central Bank Watch List", StringComparison.OrdinalIgnoreCase)) item.Source = "CBWL";
+                            else if (item.Source.Equals("Block List", StringComparison.OrdinalIgnoreCase)) item.Source = "INTERNAL";
+                            else if (item.Source.Equals("UAE IEC", StringComparison.OrdinalIgnoreCase)) item.Source = "UAE IEC LIST";
+                        }
 
-                            if (!string.IsNullOrEmpty(apiresponse2))
+                        if (item.Type == "INDIVIDUAL" || item.Type == "CORPORATE")
+                        {
+                            if (item.Source == "UAE IEC LIST")
                             {
-                                model.Source = item.Source;
-                                totalrecords++;
-                                
-                                lastSource = item.Source;
+                                var request = new { fullname = item.FullName, dob = item.DOB, nationality = item.Nationality, type = item.Source, category = item.Type, REMARKS = item.REMARKS };
+                                apiresponse2 = _clientHandler.PostAsync(request, ScreeningService.ADDTOBLACKLIST).Result;
 
-                                totalrecords++;
-
-                                var type = item.Type?.Trim().ToLower();
-
-                                if (type == "individual")
-                                    individualCount++;
-                                else if (type == "corporate")
-                                    corporateCount++;
-
-                                // Log to MongoDB (Fixed: Added missing logging for UAE IEC LIST)
-                                _mongoRepository.InsertBlockList(new NAMELIST
+                                if (!string.IsNullOrEmpty(apiresponse2))
                                 {
-                                    UID = Guid.NewGuid().ToString(),
-                                    FULLNAME = item.FullName,
-                                    NATIONALITY = item.Nationality,
-                                    TYPE = item.Source,
-                                    CATEGORY = item.Type,
-                                    REMARKS = item.REMARKS,
-                                    DOB = new List<DOBLIST> { new DOBLIST { DOB = item.DOB } },
-                                    STATUS = "A",
-                                    CREATEDON = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss"),
-                                    CREATEDDATE = DateTime.UtcNow,
-                                    UPDATEDDATE = DateTime.UtcNow
-                                });
+                                    model.Source = item.Source;
+                                    totalrecords++;
+                                    lastSource = item.Source;
+
+                                    if (item.Type == "INDIVIDUAL") individualCount++;
+                                    else if (item.Type == "CORPORATE") corporateCount++;
+
+                                    _mongoRepository.InsertBlockList(new NAMELIST
+                                    {
+                                        UID = Guid.NewGuid().ToString(),
+                                        FULLNAME = item.FullName,
+                                        NATIONALITY = item.Nationality,
+                                        TYPE = item.Source,
+                                        CATEGORY = item.Type,
+                                        REMARKS = item.REMARKS,
+                                        DOB = new List<DOBLIST> { new DOBLIST { DOB = item.DOB } },
+                                        STATUS = "A",
+                                        CREATEDON = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss"),
+                                        CREATEDDATE = DateTime.UtcNow,
+                                        UPDATEDDATE = DateTime.UtcNow
+                                    });
+                                }
                             }
+                            else
+                            {
+                                var request = new { fullname = item.FullName, dob = item.DOB, nationality = item.Nationality, type = item.Source, category = item.Type, CLIENTID = clientId, REMARKS = item.REMARKS };
+                                var apiresponse = _clientHandler.PostAsync(request, ScreeningService.ADDTOBLACKLIST).Result;
 
+                                if (!string.IsNullOrEmpty(apiresponse))
+                                {
+                                    totalrecords++;
 
+                                    if (item.Type == "INDIVIDUAL") individualCount++;
+                                    else if (item.Type == "CORPORATE") corporateCount++;
+
+                                    _mongoRepository.InsertBlockList(new NAMELIST
+                                    {
+                                        UID = Guid.NewGuid().ToString(),
+                                        FULLNAME = item.FullName,
+                                        NATIONALITY = item.Nationality,
+                                        TYPE = item.Source,
+                                        CATEGORY = item.Type,
+                                        REMARKS = item.REMARKS,
+                                        DOB = new List<DOBLIST> { new DOBLIST { DOB = item.DOB } },
+                                        STATUS = "A",
+                                        CREATEDON = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss"),
+                                        CREATEDDATE = DateTime.UtcNow,
+                                        UPDATEDDATE = DateTime.UtcNow
+                                    });
+                                }
+                            }
                         }
                         else
                         {
-                            var request = new { fullname = item.FullName, dob = item.DOB, nationality = item.Nationality, type = item.Source, category = item.Type, CLIENTID = clientId, REMARKS = item.REMARKS };
-                            var apiresponse = _clientHandler.PostAsync(request, ScreeningService.ADDTOBLACKLIST).Result;
-
-                            if (!string.IsNullOrEmpty(apiresponse))
-                            {
-                                // Log to MongoDB
-                                _mongoRepository.InsertBlockList(new NAMELIST
-                                {
-                                    UID = Guid.NewGuid().ToString(),
-                                    FULLNAME = item.FullName,
-                                    NATIONALITY = item.Nationality,
-                                    TYPE = item.Source,
-                                    CATEGORY = item.Type,
-                                    REMARKS = item.REMARKS,
-                                    DOB = new List<DOBLIST> { new DOBLIST { DOB = item.DOB } },
-                                    STATUS = "A",
-                                    CREATEDON = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss"),
-                                    CREATEDDATE = DateTime.UtcNow,
-                                    UPDATEDDATE = DateTime.UtcNow
-                                });
-                            }
+                            return Json(new { success = false, message = $"Invalid Type '{item.Type}' in row. Must be 'Individual' or 'Corporate'." });
                         }
                     }
-                    else
-                    {
-                        _toastNotification.AddErrorToastMessage("Type should be individual or corporate");
 
-                        return View("ViewExcelContent", _custExcelDataResponse);
+                    if (totalrecords > 0 && !string.IsNullOrEmpty(lastSource))
+                    {
+                        DataSetsScreeinglogsModel datasetLog = new DataSetsScreeinglogsModel
+                        {
+                            Datasets = lastSource,
+                            Delta = $"+{totalrecords}",
+                            Individual = $"+{individualCount}",
+                            Corporate = $"+{corporateCount}",
+                            Cumulative = totalrecords.ToString(),
+                            CreatedOn = DateTime.Now
+                        };
+                        _customerCaseService.InsertDatasetsScreeninglogs(datasetLog);
                     }
 
-                }
-                
-                if (!string.IsNullOrEmpty(apiresponse2))
-                {
-                    
-
-                    
-
-                    // ? Dataset Screening Log
-                    DataSetsScreeinglogsModel datasetLog = new DataSetsScreeinglogsModel
+                    watchlistModel.CreatedBy = _clientHandler.GetUserId();
+                    watchlistModel.Nationalities = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)), "Name", "Name");
+                    watchlistModel.ExcelData = _mapper.Map<List<ExcelData>>(_custExcelDataResponse);
+                    EtlBatchDTO _etlBatchDTO = new EtlBatchDTO()
                     {
-                        Datasets = lastSource,
-                        Delta = $"+{totalrecords}",
-                        Individual = $"+{individualCount}",
-                        Corporate = $"+{corporateCount}",
-                        Cumulative = totalrecords.ToString(), // replace with DB cumulative if needed
-                        CreatedOn = DateTime.Now
+                        FileName = _documentsModel.DocName,
+                        FileFullPath = _documentsModel.DocFullPath,
+                        TotalRows = watchlistModel.ExcelData.Count,
+                        RowsRecorded = 0,
+                        AddedBy = _documentsModel.AddedBy,
+                        Type = (int)LogModulle.InternalWatchlist
                     };
-
-                    _customerCaseService.InsertDatasetsScreeninglogs(datasetLog);
+                    int resp = _etlLogRepository.Create(_etlBatchDTO).Result;
+                    return resp > 0
+                        ? Json(new { success = true, total = totalrecords, message = "Bulk Watch List uploaded successfully" })
+                        : Json(new { success = false, message = "Something went wrong during logs recording." });
                 }
-
-
-                watchlistModel.CreatedBy = _clientHandler.GetUserId();
-                
-                watchlistModel.Nationalities = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)), "Name", "Name");
-                watchlistModel.ExcelData = _mapper.Map<List<ExcelData>>(_custExcelDataResponse);
-                EtlBatchDTO _etlBatchDTO = new EtlBatchDTO()
-                {
-                    FileName = _documentsModel.DocName,
-                    FileFullPath = _documentsModel.DocFullPath,
-                    TotalRows = watchlistModel.ExcelData.Count,
-                    RowsRecorded = 0,
-                    AddedBy = _documentsModel.AddedBy,
-                    Type = (int)LogModulle.InternalWatchlist
-                };
-                int resp = _etlLogRepository.Create(_etlBatchDTO).Result;
-                if (resp > 0)
-                {
-                    return Json(new { success = true, total = totalrecords, message = "Bulk Watch List uploaded successfully" });
-                }
-                else
-                {
-                    return Json(new { success = false, message = "Something went wrong during logs recording." });
-                }
+                return Json(new { success = false, message = "No document provided." });
             }
-            return Json(new { success = false, message = "No document provided." });
+            catch (Exception ex)
+            {
+                var innerMsg = ex.InnerException?.Message ?? ex.Message;
+                return Json(new { success = false, message = $"Upload failed: {innerMsg}" });
+            }
         }
         [HttpGet]
         public ActionResult DownloadInternalWatchList(string filename)
@@ -355,12 +359,83 @@ namespace AML.Web.Controllers.InternalWatchList
             byte[] fileBytes = System.IO.File.ReadAllBytes(filePath);
             return File(fileBytes, "application/force-download", fileName);
         }
-        public ActionResult DownloadUAEIECLISTInternalWatchList(string filename)
+        [HttpGet]
+        public ActionResult DownloadUAEIECLISTInternalWatchList()
         {
-            string filePath = @"Files/UaeIceList_Internal_WatchList.xlsx";
-            string fileName = "UAE IEC List Internal WatchList.xlsx";
-            byte[] fileBytes = System.IO.File.ReadAllBytes(filePath);
-            return File(fileBytes, "application/force-download", fileName);
+            var clientId = _clientHandler.GetClientId();
+            var nationalities = _countryService.GetAll(clientId).Select(x => x.Name).ToList();
+
+            using (var package = new ExcelPackage())
+            {
+                var sheet = package.Workbook.Worksheets.Add("Blocklist Template");
+                var hiddenSheet = package.Workbook.Worksheets.Add("Data");
+                hiddenSheet.Hidden = eWorkSheetHidden.VeryHidden;
+
+                // Headers
+                string[] headers = { "Type", "Full Name", "Nationality/Country of Incorporation", "Date of Birth/Incorporation", "Data Source", "Id Number", "Remarks" };
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    sheet.Cells[1, i + 1].Value = headers[i];
+                    sheet.Cells[1, i + 1].Style.Font.Bold = true;
+                    sheet.Cells[1, i + 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    sheet.Cells[1, i + 1].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+                }
+
+                // Populate Hidden Sheet
+                // Column A: Type
+                hiddenSheet.Cells[1, 1].Value = "Individual";
+                hiddenSheet.Cells[2, 1].Value = "Corporate";
+                
+                // Column B: Nationalities
+                for (int i = 0; i < nationalities.Count; i++)
+                {
+                    hiddenSheet.Cells[i + 1, 2].Value = nationalities[i];
+                }
+                
+                // Column C: Source
+                hiddenSheet.Cells[1, 3].Value = "Central Bank Watch List";
+                hiddenSheet.Cells[2, 3].Value = "Block List";
+                hiddenSheet.Cells[3, 3].Value = "UAE IEC";
+
+                // Data Validations
+                // 1. Type (Col A)
+                var typeValidation = sheet.DataValidations.AddListValidation("A2:A1000");
+                typeValidation.Formula.ExcelFormula = "Data!$A$1:$A$2";
+                typeValidation.ShowErrorMessage = true;
+                typeValidation.ErrorTitle = "Invalid Type";
+                typeValidation.Error = "Please select from the dropdown";
+
+                // 2. Nationality (Col C)
+                var nationalityValidation = sheet.DataValidations.AddListValidation("C2:C1000");
+                nationalityValidation.Formula.ExcelFormula = $"Data!$B$1:$B${nationalities.Count}";
+                nationalityValidation.ShowErrorMessage = true;
+                nationalityValidation.ErrorTitle = "Invalid Nationality";
+                nationalityValidation.Error = "Please select from the dropdown";
+
+                // 3. Source (Col E)
+                var sourceValidation = sheet.DataValidations.AddListValidation("E2:E1000");
+                sourceValidation.Formula.ExcelFormula = "Data!$C$1:$C$3";
+                sourceValidation.ShowErrorMessage = true;
+                sourceValidation.ErrorTitle = "Invalid Source";
+                sourceValidation.Error = "Please select from the dropdown";
+
+                // 4. DOB (Col D)
+                sheet.Cells["D2:D1000"].Style.Numberformat.Format = "yyyy-mm-dd";
+                var dobValidation = sheet.DataValidations.AddDateTimeValidation("D2:D1000");
+                dobValidation.Operator = ExcelDataValidationOperator.greaterThan;
+                dobValidation.Formula.Value = new DateTime(1900, 1, 1);
+                dobValidation.ShowErrorMessage = true;
+                dobValidation.ErrorTitle = "Invalid Date";
+                dobValidation.Error = "Please enter a valid date (yyyy-mm-dd)";
+
+                sheet.Cells.AutoFitColumns();
+                sheet.Column(2).Width = 30; // Full Name
+                sheet.Column(7).Width = 40; // Remarks
+
+                var fileBytes = package.GetAsByteArray();
+                string fileName = "Internal_WatchList_Template.xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
         }
         [HttpGet]
         public ActionResult DownloadOtherSample(string filename)
@@ -375,13 +450,27 @@ namespace AML.Web.Controllers.InternalWatchList
         public IActionResult Edit(string Uid)
         {
             var clientId = _clientHandler.GetClientId();
-            var request = new { UID = Uid, client_id=clientId };
+            var request = new { UID = Uid, client_id = clientId };
             var apiresponse2 = _clientHandler.PostAsync(request, ScreeningService.GETINTERNALWATCHLISTBYUID).Result;
-            WatchListModel model = JsonConvert.DeserializeObject<WatchListModel>(apiresponse2);
 
-            
+            // Deserialize into a list since the API returns an array
+            var apiList = JsonConvert.DeserializeObject<List<dynamic>>(apiresponse2);
+            var item = apiList?.FirstOrDefault();
+
+            WatchListModel model = new WatchListModel();
+            if (item != null)
+            {
+                model.UID = (string)item.uid;
+                model.FullName = (string)item.fullname;
+                model.DOB = (string)item.dob;
+                model.Nationality = (string)item.nationality == "0" ? null : (string)item.nationality;
+                model.Source = (string)item.type; // API 'type' field holds the Source (CBWL, etc.)
+                model.Type = (string)item.category; // API 'category' field holds the Type (INDIVIDUAL, etc.)
+                model.IdNumber = (string)item.idnumber;
+                model.Remarks = (string)item.remarks;
+            }
+
             model.CreatedBy = _clientHandler.GetUserId();
-            
             model.Nationalities = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)), "Name", "Name");
             return View(model);
         }

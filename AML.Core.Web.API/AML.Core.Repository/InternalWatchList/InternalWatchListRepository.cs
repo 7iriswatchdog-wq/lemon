@@ -44,12 +44,12 @@ namespace AML.Core.Repository.InternalWatchList
                             {
                                 excelData.Add(new InternalWatcListExcelDTO()
                                 {
-                                    CustomerID = Convert.ToString(row[0]),
+                                    Type = Convert.ToString(row[0]),
                                     FullName = Convert.ToString(row[1]),
                                     Nationality = Convert.ToString(row[2]),
-                                    Source = Convert.ToString(row[3]),
-                                    Type = Convert.ToString(row[4]),
-                                    DOB = Convert.ToString(row[5]),
+                                    DOB = Convert.ToString(row[3]),
+                                    Source = Convert.ToString(row[4]),
+                                    CustomerID = Convert.ToString(row[5]),
                                     REMARKS = Convert.ToString(row[6])
                                 });
                             }

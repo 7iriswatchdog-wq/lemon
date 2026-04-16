@@ -1423,51 +1423,72 @@ namespace AML.Web.Controllers.ClientCase
             if (!System.IO.File.Exists(filePath))
                 return NotFound("Template file not found.");
 
-            using (var package = new ExcelPackage(new FileInfo(filePath)))
+            try 
             {
-                var worksheet = package.Workbook.Worksheets[0];
-
-                var productTypes = new SelectList(_mapper.Map<List<ProductType>>(_kycService.GetAllProduct(culture, type, clientId)), "ProductName", "ProductName");
-                var productTypeList = productTypes.Select(x => x.Value).ToList();
-                var deliveryChannels = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.GetAllDeliveryChannel(culture, type, clientId)), "DeliveryChannelName", "DeliveryChannelName");
-                var deliveryChannelsList = deliveryChannels.Select(x => x.Value).ToList();
-                var modeofpayment = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.get_all_mode_of_payment(culture, clientId, type)), "DeliveryChannelName", "DeliveryChannelName");
-                var modeofpaymentList = modeofpayment.Select(x => x.Value).ToList();
-
-                if (type == "I")
+                using (var package = new ExcelPackage(new FileInfo(filePath)))
                 {
-                    var residentStatuses = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.get_all_residence_status(culture, clientId, type)), "DeliveryChannelName", "DeliveryChannelName");
-                    var residentStatusesList = residentStatuses.Select(x => x.Value).ToList();
-                    var profession = new SelectList(_mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.GetProfessionalStatus(culture, type, clientId)), "DeliveryChannelName", "DeliveryChannelName");
-                    var professionList = profession.Select(x => x.Value).ToList();
+                    // EPPlus Worksheets are 1-indexed. Index 0 will throw an exception.
+                    var worksheet = package.Workbook.Worksheets[1];
 
-                    AddDropdown(package, worksheet, "C2:C51", NationalitiesList, "DropdownData", 1);
-                    AddDropdown(package, worksheet, "I2:I51", professionList, "DropdownData", 2);
-                    AddDropdown(package, worksheet, "J2:J51", residentStatusesList, "DropdownData", 3);
-                    AddDropdown(package, worksheet, "K2:K51", productTypeList, "DropdownData", 4);
-                    AddDropdown(package, worksheet, "L2:L51", deliveryChannelsList, "DropdownData", 5);
-                    AddDropdown(package, worksheet, "M2:M51", modeofpaymentList, "DropdownData", 6);
+                    var productTypesList = _mapper.Map<List<ProductType>>(_kycService.GetAllProduct(culture, type, clientId)) ?? new List<ProductType>();
+                    var productTypes = new SelectList(productTypesList, "ProductName", "ProductName");
+                    var productTypeList = productTypes.Select(x => x.Value).ToList();
+
+                    var deliveryChannelsList = _mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.GetAllDeliveryChannel(culture, type, clientId)) ?? new List<ViewModel.ViewModels.Kyc.DeliveryChannel>();
+                    var deliveryChannels = new SelectList(deliveryChannelsList, "DeliveryChannelName", "DeliveryChannelName");
+                    var deliveryChannelsListMapped = deliveryChannels.Select(x => x.Value).ToList();
+
+                    var modeofpaymentListRaw = _mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.get_all_mode_of_payment(culture, clientId, type)) ?? new List<ViewModel.ViewModels.Kyc.DeliveryChannel>();
+                    var modeofpayment = new SelectList(modeofpaymentListRaw, "DeliveryChannelName", "DeliveryChannelName");
+                    var modeofpaymentList = modeofpayment.Select(x => x.Value).ToList();
+
+                    if (type == "I")
+                    {
+                        var residentStatusesList = _mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.get_all_residence_status(culture, clientId, type)) ?? new List<ViewModel.ViewModels.Kyc.DeliveryChannel>();
+                        var residentStatuses = new SelectList(residentStatusesList, "DeliveryChannelName", "DeliveryChannelName");
+                        var residentStatusesListMapped = residentStatuses.Select(x => x.Value).ToList();
+
+                        var professionListRaw = _mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.GetProfessionalStatus(culture, type, clientId)) ?? new List<ViewModel.ViewModels.Kyc.DeliveryChannel>();
+                        var profession = new SelectList(professionListRaw, "DeliveryChannelName", "DeliveryChannelName");
+                        var professionList = profession.Select(x => x.Value).ToList();
+
+                        AddDropdown(package, worksheet, "C2:C51", NationalitiesList, "DropdownData", 1);
+                        AddDropdown(package, worksheet, "I2:I51", professionList, "DropdownData", 2);
+                        AddDropdown(package, worksheet, "J2:J51", residentStatusesListMapped, "DropdownData", 3);
+                        AddDropdown(package, worksheet, "K2:K51", productTypeList, "DropdownData", 4);
+                        AddDropdown(package, worksheet, "L2:L51", deliveryChannelsListMapped, "DropdownData", 5);
+                        AddDropdown(package, worksheet, "M2:M51", modeofpaymentList, "DropdownData", 6);
+                    }
+                    else
+                    {
+                        var legalstatusListMapped = _mapper.Map<List<LegalStatusModel>>(_kycService.GetLegalStatus(culture, type, clientId)) ?? new List<LegalStatusModel>();
+                        var legalstatus = new SelectList(legalstatusListMapped, "LegalStatus", "LegalStatus");
+                        var legalstatusList = legalstatus.Select(x => x.Value).ToList();
+
+                        var businesstypeListMapped = _mapper.Map<List<BusinessNature>>(_kycService.GetBusinessType(culture, type, clientId)) ?? new List<BusinessNature>();
+                        var businesstype = new SelectList(businesstypeListMapped, "BusinessName", "BusinessName");
+                        var businesstypeList = businesstype.Select(x => x.Value).ToList();
+
+                        AddDropdown(package, worksheet, "C2:C51", NationalitiesList, "DropdownData", 1);
+                        AddDropdown(package, worksheet, "E2:E51", legalstatusList, "DropdownData", 2);
+                        AddDropdown(package, worksheet, "F2:F51", businesstypeList, "DropdownData", 3);
+                        AddDropdown(package, worksheet, "G2:G51", productTypeList, "DropdownData", 4);
+                        AddDropdown(package, worksheet, "H2:H51", deliveryChannelsListMapped, "DropdownData", 5);
+                        AddDropdown(package, worksheet, "I2:I51", modeofpaymentList, "DropdownData", 6);
+                    }
+
+                    var stream = new MemoryStream();
+                    package.SaveAs(stream);
+                    stream.Position = 0;
+                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
                 }
-                else
-                {
-                    var legalstatus = new SelectList(_mapper.Map<List<LegalStatusModel>>(_kycService.GetLegalStatus(culture, type, clientId)), "LegalStatus", "LegalStatus");
-                    var legalstatusList = legalstatus.Select(x => x.Value).ToList();
-                    var businesstype = new SelectList(_mapper.Map<List<BusinessNature>>(_kycService.GetBusinessType(culture, type, clientId)), "BusinessName", "BusinessName");
-                    var businesstypeList = businesstype.Select(x => x.Value).ToList();
-
-                    AddDropdown(package, worksheet, "C2:C51", NationalitiesList, "DropdownData", 1);
-                    AddDropdown(package, worksheet, "E2:E51", legalstatusList, "DropdownData", 2);
-                    AddDropdown(package, worksheet, "F2:F51", businesstypeList, "DropdownData", 3);
-                    AddDropdown(package, worksheet, "G2:G51", productTypeList, "DropdownData", 4);
-                    AddDropdown(package, worksheet, "H2:H51", deliveryChannelsList, "DropdownData", 5);
-                    AddDropdown(package, worksheet, "I2:I51", modeofpaymentList, "DropdownData", 6);
-                }
-
-                var stream = new MemoryStream();
-                package.SaveAs(stream);
-                stream.Position = 0;
-                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating Excel sample: {ex.Message}");
+                return StatusCode(500, "An error occurred while generating the sample file.");
+            }
+
         }
 
         private void AddDropdown(ExcelPackage package, ExcelWorksheet worksheet,
