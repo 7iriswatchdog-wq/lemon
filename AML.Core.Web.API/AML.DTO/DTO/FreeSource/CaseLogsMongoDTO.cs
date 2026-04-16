@@ -35,5 +35,7 @@ namespace AML.DTO.DTO.FreeSource
         public string MATCHGENDER { get; set; }
 
         public List<string> SEARCHTYPES { get; set; }
+
+        public string STATUS { get; set; }
     }
 }

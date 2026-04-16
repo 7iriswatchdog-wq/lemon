@@ -1279,6 +1279,7 @@ namespace AML.Core.Service.Common
                         matchrecord.MATCHDOB = item.DOB.Count > 0 ? item.DOB[0].DOB : string.Empty;
                         matchrecord.REMARKS = item.REMARKS;
                         matchrecord.MATCHDATASETS = !string.IsNullOrWhiteSpace(item.TYPE) ? item.TYPE : "--";
+                        matchrecord.STATUS = item.STATUS;
 
 
                         // matchrecordsList.Add(matchrecords);
@@ -1306,6 +1307,7 @@ namespace AML.Core.Service.Common
                         matchrecord.MATCHIDNO = item.IDDETAILS.Count > 0 ? item.IDDETAILS[0].IDNUMBER : string.Empty;
                         matchrecord.MATCHDOB = item.DOB.Count > 0 ? item.DOB[0].DOB : string.Empty;
                         matchrecord.MATCHDATASETS = !string.IsNullOrWhiteSpace(item.TYPE) ? item.TYPE : "--";
+                        matchrecord.STATUS = item.STATUS;
                         //matchrecord.REMARKS = IsBlackListed.response2.REMARKS;
 
                         // matchrecordsList.Add(matchrecords);

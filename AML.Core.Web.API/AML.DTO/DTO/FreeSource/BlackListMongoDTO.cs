@@ -132,6 +132,8 @@ namespace AML.DTO.DTO.FreeSource
             public List<DOBLIST> DOB { get; set; }
             public string CREATEDON { get; set; }
 
+            public string DeletedDate { get; set; }
+
             public string UPDATEDON { get; set; }
             public string STATUS { get; set; }
             public string TYPE { get; set; }

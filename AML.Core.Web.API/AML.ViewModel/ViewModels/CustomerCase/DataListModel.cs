@@ -25,6 +25,8 @@ namespace AML.ViewModel.ViewModels.CustomerCase
         public List<string> searchTypes { get; set; }
 
         public List<RiskAssessmentDto> riskAssessments { get; set; }
+
+        public string Status { get; set; }
     }
 
     public class RiskAssessmentDto

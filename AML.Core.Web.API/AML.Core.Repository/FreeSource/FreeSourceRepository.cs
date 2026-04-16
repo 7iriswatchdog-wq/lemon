@@ -620,7 +620,8 @@ namespace AML.Core.Repository.FreeSource
                             MATCHRESOURCESID= string.IsNullOrEmpty(item.MATCHRESOURCESID) ? "" : item.MATCHRESOURCESID,
                             REMARKS= string.IsNullOrEmpty(item.REMARKS) ? "" : item.REMARKS,
                             MATCHDATASETS=string.IsNullOrEmpty(item.MATCHDATASETS) ? "--":item.MATCHDATASETS,
-                            MATCHGENDER=string.IsNullOrEmpty(item.MATCHGENDER) ? "":item.MATCHGENDER
+                            MATCHGENDER=string.IsNullOrEmpty(item.MATCHGENDER) ? "":item.MATCHGENDER,
+                            STATUS= string.IsNullOrEmpty(item.STATUS) ? "" : item.STATUS
                         });
                     }
                 }
