@@ -390,7 +390,7 @@ namespace AML.Web.Controllers
                 RiskModel riskmodel = new RiskModel();
                 riskmodel.CustomerCode = model.CustomerId;
                 riskmodel.RiskTypeCategoryDTO = new List<RiskTypeCategoryDTO>();
-                var list = _lovMasterService.GetAllKycRiskConfig("I", 1, 0, 0, model.ClientId);
+                var list = _lovMasterService.GetAllRiskConfig("I", 1, 0, 0, model.ClientId);
                 riskmodel.RiskTypeCategoryDTO = list;
                 var a = 0;
                 var b = 0;
@@ -516,7 +516,7 @@ namespace AML.Web.Controllers
                 RiskCorpCustomerModel riskmodel = new RiskCorpCustomerModel();
                 riskmodel.UniqueID = model.CustomerId;
                 riskmodel.RiskTypeCategoryDTO = new List<RiskTypeCategoryDTO>();
-                riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllKycRiskConfig("C", 1, 0, 0, model.ClientId);
+                riskmodel.RiskTypeCategoryDTO = _lovMasterService.GetAllRiskConfig("C", 1, 0, 0, model.ClientId);
                 var a = 0;
                 var b = 0;
                 var TotalSelected = 0;
