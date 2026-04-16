@@ -945,8 +945,9 @@
                             </label>
                             <select class="w-56 h-8 text-[11px] border border-slate-200 bg-white px-2 font-medium text-slate-600 rounded-md" id="type" onchange="RiskRatingChange()" asp-for="Type">
                                 <option value="0">--@localizer["EMPTY"]--</option>
-                                <option value="U">U</option>
-                                <option value="LRU">LRU</option>
+                                <option value="Low Risk (U)">Low Risk (U)</option>
+                                <option value="Medium Risk (O)">Medium Risk (O)</option>
+                                <option value="Medium Risk (U)">Medium Risk (U)</option>
                             </select>
                         </div>
                             
@@ -2266,7 +2267,7 @@
            var OverRideVariables = [];
            var b = $('#RiskSubTable > div').length;
            for (i = 0; i <= b; i++) {
-               //cosole.log("first for loop");
+               cosole.log("first for loop");
                OverRideVariables[i] = false
            }
            var OverRides = "false";
@@ -2450,10 +2451,16 @@
             }
                //Set final risk score
                //alert(riskStatus);
+
+               var overrideType = $("#type").val();
+               if (overrideType === "Low Risk (U)" || overrideType === "Medium Risk (O)" || overrideType === "Medium Risk (U)") {
+                   riskStatus = overrideType;
+               }
+
                if(customerType == "I"){
-               $('#finalRiskScoreTxt').val(riskStatus);
-               }else{
-               $('#riskAssessmentRatingTxt').val(riskStatus);
+                   $('#finalRiskScoreTxt').val(riskStatus);
+               } else {
+                   $('#riskAssessmentRatingTxt').val(riskStatus);
                }
 
                updateRiskBadge(riskStatus);
@@ -2480,8 +2487,8 @@
                 if (!badge.length) return;
 
                 badge.removeClass();
-
                 badge.addClass("px-3 py-1 rounded-full text-xs font-bold text-white");
+                badge.text(riskStatus);
 
                 if (riskStatus.toLowerCase().includes("low")) {
 
@@ -4180,15 +4187,14 @@
 
 
                     if (type === "LRU") {
-                        // alert(type);
-                        //                 alert(currentRisk);
-
                         if (currentRisk === "High Risk" || currentRisk === "High Risk (O)") {
-                                            updateRiskBadge('Low Risk');
-                                               $('#finalRiskScoreTxt').val('Low Risk');
-                               $('#riskAssessmentRatingTxt').val('Low Risk');
-
+                            updateRiskBadge('Low Risk');
+                            $('#finalRiskScoreTxt').val('Low Risk');
+                            $('#riskAssessmentRatingTxt').val('Low Risk');
                         }
+                    }
+                    if (type === "Low Risk (U)" || type === "Medium Risk (O)" || type === "Medium Risk (U)" || type === "0") {
+                        calculateTotal();
                     }
                 }
                </script>

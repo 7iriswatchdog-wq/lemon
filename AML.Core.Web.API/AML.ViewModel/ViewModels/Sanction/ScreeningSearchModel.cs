@@ -82,6 +82,7 @@ namespace AML.ViewModel.ViewModels.Sanction
         public string matchnationality { get; set; }
         public string matchidnumber { get; set; }
         public string matchdob { get; set; }
+        public string status { get; set; }
     }
 }
 

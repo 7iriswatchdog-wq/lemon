@@ -278,7 +278,7 @@ namespace AML.Web.Controllers.Sanction
                         table.AddCell(new Phrase(results[i].matchscore ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9)));
                         table.AddCell(new Phrase(results[i].matchuid ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9)));
                         table.AddCell(new Phrase(results[i].matchcategory ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9)));
-                        table.AddCell(new Phrase(results[i].matchtype ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9)));
+                        table.AddCell(new Phrase((results[i].matchtype ?? "") + (results[i].status == "D" ? "-former" : ""), new Font(Font.FontFamily.TIMES_ROMAN, 9)));
                         table.AddCell(new Phrase(results[i].matchnationality ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9)));
                         table.AddCell(new Phrase(results[i].matchidnumber ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9)));
                         table.AddCell(new Phrase(results[i].matchdob ?? "", new Font(Font.FontFamily.TIMES_ROMAN, 9)));
@@ -458,7 +458,7 @@ namespace AML.Web.Controllers.Sanction
                     {
                         var colId = activeCols1[i].id;
                         var cell = sheet1.Cells[row1, i + 1];
-                        if (colId == "matchtype") cell.Value = item.matchtype;
+                        if (colId == "matchtype") cell.Value = (item.matchtype ?? "") + (item.status == "D" ? "-former" : "");
                         else if (colId == "matchcategory") cell.Value = item.matchcategory;
                         else if (colId == "matchname") cell.Value = item.matchname;
                         else if (colId == "matchnationality") cell.Value = item.matchnationality;
