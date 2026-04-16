@@ -56,7 +56,7 @@
     <!-- Design Dependencies -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <script type="text/tailwindcss">
@@ -206,12 +206,51 @@
       }
 
     // SIDEBAR CONFIG
+    function closeOtherParents(currentId) {
+        const parents = [
+            { id: 'name-screening-parent-dropdown', arrow: 'dropdown-arrow-parent' },
+            { id: 'pf-dropdown', arrow: 'dropdown-arrow-pf' },
+            { id: 'reports-dropdown', arrow: 'dropdown-arrow-reports' },
+            { id: 'm-dropdown', arrow: 'dropdown-arrow-8' },
+            { id: 'um-dropdown', arrow: 'dropdown-arrow-9' },
+            { id: 'cm-dropdown', arrow: 'dropdown-arrow-10' }
+        ];
+
+        parents.forEach(p => {
+            if (p.id !== currentId) {
+                const drop = document.getElementById(p.id);
+                const arrow = document.getElementById(p.arrow);
+                if (drop) {
+                    drop.classList.add('hidden');
+                    // Collapse children too
+                    const children = drop.querySelectorAll('ul');
+                    children.forEach(child => child.classList.add('hidden'));
+                    const childArrows = drop.querySelectorAll('.rotate-180');
+                    childArrows.forEach(ca => ca.classList.remove('rotate-180'));
+                }
+                if (arrow) arrow.classList.remove('rotate-180');
+            }
+        });
+    }
+
     function toggleNameScreening() {
-      const dropdown = document.getElementById('name-screening-parent-dropdown');
-      const dropdownArrow = document.getElementById('dropdown-arrow-parent');
-      dropdown.classList.toggle('hidden');
-      dropdownArrow.classList.toggle('rotate-180');
-      helper("nameScreeningParent")
+        closeOtherParents('name-screening-parent-dropdown');
+        const dropdown = document.getElementById('name-screening-parent-dropdown');
+        const dropdownArrow = document.getElementById('dropdown-arrow-parent');
+        
+        const isOpening = dropdown.classList.contains('hidden');
+        dropdown.classList.toggle('hidden');
+        dropdownArrow.classList.toggle('rotate-180');
+
+        // If we are CLOSING the parent, collapse its children also
+        if (!isOpening) {
+            const children = dropdown.querySelectorAll('ul');
+            children.forEach(child => child.classList.add('hidden'));
+            const childArrows = dropdown.querySelectorAll('.rotate-180');
+            childArrows.forEach(ca => ca.classList.remove('rotate-180'));
+        }
+
+        helper("nameScreeningParent");
     }
     function toggleCaseCreation() {
       const dropdown = document.getElementById('case-creation-dropdown');
@@ -279,6 +318,7 @@
           
     }
     function toggleDropdown8() {
+      closeOtherParents('m-dropdown');
       const dropdown = document.getElementById('m-dropdown');
       const dropdownArrow = document.getElementById('dropdown-arrow8');
       dropdown.classList.toggle('hidden');
@@ -288,8 +328,9 @@
 
       }
         function toggleDropdown9() {
+            closeOtherParents('um-dropdown');
             const dropdown = document.getElementById('um-dropdown');
-            const dropdownArrow = document.getElementById('dropdown-arrow9');
+            const dropdownArrow = document.getElementById('dropdown-arrow-9');
             dropdown.classList.toggle('hidden');
             dropdownArrow.classList.toggle('rotate-180');
 
@@ -298,9 +339,9 @@
         }
      
        function toggleDropdown10() {
-
+          closeOtherParents('cm-dropdown');
           const dropdown = document.getElementById('cm-dropdown');
-          const dropdownArrow = document.getElementById('dropdown-arrow10');
+          const dropdownArrow = document.getElementById('dropdown-arrow-10');
           dropdown.classList.toggle('hidden');
           dropdownArrow.classList.toggle('rotate-180');
           
@@ -317,6 +358,7 @@
            helper("blocklist");
       }
        function toggleDropdownPF() {
+           closeOtherParents('pf-dropdown');
            const dropdown = document.getElementById('pf-dropdown');
            const dropdownArrow = document.getElementById('dropdown-arrow-pf');
            dropdown.classList.toggle('hidden');
@@ -325,6 +367,7 @@
            helper("proliferationFinance");
       }
                function toggleDropdownReport() {
+                   closeOtherParents('reports-dropdown');
                    const dropdown = document.getElementById('reports-dropdown');
                    const dropdownArrow = document.getElementById('dropdown-arrow-reports');
                dropdown.classList.toggle('hidden');
