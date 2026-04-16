@@ -32,6 +32,18 @@ namespace AML.DTO.DTO.CustomerCase
         public string CustomerIdType { get; set; }
         [Column("cust_id_number")]
         public string CustomerIdNumber { get; set; }
+        [Column("PassportId")]
+        public string PassportId { get; set; }
+        [Column("PassportIssueDate")]
+        public DateTime? PassportIssueDate { get; set; }
+        [Column("PassportExpiryDate")]
+        public DateTime? PassportExpiryDate { get; set; }
+        [Column("EmiratesIdNumber")]
+        public string EmiratesIdNumber { get; set; }
+        [Column("EmiratesIdIssueDate")]
+        public DateTime? EmiratesIdIssueDate { get; set; }
+        [Column("EmiratesIdExpiryDate")]
+        public DateTime? EmiratesIdExpiryDate { get; set; }
         [Column("mobile")]
         public string Mobile { get; set; }
         public string GroupEntityof { get; set; }
@@ -308,6 +320,18 @@ namespace AML.DTO.DTO.CustomerCase
         public string CustomerIdType { get; set; }
         [Column("customer_id_number")]
         public string CustomerIdNumber { get; set; }
+        [Column("PassportId")]
+        public string PassportId { get; set; }
+        [Column("PassportIssueDate")]
+        public DateTime? PassportIssueDate { get; set; }
+        [Column("PassportExpiryDate")]
+        public DateTime? PassportExpiryDate { get; set; }
+        [Column("EmiratesIdNumber")]
+        public string EmiratesIdNumber { get; set; }
+        [Column("EmiratesIdIssueDate")]
+        public DateTime? EmiratesIdIssueDate { get; set; }
+        [Column("EmiratesIdExpiryDate")]
+        public DateTime? EmiratesIdExpiryDate { get; set; }
         [Column("mobile")]
         public string Mobile { get; set; }
 
@@ -690,6 +714,18 @@ namespace AML.DTO.DTO.CustomerCase
         public string IdType { get; set; }
         [Column("idnumber")]
         public string IdNumber { get; set; }
+        [Column("PassportId")]
+        public string PassportId { get; set; }
+        [Column("PassportIssueDate")]
+        public DateTime? PassportIssueDate { get; set; }
+        [Column("PassportExpiryDate")]
+        public DateTime? PassportExpiryDate { get; set; }
+        [Column("EmiratesIdNumber")]
+        public string EmiratesIdNumber { get; set; }
+        [Column("EmiratesIdIssueDate")]
+        public DateTime? EmiratesIdIssueDate { get; set; }
+        [Column("EmiratesIdExpiryDate")]
+        public DateTime? EmiratesIdExpiryDate { get; set; }
         [Column("issuedate")]
         public DateTime? IssueDate { get; set; }
         [Column("expirydate")]

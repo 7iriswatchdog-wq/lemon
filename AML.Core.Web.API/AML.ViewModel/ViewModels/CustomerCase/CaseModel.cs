@@ -51,6 +51,12 @@ namespace AML.ViewModel.ViewModels.CustomerCase
         public string CustomerIdType { get; set; }
         //[Required(ErrorMessage = "Id Number required")]
         public string CustomerIdNumber { get; set; }
+        public string PassportId { get; set; }
+        public string PassportIssueDate { get; set; }
+        public string PassportExpiryDate { get; set; }
+        public string EmiratesIdNumber { get; set; }
+        public string EmiratesIdIssueDate { get; set; }
+        public string EmiratesIdExpiryDate { get; set; }
         [MaxLength(20, ErrorMessage = "Mobile Number must be less than 20 characters")]
         [RegularExpression("[0-9]*", ErrorMessage = "Invalid Mobile Number, No special characters allowed.")]
         public string Mobile { get; set; }

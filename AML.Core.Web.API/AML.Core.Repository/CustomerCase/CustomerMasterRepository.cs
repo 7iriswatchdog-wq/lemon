@@ -64,6 +64,12 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_screeningoption", _CustomerMasterDTO.ScreeningOptions);
                 parameters.Add("@p_idissuedate", _CustomerMasterDTO.IdIssueDate);
                 parameters.Add("@p_idexpirydate", _CustomerMasterDTO.IdExpiryDate);
+                parameters.Add("@p_PassportId", _CustomerMasterDTO.PassportId);
+                parameters.Add("@p_PassportIssueDate", _CustomerMasterDTO.PassportIssueDate);
+                parameters.Add("@p_PassportExpiryDate", _CustomerMasterDTO.PassportExpiryDate);
+                parameters.Add("@p_EmiratesIdNumber", _CustomerMasterDTO.EmiratesIdNumber);
+                parameters.Add("@p_EmiratesIdIssueDate", _CustomerMasterDTO.EmiratesIdIssueDate);
+                parameters.Add("@p_EmiratesIdExpiryDate", _CustomerMasterDTO.EmiratesIdExpiryDate);
                 parameters.Add("@p_residence", _CustomerMasterDTO.Residence);
                 parameters.Add("@p_employer", _CustomerMasterDTO.Employer);
                 parameters.Add("@p_goldenvisa", _CustomerMasterDTO.GoldenVisa);
@@ -337,6 +343,12 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_cust_type", _CustomerMasterDTO.CustomerType);
                 parameters.Add("@p_cust_id_type", _CustomerMasterDTO.CustomerIdType);
                 parameters.Add("@p_cust_id_number", _CustomerMasterDTO.CustomerIdNumber);
+                parameters.Add("@p_PassportId", _CustomerMasterDTO.PassportId);
+                parameters.Add("@p_PassportIssueDate", _CustomerMasterDTO.PassportIssueDate);
+                parameters.Add("@p_PassportExpiryDate", _CustomerMasterDTO.PassportExpiryDate);
+                parameters.Add("@p_EmiratesIdNumber", _CustomerMasterDTO.EmiratesIdNumber);
+                parameters.Add("@p_EmiratesIdIssueDate", _CustomerMasterDTO.EmiratesIdIssueDate);
+                parameters.Add("@p_EmiratesIdExpiryDate", _CustomerMasterDTO.EmiratesIdExpiryDate);
                 parameters.Add("@p_mobile", _CustomerMasterDTO.Mobile);
                 parameters.Add("@p_created_by", _CustomerMasterDTO.CreatedBy);
                 parameters.Add("@p_clientId", _CustomerMasterDTO.ClientId);
@@ -369,6 +381,12 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_cust_type", _CustomerMasterDTO.CustomerType);
                 parameters.Add("@p_cust_id_type", _CustomerMasterDTO.CustomerIdType);
                 parameters.Add("@p_cust_id_number", _CustomerMasterDTO.CustomerIdNumber);
+                parameters.Add("@p_PassportId", _CustomerMasterDTO.PassportId);
+                parameters.Add("@p_PassportIssueDate", _CustomerMasterDTO.PassportIssueDate);
+                parameters.Add("@p_PassportExpiryDate", _CustomerMasterDTO.PassportExpiryDate);
+                parameters.Add("@p_EmiratesIdNumber", _CustomerMasterDTO.EmiratesIdNumber);
+                parameters.Add("@p_EmiratesIdIssueDate", _CustomerMasterDTO.EmiratesIdIssueDate);
+                parameters.Add("@p_EmiratesIdExpiryDate", _CustomerMasterDTO.EmiratesIdExpiryDate);
                 parameters.Add("@p_mobile", _CustomerMasterDTO.Mobile);
                 parameters.Add("@p_batch_id", _CustomerMasterDTO.Batch.IsNotNullOrEmpty() ? _CustomerMasterDTO.Batch : 0);
                 parameters.Add("@p_is_deleted", _CustomerMasterDTO.IsDeleted);
@@ -868,7 +886,7 @@ namespace AML.Core.Repository.CustomerCase
                     {
                         if (_riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].SelectedItemId != 0)
                         {
-                            riskItemlist += _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].Id + "Ø" + _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].SelectedItemId + "¥";
+                            riskItemlist += _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].Id + "Ã˜" + _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].SelectedItemId + "Â¥";
                             index2++;
                         }
 
@@ -916,7 +934,7 @@ namespace AML.Core.Repository.CustomerCase
                     {
                         if (_riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].SelectedItemId != 0)
                         {
-                            rowData += _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].Id + "Ø" + _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].SelectedItemId + "¥";
+                            rowData += _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].Id + "Ã˜" + _riskDTO.RiskTypeCategoryDTO[i].RiskTypes[j].SelectedItemId + "Â¥";
                             index++;
                         }
                     }
@@ -997,6 +1015,12 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_gender", _shareholderDTO.Gender);
                 parameters.Add("@p_relationship", _shareholderDTO.Relationship);
                 parameters.Add("@p_flag", _shareholderDTO.FlagType);
+                parameters.Add("@p_PassportId", _shareholderDTO.PassportId);
+                parameters.Add("@p_PassportIssueDate", _shareholderDTO.PassportIssueDate);
+                parameters.Add("@p_PassportExpiryDate", _shareholderDTO.PassportExpiryDate);
+                parameters.Add("@p_EmiratesIdNumber", _shareholderDTO.EmiratesIdNumber);
+                parameters.Add("@p_EmiratesIdIssueDate", _shareholderDTO.EmiratesIdIssueDate);
+                parameters.Add("@p_EmiratesIdExpiryDate", _shareholderDTO.EmiratesIdExpiryDate);
                 var response = ExecuteScalar("ins_shareholders_data", parameters, commandType: CommandType.StoredProcedure).ParseString();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Customer master added successfully.";
@@ -1059,3 +1083,4 @@ namespace AML.Core.Repository.CustomerCase
 
     }
 }
+
