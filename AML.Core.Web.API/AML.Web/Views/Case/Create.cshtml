@@ -49,7 +49,6 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/alpinejs" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
         body {
@@ -1189,40 +1188,65 @@ hasSearched: false,
                                                                :style="`background: linear-gradient(to right, #2563eb ${((matchParam-50)/(100-50))*100}%, #f1f5f9 ${((matchParam-50)/(100-50))*100}%)`">
                                                 </div>
                                             </div>
-                                                <div x-data="{ fileName: 'No file chosen' }" class="space-y-2">
-                                                    <label class="text-xs font-semibold text-slate-700">Document</label>
-
-                                                    <div class="relative flex items-center">
-
+                                                <!-- Multi-File Document Upload for Search & Add -->
+                                                <div x-data="{ searchFiles: [] }" class="space-y-4">
+                                                    <div class="space-y-2">
+                                                        <label class="text-xs font-semibold text-slate-700">Documents</label>
+                                                        
                                                         <!-- Hidden File Input -->
-                                                        <input type="file"
-                                                               class="hidden"
+                                                        <input type="file" 
+                                                               id="docUpload_search"
+                                                               multiple
+                                                               class="hidden" 
                                                                x-ref="docUpload"
-                                                               name="CaseDocumentsL[0].Document"
-                                                               x-on:change="
-                                                               if ($event.target.files.length> 0) {
-                                                                let fullName = $event.target.files[0].name;
-                                                                fileName = fullName.length > 10 ? fullName.substring(0, 10) + '...' : fullName;
-                                                                } else {
-                                                                fileName = 'No file chosen';
-                                                                }
-                                                        ">
+                                                               @@change="
+                                                                   if ($event.target.files.length > 0) {
+                                                                       Array.from($event.target.files).forEach(file => {
+                                                                           if (!searchFiles.some(f => f.name === file.name && f.size === file.size)) {
+                                                                               searchFiles.push(file);
+                                                                           }
+                                                                       });
+                                                                       $event.target.value = '';
+                                                                   }
+                                                               ">
 
-                                                        <!-- Custom UI -->
-                                                        <div x-on:click="$refs.docUpload.click()"
-                                                             class="w-full h-10 bg-white border border-slate-200 rounded-md px-3 py-2 text-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
-
-                                                            <!-- Short Display Name -->
-                                                            <span class="text-slate-500 text-xs" x-text="fileName"></span>
-
-                                                            <span class="text-[11px] text-blue-600 font-bold border border-blue-600 rounded-md px-3 py-0.5">
-                                                                Choose file
+                                                        <label for="docUpload_search"
+                                                               class="w-full h-10 bg-white border border-slate-200 rounded-md px-3 py-2 text-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
+                                                            <span class="text-slate-400 text-xs">Select documents...</span>
+                                                            <span class="text-[11px] text-blue-600 font-bold border border-blue-600 rounded-md px-3 py-0.5 pointer-events-none">
+                                                                Browse
                                                             </span>
+                                                        </label>
 
+                                                        <!-- File List -->
+                                                        <div x-show="searchFiles.length > 0" class="space-y-1.5 mt-2">
+                                                            <template x-for="(file, index) in searchFiles" :key="file.name + file.size">
+                                                                <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded px-2.5 py-1.5 group">
+                                                                    <div class="flex items-center gap-2 overflow-hidden">
+                                                                        <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                                        </svg>
+                                                                        <span class="text-xs text-slate-600 truncate" x-text="file.name"></span>
+                                                                    </div>
+                                                                    <button type="button" x-on:click.stop.prevent="searchFiles = searchFiles.filter((_, i) => i !== index)" class="text-slate-400 hover:text-red-500">
+                                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                        </svg>
+                                                                    </button>
+
+                                                                    <!-- Submit Sync -->
+                                                                    <div class="hidden">
+                                                                        <input type="file" :name="'CaseDocumentsL[' + index + '].Document'" x-init="$nextTick(() => {
+                                                                            const dt = new DataTransfer();
+                                                                            dt.items.add(file);
+                                                                            $el.files = dt.files;
+                                                                        })">
+                                                                        <input type="hidden" :name="'CaseDocumentsL[' + index + '].DocumentName'" :value="file.name">
+                                                                    </div>
+                                                                </div>
+                                                            </template>
                                                         </div>
                                                     </div>
-
-                                                    
                                                 </div>
 
 
@@ -1626,40 +1650,57 @@ hasSearched: false,
                                                                     <input type="text" x-model="form.cif" class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm">
                                                                 </div>
 
-                                                                <div x-data="{ fileName: 'No file chosen' }" class="space-y-2">
-                                                                    <label class="text-[13px] font-bold text-slate-700">Document</label>
+                                                                <!-- Multi-File Upload UI -->
+                                                                <div class="space-y-2">
+                                                                    <label class="text-[13px] font-bold text-slate-700">Documents</label>
+                                                                    
+                                                                    <!-- Hidden File Input (Standard Input for browser compatibility) -->
+                                                                    <input type="file" 
+                                                                           :id="'docUpload_repeater_' + index"
+                                                                           multiple
+                                                                           class="hidden" 
+                                                                           x-ref="docUpload"
+                                                                           @@change="
+                                                                               if ($event.target.files.length > 0) {
+                                                                                   Array.from($event.target.files).forEach(file => {
+                                                                                       if (!form.repeaterDocs.some(f => f.name === file.name && f.size === file.size)) {
+                                                                                           form.repeaterDocs.push(file);
+                                                                                       }
+                                                                                   });
+                                                                                   $event.target.value = ''; // Reset input to allow re-selection
+                                                                               }
+                                                                           ">
 
-                                                                    <div class="relative flex items-center">
+                                                                    <!-- Dropzone/Clickable Area -->
+                                                                    <label :for="'docUpload_repeater_' + index"
+                                                                         class="w-full min-h-[40px] bg-white border border-slate-200 rounded-md px-3 py-2 text-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
+                                                                        <span class="text-slate-400 text-xs">Choose one or more files...</span>
+                                                                        <span class="text-[11px] text-blue-600 font-bold border border-blue-600 rounded-md px-3 py-0.5 pointer-events-none">
+                                                                            Select
+                                                                        </span>
+                                                                    </label>
 
-                                                                        <!-- Hidden File Input -->
-                                                                        <input type="file"
-                                                                               class="hidden"
-                                                                               x-ref="docUpload"
-                                                                               x-on:change="
-                                                                               if ($event.target.files.length> 0) {
-                                                                        form.document = $event.target.files[0];
-                                                                        let fullName = $event.target.files[0].name;
-                                                                        fileName = fullName.length > 10 ? fullName.substring(0, 10) + '...' : fullName;
-                                                                        } else {
-                                                                        fileName = 'No file chosen';
-                                                                        }
-                                                                        ">
-
-                                                                        <!-- Custom UI -->
-                                                                        <div x-on:click="$refs.docUpload.click()"
-                                                                             class="w-full h-10 bg-white border border-slate-200 rounded-md px-3 py-2 text-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
-
-                                                                            <!-- Short Display Name -->
-                                                                            <span class="text-slate-500 text-xs" x-text="fileName"></span>
-
-                                                                            <span class="text-[11px] text-blue-600 font-bold border border-blue-600 rounded-md px-3 py-0.5">
-                                                                                Choose file
-                                                                            </span>
-
-                                                                        </div>
+                                                                    <!-- Selected Files List -->
+                                                                    <div class="mt-2 space-y-1.5" x-show="form.repeaterDocs.length > 0">
+                                                                        <template x-for="(file, fileIdx) in form.repeaterDocs" :key="file.name + file.size">
+                                                                            <div class="flex items-center justify-between bg-slate-50 rounded px-2.5 py-1.5 border border-slate-100 group transition-all">
+                                                                                <div class="flex items-center space-x-2 overflow-hidden">
+                                                                                    <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                                                    </svg>
+                                                                                    <span class="text-xs text-slate-600 truncate" x-text="file.name"></span>
+                                                                                    <span class="text-[10px] text-slate-400" x-text="'(' + (file.size / 1024).toFixed(1) + ' KB)'"></span>
+                                                                                </div>
+                                                                                <button type="button" 
+                                                                                        x-on:click.stop.prevent="form.repeaterDocs = form.repeaterDocs.filter((_, i) => i !== fileIdx)"
+                                                                                        class="text-slate-400 hover:text-red-500 transition-colors p-1">
+                                                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                                    </svg>
+                                                                                </button>
+                                                                            </div>
+                                                                        </template>
                                                                     </div>
-
-
                                                                 </div>
 
                                                             </div>
@@ -1982,11 +2023,11 @@ hasSearched: false,
                                                     files: [],
                                                     isDragging: false,
                                                     matchParam: 70,
-                                                    handleFiles(selectedFiles) {
-                                                        this.files = Array.from(selectedFiles);
+                                                    handleFiles(repeaterDocs) {
+                                                        this.files = Array.from(repeaterDocs);
 
                                                         // Assign files to hidden ASP.NET input
-                                                        this.$refs.realFileInput.files = selectedFiles;
+                                                        this.$refs.realFileInput.files = repeaterDocs;
                                                     }
                                                 }">
 
@@ -1994,7 +2035,7 @@ hasSearched: false,
                                             <div @@dragover.prevent="isDragging = true"
                                                  @@dragleave.prevent="isDragging = false"
                                                  @@drop.prevent="isDragging = false; handleFiles($event.dataTransfer.files)"
-                                                 @@click="$refs.fileInput.click()"
+                                                 @@click.stop.prevent="$refs.fileInput.click()"
                                                  class="border-2 border-dashed rounded-[32px] p-20 text-center transition-all cursor-pointer group"
                                                  :class="isDragging ? 'border-blue-500 bg-blue-50/50 scale-[0.99]' : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50/50'">
 
@@ -2003,6 +2044,7 @@ hasSearched: false,
                                                        x-ref="fileInput"
                                                        class="hidden"
                                                        multiple
+                                                       @@click.stop=""
                                                        @@change="handleFiles($event.target.files)">
 
                                                 <div class="w-20 h-20 bg-slate-100 rounded-[24px] flex items-center justify-center mx-auto mb-8 transition-transform group-hover:scale-110 duration-500">
@@ -2074,10 +2116,14 @@ hasSearched: false,
                                                                        x-text="(file.size / 1024).toFixed(2) + ' KB'"></p>
                                                                 </div>
                                                             </div>
-
-                                                            <span class="text-xs font-extrabold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
-                                                                Upload Completed
-                                                            </span>
+                                                            <div class="flex items-center gap-2">
+                                                                 <span class="text-xs font-extrabold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
+                                                                     Upload Completed
+                                                                 </span>
+                                                                 <button type="button" @@click.stop.prevent="files.splice(index, 1); files = [...files]; $refs.realFileInput.files = files" class="text-slate-400 hover:text-red-500 p-1 transition-colors">
+                                                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                                 </button>
+                                                             </div>
                                                         </div>
                                                     </template>
 
@@ -2279,10 +2325,11 @@ hasSearched: false,
                                                class="hidden"
                                                accept="image/*,.pdf"
                                                multiple
+                                               @@click.stop=""
                                                @@change="uploadFile($event)">
 
                                         <!-- Upload Card -->
-                                        <div x-show="uploadVisible" @@click="$refs.fileInput.click()"
+                                        <div x-show="uploadVisible" @@click.stop.prevent="$refs.fileInput.click()"
                                              class="border-2 border-dashed border-slate-200 rounded-[32px] p-16 text-center transition-all cursor-pointer hover:border-blue-400 hover:bg-slate-50 relative overflow-hidden group">
 
                                             <!-- Loader Overlay -->
@@ -2740,33 +2787,80 @@ hasSearched: false,
                                                             <input type="range" x-model="matchParam" min="50" max="100" id="threshold" asp-for="Threshold" class="w-full h-2 rounded-lg appearance-none cursor-pointer accent-blue-600"
                                                                    :style="`background: linear-gradient(to right, #2563eb ${((matchParam-50)/(100-50))*100}%, #f1f5f9 ${((matchParam-50)/(100-50))*100}%)`">
                                                         </div>
-                                                    </div>
-                                                    <div x-data="{ fileName: 'No file chosen' }" class="space-y-2">
-                                                    <label class="text-xs font-semibold text-slate-700">Document</label>
-
-                                                    <div class="relative flex items-center">
-
-                                                        <!-- Hidden File Input -->
-                                                        <input type="file"
-                                                               class="hidden"
-                                                               x-ref="docUpload"
-                                                               name="CaseDocumentsL[0].Document"
-                                                               x-on:change="
-                                                               if ($event.target.files.length> 0) {
-                                                        let fullName = $event.target.files[0].name;
-                                                        fileName = fullName.length > 10 ? fullName.substring(0, 10) + '...' : fullName;
-                                                        } else {
-                                                        fileName = 'No file chosen';
+                                                                    <div x-data="{ 
+                                                        manualDocs: [],
+                                                        addFiles(files) {
+                                                            Array.from(files).forEach(file => {
+                                                                if (!this.manualDocs.some(f => f.name === file.name && f.size === file.size)) {
+                                                                    this.manualDocs.push(file);
+                                                                }
+                                                            });
+                                                        },
+                                                        removeFile(index) {
+                                                            this.manualDocs = this.manualDocs.filter((_, i) => i !== index);
                                                         }
-                                                        ">
+                                                    }" class="space-y-3">
+                                                        <label class="text-xs font-semibold text-slate-700">Documents</label>
 
-                                                        <!-- Custom UI -->
-                                                        <div x-on:click="$refs.docUpload.click()"
-                                                             class="w-full h-10 bg-white border border-slate-200 rounded-md px-3 py-2 text-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
+                                                        <div class="relative">
+                                                            <!-- Hidden File Input -->
+                                                            <input type="file"
+                                                                   id="docUpload_manual"
+                                                                   class="hidden"
+                                                                   x-ref="docUpload"
+                                                                   multiple
+                                                                   x-on:change="addFiles($event.target.files); $event.target.value = ''">
 
-                                                            <!-- Short Display Name -->
-                                                            <span class="text-slate-500 text-xs" x-text="fileName"></span>
+                                                            <!-- Custom UI -->
+                                                            <label for="docUpload_manual"
+                                                                  class="w-full h-12 bg-white border-2 border-dashed border-slate-200 rounded-xl px-4 flex items-center justify-between cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all group">
+                                                                <div class="flex items-center gap-3">
+                                                                    <div class="p-2 rounded-lg bg-slate-100 group-hover:bg-blue-100 text-slate-500 group-hover:text-blue-600 transition-colors">
+                                                                        <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                                                                    </div>
+                                                                    <span class="text-sm font-medium text-slate-500 group-hover:text-blue-700">Click to upload multiple documents</span>
+                                                                </div>
+                                                                <span class="text-[11px] text-blue-600 font-bold bg-blue-50 px-3 py-1 rounded-lg pointer-events-none">
+                                                                    Browse
+                                                                </span>
+                                                            </label>
 
+                                                            <!-- Selected Files List -->
+                                                            <div x-show="manualDocs.length > 0" class="mt-3 space-y-2">
+                                                                <template x-for="(file, index) in manualDocs" :key="file.name + file.size">
+                                                                    <div class="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl group hover:border-blue-200 hover:bg-white transition-all">
+                                                                        <div class="flex items-center gap-3 min-w-0">
+                                                                            <div class="p-2 rounded-lg bg-blue-50 text-blue-600">
+                                                                                <i data-lucide="file-text" class="w-4 h-4"></i>
+                                                                            </div>
+                                                                            <div class="flex flex-col min-w-0">
+                                                                                <span class="text-[13px] font-bold text-slate-700 truncate" x-text="file.name"></span>
+                                                                                <span class="text-[11px] text-slate-400" x-text="(file.size / 1024).toFixed(1) + ' KB'"></span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <button type="button" x-on:click.stop.prevent="manualDocs = manualDocs.filter((_, i) => i !== index)" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                                                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                                        </button>
+                                                                        <!-- Hidden inputs for form submission -->
+                                                                        <input type="file" :name="'CaseDocumentsL[' + index + '].Document'" x-ref="hiddenInput" style="display:none">
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+                                                            
+                                                            <!-- Sync hidden inputs with file objects -->
+                                                            <div x-init="$watch('manualDocs', () => {
+                                                                $nextTick(() => {
+                                                                    const containers = $el.parentElement.querySelectorAll('input[type=file][style*=\'display:none\']');
+                                                                    manualDocs.forEach((file, i) => {
+                                                                        if (containers[i]) {
+                                                                            const dataTransfer = new DataTransfer();
+                                                                            dataTransfer.items.add(file);
+                                                                            containers[i].files = dataTransfer.files;
+                                                                        }
+                                                                    });
+                                                                });
+                                                            })"></div>
+                                                        </div>
                                                             <span class="text-[11px] text-blue-600 font-bold border border-blue-600 rounded-md px-3 py-0.5">
                                                                 Choose file
                                                             </span>
@@ -5861,7 +5955,8 @@ function validateIdNumber($form, isSubmit = false) {
                                     passportExpiryDate: "",
                                     emiratesIdNumber: "",
                                     emiratesIdIssueDate: "",
-                                    emiratesIdExpiryDate: ""
+                                    emiratesIdExpiryDate: "",
+                                    repeaterDocs: []
                                 }],
                                 maxForms: 5,
                                 activeShareholderTab: parentTab, // track current tab
@@ -5887,7 +5982,8 @@ function validateIdNumber($form, isSubmit = false) {
                                         passportExpiryDate: "",
                                         emiratesIdNumber: "",
                                         emiratesIdIssueDate: "",
-                                        emiratesIdExpiryDate: ""
+                                        emiratesIdExpiryDate: "",
+                                        repeaterDocs: []
                                     });
                                     this.$nextTick(() => {
                                                                 initAllDatePickers(); // 🔥 reinitialize new inputs
@@ -5977,15 +6073,19 @@ function validateIdNumber($form, isSubmit = false) {
                                 FlagType:flagType,
                                 CustType:"I",
                                 ClientID: 0,
-                                UserId: 0,
-
+                                UserId: 0
                             };
 
-                            payload.push(obj);
-
-                            if (form.document) {
-                                formData.append("Documents", form.document);
+                            if (form.repeaterDocs && form.repeaterDocs.length > 0) {
+                                form.repeaterDocs.forEach(file => {
+                                    formData.append("Documents", file); // Backend: List<IFormFile> Documents
+                                });
+                                obj.DocumentCount = form.repeaterDocs.length;
+                            } else {
+                                obj.DocumentCount = 0;
                             }
+
+                            payload.push(obj);
                         });
 
                         // THIS LINE WAS MISSING

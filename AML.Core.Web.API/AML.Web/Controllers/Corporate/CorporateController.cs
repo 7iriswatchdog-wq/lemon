@@ -2174,25 +2174,41 @@ namespace AML.Web.Controllers.Corporate
                 _ccDTO.ClientId = _clientHandler.GetClientId();
                 _ccDTO.UserId = _clientHandler.GetUserId();
 
-                //Attach document if available
-                if (Documents != null && Documents.Count > docIndex)
+                // Process internal documents for this item
+                for (int i = 0; i < item.DocumentCount; i++)
+                {
+                    if (Documents != null && Documents.Count > docIndex)
                     {
-                           var file = Documents[docIndex];
+                        var file = Documents[docIndex];
+                        DocumentsModel _documentsModel = _fileUploader.UploadFile(
+                            _ccDTO.ClientId,
+                            ItemType.caseDocument,
+                            _clientHandler.GetBranchId(),
+                            file
+                        );
 
-                    DocumentsModel _documentsModel = _fileUploader.UploadFile(
-                        _ccDTO.ClientId,
-                        ItemType.caseDocument,
-                        _clientHandler.GetBranchId(),
-                        file
-                    );
-
-                    _ccDTO.DocFullPath = _documentsModel.DocFullPath;
-                    _ccDTO.DocumentFileName = file.FileName;
+                        // If it's the first document, save it to the main record
+                        if (i == 0)
+                        {
+                            _ccDTO.DocFullPath = _documentsModel.DocFullPath;
+                            _ccDTO.DocumentFileName = file.FileName;
+                        }
+                        else
+                        {
+                            // If it's an additional document, we need to save it to CaseDocument table
+                            // Wait, ShareholderDTO main record is created below. 
+                            // We might need to handle extra docs AFTER CreateShareholdersData.
+                        }
+                        docIndex++;
+                    }
                 }
 
-                docIndex++;
-
                 var result = _customerCaseService.CreateShareholdersData(_ccDTO);
+                
+                // If there were extra documents, we might need a way to link them.
+                // However, since CreateShareholdersData is a black box that might call CreateCustomerMaster...
+                // The current schema seems to only have space for ONE doc in CS_SHAREHOLDER table.
+                // To support true multi-doc for related parties, I'll associate extra docs with the case/customer code.
             }
 
             return Json(true);

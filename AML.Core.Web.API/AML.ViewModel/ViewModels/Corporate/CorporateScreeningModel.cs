@@ -345,7 +345,7 @@ namespace AML.ViewModel.ViewModels.Corporate
         public string FlagType { get; set; }
 
         public string CustomerId { get; set; }
-
+        public int DocumentCount { get; set; }
     }
 
     public class ShareholderFormModel
