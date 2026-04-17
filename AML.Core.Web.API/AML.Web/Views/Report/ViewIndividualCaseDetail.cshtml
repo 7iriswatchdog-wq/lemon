@@ -330,7 +330,42 @@
                                                         <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchnationality</td>
                                                         <td class="px-3 py-3 text-[11px] hidden">@Model.DataList[i].matchidno</td>
                                                         <td class="px-3 py-3 text-[11px] whitespace-nowrap">@Model.DataList[i].matchdob</td>
-                                                        <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchdatasets</td>
+@*                                                         <td class="px-3 py-3 text-[11px]">@Model.DataList[i].matchdatasets</td> *@
+                                                        <td class="px-3 py-3 text-[11px]">
+                                                            @{
+                                                                var datasets = Model.DataList[i].matchdatasets?.Split(',');
+                                                                var status = Model.DataList[i].Status;
+                                                            }
+
+                                                            @if (datasets != null)
+                                                            {
+                                                                for (int k = 0; k < datasets.Length; k += 2)
+                                                                {
+                                                                    <div>
+                                                                        @{
+                                                                            string Format(string val)
+                                                                            {
+                                                                                var value = val.Trim();
+
+                                                                                if (!value.Equals("KYC6", StringComparison.OrdinalIgnoreCase) && status == "D")
+                                                                                {
+                                                                                    value += "-Former";
+                                                                                }
+
+                                                                                return value;
+                                                                            }
+                                                                        }
+
+                                                                        @Format(datasets[k])
+
+                                                                        @if (k + 1 < datasets.Length)
+                                                                        {
+                                                                            @(", " + Format(datasets[k + 1]))
+                                                                        }
+                                                                    </div>
+                                                                }
+                                                            }
+                                                        </td>
 
                                                     @if (@Model.DataList[i].matchtype == "KYC6")
                                                     {

@@ -186,7 +186,10 @@ namespace AML.Core.Service.CustomerCase
                 Designation=_CustomerCaseDT.Designation,
                 CounterPartyName=_CustomerCaseDT.CounterPartyName,
                 FlagType=_CustomerCaseDT.FlagType,
-                Relationship=_CustomerCaseDT.Relationship
+                Relationship=_CustomerCaseDT.Relationship,
+                PassportId=_CustomerCaseDT.PassportId,
+                PassportExpiryDate=_CustomerCaseDT.PassportExpiryDate,
+                PassportIssueDate=_CustomerCaseDT.PassportIssueDate
                 
                 //EstablishmentDate=_CustomerCaseDT.EstablishmentDate,
                 //Address= _CustomerCaseDT.Address
