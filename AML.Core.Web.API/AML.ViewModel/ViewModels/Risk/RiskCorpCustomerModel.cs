@@ -45,5 +45,9 @@ namespace AML.ViewModel.ViewModels.Risk
         public string RiskOverRide { get; set; }
 
         public string Type { get; set; }
+
+        public string ProductReference { get; set; }
+        public decimal? ProductValue { get; set; }
+        public string RiskComments { get; set; }
     }
 }

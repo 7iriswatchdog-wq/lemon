@@ -84,6 +84,9 @@ namespace AML.ViewModel.ViewModels.CaseProcess
         public string DualGoodsMatchStatus { get; set; }
 
         public string Type { get; set; }
+        public string ProductReference { get; set; }
+        public decimal? ProductValue { get; set; }
+        public string RiskComments { get; set; }
 
         //public List<PassportDetails> passportDetails { get; set; }
     }

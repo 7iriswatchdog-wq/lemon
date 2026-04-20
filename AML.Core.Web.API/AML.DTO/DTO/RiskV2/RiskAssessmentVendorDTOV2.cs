@@ -40,5 +40,13 @@ namespace AML.DTO.DTO.RiskV2
         public int CreatedBy { get; set; }
         [Column("version")]
         public int version { get; set; }
+        [Column("remarks")]
+        public string Remarks { get; set; }
+        [Column("product_reference")]
+        public string ProductReference { get; set; }
+        [Column("product_value")]
+        public decimal? ProductValue { get; set; }
+        [Column("comments")]
+        public string Comments { get; set; }
     }
 }

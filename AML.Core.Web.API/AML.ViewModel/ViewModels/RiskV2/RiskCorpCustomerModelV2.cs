@@ -35,5 +35,8 @@ namespace AML.ViewModel.ViewModels.RiskV2
         public int version { get; set; }
 
         public string Remarks { get; set; }
+        public string ProductReference { get; set; }
+        public decimal? ProductValue { get; set; }
+        public string RiskComments { get; set; }
     }
 }

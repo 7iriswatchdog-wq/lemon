@@ -181,6 +181,9 @@ namespace AML.Core.Repository.Risk
                 parameters.Add("@p_risk_count", _riskDTO.RiskScoreCount);
                 parameters.Add("@p_risk_score_initial", _riskDTO.RiskAssessmentRatingWithoutOverride);
                 parameters.Add("@p_final_risk_score", _riskDTO.RiskAssessmentRating);
+                parameters.Add("@p_product_reference", _riskDTO.ProductReference);
+                parameters.Add("@p_product_value", _riskDTO.ProductValue);
+                parameters.Add("@p_comments", _riskDTO.RiskComments);
 
                 string riskItemlist = "";
                 int index2 = 0;

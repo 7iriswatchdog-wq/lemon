@@ -148,6 +148,10 @@ namespace AML.Core.Repository.RiskV2
                 parameters.Add("@p_risk_category_count", index);
                 parameters.Add("@p_clientId", _riskDTO.ClientId);
                 parameters.Add("@p_created_by", _riskDTO.CreatedBy);
+                parameters.Add("@p_remarks", _riskDTO.Remarks);
+                parameters.Add("@p_product_reference", _riskDTO.ProductReference);
+                parameters.Add("@p_product_value", _riskDTO.ProductValue);
+                parameters.Add("@p_comments", _riskDTO.Comments);
                 var response = ExecuteScalar("ins_transaction_risk_bank", parameters, commandType: CommandType.StoredProcedure).ParseInt();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Risk Assesment for Bank added successfully.";
@@ -197,9 +201,11 @@ namespace AML.Core.Repository.RiskV2
                 parameters.Add("@p_risk_data", riskItemlist);
                 parameters.Add("@p_risk_category_count", index2);
                 parameters.Add("@p_clientId", _riskDTO.ClientId);
-
                 parameters.Add("@p_created_by", _riskDTO.CreatedBy);
-
+                parameters.Add("@p_remarks", _riskDTO.Remarks);
+                parameters.Add("@p_product_reference", _riskDTO.ProductReference);
+                parameters.Add("@p_product_value", _riskDTO.ProductValue);
+                parameters.Add("@p_comments", _riskDTO.Comments);
                 var response = ExecuteScalar("ins_transaction_risk_vendor", parameters, commandType: CommandType.StoredProcedure).ParseInt();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Risk Assesment for Vendor added successfully.";

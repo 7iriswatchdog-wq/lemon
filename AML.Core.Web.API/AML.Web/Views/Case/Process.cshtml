@@ -989,9 +989,22 @@
                         </div>
                             
     @{
+        // Relocate 'Residence Country' from 'Customer Risk' to 'Geographic Risk' in the UI model only
+        var customerRisk = Model.RiskTypeCategoryDTO.FirstOrDefault(x => x.RiskCategory.Contains("Customer Risk"));
+        var geoRisk = Model.RiskTypeCategoryDTO.FirstOrDefault(x => x.RiskCategory.Contains("Geographic Risk"));
         
-            int a = 0;
-        
+        if (customerRisk != null && geoRisk != null)
+        {
+            var residenceItem = customerRisk.RiskTypes.FirstOrDefault(x => x.RiskType.Contains("Residence"));
+            if (residenceItem != null && !geoRisk.RiskTypes.Any(x => x.RiskType.Contains("Residence")))
+            {
+                customerRisk.RiskTypes.Remove(residenceItem);
+                geoRisk.RiskTypes.Insert(0, residenceItem);
+            }
+        }
+
+        int a = 0;
+    }
 
         @for (int i = 0; i < Model.RiskTypeCategoryDTO.Count; i++)
         {
@@ -1003,7 +1016,7 @@
 
                 @for (int j = 0; j < Model.RiskTypeCategoryDTO[i].RiskTypes.Count; j++)
                 {
-                    <div class="flex items-center judtify-between gap-3" id="RiskSubTable">
+                    <div class="flex items-center justify-between gap-3" id="RiskSubTable">
 
                         <!-- Label -->
                         <label class="text-[11px] w-full risk-type-label pl-3" data-risk-type-text="@Model.RiskTypeCategoryDTO[i].RiskTypes[j].RiskType">
@@ -1034,13 +1047,47 @@
 
                     </div>
 
-                    a = a + 1;
                 }
-
             </div>
         }
-        }
-    
+        
+    @* Other category fields *@
+    <div class="space-y-3 mt-3">
+        <h4 class="text-[10px] font-bold bg-slate-100 px-3 py-2 rounded">Other</h4>
+
+        <!-- Product Reference -->
+        <div class="flex items-center justify-between gap-3 pl-3">
+            <label class="text-[11px] risk-type-label">Product Reference</label>
+            <div class="w-[140px]">
+                <input type="text" asp-for="ProductReference" 
+                       class="w-full h-8 text-[11px] border border-slate-200 bg-white px-2 rounded-md" 
+                       oninput="riskAssessmentDirty = true"
+                       placeholder="Reference" />
+            </div>
+        </div>
+
+        <!-- Product Value -->
+        <div class="flex items-center justify-between gap-3 pl-3">
+            <label class="text-[11px] risk-type-label">Product Value</label>
+            <div class="w-[140px]">
+                <input type="number" step="any" asp-for="ProductValue" 
+                       class="w-full h-8 text-[11px] border border-slate-200 bg-white px-2 rounded-md" 
+                       oninput="riskAssessmentDirty = true"
+                       placeholder="Amount" />
+            </div>
+        </div>
+
+        <!-- Comments -->
+        <div class="flex items-center justify-between gap-3 pl-3">
+            <label class="text-[11px] risk-type-label">Comments</label>
+            <div class="w-[140px]">
+                <input type="text" asp-for="RiskComments" 
+                       class="w-full h-8 text-[11px] border border-slate-200 bg-white px-2 rounded-md" 
+                       oninput="riskAssessmentDirty = true"
+                       placeholder="Add comments..." />
+            </div>
+        </div>
+    </div>
 </div>
 
 
@@ -1151,8 +1198,11 @@
                         // Check Dual Goods
                         hasDualGoodsMatch = Model.DualGoodsMatchStatus == "Pending" || Model.DualGoodsMatchStatus == "Potential Match";
 
+                        // Requirement: Disable Approve/Reject buttons until at least one search action is saved.
+                        bool hasSearchActions = Model.DataList != null && Model.DataList.Any(x => x.searchTypes != null && x.searchTypes.Any());
+                        
                         // Disable button if any condition is true
-                        if (hasPendingShareholders || hasDualGoodsMatch) 
+                        if (hasPendingShareholders || hasDualGoodsMatch || !hasSearchActions) 
                         {
                             disableButtons = true;
                         }

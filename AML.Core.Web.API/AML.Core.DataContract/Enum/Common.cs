@@ -13,7 +13,8 @@ namespace AML.Core.DataContract.Enum
         caseDocument = 4,
         InternalWatchList = 5,
         Logo = 6,
-        IndividualUpload = 7
+        IndividualUpload = 7,
+        Notepad = 8
     }
     public enum EnvironmentEnum
     {

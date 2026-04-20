@@ -42,6 +42,9 @@ namespace AML.ViewModel.ViewModels.RiskV2
         public string Dob { get; set; }
 
         public string Remarks { get; set; }
+        public string ProductReference { get; set; }
+        public decimal? ProductValue { get; set; }
+        public string RiskComments { get; set; }
     }
     //public class IndividualExcel
     //{

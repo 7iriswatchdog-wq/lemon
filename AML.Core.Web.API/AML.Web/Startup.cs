@@ -168,6 +168,10 @@ using AML.Core.Repository.ProliferationFinance;
 using AML.Core.Service.ProliferationFinance;
 using AML.Core.ServiceContract.AI;
 using AML.Core.Service.AI;
+using AML.Core.ServiceContract.Notepad;
+using AML.Core.Service.Notepad;
+using AML.Core.RepositoryContract.Notepad;
+using AML.Core.Repository.Notepad;
 
 namespace AML.Web
 {
@@ -396,6 +400,7 @@ namespace AML.Web
             services.AddTransient<IAIService, MockAIService>();
             services.AddTransient<ChatDataService, ChatDataService>();
             services.AddTransient<ChatHistoryService, ChatHistoryService>();
+            services.AddTransient<INotepadService, NotepadService>();
 
             //services.AddScoped<IBaseRepository, BaseRepository>();
             services.AddScoped<IUserGroupRightRepository, UserGroupRightRepository>();
@@ -447,6 +452,7 @@ namespace AML.Web
             services.AddScoped<IProliferationFinanceRepository, ProliferationFinanceRepository>();
             services.AddScoped<IProliferationFinanceMongoRepository, ProliferationFinanceMongoRepository>();
             services.AddScoped<IInternalWatchListMongoRepository, InternalWatchListMongoRepository>();
+            services.AddScoped<INotepadRepository, NotepadRepository>();
 
             services.AddControllersWithViews();
 

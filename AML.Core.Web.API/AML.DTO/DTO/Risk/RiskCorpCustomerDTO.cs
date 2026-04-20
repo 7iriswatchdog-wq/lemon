@@ -47,5 +47,12 @@ namespace AML.DTO.DTO.Risk
         [Column("type")]
         public string Type { get; set; }
 
+        [Column("product_reference")]
+        public string ProductReference { get; set; }
+        [Column("product_value")]
+        public decimal? ProductValue { get; set; }
+        [Column("comments")]
+        public string RiskComments { get; set; }
+
     }
 }
