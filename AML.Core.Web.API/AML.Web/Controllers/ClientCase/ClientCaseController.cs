@@ -1391,104 +1391,121 @@ namespace AML.Web.Controllers.ClientCase
 
         //    //    return File(fileBytes, "application/force-download", fileName);
         //    //}
-        //    return null;
-        //    //byte[] fileBytes = System.IO.File.ReadAllBytes(filePath);
-
-        //    //return File(fileBytes, "application/force-download", fileName);
-        //}
-
         [HttpGet]
         public ActionResult DownloadCustomerUploadSample(string type)
         {
-            var clientId = _clientHandler.GetClientId();
-            string culture = "en";
-
-            var Nationalities = new SelectList(_mapper.Map<List<CountryModel>>(_countryService.GetAll(clientId)), "Name", "Name");
-            var NationalitiesList = Nationalities.Select(x => x.Value).ToList();
-
-            string filePath;
-            string fileName;
-
-            if (type == "I")
+            try
             {
-                filePath = Path.Combine(_env.ContentRootPath, "Files", "Data-Customer Bulk upload Sample.xlsx");
-                fileName = "Customer_Bulk_Upload_Sample.xlsx";
-            }
-            else
-            {
-                filePath = Path.Combine(_env.ContentRootPath, "Files", "Data-Corporate Bulk upload Sample.xlsx");
-                fileName = "Corporate_Bulk_Upload_Sample.xlsx";
-            }
+                string filePath = Path.Combine(_env.ContentRootPath, "Files", type == "I" ? "Data-Customer Bulk upload Sample.xlsx" : "Data-Corporate Bulk upload Sample.xlsx");
 
-            if (!System.IO.File.Exists(filePath))
-                return NotFound("Template file not found.");
+                if (!System.IO.File.Exists(filePath))
+                    return NotFound("Template file not found.");
 
-            try 
-            {
-                using (var package = new ExcelPackage(new FileInfo(filePath)))
+                var fileName = type == "I" ? "Individual Bulk upload Sample.xlsx" : "Corporate Bulk upload Sample.xlsx";
+
+                byte[] fileData = System.IO.File.ReadAllBytes(filePath);
+                using (var stream = new MemoryStream(fileData))
+                using (var package = new ExcelPackage(stream))
                 {
-                    // EPPlus Worksheets are 1-indexed. Index 0 will throw an exception.
                     var worksheet = package.Workbook.Worksheets[1];
+                    var clientId = _clientHandler.GetClientId();
+                    var culture = System.Globalization.CultureInfo.CurrentCulture.Name;
 
-                    var productTypesList = _mapper.Map<List<ProductType>>(_kycService.GetAllProduct(culture, type, clientId)) ?? new List<ProductType>();
-                    var productTypes = new SelectList(productTypesList, "ProductName", "ProductName");
-                    var productTypeList = productTypes.Select(x => x.Value).ToList();
-
-                    var deliveryChannelsList = _mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.GetAllDeliveryChannel(culture, type, clientId)) ?? new List<ViewModel.ViewModels.Kyc.DeliveryChannel>();
-                    var deliveryChannels = new SelectList(deliveryChannelsList, "DeliveryChannelName", "DeliveryChannelName");
-                    var deliveryChannelsListMapped = deliveryChannels.Select(x => x.Value).ToList();
-
-                    var modeofpaymentListRaw = _mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.get_all_mode_of_payment(culture, clientId, type)) ?? new List<ViewModel.ViewModels.Kyc.DeliveryChannel>();
-                    var modeofpayment = new SelectList(modeofpaymentListRaw, "DeliveryChannelName", "DeliveryChannelName");
-                    var modeofpaymentList = modeofpayment.Select(x => x.Value).ToList();
+                    var nationalitiesData = _countryService.GetAll(clientId);
+                    var NationalitiesList = _mapper.Map<List<CountryModel>>(nationalitiesData)?
+                                            .Select(x => x.Name)
+                                            .Where(x => !string.IsNullOrEmpty(x))
+                                            .ToList() ?? new List<string>();
 
                     if (type == "I")
                     {
-                        var residentStatusesList = _mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.get_all_residence_status(culture, clientId, type)) ?? new List<ViewModel.ViewModels.Kyc.DeliveryChannel>();
-                        var residentStatuses = new SelectList(residentStatusesList, "DeliveryChannelName", "DeliveryChannelName");
-                        var residentStatusesListMapped = residentStatuses.Select(x => x.Value).ToList();
+                        // Headers for Individual (20 columns)
+                        string[] headers = {
+                            "First Name", "Last Name", "Gender", "Date of Birth", "Nationality", "Residence Country",
+                            "ID Type", "Passport ID", "Passport Issue Date", "Passport Expiry Date",
+                            "Emirates ID Number", "Emirates ID Issue Date", "Emirates ID Expiry Date",
+                            "Customer CIF No", "SOW/SOF Country", "Employer Name", "Employer Industry",
+                            "Employer Sector", "Golden Visa", "Designation"
+                        };
 
-                        var professionListRaw = _mapper.Map<List<ViewModel.ViewModels.Kyc.DeliveryChannel>>(_kycService.GetProfessionalStatus(culture, type, clientId)) ?? new List<ViewModel.ViewModels.Kyc.DeliveryChannel>();
-                        var profession = new SelectList(professionListRaw, "DeliveryChannelName", "DeliveryChannelName");
-                        var professionList = profession.Select(x => x.Value).ToList();
+                        for (int i = 0; i < headers.Length; i++)
+                        {
+                            worksheet.Cells[1, i + 1].Value = headers[i];
+                        }
 
-                        AddDropdown(package, worksheet, "C2:C51", NationalitiesList, "DropdownData", 1);
-                        AddDropdown(package, worksheet, "I2:I51", professionList, "DropdownData", 2);
-                        AddDropdown(package, worksheet, "J2:J51", residentStatusesListMapped, "DropdownData", 3);
-                        AddDropdown(package, worksheet, "K2:K51", productTypeList, "DropdownData", 4);
-                        AddDropdown(package, worksheet, "L2:L51", deliveryChannelsListMapped, "DropdownData", 5);
-                        AddDropdown(package, worksheet, "M2:M51", modeofpaymentList, "DropdownData", 6);
+                        // Styling Header
+                        using (var range = worksheet.Cells[1, 1, 1, headers.Length])
+                        {
+                            range.Style.Font.Bold = true;
+                            range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                            range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(211, 211, 211));
+                        }
+
+                        // Dropdowns
+                        var genderList = new List<string> { "Male", "Female", "Other" };
+                        var idTypeList = new List<string> { "Passport", "Emirates ID" };
+                        var goldenVisaList = new List<string> { "Yes", "No" };
+
+                        var profData = _kycService.GetProfessionalStatus(culture, type, clientId);
+                        var profList = _mapper.Map<List<AML.ViewModel.ViewModels.Kyc.DeliveryChannel>>(profData)?.Select(x => x.DeliveryChannelName).ToList() ?? new List<string>();
+
+                        var busData = _kycService.GetBusinessType(culture, type, clientId);
+                        var busList = _mapper.Map<List<AML.ViewModel.ViewModels.Kyc.BusinessNature>>(busData)?.Select(x => x.BusinessName).ToList() ?? new List<string>();
+
+                        AddDropdown(package, worksheet, "C2:C51", genderList, "DropdownData", 1); // Gender
+                        AddDropdown(package, worksheet, "E2:E51", NationalitiesList, "DropdownData", 2); // Nationality
+                        AddDropdown(package, worksheet, "F2:F51", NationalitiesList, "DropdownData", 3); // Residence Country
+                        AddDropdown(package, worksheet, "G2:G51", idTypeList, "DropdownData", 4); // ID Type
+                        AddDropdown(package, worksheet, "O2:O51", NationalitiesList, "DropdownData", 5); // SOW/SOF Country
+                        AddDropdown(package, worksheet, "Q2:Q51", busList, "DropdownData", 6); // Industry
+                        AddDropdown(package, worksheet, "R2:R51", busList, "DropdownData", 7); // Sector
+                        AddDropdown(package, worksheet, "S2:S51", goldenVisaList, "DropdownData", 8); // Golden Visa
+                        AddDropdown(package, worksheet, "T2:T51", profList, "DropdownData", 9); // Designation
+
+                        // Date Validations
+                        AddDateValidation(worksheet, "D2:D51", "Date of Birth");
+                        AddDateValidation(worksheet, "I2:I51", "Passport Issue Date");
+                        AddDateValidation(worksheet, "J2:J51", "Passport Expiry Date");
+                        AddDateValidation(worksheet, "L2:L51", "Emirates ID Issue Date");
+                        AddDateValidation(worksheet, "M2:M51", "Emirates ID Expiry Date");
                     }
                     else
                     {
-                        var legalstatusListMapped = _mapper.Map<List<LegalStatusModel>>(_kycService.GetLegalStatus(culture, type, clientId)) ?? new List<LegalStatusModel>();
-                        var legalstatus = new SelectList(legalstatusListMapped, "LegalStatus", "LegalStatus");
-                        var legalstatusList = legalstatus.Select(x => x.Value).ToList();
+                        // Headers for Corporate (7 columns)
+                        string[] headers = {
+                            "Corporate Name", "License Number", "Issuing Authority", "Country of Incorporation",
+                            "Date of Registration", "Date of Expiry", "Customer CIF No"
+                        };
 
-                        var businesstypeListMapped = _mapper.Map<List<BusinessNature>>(_kycService.GetBusinessType(culture, type, clientId)) ?? new List<BusinessNature>();
-                        var businesstype = new SelectList(businesstypeListMapped, "BusinessName", "BusinessName");
-                        var businesstypeList = businesstype.Select(x => x.Value).ToList();
+                        for (int i = 0; i < headers.Length; i++)
+                        {
+                            worksheet.Cells[1, i + 1].Value = headers[i];
+                        }
 
-                        AddDropdown(package, worksheet, "C2:C51", NationalitiesList, "DropdownData", 1);
-                        AddDropdown(package, worksheet, "E2:E51", legalstatusList, "DropdownData", 2);
-                        AddDropdown(package, worksheet, "F2:F51", businesstypeList, "DropdownData", 3);
-                        AddDropdown(package, worksheet, "G2:G51", productTypeList, "DropdownData", 4);
-                        AddDropdown(package, worksheet, "H2:H51", deliveryChannelsListMapped, "DropdownData", 5);
-                        AddDropdown(package, worksheet, "I2:I51", modeofpaymentList, "DropdownData", 6);
+                        // Styling Header
+                        using (var range = worksheet.Cells[1, 1, 1, headers.Length])
+                        {
+                            range.Style.Font.Bold = true;
+                            range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                            range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(211, 211, 211));
+                        }
+
+                        AddDropdown(package, worksheet, "D2:D51", NationalitiesList, "DropdownData", 1); // Incorporation Country
+
+                        // Date Validations
+                        AddDateValidation(worksheet, "E2:E51", "Date of Registration");
+                        AddDateValidation(worksheet, "F2:F51", "Date of Expiry");
                     }
 
-                    var stream = new MemoryStream();
-                    package.SaveAs(stream);
-                    stream.Position = 0;
-                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                    worksheet.Cells.AutoFitColumns();
+                    return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error generating Excel sample: {ex.Message}");
-                return StatusCode(500, "An error occurred while generating the sample file.");
+                return StatusCode(500, $"An error occurred while generating the sample file: {ex.Message}. Details: {ex.InnerException?.Message}");
             }
-
         }
 
         private void AddDropdown(ExcelPackage package, ExcelWorksheet worksheet,
@@ -1515,6 +1532,14 @@ namespace AML.Web.Controllers.ClientCase
                 hiddenSheet.Cells[i + 1, hiddenColumn].Value = values[i];
             }
 
+            for (int i = worksheet.DataValidations.Count - 1; i >= 0; i--)
+            {
+                if (worksheet.DataValidations[i].Address.Address == cellRange)
+                {
+                    worksheet.DataValidations.Remove(worksheet.DataValidations[i]);
+                }
+            }
+
             var validation = worksheet.DataValidations.AddListValidation(cellRange);
 
             string columnLetter = GetExcelColumnLetter(hiddenColumn);
@@ -1524,6 +1549,27 @@ namespace AML.Web.Controllers.ClientCase
 
             validation.ShowErrorMessage = true;
             validation.Error = "Please select value from dropdown";
+        }
+
+        private void AddDateValidation(ExcelWorksheet worksheet, string cellRange, string fieldName)
+        {
+            worksheet.Cells[cellRange].Style.Numberformat.Format = "yyyy-mm-dd";
+            
+            // Clear existing validations
+            for (int i = worksheet.DataValidations.Count - 1; i >= 0; i--)
+            {
+                if (worksheet.DataValidations[i].Address.Address == cellRange)
+                {
+                    worksheet.DataValidations.Remove(worksheet.DataValidations[i]);
+                }
+            }
+
+            var validation = worksheet.DataValidations.AddDateTimeValidation(cellRange);
+            validation.Operator = OfficeOpenXml.DataValidation.ExcelDataValidationOperator.greaterThan;
+            validation.Formula.Value = new DateTime(1900, 1, 1);
+            validation.ShowErrorMessage = true;
+            validation.ErrorTitle = "Invalid Date";
+            validation.Error = $"Please enter a valid {fieldName} (yyyy-mm-dd)";
         }
 
         //private void AddDropdown(ExcelPackage package,ExcelWorksheet worksheet,string cellRange,List<string> values,string hiddenSheetName,int hiddenColumn)
