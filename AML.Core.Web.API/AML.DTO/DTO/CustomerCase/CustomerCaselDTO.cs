@@ -783,7 +783,9 @@ namespace AML.DTO.DTO.CustomerCase
         [Column("flagtype")]
         public string FlagType { get; set; }
 
+        [Column("mainpartycode")]
 
+        public string MainPartyCode { get; set; }
     }
 
     

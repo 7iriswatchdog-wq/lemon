@@ -479,6 +479,12 @@ namespace AML.Web.Mappings
             CreateMap<ShareholderDTO, ShareholderModel>();
             CreateMap<ShareholderModel, ShareholderDTO>();
 
+            CreateMap<ShareholderDTO, CustomerCaseDTO>();
+            CreateMap<CustomerCaseDTO, ShareholderDTO>();
+
+            CreateMap<ShareholderModel, CustomerCaseDTO>();
+            CreateMap<CustomerCaseDTO, ShareholderModel>();
+
             CreateMap<ScreeningDatabaseLogsModel, CaseReportRequestDTO>();
             CreateMap<CaseReportRequestDTO, ScreeningDatabaseLogsModel>();
 

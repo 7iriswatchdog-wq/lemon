@@ -1809,6 +1809,8 @@ namespace AML.Web.Controllers.Case
             _CustomerCaseDTO.ClientId = _clientHandler.GetClientId();
             _CustomerCaseDTO.CreatedBy = _clientHandler.GetUserId();
             _CustomerCaseDTO.CustomerId = "0";
+            _CustomerCaseDTO.CompanyCode = "";
+            _CustomerCaseDTO.ParentID = "";
 
             int previousStatus = _CustomerCaseDTO.Status;
 

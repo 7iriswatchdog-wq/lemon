@@ -346,6 +346,8 @@ namespace AML.ViewModel.ViewModels.Corporate
 
         public string CustomerId { get; set; }
         public int DocumentCount { get; set; }
+
+        public string MainPartyCode { get; set; }
     }
 
     public class ShareholderFormModel
@@ -359,5 +361,16 @@ namespace AML.ViewModel.ViewModels.Corporate
         public List<ShareholderModel> Shareholders { get; set; } = new();
 
         public List<string> CodeNames { get; set; } = new List<string>();
+    }
+
+    public class ConvertToShareholderRequest
+    {
+        public string customerId { get; set; }
+        public string type { get; set; }
+        public string flagType { get; set; }
+        public string companyCode { get; set; }
+        public string companyName { get; set; }
+
+        public string custtype { get; set; }
     }
 }

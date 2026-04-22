@@ -566,6 +566,7 @@
                                                                 @* :value="item.documentFileName"> *@
                                                                 <input type="hidden" :name="'Shareholders[' + index + '].Residence'" :value="item.residence">
                                                                 <input type="hidden" :name="'Shareholders[' + index + '].CustomerId'" :value="item.customerId">
+                                                                    <input type="hidden" :name="'Shareholders[' + index + '].MainPartyCode'" :value="item.mainPartyCode">
                                                                     
                                                                     
                                                             </div>
@@ -684,7 +685,7 @@
                                                            class="flex-1 h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm font-medium
                                                                 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all
                                                                 fullNameField"
-                                                           oninput="toggleDuplicateBtn()" />
+                                                           oninput="toggleDuplicateBtn(event.target)" />
 
                                                     <button type="button"
                                                             id="btnCheckDuplicate"
@@ -694,7 +695,7 @@
                                                                        transition-all whitespace-nowrap
                                                                        disabled:opacity-50 disabled:cursor-not-allowed
                                                                        hover:bg-blue-50 active:scale-95"
-                                                            onclick="checkDuplicatefunction(this)">
+                                                            onclick="checkDuplicatefunction(this,'Manual')">
 
                                                         <!-- Check Verification Icon -->
                                                         <svg xmlns="http://www.w3.org/2000/svg"
@@ -1075,10 +1076,42 @@
                                                                        x-text="form.type === 'shareholder' ? 'Name of Individual Shareholder *' : form.type === 'corporate_shareholder' ? 'Name of Corporate Shareholder *' : form.type === 'related_shareholder' ? 'Name of Individual Related Parties *' : form.type === 'related_corporate_shareholder' ? 'Name of Corporate Related Parties *' : form.type === 'signatories' ? 'Name of Authorized Signatory *' :
                                                'Name of Senior Management *'">
                                                                 </label>
-                                                                <input type="text"
-                                                                       x-model="form.name"
-                                                                       class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                                                       placeholder="Enter name">
+                                                                <div class="flex items-center gap-2">
+                                                                    <input type="text"
+                                                                           x-model="form.name"
+                                                                           class="w-full h-10 border border-slate-200 rounded-md px-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                                           placeholder="Enter name" oninput="toggleDuplicateBtn(event.target)">
+
+                                                                    <button type="button"
+                                                                            id="btnCheckDuplicate1"
+                                                                            disabled
+                                                                            title="Check Duplicate"
+                                                                            class="flex items-center justify-center w-11 h-11 border-2 border-blue-600 text-blue-600 rounded-xl
+                                                                       transition-all whitespace-nowrap
+                                                                       disabled:opacity-50 disabled:cursor-not-allowed
+                                                                       hover:bg-blue-50 active:scale-95"
+                                                                            :data-name="form.name"
+                                                                            :data-tab="activeShareholderTab"
+                                                                            @@click="checkDuplicatefunction($event,'Shareholders')">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                                             class="w-7 h-7"
+                                                                             fill="none"
+                                                                             viewBox="0 0 28 24"
+                                                                             stroke="currentColor"
+                                                                             stroke-width="2">
+
+                                                                            <!-- Left search -->
+                                                                            <circle cx="8" cy="10" r="4"></circle>
+                                                                            <line x1="11" y1="13" x2="13.5" y2="15.5" stroke-linecap="round"></line>
+
+                                                                            <!-- Right search -->
+                                                                            <circle cx="18" cy="10" r="4"></circle>
+                                                                            <line x1="21" y1="13" x2="23.5" y2="15.5" stroke-linecap="round"></line>
+
+                                                                        </svg>
+
+                                                                    </button>
+                                                                </div>
                                                             </div>
 
                                                             <!-- Share Percentage -->
@@ -2620,19 +2653,48 @@
                     screeningList: []
                 });
             });
-            
+                        function toggleDuplicateBtn(input) {
 
-        
-          function toggleDuplicateBtn() {
-                const input = document.getElementById('txtCompanyName');
-    const btn = document.getElementById('btnCheckDuplicate');
+                // If event is passed instead of element
+                if (input?.target) {
+                    input = input.target;
+                }
 
-    if (input.value.trim().length > 0) {
-        btn.disabled = false;
-    } else {
-        btn.disabled = true;
-    }
-}
+                // Validate it's a DOM element
+                if (!(input instanceof Element)) {
+                    console.error("Invalid element passed:", input);
+                    return;
+                }
+
+                const container = input.closest('.flex');
+                const btn = container?.querySelector('button');
+
+                if (btn) {
+                    btn.disabled = !input.value.trim();
+                }
+            }
+
+                    // function toggleDuplicateBtn(input) {
+
+                    //         const form = input.closest('.flex');
+                    //         const btn = form.querySelector('[id^="btnCheckDuplicate"]');
+
+                    //         if (input.value.trim().length > 0) {
+                    //             btn.disabled = false;
+                    //         } else {
+                    //             btn.disabled = true;
+                    //         }
+                    //     }
+//           function toggleDuplicateBtn() {
+//                 const input = document.getElementById('txtCompanyName');
+//     const btn = document.getElementById('btnCheckDuplicate');
+
+//     if (input.value.trim().length > 0) {
+//         btn.disabled = false;
+//     } else {
+//         btn.disabled = true;
+//     }
+// }
 document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
 
         window.addEventListener('beforeunload', () => {
@@ -3626,6 +3688,13 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                             gender: item.gender || '',
                             relationship: item.relationship || '',
                             flagType: item.flagType || '',
+                            emiratesIdExpiryDate:item.emiratesIdExpiryDate || '',
+                            emiratesIdIssueDate:item.emiratesIdIssueDate || '',
+                            emiratesIdNumber:item.emiratesIdNumber || '',
+                            passportExpiryDate:item.passportExpiryDate || '',
+                            passportIssueDate:item.passportIssueDate || '',
+                            passportId:item.passportId || '',
+                            mainPartyCode:item.mainPartyCode || '',
                             isScreened: false,
                         }));
 
@@ -3798,6 +3867,13 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                     gender : item.gender || '',
                     relationship : item.relationship || '',
                     flagType    : item.flagType || '',
+                    emiratesIdExpiryDate:item.emiratesIdExpiryDate || '',
+                    emiratesIdIssueDate:item.emiratesIdIssueDate || '',
+                    emiratesIdNumber:item.emiratesIdNumber || '',
+                    passportExpiryDate:item.passportExpiryDate || '',
+                    passportIssueDate:item.passportIssueDate || '',
+                    passportId:item.passportId || '',
+                    mainPartyCode:item.mainPartyCode || '',
 
                 }));
 
@@ -4664,106 +4740,139 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
                                 };
                             }
 
-        function checkDuplicatefunction(){
+                    function checkDuplicatefunction(buttonElement,source) {
 
-                 //alert("hai");
-                             $('#loadingeffect').show();
-                    var fullname=$('#txtCompanyName').val();
-                     var type='C';
-                 //alert(fullname);
+                                         $('#loadingeffect').show();
 
-                 $.ajax({
-                 url: '/case/Checkduplicatenames',
-                 type: 'POST',
-                 data: {fullname : fullname,type:type},
-                 success: function (data) {
-                     console.log(data);
+                                                    // console.log("Name:", fullname);
+                            //console.log("Tab:", tabType);
 
-                     let tbody = $('#duplicateTableBody');
-                 tbody.empty(); // clear old rows
+                                                    console.log("source:", source);
 
-                 if (data.length > 0) {
 
-                     data.forEach(function (item) {
+                        //                 let form = $(buttonElement).closest('form');
+                        // let fullname = form.find('.fullNameField').val();
 
-                         let createdDate = new Date(item.createdOn);
-                                     const created = formatDateTime(item.createdOn);
-                                                             const isShareholder = !(item.type === 'Individual' || item.type === 'Corporate');
+                        let fullname = '';
+
+                                     var type='C';
+
+                        // Try main form first
+                                    if (source === 'Manual') {
+                                let form = $(buttonElement).closest('form');
+                                fullname = form.find('.fullNameField').val();
+                            }
+                            // ✅ Shareholder repeater
+                            else {
+                               let btn = buttonElement.currentTarget;
+
+                                fullname = btn.dataset.name;
+                                tabType = btn.dataset.tab;
+                                 type = tabType && tabType.includes('corporate') ? 'C' : 'I'
+                                            console.log("Tab:", tabType);
+                                                         console.log("Full Name:", fullname);
+                            }
+                                       
+                            
+
+                        console.log("Full Name:", fullname);
+
+
+
+                                      
+
+                            $.ajax({
+                                url: '/case/Checkduplicatenames',
+                                type: 'POST',
+                                data: {fullname : fullname,type:type},
+
+                                success: function (data) {
+
+                                    let tbody = $('#duplicateTableBody');
+                                    tbody.empty();
+
+                                    if (data.length > 0) {
+
+                                        data.forEach(function (item) {
+
+                                            let createdDate = new Date(item.createdOn);
+                                            const created = formatDateTime(item.createdOn);
+                                                           const isShareholder = !(item.type === 'Individual' || item.type === 'Corporate');
 
                         const processUrl = isShareholder
                             ? `/report/ViewShareholderCaseDetails?id=${item.customerId}&type=1`
                             : `/report/ViewIndividualCaseDetail?id=${item.customerId}&type=${item.customerType}`;
+                                                let row = `
+                                              <tr class="hover:bg-slate-50/50 transition-colors">
+                                                <td class="px-6 py-6 font-bold text-slate-900">${item.customerId}</td>
 
-
-                         let row = `
-                                   <tr class="hover:bg-slate-50/50 transition-colors">
-                                     <td class="px-6 py-6 font-bold text-slate-900">${item.customerId}</td>
-
-                                     <td class="px-6 py-6 text-slate-600 font-medium">
-                                         ${createdDate.toLocaleDateString('en-GB')}
-                                         <br>
-                                                     <span class="ml-2">
+                                                <td class="px-6 py-6 text-slate-600 font-medium">
+                                                    ${createdDate.toLocaleDateString('en-GB')}
+                                                    <br>
+                                                    <span class="ml-2">
                                                         ${created?.time ? created.time.replace(/\s?(AM|PM)/i, '') : ''}
                                                     </span>
-                                     </td>
+                                                </td>
 
-                                     <td class="px-6 py-6 font-bold text-slate-700">
-                                         ${[item.firstName, item.middleName, item.lastName].filter(Boolean).join(' ')}
-                                     </td>
+                                                <td class="px-6 py-6 font-bold text-slate-700">
+                                                    ${[item.firstName, item.middleName, item.lastName].filter(Boolean).join(' ')}
+                                                </td>
 
-                                                  <td class="px-6 py-6">
+                                                <td class="px-6 py-6">
 
                                                    ${formatCaseStatus(item.caseStatus)}
 
                                                 </td>
-                                                              <td class="px-6 py-6">
+                                                <td class="px-6 py-6">
 
                                                    ${item.type}
 
                                                 </td>
 
-                                     <td class="px-6 py-6">
-                                          <a href="${processUrl}"
-                                                      onclick="${isShareholder ? `setShareholderViewFlag()` : ``}"
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              class="text-blue-600 font-extrabold hover:underline">
-                                               View
-                                           </a>
-                                     ${(item.type !== 'Individual' && item.type !== 'Corporate') ? `
-                                           <a onclick="converttomainpartyModel('${item.customerId}')"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                class="text-blue-600 font-extrabold hover:underline ml-2 cursor-pointer">
-                                                Process
-                                           </a>
-                                                    ` : ''}
-                                     </td>
-                                 </tr>
+                                                <td class="px-6 py-6">
+                                                  <a href="${processUrl}"
+                                                              onclick="${isShareholder ? `setShareholderViewFlag()` : ``}"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       class="text-blue-600 font-extrabold hover:underline">
+                                                        View
+                                                    </a>
+                                                            ${(
+                                                            source === 'Shareholders'
+                                                            || (source === 'Manual' && item.type !== 'Individual' && item.type !== 'Corporate')
+                                                        ) ? `
+                                                            <a onclick="${source === 'Shareholders'
+                                                                            ? `converttoshareholderModel('${item.customerId}','${tabType}')`
+                                                                : `converttomainpartyModel('${item.customerId}')`}"
+                                                               class="text-blue-600 font-extrabold hover:underline ml-2 cursor-pointer">
+                                                               Process
+                                                            </a>
+                                                        ` : ''}
+                                                </td>
+                                            </tr>
 
-                         `;
+                                    `;
+                                                // <td class="px-6 py-6">
+                                                //     <div class="flex items-center justify-center gap-2">
+                                                //         <div class="w-16 bg-slate-100 rounded-full h-1.5">
+                                                //             <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${item.matchScore}%"></div>
+                                                //         </div>
+                                                //         <span class="text-xs font-bold text-slate-600">${item.matchScore}%</span>
+                                                //     </div>
+                                                // </td>
+                                            tbody.append(row);
+                                        });
 
-                         tbody.append(row);
-                     });
-
-                 } else {
-                                 tbody.append(`<tr><td colspan="5" class="text-center py-10 text-slate-500 font-medium">
+                                    } else {
+                                                    tbody.append(`<tr> <td colspan="5" class="text-center py-10 text-slate-500 font-medium">
                                 No duplicates found
                             </td></tr>`);
-                 }
-                                     $('#loadingeffect').hide();
-                     $('#isDuplicateModalOpen').show();
-
-                 },
-                 error: function (xhr) {
-                     console.error('Error:', xhr.responseText);
-                     alert('Error loading data');
-                 },
-                 complete: function () {
-                     $("#loader").hide();
-                 }
-             });
-             }
+                                    }
+                                                 $('#loadingeffect').hide();
+                                    $('#isDuplicateModalOpen').show();
+                                }
+                            });
+                        }
                     function successModal(isOpen, refId) {
                        return {
                            isSuccessModalOpen: isOpen,
@@ -5018,23 +5127,162 @@ document.addEventListener('DOMContentLoaded', toggleDuplicateBtn);
 
 
 
-                              let selectedCustomerId = "";
-                    function converttomainpartyModel(customerId)
-                    {
-                                selectedCustomerId = customerId;
-                        $('#isDuplicateModalOpen').hide();
+                                        let selectedCustomerId = "";
+                        function converttomainpartyModel(customerId)
+                        {
+                                    selectedCustomerId = customerId;
+                            $('#isDuplicateModalOpen').hide();
 
-                        $('#shareholderModel')
-                            .removeClass('hidden')
-                            .addClass('flex');
-                        $('#rollbackCustomerId').text(customerId);
-                    }
-                                function closeShareholderModal()
-                    {
-                        $('#shareholderModel')
-                            .removeClass('flex')
-                            .addClass('hidden');
-                    }
+                                         $('#modalTitle').text('Confirm Process');
+                            $('#modalMessage').text('Do you want to proceed with this customer to convert to Main Party?');
+
+                            $('#shareholderModel')
+                                .removeClass('hidden')
+                                .addClass('flex');
+                            $('#rollbackCustomerId').text(customerId);
+
+                                            window.currentAction = 'main';
+
+
+                        }
+
+                                    function converttoshareholderModel(customerId,tabType)
+                                    {
+
+                                                selectedCustomerId = customerId;
+                                                 window.selectedTabType = tabType;
+                                                             console.log("2nd customerId",selectedCustomerId);
+                                                                                     console.log("tabType",tabType);
+                                        $('#isDuplicateModalOpen').hide();
+
+                                        $('#modalTitle').text('Confirm Shareholder Conversion');
+                                        $('#modalMessage').text('Do you want to convert this customer to Shareholder?');
+
+                                        $('#shareholderModel')
+                                            .removeClass('hidden')
+                                            .addClass('flex');
+                                        $('#rollbackCustomerId').text(customerId);
+
+                                                    window.currentAction = 'shareholder';
+                                    }
+                                    function closeShareholderModal()
+                        {
+                            $('#shareholderModel')
+                                .removeClass('flex')
+                                .addClass('hidden');
+                        }
+
+                                    function getTypeAndFlag(tabType) {
+                            let typeValue = '';
+                            let flagType = '';
+
+                            switch (tabType) {
+                                case 'shareholder':
+                                    typeValue = 'Individual_Ind';
+                                    flagType = 'Individual Shareholder';
+                                    break;
+
+                                case 'corporate_shareholder':
+                                    typeValue = 'Individual_Corp';
+                                    flagType = 'Corporate Shareholder';
+                                    break;
+
+                                case 'related_shareholder':
+                                    typeValue = 'Individual_Ind';
+                                    flagType = 'Individual Related Parties';
+                                    break;
+
+                                case 'related_corporate_shareholder':
+                                    typeValue = 'Individual_Corp';
+                                    flagType = 'Corporate Related Parties';
+                                    break;
+
+                                case 'signatories':
+                                    typeValue = 'Individual_Poa';
+                                    flagType = 'Authorized Signatory';
+                                    break;
+
+                                default:
+                                    typeValue = 'Individual_Ind';
+                                    flagType = 'Senior Management';
+                                    break;
+                            }
+
+                            return { typeValue, flagType };
+                        }
+
+                        function handleProceed()
+                        {
+                            console.log("currentaction",window.currentAction)
+
+                            if (window.currentAction === 'main') {
+
+
+
+                                // call your API / function
+
+                                            creatingrecordShareholder(); // existing function
+                            }
+                            else if (window.currentAction === 'shareholder') {
+                                            const { typeValue, flagType } = getTypeAndFlag(window.selectedTabType);
+
+                                            console.log("handle Proceed Type:", typeValue);
+                                            console.log("Flag:", flagType);
+                                            convertToShareholder(selectedCustomerId, typeValue, flagType); // create this function
+                            }
+
+                            closeShareholderModal();
+                        }
+
+
+                                     async function convertToShareholder(customerId, typeValue, flagType) {
+
+
+                                                     var companyCode=$("#CompanyCodeInput").val();
+                                                         var companyName=$("#CompanyNameHidden").val();
+                                                         var custtype="C";
+
+                        console.log("flagType",flagType);
+                                                     console.log("typeValue",typeValue);
+                                                     console.log("customerId",customerId);
+                                                     console.log("companyName",companyName);
+                                                     console.log("companyCode",companyCode);
+
+                            const response = await fetch('/corporate/ConvertToShareholder', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    customerId: customerId,
+                                    type: typeValue,
+                                    flagType: flagType,
+                                    companyCode:companyCode,
+                                    companyName:companyName,
+                                    custtype:custtype
+                                })
+                            });
+
+                            if (response.ok) {
+                                toastr.success("Converted successfully");
+
+                                closeShareholderModal();
+
+                                await new Promise(resolve => {
+                                    window.dispatchEvent(new CustomEvent('load-casecreated-shareholders', {
+                                        detail: { skipModal: true }
+                                    }));
+                                    setTimeout(resolve, 300);
+                                });
+
+                                await new Promise(resolve => {
+                                    window.dispatchEvent(new CustomEvent('load-pending-shareholders', {
+                                        detail: { skipModal: true }
+                                    }));
+                                    setTimeout(resolve, 300);
+                                });
+                            }
+                        }
 
                     function creatingrecordShareholder()
                     {

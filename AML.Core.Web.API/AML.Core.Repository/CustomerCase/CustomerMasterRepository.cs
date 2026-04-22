@@ -1021,6 +1021,7 @@ namespace AML.Core.Repository.CustomerCase
                 parameters.Add("@p_EmiratesIdNumber", _shareholderDTO.EmiratesIdNumber);
                 parameters.Add("@p_EmiratesIdIssueDate", _shareholderDTO.EmiratesIdIssueDate);
                 parameters.Add("@p_EmiratesIdExpiryDate", _shareholderDTO.EmiratesIdExpiryDate);
+                parameters.Add("@p_mainpartycode", _shareholderDTO.MainPartyCode);
                 var response = ExecuteScalar("ins_shareholders_data", parameters, commandType: CommandType.StoredProcedure).ParseString();
                 serviceResponse.Result = response;
                 serviceResponse.Message = "Customer master added successfully.";
