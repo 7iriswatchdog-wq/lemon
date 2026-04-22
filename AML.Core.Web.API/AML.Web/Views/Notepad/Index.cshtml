@@ -5,12 +5,50 @@
     Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
 }
 
-<body class="bg-slate-50/30 min-h-screen text-slate-900">
+@section Styles {
+    <link href="~/plugins/summernote/summernote-lite.min.css" rel="stylesheet">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+        
+        .note-editor.note-frame { border: none !important; }
+        .note-toolbar { background: #f8fafc !important; border-bottom: 1px solid #f1f5f9 !important; padding: 10px !important; border-radius: 12px 12px 0 0 !important; }
+        .note-editable { background: white !important; padding: 30px !important; font-family: 'Inter', sans-serif !important; font-size: 15px !important; line-height: 1.6 !important; text-align: left !important; direction: ltr !important; }
+        .note-placeholder { padding: 30px !important; text-align: left !important; }
+        .note-status-output { display: none !important; }
+        
+        #mainColumn { height: calc(100vh - 180px); }
+        #sidebarColumn { height: calc(100vh - 180px); }
+
+        /* Summernote Overrides for System Match */
+        .note-editor.note-lite { border: none !important; font-family: 'Inter', sans-serif !important; height: 100% !important; display: flex !important; flex-direction: column !important; }
+        .note-editing-area { flex: 1 !important; min-height: 500px !important; display: flex !important; flex-direction: column !important; position: relative !important; z-index: 1 !important; }
+        .note-editable h1 { font-size: 2.25rem !important; font-weight: 900 !important; margin-bottom: 1.5rem !important; margin-top: 2rem !important; color: #0f172a !important; letter-spacing: -0.025em !important; }
+        .note-editable ul { list-style-type: disc !important; padding-left: 20px !important; margin: 15px 0 !important; }
+        .note-editable ol { list-style-type: decimal !important; padding-left: 20px !important; margin: 15px 0 !important; }
+        .note-editable iframe { width: 100% !important; aspect-ratio: 16 / 9 !important; height: auto !important; border-radius: 12px !important; margin: 24px 0 !important; border: none !important; display: block !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; }
+        .note-statusbar { display: none !important; }
+        .note-btn:not(.note-color-btn) { background: white !important; border: 1px solid #e2e8f0 !important; color: #64748b !important; font-size: 12px !important; padding: 6px 10px !important; border-radius: 6px !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important; font-weight: 600 !important; margin-right: 2px !important; transition: all 0.2s !important; }
+        .note-btn:not(.note-color-btn):hover { background: #f8fafc !important; color: #3b82f6 !important; border-color: #3b82f6 !important; }
+        .note-btn:not(.note-color-btn).active { background: #eff6ff !important; border-color: #3b82f6 !important; color: #2563eb !important; font-weight: 800 !important; }
+        .note-modal-backdrop { background-color: rgba(0,0,0,0.5) !important; z-index: 9999 !important; backdrop-filter: blur(4px) !important; }
+        .note-modal { z-index: 10000 !important; }
+        .note-modal-content { border-radius: 16px !important; border:none !important; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important; overflow: hidden !important; }
+        .note-modal-header { border-bottom: 1px solid #f1f5f9 !important; padding: 15px 20px !important; }
+        .note-modal-body { padding: 20px !important; }
+        .note-modal-footer { border-top: 1px solid #f1f5f9 !important; padding: 15px 20px !important; }
+    </style>
+}
+
+<div class="bg-slate-50/30 min-h-screen text-slate-900">
     <div id="process-container" class="p-4 sm:p-6 min-h-screen flex flex-col" x-data="notepadApp()" x-init="initNotepad()">
         
-        <!-- Premium Confirmation Modal -->
-        <div id="confirmModal"
-             x-show="showConfirmModal"
+        
+        <!-- Note Delete Modal -->
+        <div id="noteDeleteModal"
+             x-show="showNoteDeleteModal"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
@@ -22,21 +60,57 @@
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 space-y-6 border border-slate-100">
                 <div class="flex flex-col items-center text-center gap-4">
                     <div class="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-red-600 shadow-sm border border-red-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                     </div>
                     <div class="space-y-2">
-                        <h3 class="text-xl font-black text-red-600 tracking-tight">Delete Attachment?</h3>
+                        <h3 class="text-xl font-black text-red-600 tracking-tight">Delete Note?</h3>
                         <p class="text-sm text-slate-500 leading-relaxed font-medium px-4">
-                            This file will be permanently removed from your note. You cannot undo this action.
+                            This note and all its attachments will be permanently deleted. This action cannot be undone.
                         </p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 pt-2">
-                    <button @@click="closeConfirmModal()"
+                    <button @@click="showNoteDeleteModal = false"
+                            class="flex-1 h-12 text-slate-500 hover:bg-slate-100 rounded-xl font-bold text-sm transition-all border border-slate-200">
+                        Keep Note
+                    </button>
+                    <button @@click="confirmDeleteNote()"
+                            class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-sm h-12 rounded-xl shadow-lg shadow-red-200 transition-all active:scale-95">
+                        Yes, Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attachment Delete Modal -->
+        <div id="attachmentDeleteModal"
+             x-show="showAttachmentDeleteModal" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+             style="display: none;">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 space-y-6 border border-slate-100">
+                <div class="flex flex-col items-center text-center gap-4">
+                    <div class="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-red-600 shadow-sm border border-red-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-black text-red-600 tracking-tight">Delete Attachment?</h3>
+                        <p class="text-sm text-slate-500 leading-relaxed font-medium px-4">
+                            This file will be permanently removed. This action cannot be undone.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 pt-2">
+                    <button @@click="showAttachmentDeleteModal = false"
                             class="flex-1 h-12 text-slate-500 hover:bg-slate-100 rounded-xl font-bold text-sm transition-all border border-slate-200">
                         Keep File
                     </button>
-                    <button @@click="confirmDelete()"
+                    <button @@click="confirmAttachmentDelete()"
                             class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-sm h-12 rounded-xl shadow-lg shadow-red-200 transition-all active:scale-95">
                         Yes, Delete
                     </button>
@@ -115,68 +189,105 @@
             </div>
 
             <!-- SIDEBAR COLUMN -->
-            <div class="w-full lg:w-80 shrink-0 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-1">
-                <!-- Attachments Card -->
-                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-6">
-                    <div class="flex items-center gap-2">
-                        <div class="h-5 w-1.5 bg-blue-600 rounded-full"></div>
-                        <h2 class="text-base font-black text-slate-900 leading-none tracking-tight">Attachments</h2>
+            <div id="sidebarColumn" class="w-full lg:w-80 shrink-0 flex flex-col gap-6 overflow-hidden">
+                <!-- Saved Notes Card -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4 flex flex-col flex-[1.8] min-h-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="h-5 w-1.5 bg-blue-600 rounded-full"></div>
+                            <h2 class="text-base font-black text-slate-900 leading-none tracking-tight">Saved Notes</h2>
+                        </div>
+                        <button @@click="createNewNote()" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="New Note">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus-circle"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Search Notes -->
+                    <div class="relative group">
+                        <input type="text" x-model="searchQuery" placeholder="Search notes..." class="w-full h-9 bg-slate-50 border border-slate-100 rounded-lg px-3 pl-8 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-300">
+                        <div class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        </div>
                     </div>
 
-                    <!-- Upload Form -->
-                    <form id="uploadForm" action="/Notepad/UploadAttachment" method="post" enctype="multipart/form-data">
-                        <label class="relative group cursor-pointer block">
-                            <input type="file" name="files" class="hidden" @@change="handleFileUpload">
-                            <div class="border-2 border-dashed border-slate-200 group-hover:border-blue-400 group-hover:bg-blue-50/50 rounded-2xl p-6 transition-all flex flex-col items-center text-center gap-3">
-                                <div class="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-all shadow-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-cloud"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
-                                </div>
-                                <div class="space-y-1">
-                                    <p class="text-xs font-black text-slate-900 tracking-tight">Upload File</p>
-                                    <p class="text-[10px] text-slate-400 font-medium tracking-tight">Up to 10MB per file</p>
-                                </div>
-                            </div>
-                        </label>
-                    </form>
-
-                    <!-- Grouped Files List -->
-                    <div class="space-y-6 overflow-y-auto max-h-[600px] pr-1 custom-scrollbar">
-                        <template x-for="(group, dateKey) in groupedAttachments" :key="dateKey">
+                    <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-4">
+                        <template x-for="(group, dateKey) in groupedNotes" :key="dateKey">
                             <div class="space-y-3">
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-2 px-1">
                                     <span class="text-[10px] font-black text-slate-400 tracking-[0.15em] uppercase" x-text="group.label"></span>
                                     <div class="flex-1 h-px bg-slate-100"></div>
                                 </div>
-                                
-                                <div class="space-y-2.5">
-                                    <template x-for="file in group.items" :key="file.Id">
-                                        <div class="group flex items-center gap-3 p-3 bg-slate-50/50 border border-slate-100 rounded-xl hover:border-blue-200 hover:bg-white hover:shadow-lg hover:shadow-blue-50/50 transition-all duration-300">
-                                            <!-- File Icon Fix -->
-                                            <div class="shrink-0 w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
-                                                <template x-if="file.FileName && file.FileName.toLowerCase().endsWith('.pdf')">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-                                                </template>
-                                                <template x-if="file.FileName && (file.FileName.toLowerCase().endsWith('.png') || file.FileName.toLowerCase().endsWith('.jpg') || file.FileName.toLowerCase().endsWith('.jpeg'))">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                                                </template>
-                                                <template x-if="!file.FileName || (!file.FileName.toLowerCase().endsWith('.pdf') && !file.FileName.toLowerCase().endsWith('.png') && !file.FileName.toLowerCase().endsWith('.jpg') && !file.FileName.toLowerCase().endsWith('.jpeg'))">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
-                                                </template>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <div class="text-[11px] font-black text-slate-800 truncate leading-tight mb-0.5" x-text="file.FileName" :title="file.FileName"></div>
-                                                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider" x-text="formatTime(file.UploadedOn)"></div>
-                                            </div>
-                                            <div class="shrink-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                                <a :href="'/Notepad/DownloadAttachment/' + file.Id" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Download">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-cloud"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
-                                                </a>
-                                                <button @@click="openConfirmModal(file.Id)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                                                </button>
+                                <div class="space-y-2">
+                                    <template x-for="note in group.items" :key="note.id">
+                                        <div @@click="loadNote(note.id)" 
+                                             :class="(id === note.id) ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-500/10' : 'border-slate-100 bg-slate-50/30 hover:border-blue-200 hover:bg-white'"
+                                             class="group cursor-pointer flex flex-col gap-1 p-3 border rounded-xl transition-all duration-300 relative overflow-hidden">
+                                            <div x-show="id === note.id" class="absolute left-0 top-0 bottom-0 w-1 bg-blue-600"></div>
+                                            <div class="text-[11px] font-black text-slate-800 truncate leading-tight" x-text="note.subject || 'Untitled Note'"></div>
+                                            <div class="flex items-center justify-between">
+                                                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider" x-text="formatDate(note.updatedOn)"></div>
+                                                <div class="flex items-center gap-2">
+                                                    <button @@click.stop="openNoteDeleteModal(note.id)" class="p-1 text-slate-400 hover:text-red-600" title="Delete Note">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                                    </button>
+                                                    <div class="text-[9px] text-blue-600 font-bold">Open &rarr;</div>
+                                                </div>
                                             </div>
                                         </div>
                                     </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Attachments Card -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4 flex flex-col flex-1 min-h-0 overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="h-5 w-1.5 bg-blue-600 rounded-full"></div>
+                            <h2 class="text-base font-black text-slate-900 leading-none tracking-tight">
+                                Attachments 
+                                <span x-show="attachments.length > 0" class="ml-1 text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full text-[10px]" x-text="attachments.length"></span>
+                            </h2>
+                        </div>
+                        <label class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer active:scale-95" title="Upload File">
+                            <input type="file" name="files" class="hidden" @@change="handleFileUpload" form="uploadForm" multiple>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus-circle"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+                        </label>
+                    </div>
+
+                    <!-- Hidden Upload Form -->
+                    <form id="uploadForm" action="/Notepad/UploadAttachment" method="post" enctype="multipart/form-data" class="hidden">
+                        <input type="hidden" name="notepadId" :value="id">
+                    </form>
+
+                    <!-- Grouped Files List -->
+                    <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2.5">
+                        <template x-for="file in attachments" :key="file.id">
+                            <div class="group flex items-center gap-3 p-3 bg-slate-50/50 border border-slate-100 rounded-xl hover:border-blue-200 hover:bg-white hover:shadow-lg hover:shadow-blue-50/50 transition-all duration-300">
+                                <!-- File Icon Fix -->
+                                <div class="shrink-0 w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
+                                    <template x-if="file.fileName && file.fileName.toLowerCase().endsWith('.pdf')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                                    </template>
+                                    <template x-if="file.fileName && (file.fileName.toLowerCase().endsWith('.png') || file.fileName.toLowerCase().endsWith('.jpg') || file.fileName.toLowerCase().endsWith('.jpeg'))">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                                    </template>
+                                    <template x-if="!file.fileName || (!file.fileName.toLowerCase().endsWith('.pdf') && !file.fileName.toLowerCase().endsWith('.png') && !file.fileName.toLowerCase().endsWith('.jpg') && !file.fileName.toLowerCase().endsWith('.jpeg'))">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                                    </template>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-[11px] font-black text-slate-800 truncate leading-tight" x-text="file.fileName || 'Untitled'" :title="file.fileName || 'Untitled'"></div>
+                                </div>
+                                <div class="shrink-0 flex gap-1">
+                                    <a :href="'/Notepad/DownloadAttachment/' + file.id" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Download" download>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down-to-line"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>
+                                    </a>
+                                    <button @@click.stop="openAttachmentDeleteModal(file.id)" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                    </button>
                                 </div>
                             </div>
                         </template>
@@ -193,42 +304,10 @@
         </div>
     </div>
 
-    <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
 
-        /* Summernote Overrides for System Match */
-        .note-editor.note-lite { border: none !important; font-family: 'Inter', sans-serif !important; height: 100% !important; display: flex !important; flex-direction: column !important; }
-        .note-toolbar { background: #f8fafc !important; border-bottom: 1px solid #e2e8f0 !important; padding: 12px 15px !important; flex-shrink: 0 !important; border-radius: 0 !important; }
-        .note-editing-area { flex: 1 !important; min-height: 500px !important; display: flex !important; flex-direction: column !important; position: relative !important; z-index: 1 !important; }
-        
-        .note-editable { flex: 1 !important; background: white !important; padding: 30px 40px !important; color: #1e293b !important; overflow-y: auto !important; text-align: left !important; line-height: 1.6 !important; }
-        .note-editable h1 { font-size: 2.25rem !important; font-weight: 900 !important; margin-bottom: 1.5rem !important; margin-top: 2rem !important; color: #0f172a !important; letter-spacing: -0.025em !important; }
-        .note-editable ul { list-style-type: disc !important; padding-left: 20px !important; margin: 15px 0 !important; }
-        .note-editable ol { list-style-type: decimal !important; padding-left: 20px !important; margin: 15px 0 !important; }
-        .note-editable iframe { width: 100% !important; aspect-ratio: 16 / 9 !important; height: auto !important; border-radius: 12px !important; margin: 24px 0 !important; border: none !important; display: block !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; }
-        
-        .note-placeholder { position: absolute !important; top: 30px !important; left: 40px !important; padding: 0 !important; color: #cbd5e1 !important; font-style: italic !important; pointer-events: none !important; font-size: 1.1rem !important; }
-        .note-statusbar { display: none !important; }
-        
-        .note-btn:not(.note-color-btn) { background: white !important; border: 1px solid #e2e8f0 !important; color: #64748b !important; font-size: 12px !important; padding: 6px 10px !important; border-radius: 6px !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important; font-weight: 600 !important; margin-right: 2px !important; transition: all 0.2s !important; }
-        .note-btn:not(.note-color-btn):hover { background: #f8fafc !important; color: #3b82f6 !important; border-color: #3b82f6 !important; }
-        .note-btn:not(.note-color-btn).active { background: #eff6ff !important; border-color: #3b82f6 !important; color: #2563eb !important; font-weight: 800 !important; }
 
-        .note-modal-backdrop { background-color: rgba(0,0,0,0.5) !important; z-index: 9999 !important; backdrop-filter: blur(4px) !important; }
-        .note-modal { z-index: 10000 !important; }
-        .note-modal-content { border-radius: 16px !important; border:none !important; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important; overflow: hidden !important; }
-        .note-modal-header { border-bottom: 1px solid #f1f5f9 !important; padding: 15px 20px !important; }
-        .note-modal-body { padding: 20px !important; }
-        .note-modal-footer { border-top: 1px solid #f1f5f9 !important; padding: 15px 20px !important; }
-    </style>
-</body>
-
-@section Styles {
-    <link href="~/plugins/summernote/summernote-lite.min.css" rel="stylesheet">
-}
+    </div>
+</div>
 
 @section Scripts {
     <script src="~/plugins/summernote/summernote-lite.min.js"></script>
@@ -239,24 +318,102 @@
                 subject: '@(Model.Subject ?? "")',
                 isSaving: false,
                 lastSavedText: 'Last sync: Just now',
-                attachments: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Attachments ?? new List<AML.DTO.DTO.Notepad.NotepadAttachmentDTO>())),
+                attachments: (@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Attachments ?? new List<AML.DTO.DTO.Notepad.NotepadAttachmentDTO>())))
+                    .map(a => {
+                        console.log('Mapping attachment:', a);
+                        return { 
+                            id: a.Id || a.id || a.ID, 
+                            fileName: a.FileName || a.fileName || a.file_name || a.Name || 'Unknown File', 
+                            uploadedOn: a.UploadedOn || a.uploadedOn || a.uploaded_on || new Date().toISOString(),
+                            filePath: a.FilePath || a.filePath || a.file_path,
+                            fileType: a.FileType || a.file_type || a.extension
+                        };
+                    }),
+                allNotes: (@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.AllNotes ?? new List<AML.DTO.DTO.Notepad.NotepadDTO>())))
+                    .map(n => ({ id: n.Id || n.id, subject: n.Subject || n.subject, updatedOn: n.UpdatedOn || n.updatedOn })),
+                searchQuery: '',
                 saveTimeout: null,
-                showConfirmModal: false,
                 deletingId: null,
+                deletingAttachmentId: null,
+                showAttachmentDeleteModal: false,
+                showNoteDeleteModal: false,
+                noteToDelete: null,
 
-                get groupedAttachments() {
+                openNoteDeleteModal(id) {
+                    this.noteToDelete = id;
+                    this.showNoteDeleteModal = true;
+                },
+
+                async confirmDeleteNote() {
+                    if (!this.noteToDelete) return;
+                    try {
+                        const response = await fetch('/Notepad/DeleteNote?id=' + this.noteToDelete, { method: 'POST' });
+                        const data = await response.json();
+                        if (response.ok && data.success) {
+                            this.allNotes = this.allNotes.filter(n => n.id !== this.noteToDelete);
+                            if (this.id === this.noteToDelete) {
+                                this.createNewNote();
+                            }
+                            this.showNoteDeleteModal = false;
+                        } else {
+                            alert(data.message || 'Failed to delete note');
+                        }
+                    } catch (error) {
+                        console.error('Delete note failed:', error);
+                    }
+                },
+
+                openAttachmentDeleteModal(id) {
+                    console.log('Opening delete modal for attachment ID:', id);
+                    this.deletingAttachmentId = id;
+                    this.showAttachmentDeleteModal = true;
+                },
+
+                async confirmAttachmentDelete() {
+                    const id = this.deletingAttachmentId;
+                    console.log('Confirming delete for attachment ID:', id);
+                    try {
+                        const response = await fetch('/Notepad/DeleteAttachment?id=' + id, { 
+                            method: 'POST'
+                        });
+                        console.log('Delete response status:', response.status);
+                        const data = await response.json();
+                        console.log('Delete response data:', data);
+                        if (response.ok && data.success) {
+                            this.attachments = this.attachments.filter(a => a.id !== id);
+                            this.showAttachmentDeleteModal = false;
+                        } else {
+                            alert(data.message || 'Failed to delete attachment');
+                        }
+                    } catch (error) {
+                        console.error('Delete failed:', error);
+                        alert('Network or JS error: ' + error.message);
+                    }
+                },
+
+                get filteredNotes() {
+                    if (!this.searchQuery) return this.allNotes;
+                    const q = this.searchQuery.toLowerCase();
+                    return this.allNotes.filter(n => {
+                        const subj = (n.subject || '').toLowerCase();
+                        return subj.includes(q);
+                    });
+                },
+
+                get groupedNotes() {
+                    const notes = this.filteredNotes;
                     const groups = {};
                     const now = new Date();
                     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
                     const yesterday = today - 86400000;
 
-                    this.attachments.forEach(file => {
-                        const date = new Date(file.UploadedOn);
+                    notes.forEach(note => {
+                        const date = new Date(note.updatedOn);
                         let key, label;
 
                         if (isNaN(date.getTime()) || date.getFullYear() <= 1) {
-                            key = 'older';
-                            label = 'Older Records';
+                            key = 'recent';
+                            label = 'Recent';
                         } else {
                             const time = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
                             if (time === today) {
@@ -272,19 +429,16 @@
                         }
 
                         if (!groups[key]) groups[key] = { label, items: [] };
-                        groups[key].items.push(file);
+                        groups[key].items.push(note);
                     });
 
-                    // Sort keys: today -> yesterday -> dates -> older
                     const sorted = {};
                     if (groups['today']) sorted['today'] = groups['today'];
                     if (groups['yesterday']) sorted['yesterday'] = groups['yesterday'];
-                    
-                    Object.keys(groups).sort((a,b) => b.localeCompare(a)).forEach(k => {
-                        if (k !== 'today' && k !== 'yesterday' && k !== 'older') sorted[k] = groups[k];
+                    Object.keys(groups).forEach(k => {
+                        if (!['today', 'yesterday', 'recent'].includes(k)) sorted[k] = groups[k];
                     });
-                    
-                    if (groups['older']) sorted['older'] = groups['older'];
+                    if (groups['recent']) sorted['recent'] = groups['recent'];
                     return sorted;
                 },
 
@@ -312,35 +466,125 @@
                 },
 
                 formatTime(dateStr) {
-                    if (!dateStr || dateStr.startsWith('0001')) return 'Joined now';
+                    if (!dateStr || dateStr.startsWith('0001')) return 'Just now';
                     const date = new Date(dateStr);
                     if (isNaN(date.getTime())) return 'Recently';
                     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 },
 
+                formatDate(dateStr) {
+                    if (!dateStr || dateStr.startsWith('0001')) return 'Just now';
+                    const date = new Date(dateStr);
+                    if (isNaN(date.getTime())) return 'Recently';
+                    
+                    const now = new Date();
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                    const time = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+                    
+                    if (time === today) return 'Today, ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ', ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                },
+
+                async loadNote(id) {
+                    try {
+                        const response = await fetch('/Notepad/GetNote/' + id);
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.id = data.Id || data.id;
+                            this.subject = data.Subject || data.subject;
+                            $('#summernote').summernote('code', data.Content || data.content || '');
+                            this.attachments = (data.Attachments || data.attachments || [])
+                                .map(a => {
+                                    console.log('Loading attachment:', a);
+                                    return { 
+                                        id: a.Id || a.id || a.ID, 
+                                        fileName: a.FileName || a.fileName || a.file_name || a.Name || 'Unknown File', 
+                                        uploadedOn: a.UploadedOn || a.uploadedOn || a.uploaded_on || new Date().toISOString(),
+                                        filePath: a.FilePath || a.filePath || a.file_path,
+                                        fileType: a.FileType || a.file_type || a.extension
+                                    };
+                                });
+                            window.history.replaceState({}, '', '/Notepad/Index/' + this.id);
+                        }
+                    } catch (error) {
+                        console.error('Failed to load note:', error);
+                    }
+                },
+
+                createNewNote() {
+                    this.id = 0;
+                    this.subject = 'New Note';
+                    this.attachments = [];
+                    this.lastSavedText = 'New unsaved note';
+                    $('#summernote').summernote('code', '');
+                    window.history.replaceState({}, '', '/Notepad/Index');
+                },
+
                 triggerAutoSave() {
-                    this.isSaving = true;
+                    if (this.id === 0 && !this.subject) return;
                     clearTimeout(this.saveTimeout);
                     this.saveTimeout = setTimeout(() => {
                         this.manualSave();
-                    }, 2000);
+                    }, 3000);
                 },
 
-                manualSave() {
+                async manualSave() {
+                    if (this.isSaving) return;
                     const contents = $('#summernote').summernote('code');
-                    this.saveNotepad(contents);
+                    await this.saveNotepad(contents);
                 },
 
                 async saveNotepad(contents) {
+                    if (this.isSaving) return;
+                    const savingId = this.id;
                     this.isSaving = true;
                     try {
                         const response = await fetch('/Notepad/Save', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ id: this.id, content: contents, subject: this.subject })
+                            body: JSON.stringify({ Id: this.id, Content: contents, Subject: this.subject })
                         });
                         if (response.ok) {
-                            this.lastSavedText = 'Last sync at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                            const data = await response.json();
+                            const now = new Date().toISOString();
+                            
+                            const finalSubject = data.subject || data.Subject || this.subject;
+                            const finalId = data.id || data.Id;
+                            
+                            if (this.id === savingId) {
+                                this.subject = finalSubject;
+                                if (finalId && (this.id === 0 || this.id === finalId)) {
+                                    const isNew = this.id === 0;
+                                    this.id = finalId;
+                                    
+                                    if (isNew) {
+                                        // Add to list and force reactivity with spread
+                                        this.allNotes = [{
+                                            id: finalId,
+                                            subject: finalSubject,
+                                            updatedOn: now
+                                        }, ...this.allNotes];
+                                        window.history.replaceState({}, '', '/Notepad/Index/' + finalId);
+                                    } else {
+                                        // Update existing note in list
+                                        const noteIndex = this.allNotes.findIndex(n => (n.id || n.Id) === this.id);
+                                        if (noteIndex !== -1) {
+                                            const updatedNote = { ...this.allNotes[noteIndex], subject: finalSubject, updatedOn: now };
+                                            this.allNotes.splice(noteIndex, 1);
+                                            this.allNotes = [updatedNote, ...this.allNotes];
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (finalId && savingId === 0) {
+                                    this.allNotes = [{
+                                        id: finalId,
+                                        subject: finalSubject,
+                                        updatedOn: now
+                                    }, ...this.allNotes];
+                                }
+                            }
+                            this.lastSavedText = 'Last sync at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' (ID: ' + this.id + ')';
                         }
                     } catch (error) {
                         console.error('Save failed:', error);
@@ -348,33 +592,18 @@
                         this.isSaving = false;
                     }
                 },
-
-                openConfirmModal(id) {
-                    this.deletingId = id;
-                    this.showConfirmModal = true;
-                },
-
-                closeConfirmModal() {
-                    this.showConfirmModal = false;
-                    this.deletingId = null;
-                },
-
-                async confirmDelete() {
-                    const id = this.deletingId;
-                    this.closeConfirmModal();
-                    try {
-                        const response = await fetch('/Notepad/DeleteAttachment/' + id, { method: 'POST' });
-                        if (response.ok) {
-                            this.attachments = this.attachments.filter(a => (a.Id || a.id) !== id);
-                        }
-                    } catch (error) {
-                        console.error('Delete failed:', error);
-                    }
-                },
-
-                handleFileUpload(e) {
+                async handleFileUpload(e) {
                     if (e.target.files.length > 0) {
-                        document.getElementById('uploadForm').submit();
+                        // If this is a new note, we MUST save it first to get an ID
+                        if (this.id === 0) {
+                            await this.manualSave();
+                            // Wait a moment for the ID to be assigned from the response
+                            setTimeout(() => {
+                                document.getElementById('uploadForm').submit();
+                            }, 500);
+                        } else {
+                            document.getElementById('uploadForm').submit();
+                        }
                     }
                 }
             };
