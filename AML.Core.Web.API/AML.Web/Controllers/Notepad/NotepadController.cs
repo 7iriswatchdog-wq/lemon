@@ -22,15 +22,35 @@ namespace AML.Web.Controllers.Notepad
             _fileUploader = fileUploader;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? id)
         {
             int userId = _httpClientHandler.GetUserId();
-            var notepad = await _notepadService.GetNotepadAsync(userId);
+            var allNotes = await _notepadService.GetAllNotesAsync(userId);
+            ViewBag.AllNotes = allNotes;
+
+            NotepadDTO notepad = null;
+            if (id.HasValue)
+            {
+                notepad = await _notepadService.GetNoteByIdAsync(id.Value);
+            }
+            else
+            {
+                notepad = await _notepadService.GetNotepadAsync(userId);
+            }
+
             if (notepad == null)
             {
-                notepad = new NotepadDTO { UserId = userId, Content = "" };
+                notepad = new NotepadDTO { UserId = userId, Content = "", Subject = "New Note" };
             }
             return View(notepad);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetNote(int id)
+        {
+            var notepad = await _notepadService.GetNoteByIdAsync(id);
+            if (notepad == null) return NotFound();
+            return Json(notepad);
         }
 
         [HttpPost]
@@ -39,7 +59,7 @@ namespace AML.Web.Controllers.Notepad
             int userId = _httpClientHandler.GetUserId();
             model.UserId = userId;
             var result = await _notepadService.SaveNotepadAsync(model);
-            return Json(new { success = result });
+            return Json(new { success = result, id = model.Id, subject = model.Subject });
         }
 
         [HttpPost]
@@ -47,6 +67,8 @@ namespace AML.Web.Controllers.Notepad
         {
             var files = Request.Form.Files;
             int userId = _httpClientHandler.GetUserId();
+            int notepadId = 0;
+            int.TryParse(Request.Form["notepadId"], out notepadId);
             
             foreach (var file in files)
             {
@@ -55,6 +77,7 @@ namespace AML.Web.Controllers.Notepad
                 {
                     var attachment = new NotepadAttachmentDTO
                     {
+                        NotepadId = notepadId,
                         FileName = doc.DocOriginalName,
                         FilePath = doc.DocPath,
                         FileType = doc.DocType,
@@ -64,19 +87,29 @@ namespace AML.Web.Controllers.Notepad
                     await _notepadService.AddAttachmentAsync(userId, attachment);
                 }
             }
-            return RedirectToAction("Index");
+            return RedirectToAction("Index", new { id = notepadId > 0 ? (int?)notepadId : null });
         }
 
         public async Task<IActionResult> DownloadAttachment(int id)
         {
             var attachment = await _notepadService.GetAttachmentAsync(id);
-            if (attachment == null || !System.IO.File.Exists(attachment.FilePath))
+            if (attachment == null) return NotFound();
+
+            // Normalize path for Windows/Linux compatibility and handle double slashes
+            string normalizedPath = attachment.FilePath.Replace("/", "\\").Replace("\\\\", "\\");
+            
+            if (!System.IO.File.Exists(normalizedPath))
             {
-                return NotFound();
+                // Try original path if normalized fails
+                if (!System.IO.File.Exists(attachment.FilePath))
+                {
+                    return NotFound();
+                }
+                normalizedPath = attachment.FilePath;
             }
 
             var memory = new MemoryStream();
-            using (var stream = new FileStream(attachment.FilePath, FileMode.Open))
+            using (var stream = new FileStream(normalizedPath, FileMode.Open))
             {
                 await stream.CopyToAsync(memory);
             }
@@ -85,10 +118,31 @@ namespace AML.Web.Controllers.Notepad
         }
 
         [HttpPost]
-        public async Task<IActionResult> DeleteAttachment(int id)
+        public async Task<IActionResult> DeleteAttachment([FromQuery] int id)
         {
-            var result = await _notepadService.DeleteAttachmentAsync(id);
-            return Json(new { success = result });
+            try
+            {
+                var result = await _notepadService.DeleteAttachmentAsync(id);
+                return Json(new { success = result, message = result ? "File deleted successfully" : "Failed to delete file. It may have already been removed." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Server error: " + ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteNote([FromQuery] int id)
+        {
+            try
+            {
+                var result = await _notepadService.DeleteNoteAsync(id);
+                return Json(new { success = result, message = result ? "Note deleted successfully" : "Failed to delete note." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Server error: " + ex.Message });
+            }
         }
     }
 }
