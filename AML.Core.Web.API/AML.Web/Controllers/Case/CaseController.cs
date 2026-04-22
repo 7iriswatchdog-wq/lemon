@@ -4374,7 +4374,7 @@ namespace AML.Web.Controllers.Case
         {
             { "CustomerId", ("Customer ID", c => c.CustomerId) },
             { "CreatedOn", ("Created On", c => c.CreatedOn.ToString("dd MMM yyyy HH:mm:ss")) },
-            { "UpdatedOnDB", ("Updated On", c => c.UpdatedOn) },
+            { "UpdatedOnDB", ("Updated On", c => DateTime.TryParse(c.UpdatedOnDB, out var dt) ? dt.ToString("dd MMM yyyy HH:mm:ss") : (c.UpdatedOnDB ?? "-")) },
             { "CustomerType", ("Customer Type", c => c.CustomerType == "I" ? "Individual" : "Corporate") },
             { "CustomerName", ("Customer Name", c => (c.FirstName + " " + c.LastName).Trim()) },
             { "CaseChangeStatus", ("Datasets", c => c.CaseChangeStatus) },
@@ -4457,7 +4457,7 @@ namespace AML.Web.Controllers.Case
         {
             { "CustomerId", ("Customer ID", c => c.CustomerId) },
             { "CreatedOn", ("Created On", c => c.CreatedOn.ToString("dd MMM yyyy HH:mm:ss")) },
-            { "UpdatedOnDB", ("Updated On", c => c.UpdatedOn) },
+            { "UpdatedOnDB", ("Updated On", c => DateTime.TryParse(c.UpdatedOnDB, out var dt) ? dt.ToString("dd MMM yyyy HH:mm:ss") : (c.UpdatedOnDB ?? "-")) },
             { "CustomerType", ("Customer Type", c => c.CustomerType == "I" ? "Individual" : "Corporate") },
             { "CustomerName", ("Customer Name", c => (c.FirstName + " " + c.LastName).Trim()) },
             { "CaseChangeStatus", ("Datasets", c => c.CaseChangeStatus) },
