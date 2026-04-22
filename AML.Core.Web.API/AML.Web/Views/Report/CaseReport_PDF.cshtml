@@ -163,7 +163,21 @@
                                 }
                                 @if (ShowColumn("riskRating"))
                                 {
-                                    <td class="px-2 py-3 font-black text-blue-600 text-center">@item.MatchScore</td>
+                                    <td class="px-2 py-3 text-center">
+                                        @{
+                                            var rScore = (item.CustomerType == "I" || item.CustomerType == "Individual") ? item.Individual_final_risk_score : item.corporate_final_risk_score;
+                                            var rOverride = (item.CustomerType == "I" || item.CustomerType == "Individual") ? item.Individual_Risk_Override : item.Corporate_Risk_Override;
+                                            var rDisplay = string.IsNullOrEmpty(rScore) ? "Unclassified" : rScore.Replace(" Risk", "");
+                                            if (!string.IsNullOrEmpty(rScore) && rScore.ToLower().Contains("high") && rOverride?.ToLower() == "override")
+                                            {
+                                                rDisplay = "High(O)";
+                                            }
+                                            var rClass = string.IsNullOrEmpty(rScore) || rScore.ToLower().Contains("unclassified") ? "text-slate-400" :
+                                                         rScore.ToLower().Contains("high") ? "text-red-600" :
+                                                         rScore.ToLower().Contains("medium") ? "text-orange-500" : "text-green-600";
+                                        }
+                                        <span class="font-black @rClass">@rDisplay</span>
+                                    </td>
                                 }
                                 @if (ShowColumn("user"))
                                 {

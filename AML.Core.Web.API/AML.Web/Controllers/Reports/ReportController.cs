@@ -1401,6 +1401,10 @@ namespace AML.Web.Controllers.Reports
             {
                 riskLevel = "High Risk";
             }
+            else if (riskLevel == "Unclassified")
+            {
+                riskLevel = "Unclassified";
+            }
             if (option == "OnGoing")
             {
                 abc = _mapper.Map<List<CaseReportListModel>>(_reportService.GetCaseReportListBySchedulerTrackerId(new CaseReportRequestDTO
@@ -4470,7 +4474,7 @@ namespace AML.Web.Controllers.Reports
                 SearchValue = searchValue,
                 User = createdBy == 0 ? null : createdBy.ToString(),
                 matchscore = matchScore,
-                riskLevel = riskLevel == "1" ? "Low Risk" : riskLevel == "2" ? "Medium Risk" : riskLevel == "3" ? "High Risk" : null
+                riskLevel = riskLevel == "1" ? "Low Risk" : riskLevel == "2" ? "Medium Risk" : riskLevel == "3" ? "High Risk" : riskLevel == "Unclassified" ? "Unclassified" : null
             };
 
             List<CaseReportListModel> data = new List<CaseReportListModel>();
@@ -4558,7 +4562,7 @@ namespace AML.Web.Controllers.Reports
             SearchValue = searchValue,
             User = createdBy == 0 ? null : createdBy.ToString(),
             matchscore = matchScore,
-            riskLevel = riskLevel == "1" ? "Low Risk" : riskLevel == "2" ? "Medium Risk" : riskLevel == "3" ? "High Risk" : null
+            riskLevel = riskLevel == "1" ? "Low Risk" : riskLevel == "2" ? "Medium Risk" : riskLevel == "3" ? "High Risk" : riskLevel == "Unclassified" ? "Unclassified" : null
         };
 
         List<CaseReportListModel> data = new List<CaseReportListModel>();
@@ -4576,7 +4580,7 @@ namespace AML.Web.Controllers.Reports
             { "CustomerName", (Header: "Customer Name", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.CustomerName)) },
             { "CaseChangeStatus", (Header: "Datasets", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.CaseChangeStatus)) },
             { "MatchScore", (Header: "Screening Score", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.MatchScore)) },
-            { "riskScore", (Header: "Risk Rating", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.Individual_final_risk_score ?? c.corporate_final_risk_score ?? "Low Risk")) },
+            { "riskScore", (Header: "Risk Rating", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.Individual_final_risk_score ?? c.corporate_final_risk_score ?? "Unclassified")) },
             { "CreatedUser", (Header: "User", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => c.CreatedBy)) },
             { "CaseStatus", (Header: "Status", Value: (Func<AML.ViewModel.ViewModels.Report.CaseReportListModel, object>)(c => FormatExcelStatus(c.Match))) }
         };

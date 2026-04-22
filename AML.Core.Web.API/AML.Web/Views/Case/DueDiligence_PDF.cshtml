@@ -72,7 +72,7 @@
 
     public string GetRiskClass(string risk)
     {
-        if (string.IsNullOrEmpty(risk)) return "text-emerald-700";
+        if (string.IsNullOrEmpty(risk) || risk.ToLower().Contains("unclassified")) return "text-slate-400";
         var r = risk.ToLower();
         if (r.Contains("high")) return "text-red-700";
         if (r.Contains("medium")) return "text-amber-700";
@@ -145,7 +145,7 @@
                         foreach (var item in Model)
                         {
                             var statusInfo = ParseStatus(item.CaseStatus);
-                            var riskText = item.Individual_final_risk_score ?? item.corporate_final_risk_score ?? "Low Risk";
+                            var riskText = item.Individual_final_risk_score ?? item.corporate_final_risk_score ?? "Unclassified";
                             var riskOverride = item.Individual_Risk_Override ?? item.Corporate_Risk_Override;
                             var riskClass = GetRiskClass(riskText);
                             var scoreColor = item.MatchScore < 70 ? "text-green-600" : item.MatchScore < 85 ? "text-orange-500" : "text-red-600";

@@ -273,37 +273,16 @@
                 <!-- Risk Level -->
                 <div id="RiskLevelField" class="space-y-2 hidden">
                     <label class="text-[12px] font-bold text-slate-500">Risk Score</label>
-                    <select id="riskScore"
-                            class="h-10 w-full border border-slate-200 rounded-md px-3 text-sm">
-                        <option value="">--Select--</option>
-                        <option value="1">Low</option>
-                        <option value="2">Medium</option>
-                        <option value="3">High</option>
-                        @* <option value="3">High(O)</option> *@
+                    <select id="riskScore" class="w-full h-10 border border-slate-200 rounded-lg text-sm px-3 appearance-none">
+                        <option value="">Risk Level (All)</option>
+                        <option value="1">Low Risk</option>
+                        <option value="2">Medium Risk</option>
+                        <option value="3">High Risk</option>
+                        <option value="Unclassified">Unclassified</option>
                     </select>
                 </div>
 
                 <!-- Buttons -->
-                @* <div class="flex gap-4 items-center">
-                    <button type="button" id="filterBtn"
-                            onclick="toggleExtraFilters()"
-                            class="h-10 w-10 flex items-center justify-center rounded-md border border-slate-300 hover:bg-slate-100 transition">
-                        <i data-lucide="filter" class="h-4 w-4 text-slate-600"></i>
-                    </button>
-                     
-                    <button onclick="applyFilters()"
-                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-4 rounded-md text-sm">
-                        Apply Filters
-                    </button>
-                    <button onclick="ExportList(false)"
-                            class="sm:ml-auto bg-white border border-slate-200 shadow-sm
-                   hover:bg-slate-50 text-slate-700 font-bold
-                   h-10 px-5 rounded-md flex items-center gap-2
-                   transition-colors text-sm">
-                        <i data-lucide="download" class="h-4 w-4"></i>
-                        Export
-                    </button>
-                </div> *@
                 <div class="flex items-center gap-3">
 
                     <!-- Filter Toggle -->
@@ -704,14 +683,13 @@
             </span>
         `;
     }
-    function getRiskScoreClass(riskScore) {
-             const score = (riskScore || '').toLowerCase().trim();
-
-        if (score.includes('low')) return 'text-green-500';
-        if (score.includes('medium')) return 'text-yellow-400';
-        if (score.includes('high')) return 'text-red-500';
-
-            return 'text-black';
+    function getRiskScoreClass(score) {
+        if (!score || score.toLowerCase().includes("unclassified")) return "text-slate-400";
+        const s = score.toLowerCase();
+        if (s.includes("high")) return "text-red-600";
+        if (s.includes("medium")) return "text-orange-500";
+        if (s.includes("low")) return "text-green-600";
+        return "text-slate-600";
     }
 
       function formatDateTime(dateStr) {
@@ -980,7 +958,7 @@
             )
                 ? "High(O)"
                 : caseItem.riskScore.replace(" Risk", "").replace("High (O)", "High(O)")
-            : ""
+            : "Unclassified"
     }
     </span>
     </td>
