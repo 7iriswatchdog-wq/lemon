@@ -273,6 +273,10 @@ namespace AML.Web.Controllers.Case
                 {
                     riskLevel = "High Risk";
                 }
+                else if (riskLevel == "Unclassified")
+                {
+                    riskLevel = "Unclassified";
+                }
             
             if (caseStatusChange == "0")
             {
@@ -3941,6 +3945,10 @@ namespace AML.Web.Controllers.Case
             {
                 riskLevel = "High Risk";
             }
+            else if (riskLevel == "Unclassified")
+            {
+                riskLevel = "Unclassified";
+            }
             if (caseStatusChange == "0")
             {
                 caseStatusChange = null;
@@ -4300,6 +4308,7 @@ namespace AML.Web.Controllers.Case
         if (riskLevel == "1") riskLevel = "Low Risk";
         else if (riskLevel == "2") riskLevel = "Medium Risk";
         else if (riskLevel == "3") riskLevel = "High Risk";
+        else if (riskLevel == "Unclassified") riskLevel = "Unclassified";
 
         List<CaseModel> cases = new List<CaseModel>();
         if (!string.IsNullOrEmpty(searchValue))
@@ -4329,6 +4338,7 @@ namespace AML.Web.Controllers.Case
         if (riskLevel == "1") riskLevel = "Low Risk";
         else if (riskLevel == "2") riskLevel = "Medium Risk";
         else if (riskLevel == "3") riskLevel = "High Risk";
+        else if (riskLevel == "Unclassified") riskLevel = "Unclassified";
 
         List<CaseModel> cases = new List<CaseModel>();
         if (!string.IsNullOrEmpty(searchValue))
@@ -4359,6 +4369,7 @@ namespace AML.Web.Controllers.Case
         if (riskLevel == "1") riskLevel = "Low Risk";
         else if (riskLevel == "2") riskLevel = "Medium Risk";
         else if (riskLevel == "3") riskLevel = "High Risk";
+        else if (riskLevel == "Unclassified") riskLevel = "Unclassified";
 
         List<CaseModel> cases = new List<CaseModel>();
         if (!string.IsNullOrEmpty(searchValue))
@@ -4379,7 +4390,7 @@ namespace AML.Web.Controllers.Case
             { "CustomerName", ("Customer Name", c => (c.FirstName + " " + c.LastName).Trim()) },
             { "CaseChangeStatus", ("Datasets", c => c.CaseChangeStatus) },
             { "MatchScore", ("Screening Score", c => c.MatchScore) },
-            { "riskScore", ("Risk Rating", c => c.Individual_final_risk_score ?? c.corporate_final_risk_score ?? "Low Risk") },
+            { "riskScore", ("Risk Rating", c => c.Individual_final_risk_score ?? c.corporate_final_risk_score ?? "Unclassified") },
             { "CreatedUser", ("User", c => c.CreatedUser) },
             { "CaseStatus", ("Status", c => FormatExcelStatus(c.CaseStatus)) }
         };
@@ -4442,6 +4453,7 @@ namespace AML.Web.Controllers.Case
         if (riskLevel == "1") riskLevel = "Low Risk";
         else if (riskLevel == "2") riskLevel = "Medium Risk";
         else if (riskLevel == "3") riskLevel = "High Risk";
+        else if (riskLevel == "Unclassified") riskLevel = "Unclassified";
 
         List<CaseModel> cases = new List<CaseModel>();
         if (!string.IsNullOrEmpty(searchValue))
@@ -4462,7 +4474,7 @@ namespace AML.Web.Controllers.Case
             { "CustomerName", ("Customer Name", c => (c.FirstName + " " + c.LastName).Trim()) },
             { "CaseChangeStatus", ("Datasets", c => c.CaseChangeStatus) },
             { "MatchScore", ("Screening Score", c => c.MatchScore) },
-            { "riskScore", ("Risk Rating", c => c.Individual_final_risk_score ?? c.corporate_final_risk_score ?? "Low Risk") },
+            { "riskScore", ("Risk Rating", c => c.Individual_final_risk_score ?? c.corporate_final_risk_score ?? "Unclassified") },
             { "CreatedUser", ("User", c => c.CreatedUser) },
             { "CaseStatus", ("Status", c => FormatExcelStatus(c.CaseStatus)) }
         };
