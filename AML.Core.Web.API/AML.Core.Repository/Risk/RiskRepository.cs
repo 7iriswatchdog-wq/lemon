@@ -34,6 +34,9 @@ namespace AML.Core.Repository.Risk
                 parameters.Add("@p_risk_score_sum", _riskDTO.RiskScoreSum);
                 parameters.Add("@p_risk_score_count", _riskDTO.RiskScoreCount);
                 parameters.Add("@p_risk_score_before_override", _riskDTO.RiskScoreBeforeOverride);
+                parameters.Add("@p_product_reference", _riskDTO.ProductReference);
+                parameters.Add("@p_product_value", _riskDTO.ProductValue);
+                parameters.Add("@p_comments", _riskDTO.RiskComments);
                 string riskItemlist = "";
                 int index2 = 0;
                 for (int i= 0;i < _riskDTO.RiskTypeCategoryDTO.Count;i++)
@@ -86,6 +89,9 @@ namespace AML.Core.Repository.Risk
                 parameters.Add("@p_risk_score_before_override", _riskDTO.RiskAssessmentRatingWithoutOverride);
                 parameters.Add("@p_risk_sum", _riskDTO.RiskScoreSum);
                 parameters.Add("@p_risk_count", _riskDTO.RiskScoreCount);
+                parameters.Add("@p_product_reference", _riskDTO.ProductReference);
+                parameters.Add("@p_product_value", _riskDTO.ProductValue);
+                parameters.Add("@p_comments", _riskDTO.RiskComments);
                 var rowData = "";
                 var index = 0;
                 for (var i = 0; i < _riskDTO.RiskTypeCategoryDTO.Count; i++)

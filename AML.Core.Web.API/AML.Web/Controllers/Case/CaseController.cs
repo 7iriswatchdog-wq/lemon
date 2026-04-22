@@ -2969,7 +2969,7 @@ namespace AML.Web.Controllers.Case
                                     case "profession":
                                         model1.OccupatinTypeTxt = risk.ItemText;
                                         break;
-                                    case "residence status":
+                                    case "residence country":
                                         model1.ResidenceStatus = risk.ItemText;
                                         break;
                                     case "nationality":
