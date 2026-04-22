@@ -35,7 +35,7 @@ namespace AML.Core.Service.ProliferationFinance
 
                 // Absolute path as per user request
                 //string filePath = @"d:\Omkar\lemon_new\قرار مجلس الوزراء رقم (156) لسنة 2025 .pdf";
-                string filePath = Path.Combine(Directory.GetCurrentDirectory(), "Files", "_قرار مجلس الوزراء رقم (156) لسنة 2025 .pdf");
+                string filePath = Path.Combine(Directory.GetCurrentDirectory(), "Files", "Non-chemical.pdf");
 
                 string matchedParagraph = PdfHelper.SearchKeywordInPdf(filePath, keyword);
 
