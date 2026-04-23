@@ -113,5 +113,20 @@ namespace AML.Core.Service.Notepad
             }
             return await _notepadRepository.DeleteAsync(id) > 0;
         }
+
+        public async Task<IEnumerable<Notepadv2DTO>> GetNotepadv2Async(int clientId, string search)
+        {
+            return await _notepadRepository.GetNotepadv2Async(clientId, search);
+        }
+
+        public async Task<bool> SaveNotepadv2Async(Notepadv2DTO model)
+        {
+            return await _notepadRepository.SaveNotepadv2Async(model) > 0;
+        }
+
+        public async Task<bool> DeleteNotepadv2Async(int id)
+        {
+            return await _notepadRepository.DeleteNotepadv2Async(id) > 0;
+        }
     }
 }

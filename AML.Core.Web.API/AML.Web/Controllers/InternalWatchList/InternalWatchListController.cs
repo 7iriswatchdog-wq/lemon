@@ -32,10 +32,9 @@ using OfficeOpenXml.DataValidation;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.ComponentModel;
 using System.Data;
 using System.Linq;
+using System.ComponentModel;
 using static AML.DTO.DTO.FreeSource.BlackListMongoDTO;
 
 namespace AML.Web.Controllers.InternalWatchList

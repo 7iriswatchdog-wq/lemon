@@ -45,6 +45,11 @@ namespace AML.Web.Controllers.Notepad
             return View(notepad);
         }
 
+        public IActionResult Notepadv2()
+        {
+            return View();
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetNote(int id)
         {

@@ -14,5 +14,10 @@ namespace AML.Core.RepositoryContract.Notepad
         Task<NotepadAttachmentDTO> GetAttachmentByIdAsync(int attachmentId);
         Task<NotepadDTO> GetByIdAsync(int id);
         Task<int> DeleteAsync(int id);
+
+        // Notepad V2
+        Task<IEnumerable<Notepadv2DTO>> GetNotepadv2Async(int clientId, string search);
+        Task<int> SaveNotepadv2Async(Notepadv2DTO model);
+        Task<int> DeleteNotepadv2Async(int id);
     }
 }

@@ -1,0 +1,405 @@
+@using MongoDB.Driver.Linq;
+@using Newtonsoft.Json;
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = @localizer["Notepad"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var userName = HttpContextAccessor.HttpContext.Session.GetString("SessUsername");
+}
+
+@section Styles {
+    <style>
+        [x-cloak] { display: none !important; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+        
+        .table-container { height: calc(100vh - 250px); overflow-x: auto; }
+        .sticky-col { position: sticky; left: 0; z-index: 10; background: white; }
+        .sticky-header { position: sticky; top: 0; z-index: 20; }
+        
+        input:focus, select:focus { outline: none !important; border-color: #3b82f6 !important; ring: 4px #3b82f61a !important; }
+        
+        th { font-size: 10px !important; text-transform: uppercase; letter-spacing: 0.025em; white-space: nowrap; }
+        td { font-size: 11px !important; white-space: nowrap; }
+    </style>
+}
+
+<div class="bg-slate-50/30 min-h-screen text-slate-900" x-data="trackerApp()" x-init="init()">
+    <div class="p-4 sm:p-6 space-y-6">
+        
+        <!-- Header & Actions -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2 text-slate-500 text-xs mb-1">
+                    <a href="/Home/Index" class="hover:text-blue-600 font-medium">Dashboard</a>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3"><path d="m9 18 6-6-6-6"/></svg>
+                    <span class="text-slate-900 font-bold tracking-tight">Notepad</span>
+                </div>
+                <h1 class="text-2xl font-black text-slate-900 tracking-tighter">Notepad</h1>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="relative group">
+                    <input type="text" 
+                           x-model="searchQuery" 
+                           @@keyup.enter="performSearch()"
+                           placeholder="Search customer, ID..." 
+                           class="w-64 h-11 bg-white border border-slate-200 rounded-xl px-4 pl-10 text-sm font-bold text-slate-900 shadow-sm transition-all placeholder:text-slate-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-4 top-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
+
+                <button @@click="addNewRow()" class="h-11 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-200 transition-all flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
+                    Add Record
+                </button>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="table-container custom-scrollbar">
+                <table class="w-full text-left border-collapse">
+                    <thead class="sticky-header bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
+                        <tr class="text-slate-500 font-bold">
+                            <th class="px-4 py-4 text-center w-12 sticky-col bg-slate-50/80">#</th>
+                            <th class="px-2 py-4 font-semibold h-12 w-[120px] min-w-[120px]">Date of Receipt</th>
+                            <th class="px-2 py-4 font-semibold h-12 w-[100px] text-center">Actions</th>
+                            <th class="px-2 py-4 font-semibold h-12 w-[250px] min-w-[250px]">Case Type</th>
+                            <th class="px-2 py-4 font-semibold h-12 w-[150px] min-w-[150px]">Cust Type (Not Mandatory)</th>
+                            <th class="px-2 py-4 font-semibold h-12 w-[180px] min-w-[180px]">Watchdog System Cust ID (Not Mandatory)</th>
+                            <th class="px-2 py-4 font-semibold h-12 w-[200px] min-w-[200px]">unit ref No. * / Unique Ref Number</th>
+                            <th class="px-2 py-4 font-semibold h-12 w-[200px] min-w-[200px]">Name of the Customer (Not Mandatory)</th>
+                            <th class="px-2 py-4 font-semibold h-12 w-[300px] min-w-[300px]">Comments-KYC check and document collection</th>
+                            <th class="px-2 py-4 font-semibold h-12 w-[180px] min-w-[180px]">Type Buyer/Seller/ Developer *</th>
+                            <th class="px-2 py-4 font-semibold h-12 w-[120px]">Created By</th>
+                            <th class="px-2 py-4 font-semibold h-12 w-[120px]">Created on</th>
+                            <th class="px-2 py-4 font-semibold h-12 w-[120px]">Updated By</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <template x-for="(row, index) in rows" :key="row.id || 'new-' + index">
+                            <tr :class="row.isNew ? 'bg-blue-50/30' : 'hover:bg-slate-50/50'" class="transition-colors group/row">
+                                <td class="px-4 py-4 font-bold text-slate-400 text-center sticky-col bg-white group-hover/row:bg-slate-50/50 transition-colors" x-text="index + 1"></td>
+                                
+                                <!-- Date of Receipt -->
+                                <td class="px-2 py-3">
+                                    <template x-if="!row.isEditing">
+                                        <span class="font-medium text-slate-600" x-text="formatDate(row.date_of_receipt)"></span>
+                                    </template>
+                                    <template x-if="row.isEditing">
+                                        <input type="date" x-model="row.date_of_receipt" class="w-full h-8 rounded-lg border-slate-200 shadow-sm">
+                                    </template>
+                                </td>
+
+                                <!-- Actions -->
+                                <td class="px-2 py-3">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <template x-if="!row.isEditing">
+                                            <button @@click="editRow(row)" class="p-1.5 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-900 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                            </button>
+                                        </template>
+                                        <template x-if="row.isEditing">
+                                            <button @@click="saveRow(row)" class="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm" :disabled="row.isSaving">
+                                                <svg x-show="!row.isSaving" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                                <svg x-show="row.isSaving" class="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            </button>
+                                        </template>
+                                        <button @@click="confirmDelete(row.id)" class="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                        </button>
+                                    </div>
+                                </td>
+
+                                <!-- Case Type -->
+                                <td class="px-2 py-3">
+                                    <template x-if="!row.isEditing">
+                                        <span class="text-slate-600 truncate block max-w-[200px]" :title="row.case_type" x-text="row.case_type"></span>
+                                    </template>
+                                    <template x-if="row.isEditing">
+                                        <select x-model="row.case_type" 
+                                                @@change="onCaseTypeChange(row)"
+                                                class="w-full h-9 px-3 rounded-lg border-slate-200 shadow-sm text-xs">
+                                            <option value="">--Select--</option>
+                                            <template x-for="type in caseTypes" :key="type">
+                                                <option :value="type" x-text="type"></option>
+                                            </template>
+                                        </select>
+                                    </template>
+                                </td>
+
+                                <!-- Cust Type -->
+                                <td class="px-2 py-3">
+                                    <template x-if="!row.isEditing">
+                                        <span class="text-slate-600" x-text="row.cust_type || '-'"></span>
+                                    </template>
+                                    <template x-if="row.isEditing">
+                                        <input type="text" x-model="row.cust_type" class="w-full h-8 rounded-lg border-slate-200 shadow-sm">
+                                    </template>
+                                </td>
+
+                                <!-- WDS Cust ID -->
+                                <td class="px-2 py-3">
+                                    <template x-if="!row.isEditing">
+                                        <span class="font-mono text-slate-500" x-text="row.wds_cust_id || '-'"></span>
+                                    </template>
+                                    <template x-if="row.isEditing">
+                                        <input type="text" x-model="row.wds_cust_id" 
+                                               :disabled="row.isWdsLocked"
+                                               :class="row.isWdsLocked ? 'bg-slate-50' : ''"
+                                               class="w-full h-8 rounded-lg border-slate-200 shadow-sm">
+                                    </template>
+                                </td>
+
+                                <!-- Unit Ref No -->
+                                <td class="px-2 py-3">
+                                    <template x-if="!row.isEditing">
+                                        <span class="text-slate-600" x-text="row.unit_ref_no || '-'"></span>
+                                    </template>
+                                    <template x-if="row.isEditing">
+                                        <input type="text" x-model="row.unit_ref_no" class="w-full h-8 rounded-lg border-slate-200 shadow-sm">
+                                    </template>
+                                </td>
+
+                                <!-- Customer Name -->
+                                <td class="px-2 py-3">
+                                    <template x-if="!row.isEditing">
+                                        <span class="font-bold text-slate-900" x-text="row.customer_name"></span>
+                                    </template>
+                                    <template x-if="row.isEditing">
+                                        <input type="text" x-model="row.customer_name" class="w-full h-8 rounded-lg border-slate-200 shadow-sm">
+                                    </template>
+                                </td>
+
+                                <!-- Comment KYC -->
+                                <td class="px-2 py-3">
+                                    <template x-if="!row.isEditing">
+                                        <span class="text-slate-600 italic block max-w-[300px] truncate" :title="row.Comment_kyc" x-text="row.Comment_kyc || '-'"></span>
+                                    </template>
+                                    <template x-if="row.isEditing">
+                                        <input type="text" x-model="row.Comment_kyc" class="w-full h-8 rounded-lg border-slate-200 shadow-sm">
+                                    </template>
+                                </td>
+
+                                <!-- Type Buyer/Seller/Developer -->
+                                <td class="px-2 py-3">
+                                    <template x-if="!row.isEditing">
+                                        <span class="text-slate-600" x-text="row.cust_type_realestate || '-'"></span>
+                                    </template>
+                                    <template x-if="row.isEditing">
+                                        <select x-model="row.cust_type_realestate" class="w-full h-9 px-3 rounded-lg border-slate-200 shadow-sm text-xs">
+                                            <option value="">--Select--</option>
+                                            <option value="Buyer">Buyer</option>
+                                            <option value="Seller">Seller</option>
+                                            <option value="Developer">Developer</option>
+                                        </select>
+                                    </template>
+                                </td>
+
+                                <!-- Audit Info -->
+                                <td class="px-2 py-3 text-slate-400" x-text="row.CreatedByName || '-'"></td>
+                                <td class="px-2 py-3 text-slate-400" x-text="formatDate(row.created_on)"></td>
+                                <td class="px-2 py-3 text-slate-400" x-text="row.UpdatedByName || '-'"></td>
+                            </tr>
+                        </template>
+                        
+                        <!-- Empty State -->
+                        <template x-if="rows.length === 0">
+                            <tr>
+                                <td colspan="13" class="px-4 py-20 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                            </svg>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-slate-900 mb-1">No Tracker Records Found</h3>
+                                        <p class="text-slate-500 text-sm max-w-xs mx-auto">It seems there are no AML tracker entries for this client. Click "Add Record" to start tracking.</p>
+                                        <button @@click="addNewRow()" class="mt-6 h-10 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm shadow-lg transition-all flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
+                                            Add First Record
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
+            <div x-text="`Showing ${rows.length} total records`"></div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <span>New Records</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-slate-300"></span>
+                    <span>Saved Records</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div x-show="showDeleteModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-transition.opacity>
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center" @@click.away="showDeleteModal = false">
+            <div class="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v2m3 3h8" /></svg>
+            </div>
+            <h3 class="text-xl font-black text-slate-900 mb-2">Delete Record?</h3>
+            <p class="text-slate-500 text-sm mb-8">This action cannot be undone. Are you sure you want to remove this record?</p>
+            <div class="flex gap-3">
+                <button @@click="showDeleteModal = false" class="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all">Cancel</button>
+                <button @@click="executeDelete()" class="flex-1 h-12 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200 transition-all">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script>
+        function trackerApp() {
+            return {
+                rows: [],
+                searchQuery: '',
+                showDeleteModal: false,
+                idToDelete: null,
+                caseTypes: [
+                    "New Unprocessed Main Party Cases – None of EID / PP / TL Available",
+                    "Unprocessed and incomplete repeat case (pending KYC documents, screening done and RA pending)",
+                    "Others"
+                ],
+
+                async init() {
+                    await this.loadData();
+                },
+
+                async loadData() {
+                    try {
+                        const response = await fetch(`/notepadv2/search?search=${encodeURIComponent(this.searchQuery)}&page=1`);
+                        const result = await response.json();
+                        this.rows = result.data.map(r => ({
+                            ...r,
+                            isEditing: false,
+                            isSaving: false,
+                            isNew: false,
+                            isWdsLocked: r.case_type === "New Unprocessed Main Party Cases – None of EID / PP / TL Available"
+                        }));
+                    } catch (error) {
+                        toastr.error("Failed to load data");
+                    }
+                },
+
+                formatDate(date) {
+                    if (!date) return '-';
+                    return new Date(date).toLocaleDateString();
+                },
+
+                performSearch() {
+                    this.loadData();
+                },
+
+                addNewRow() {
+                    const newRow = {
+                        id: 0,
+                        date_of_receipt: new Date().toISOString().split('T')[0],
+                        case_type: '',
+                        cust_type: '',
+                        wds_cust_id: '',
+                        unit_ref_no: '',
+                        customer_name: '',
+                        Comment_kyc: '',
+                        cust_type_realestate: '',
+                        isEditing: true,
+                        isSaving: false,
+                        isNew: true,
+                        isWdsLocked: false
+                    };
+                    this.rows.unshift(newRow);
+                },
+
+                onCaseTypeChange(row) {
+                    row.isWdsLocked = row.case_type === "New Unprocessed Main Party Cases – None of EID / PP / TL Available";
+                    if (row.isWdsLocked) {
+                        row.wds_cust_id = 'NA'; 
+                    }
+                },
+
+                editRow(row) {
+                    row.isEditing = true;
+                },
+
+                async saveRow(row) {
+                    if (!row.customer_name) {
+                        toastr.error("Customer Name is required");
+                        return;
+                    }
+
+                    row.isSaving = true;
+                    const endpoint = row.id === 0 ? '/notepadv2/Create' : '/notepadv2/Update';
+                    
+                    try {
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(row)
+                        });
+
+                        const result = await response.json();
+                        if (result.success) {
+                            toastr.success(row.id === 0 ? "Record created" : "Record updated");
+                            await this.loadData();
+                        } else {
+                            toastr.error("Action failed");
+                        }
+                    } catch (error) {
+                        toastr.error("Network error");
+                    } finally {
+                        row.isSaving = false;
+                    }
+                },
+
+                confirmDelete(id) {
+                    if (id === 0) {
+                        this.rows = this.rows.filter(r => r.id !== 0);
+                        return;
+                    }
+                    this.idToDelete = id;
+                    this.showDeleteModal = true;
+                },
+
+                async executeDelete() {
+                    if (!this.idToDelete) return;
+                    
+                    try {
+                        const response = await fetch(`/notepadv2/Delete?id=${this.idToDelete}`, {
+                            method: 'POST'
+                        });
+                        const result = await response.json();
+
+                        if (result.success) {
+                            toastr.success("Record deleted");
+                            this.rows = this.rows.filter(r => r.id !== this.idToDelete);
+                            this.showDeleteModal = false;
+                        } else {
+                            toastr.error("Deletion failed");
+                        }
+                    } catch (error) {
+                        toastr.error("Network error");
+                    } finally {
+                        this.idToDelete = null;
+                    }
+                }
+            }
+        }
+    </script>
+}
