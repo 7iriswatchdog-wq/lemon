@@ -1,0 +1,81 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@using System.Collections.Generic
+@model List<HighRiskCustomerRow>
+@{
+    ViewData["Title"] = "High-Risk Customer Register";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "High-Risk Customer Register";
+    ViewData["ReportSubtitle"] = "All customers whose latest assessment is High Risk. Sorted by most-recent assessment.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var totalOpen = Model.Sum(r => r.OpenCases);
+    var totalCases = Model.Sum(r => r.TotalCases);
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-3">
+            <div class="bg-rose-50 border border-rose-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-rose-700 font-bold">High-Risk Customers</div>
+                <div class="text-2xl font-semibold text-rose-700">@Model.Count</div>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-blue-700 font-bold">Open Cases</div>
+                <div class="text-2xl font-semibold text-blue-700">@totalOpen</div>
+            </div>
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-slate-500 font-bold">Total Cases</div>
+                <div class="text-2xl font-semibold text-slate-800">@totalCases</div>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-emerald-700 font-bold">Whitelisted</div>
+                <div class="text-2xl font-semibold text-emerald-700">@Model.Count(r => string.Equals(r.IsWhiteListed, "Y", StringComparison.OrdinalIgnoreCase))</div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left">
+                        <th class="px-3 py-2">Customer</th>
+                        <th class="px-3 py-2">Type</th>
+                        <th class="px-3 py-2">Nationality</th>
+                        <th class="px-3 py-2">Risk Score</th>
+                        <th class="px-3 py-2">Last Assessment</th>
+                        <th class="px-3 py-2 text-right">Open / Total Cases</th>
+                        <th class="px-3 py-2">Last Touched</th>
+                        <th class="px-3 py-2">WL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="8" class="px-3 py-12 text-center text-slate-500">No customers currently rated High Risk.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var r in Model)
+                        {
+                            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                <td class="px-3 py-2">
+                                    <a href="@Url.Action("Customer360", "AmlTracker", new { cmid = r.CustomerMasterId })" class="font-medium text-blue-700 hover:underline">@r.FullName</a>
+                                    <div class="text-xs text-slate-500 font-mono">@r.CustomerCode</div>
+                                </td>
+                                <td class="px-3 py-2 text-slate-600">@r.CustomerType</td>
+                                <td class="px-3 py-2">@r.Nationality</td>
+                                <td class="px-3 py-2"><span class="px-2 py-0.5 text-xs rounded-full bg-rose-100 text-rose-800">@r.FinalRiskScore</span></td>
+                                <td class="px-3 py-2 text-slate-600 text-xs">@(r.AssessmentDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                <td class="px-3 py-2 text-right"><span class="font-semibold text-blue-700">@r.OpenCases</span> / <span class="text-slate-600">@r.TotalCases</span></td>
+                                <td class="px-3 py-2 text-slate-600 text-xs">@(r.LastTouched?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                <td class="px-3 py-2">
+                                    @if (string.Equals(r.IsWhiteListed, "Y", StringComparison.OrdinalIgnoreCase)) { <span class="text-emerald-700 font-bold">✓</span> }
+                                    else { <span class="text-slate-400">—</span> }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

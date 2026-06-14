@@ -1,0 +1,66 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model WorkloadHeatmapVM
+@{
+    ViewData["Title"] = "Workload Heatmap";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "Workload Heatmap";
+    ViewData["ReportSubtitle"] = "Open and closed cases per analyst, by status.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var max = Model.Owners.SelectMany(o => o.StatusCounts.Values).DefaultIfEmpty(0).Max();
+    if (max < 1) max = 1;
+    string Cell(int n)
+    {
+        if (n == 0) return "bg-slate-50 text-slate-400";
+        var ratio = (double)n / max;
+        if (ratio > 0.66) return "bg-rose-500 text-white";
+        if (ratio > 0.33) return "bg-amber-400 text-white";
+        return "bg-blue-100 text-blue-900";
+    }
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        @if (Model.Unassigned > 0)
+        {
+            <div class="bg-amber-50 border border-amber-300 text-amber-900 rounded p-3 my-3 text-sm">
+                <strong>@Model.Unassigned</strong> case(s) currently have no owner assigned. Use Tracker → Reassign to fix.
+            </div>
+        }
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden mt-3">
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-xs">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th class="px-3 py-2 text-left sticky left-0 bg-slate-50">Owner</th>
+                            @foreach (var s in Model.StatusColumns) { <th class="px-3 py-2 text-center">@s</th> }
+                            <th class="px-3 py-2 text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Owners.Any())
+                        {
+                            <tr><td colspan="@(Model.StatusColumns.Count + 2)" class="px-3 py-12 text-center text-slate-500">No assigned cases.</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var o in Model.Owners)
+                            {
+                                <tr class="border-b border-slate-100">
+                                    <td class="px-3 py-2 font-medium sticky left-0 bg-white">@o.OwnerName</td>
+                                    @foreach (var s in Model.StatusColumns)
+                                    {
+                                        var n = o.StatusCounts.TryGetValue(s, out var v) ? v : 0;
+                                        <td class="px-2 py-1 text-center @Cell(n) font-mono">@(n == 0 ? "·" : n.ToString())</td>
+                                    }
+                                    <td class="px-3 py-2 text-right font-semibold">@o.Total</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,93 @@
+@using AML.ViewModel.ViewModels.ComplianceHub
+@using System.Linq
+@model PeriodicReviewVM
+@{
+    ViewData["Title"] = "Periodic Review";
+    ViewData["ReportTitle"] = "Periodic Review Calendar";
+    ViewData["ReportSubtitle"] = "Customers due for KYC refresh based on risk-band cadence (High = 1y · Medium = 2y · Low = 3y · Unrated = 1y).";
+    ViewData["Theme"] = "Lifecycle";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+    var today = DateTime.UtcNow.Date;
+    var monthStart = new DateTime(today.Year, today.Month, 1);
+    var months = Enumerable.Range(-2, 12).Select(i => monthStart.AddMonths(i)).ToList();
+    var byMonth = Model.Rows.GroupBy(r => new { r.NextReviewDue.Year, r.NextReviewDue.Month })
+        .ToDictionary(g => $"{g.Key.Year}-{g.Key.Month}", g => g.ToList());
+    string BandColor(string b) => b switch { "High" => "#dc2626", "Medium" => "#d97706", "Low" => "#059669", _ => "#64748b" };
+    string BandBg(string b) => b switch { "High" => "#fee2e2", "Medium" => "#fef3c7", "Low" => "#d1fae5", _ => "#e2e8f0" };
+}
+
+<style>
+    .pr-cal { display:grid; grid-template-columns: repeat(6, 1fr); gap:10px; }
+    .pr-month { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:12px; min-height:110px; display:flex; flex-direction:column; gap:5px; }
+    .pr-month.past { background:#fef2f2; border-color:#fecaca; }
+    .pr-month.now { background:linear-gradient(135deg,#eff6ff,#fff); border-color:#bfdbfe; }
+    .pr-month-label { font-size:10px; text-transform:uppercase; font-weight:800; color:#94a3b8; letter-spacing:.05em; }
+    .pr-month.past .pr-month-label { color:#dc2626; }
+    .pr-month-count { font-size:22px; font-weight:800; color:#0f172a; line-height:1; }
+    .pr-bands { display:flex; gap:3px; margin-top:auto; }
+    .pr-band-pill { font-size:9px; padding:2px 6px; border-radius:9999px; font-weight:700; }
+    .stat-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px; text-align:center; }
+    .stat-card .n { font-size:28px; font-weight:800; line-height:1; }
+    .stat-card .l { font-size:11px; text-transform:uppercase; font-weight:700; color:#64748b; margin-top:4px; }
+</style>
+
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="_ReportShell" />
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            <div class="stat-card" style="border-left:4px solid #dc2626;"><div class="n" style="color:#dc2626;">@Model.Overdue</div><div class="l">Overdue</div></div>
+            <div class="stat-card" style="border-left:4px solid #d97706;"><div class="n" style="color:#d97706;">@Model.DueIn30</div><div class="l">Due in 30 days</div></div>
+            <div class="stat-card" style="border-left:4px solid #2563eb;"><div class="n" style="color:#2563eb;">@Model.Rows.Count(r => r.RiskBand == "High")</div><div class="l">High-risk customers</div></div>
+            <div class="stat-card" style="border-left:4px solid #059669;"><div class="n" style="color:#059669;">@Model.Rows.Count</div><div class="l">Total customers</div></div>
+        </div>
+
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">Review calendar — last 2 + next 9 months</h3>
+        <div class="pr-cal">
+            @foreach (var m in months)
+            {
+                var key = $"{m.Year}-{m.Month}";
+                var rows = byMonth.ContainsKey(key) ? byMonth[key] : new List<PeriodicReviewRow>();
+                var bandCounts = rows.GroupBy(r => r.RiskBand).ToDictionary(g => g.Key, g => g.Count());
+                var cls = m < monthStart ? "past" : m == monthStart ? "now" : "";
+                <div class="pr-month @cls">
+                    <div class="pr-month-label">@m.ToString("MMM yyyy")</div>
+                    <div class="pr-month-count">@rows.Count</div>
+                    <div class="pr-bands">
+                        @foreach (var band in new[] { "High", "Medium", "Low", "Unrated" })
+                        {
+                            if (bandCounts.ContainsKey(band))
+                            {
+                                <span class="pr-band-pill" style="background:@BandBg(band);color:@BandColor(band);">@band[0]@(bandCounts[band])</span>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mt-6 mb-2">All customers — sorted by review due-date</h3>
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50">
+                    <tr class="text-left text-xs uppercase font-bold text-slate-500"><th class="p-3">Customer</th><th class="p-3">Risk band</th><th class="p-3">Last reviewed</th><th class="p-3">Next due</th><th class="p-3">Days</th></tr>
+                </thead>
+                <tbody>
+                @foreach (var r in Model.Rows.Take(300))
+                {
+                    <tr class="border-t border-slate-100 hover:bg-slate-50">
+                        <td class="p-3"><div class="font-semibold text-slate-800">@r.FullName</div><div class="text-xs text-slate-500 font-mono">@r.CustomerCode</div></td>
+                        <td class="p-3"><span class="pr-band-pill" style="background:@BandBg(r.RiskBand);color:@BandColor(r.RiskBand);">@r.RiskBand</span></td>
+                        <td class="p-3 text-slate-600">@r.LastReviewedOn.ToString("yyyy-MM-dd")</td>
+                        <td class="p-3 font-semibold">@r.NextReviewDue.ToString("yyyy-MM-dd")</td>
+                        <td class="p-3 @(r.DaysUntilReview < 0 ? "text-rose-600 font-bold" : r.DaysUntilReview <= 30 ? "text-amber-600 font-semibold" : "text-slate-600")">
+                            @(r.DaysUntilReview < 0 ? $"{Math.Abs(r.DaysUntilReview)} overdue" : $"{r.DaysUntilReview} days")
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

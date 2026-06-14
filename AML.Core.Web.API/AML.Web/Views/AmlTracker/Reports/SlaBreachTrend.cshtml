@@ -1,0 +1,52 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model SlaBreachTrendVM
+@{
+    ViewData["Title"] = "SLA Breach Trend";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "SLA Status Distribution";
+    ViewData["ReportSubtitle"] = "Current Tracker state — % of cases per SLA bucket. (Historical trend coming once we capture daily snapshots.)";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var total = Math.Max(1, Model.Buckets.Sum(b => b.Count));
+    string Cls(string b) => b switch
+    {
+        "On Track" => "bg-emerald-500",
+        "At Risk" => "bg-amber-500",
+        "Breach" => "bg-rose-500",
+        "Closed" => "bg-slate-400",
+        _ => "bg-slate-300"
+    };
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1100px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-3">
+            <div class="bg-white border border-emerald-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-emerald-700 font-bold">On Track</div>
+                <div class="text-xl font-semibold text-emerald-700">@Model.OnTrack</div>
+            </div>
+            <div class="bg-white border border-amber-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-amber-700 font-bold">At Risk</div>
+                <div class="text-xl font-semibold text-amber-700">@Model.AtRisk</div>
+            </div>
+            <div class="bg-white border border-rose-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-rose-700 font-bold">Breach</div>
+                <div class="text-xl font-semibold text-rose-700">@Model.Breach</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-slate-700 font-bold">Closed</div>
+                <div class="text-xl font-semibold text-slate-700">@Model.Closed</div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg p-4">
+            <div class="flex w-full h-6 overflow-hidden rounded">
+                @foreach (var b in Model.Buckets.Where(x => x.Count > 0))
+                {
+                    var pct = b.Count * 100.0 / total;
+                    <div class="@Cls(b.Bucket) text-white text-xs flex items-center justify-center" style="width:@(pct.ToString("0.0"))%;" title="@b.Bucket: @b.Count">@(pct >= 8 ? $"{b.Bucket} ({b.Count})" : "")</div>
+                }
+            </div>
+            <div class="text-xs text-slate-500 mt-2">@total cases total</div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,462 @@
+@model AML.ViewModel.ViewModels.SectoralTMS.StmTransactionModel
+@{
+    ViewData["Title"] = "STM - New Transaction";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    ViewBag.StmActive = "transactions";
+}
+
+@await Html.PartialAsync("_StmLayout")
+
+<div class="px-6 pb-12">
+    <div class="stm-card mb-4">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <div class="stm-page-title">Create Transaction</div>
+                <div class="stm-page-sub">Submit a transaction for monitoring. Existing customer data will be auto-populated.</div>
+            </div>
+            <a href="/stm/transactions" class="stm-btn stm-btn-secondary"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</a>
+        </div>
+
+        <!-- 1) Sector + Reference -->
+        <div class="stm-section-title">1. Transaction Details</div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div>
+                <label class="stm-label">Sector *</label>
+                <select id="sectorId" class="stm-select" required>
+                    <option value="">-- Select --</option>
+                    @foreach (var s in Model.SectorList ?? new Microsoft.AspNetCore.Mvc.Rendering.SelectList(new List<object>(), "", ""))
+                    {
+                        <option value="@s.Value">@s.Text</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="stm-label">Reference No. *</label>
+                <input id="tranRefNo" class="stm-input" placeholder="e.g. TXN-2026-00001" required />
+            </div>
+            <div>
+                <label class="stm-label">Transaction Date *</label>
+                <input id="tranDate" type="datetime-local" class="stm-input" required />
+            </div>
+            <div>
+                <label class="stm-label">Transaction Type *</label>
+                <select id="tranType" class="stm-select" required>
+                    <option value="">-- Select --</option>
+                    <option value="Premium">Premium</option>
+                    <option value="Claim">Claim</option>
+                    <option value="Surrender">Surrender</option>
+                    <option value="Withdrawal">Withdrawal</option>
+                    <option value="Purchase">Purchase</option>
+                    <option value="Sale">Sale</option>
+                    <option value="Rental">Rental</option>
+                    <option value="Lease">Lease</option>
+                    <option value="Credit">Credit</option>
+                    <option value="Debit">Debit</option>
+                </select>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div>
+                <label class="stm-label">Amount *</label>
+                <input id="amount" type="number" step="0.01" class="stm-input" required />
+            </div>
+            <div>
+                <label class="stm-label">Currency</label>
+                <input id="currency" class="stm-input" value="AED" />
+            </div>
+            <div>
+                <label class="stm-label">Payment Mode</label>
+                <select id="tranMode" class="stm-select">
+                    <option value="">--</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Bank">Bank Transfer</option>
+                    <option value="Wire">Wire</option>
+                    <option value="Card">Card</option>
+                    <option value="Crypto">Crypto</option>
+                </select>
+            </div>
+            <div>
+                <label class="stm-label">Delivery Channel</label>
+                <select id="deliveryChannel" class="stm-select">
+                    <option value="">--</option>
+                    <option value="Branch">Branch</option>
+                    <option value="Online">Online</option>
+                    <option value="Agent">Agent</option>
+                    <option value="Broker">Broker</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 2) Customer Pull-in -->
+        <div class="stm-section-title">2. Customer Selection</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+            <div>
+                <label class="stm-label">Search existing customer</label>
+                <div class="relative">
+                    <input id="custSearch" class="stm-input" placeholder="Search by ID, name, mobile..." autocomplete="off" />
+                    <div id="custResults" class="absolute z-10 bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-80 overflow-y-auto w-full hidden"></div>
+                </div>
+                <div class="text-xs text-slate-500 mt-1">Pulls from the customer master populated at onboarding.</div>
+            </div>
+            <div>
+                <label class="stm-label">Multi-party transaction?</label>
+                <div class="flex gap-3 items-center mt-2">
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="isMultiParty" value="0" checked /> <span class="ml-2">Single party</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="isMultiParty" value="1" /> <span class="ml-2">Multiple parties (e.g. joint policy / co-buyers)</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Single-party panel -->
+        <div id="singlePartyPanel">
+            <div class="bg-slate-50 rounded-lg p-4 mb-4">
+                <div class="text-xs font-semibold text-slate-600 mb-2">Selected Customer</div>
+                <div id="selectedCustomer" class="text-sm text-slate-500">No customer selected yet.</div>
+                <div id="customerDetailsCard" class="hidden mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm"></div>
+            </div>
+        </div>
+
+        <!-- Multi-party panel -->
+        <div id="multiPartyPanel" class="hidden">
+            <div class="flex justify-between items-center mb-2">
+                <div class="text-xs font-semibold text-slate-600">Parties involved</div>
+                <button type="button" class="stm-btn stm-btn-secondary" onclick="addParty()"><i data-lucide="user-plus" class="w-4 h-4"></i> Add Party</button>
+            </div>
+            <div id="partiesList" class="space-y-3"></div>
+        </div>
+
+        <!-- 3) Counter-party -->
+        <div class="stm-section-title mt-6">3. Counter-party / Sector Details</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+            <div>
+                <label class="stm-label">Remitter / Sender</label>
+                <input id="remitterName" class="stm-input" />
+            </div>
+            <div>
+                <label class="stm-label">Remitter ID</label>
+                <input id="remitterId" class="stm-input" placeholder="Payer ID — leave blank if same as customer" />
+                <div class="text-xs text-slate-500 mt-1">Third-party rules fire only when this differs from the customer ID.</div>
+            </div>
+            <div>
+                <label class="stm-label">Remitter Country (ISO-2)</label>
+                <input id="remitterCountry" class="stm-input" placeholder="AE / US / GB ..." />
+            </div>
+            <div>
+                <label class="stm-label">Beneficiary / Receiver</label>
+                <input id="beneficiaryName" class="stm-input" />
+            </div>
+            <div>
+                <label class="stm-label">Beneficiary Country (ISO-2)</label>
+                <input id="beneficiaryCountry" class="stm-input" placeholder="AE / US / GB ..." />
+            </div>
+            <div>
+                <label class="stm-label">Customer Nationality (ISO-2)</label>
+                <input id="customerNationality" class="stm-input" placeholder="auto-filled from customer" />
+            </div>
+            <div>
+                <label class="stm-label">Policy No. (Insurance)</label>
+                <input id="policyNo" class="stm-input" />
+            </div>
+            <div>
+                <label class="stm-label">Policy Inception Date (Insurance)</label>
+                <input id="policyInceptionDate" type="date" class="stm-input" />
+                <div class="text-xs text-slate-500 mt-1">Used to compute policy age for early-surrender rules.</div>
+            </div>
+            <div>
+                <label class="stm-label">Property Ref (Real Estate)</label>
+                <input id="propertyRef" class="stm-input" />
+            </div>
+            <div>
+                <label class="stm-label">Property Value (Real Estate)</label>
+                <input id="propertyValue" type="number" step="0.01" class="stm-input" />
+            </div>
+            <div>
+                <label class="stm-label">Property Purchase Date (Real Estate)</label>
+                <input id="propertyPurchaseDate" type="date" class="stm-input" />
+                <div class="text-xs text-slate-500 mt-1">Used to compute holding period for quick-resale rules.</div>
+            </div>
+            <div class="flex items-center">
+                <label class="inline-flex items-center mt-5">
+                    <input type="checkbox" id="hasPep" /> <span class="ml-2 stm-label mb-0">Customer / related party is a PEP</span>
+                </label>
+            </div>
+            <div class="md:col-span-3">
+                <label class="stm-label">Purpose / Remarks</label>
+                <input id="purpose" class="stm-input" />
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6">
+            <a href="/stm/transactions" class="stm-btn stm-btn-secondary">Cancel</a>
+            <button type="button" class="stm-btn stm-btn-primary" id="submitBtn" onclick="submitTransaction()"><i data-lucide="send" class="w-4 h-4"></i> Submit &amp; Run Rules</button>
+        </div>
+    </div>
+
+    <!-- Result panel -->
+    <div id="resultPanel" class="stm-card hidden transition-all" style="scroll-margin-top:80px">
+        <div class="stm-section-title">Result</div>
+        <div id="resultBody"></div>
+    </div>
+</div>
+
+@*
+   Hidden template for one multi-party row.
+*@
+<template id="partyTemplate">
+    <div class="party-row bg-slate-50 rounded-lg p-4 border border-slate-200">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+            <div class="md:col-span-2">
+                <label class="stm-label">Role</label>
+                <select class="stm-select p-role">
+                    <option>PolicyHolder</option>
+                    <option>Insured</option>
+                    <option>Nominee</option>
+                    <option>Buyer</option>
+                    <option>Seller</option>
+                    <option>Agent</option>
+                    <option>Broker</option>
+                    <option>Beneficiary</option>
+                    <option>Sender</option>
+                </select>
+            </div>
+            <div class="md:col-span-3">
+                <label class="stm-label">Find Customer</label>
+                <input class="stm-input p-search" placeholder="Search by ID / name" />
+                <input type="hidden" class="p-cust-id" />
+                <input type="hidden" class="p-cust-master-id" />
+            </div>
+            <div class="md:col-span-3">
+                <label class="stm-label">Name</label>
+                <input class="stm-input p-name" />
+            </div>
+            <div class="md:col-span-2">
+                <label class="stm-label">Nationality</label>
+                <input class="stm-input p-nat" />
+            </div>
+            <div class="md:col-span-1">
+                <label class="stm-label">Share %</label>
+                <input class="stm-input p-share" type="number" />
+            </div>
+            <div class="md:col-span-1 text-right">
+                <label class="stm-label">&nbsp;</label>
+                <button type="button" class="stm-btn stm-btn-danger" onclick="this.closest('.party-row').remove()"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    let selectedCustomerData = null;
+    const tranDate = document.getElementById('tranDate');
+    tranDate.value = new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+
+    // ----- Customer search (debounced) -----
+    const custSearch = document.getElementById('custSearch');
+    const custResults = document.getElementById('custResults');
+    let custTimer = null;
+    custSearch.addEventListener('input', () => {
+        clearTimeout(custTimer);
+        custTimer = setTimeout(searchCustomers, 250);
+    });
+    document.addEventListener('click', (e) => {
+        if (!custSearch.contains(e.target) && !custResults.contains(e.target)) custResults.classList.add('hidden');
+    });
+
+    async function searchCustomers() {
+        const q = custSearch.value.trim();
+        if (q.length < 2) { custResults.classList.add('hidden'); return; }
+        try {
+            const r = await fetch('/stm/customers/search?q=' + encodeURIComponent(q));
+            const j = await r.json();
+            if (!j.success || !j.data || !j.data.length) {
+                custResults.innerHTML = '<div class="p-3 text-sm text-slate-500">No matches</div>';
+            } else {
+                custResults.innerHTML = j.data.map(c => `
+                    <div class="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100" onclick='pickCustomer(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
+                        <div class="text-sm font-semibold text-slate-900">${c.CustomerName || ''} <span class="text-xs text-slate-500 ml-2">${c.CustomerId || ''}</span></div>
+                        <div class="text-xs text-slate-500">${c.Nationality || ''} ${c.Mobile ? '· ' + c.Mobile : ''} ${c.IdType ? '· ' + c.IdType : ''}</div>
+                    </div>`).join('');
+            }
+            custResults.classList.remove('hidden');
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    async function pickCustomer(c) {
+        const detailRes = await fetch('/stm/customers/details/' + encodeURIComponent(c.CustomerId));
+        const dj = await detailRes.json();
+        selectedCustomerData = dj.success ? dj.data : c;
+        const d = selectedCustomerData;
+        document.getElementById('selectedCustomer').innerHTML = `<span class="font-semibold text-slate-900">${d.CustomerName || ''}</span> · ${d.CustomerId || ''} · ${d.CustomerType === 'C' ? 'Corporate' : 'Individual'}`;
+        const card = document.getElementById('customerDetailsCard');
+        card.innerHTML = `
+            <div><span class="text-slate-500">Nationality:</span> <strong>${d.Nationality || '-'}</strong></div>
+            <div><span class="text-slate-500">ID Type:</span> <strong>${d.IdType || '-'}</strong></div>
+            <div><span class="text-slate-500">ID Number:</span> <strong>${d.IdNumber || '-'}</strong></div>
+            <div><span class="text-slate-500">Mobile:</span> <strong>${d.Mobile || '-'}</strong></div>
+            <div><span class="text-slate-500">DOB:</span> <strong>${d.DOB || '-'}</strong></div>
+            <div><span class="text-slate-500">Profession:</span> <strong>${d.Profession || '-'}</strong></div>
+            <div class="md:col-span-3"><span class="text-slate-500">Source of Funds:</span> <strong>${d.SourceOfFunds || '-'}</strong></div>
+            <div class="md:col-span-3"><span class="text-slate-500">Risk Score:</span> <strong>${d.RiskScore || '-'}</strong></div>
+        `;
+        card.classList.remove('hidden');
+        custResults.classList.add('hidden');
+        custSearch.value = d.CustomerName || '';
+        if (document.getElementById('policyNo').value === '') document.getElementById('policyNo').value = d.PolicyNo || '';
+        if (document.getElementById('customerNationality').value === '') document.getElementById('customerNationality').value = d.Nationality || '';
+    }
+
+    // ----- Multi-party toggle -----
+    document.querySelectorAll('input[name="isMultiParty"]').forEach(r => {
+        r.addEventListener('change', () => {
+            const multi = document.querySelector('input[name="isMultiParty"]:checked').value === '1';
+            document.getElementById('singlePartyPanel').classList.toggle('hidden', multi);
+            document.getElementById('multiPartyPanel').classList.toggle('hidden', !multi);
+            if (multi && document.querySelectorAll('#partiesList .party-row').length === 0) addParty();
+        });
+    });
+
+    function addParty() {
+        const tpl = document.getElementById('partyTemplate');
+        const node = tpl.content.cloneNode(true);
+        document.getElementById('partiesList').appendChild(node);
+        if (window.lucide) lucide.createIcons();
+        // attach search-on-type for the new party row
+        const row = document.querySelectorAll('#partiesList .party-row').slice ? Array.from(document.querySelectorAll('#partiesList .party-row')).pop() : document.querySelectorAll('#partiesList .party-row')[document.querySelectorAll('#partiesList .party-row').length - 1];
+        const searchInput = row.querySelector('.p-search');
+        let timer;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => doPartySearch(row), 250);
+        });
+    }
+
+    async function doPartySearch(row) {
+        const q = row.querySelector('.p-search').value.trim();
+        if (q.length < 2) return;
+        const r = await fetch('/stm/customers/search?q=' + encodeURIComponent(q));
+        const j = await r.json();
+        if (j.success && j.data && j.data.length) {
+            // Simple: pick first match
+            const c = j.data[0];
+            const d = await (await fetch('/stm/customers/details/' + encodeURIComponent(c.CustomerId))).json();
+            const det = d.success ? d.data : c;
+            row.querySelector('.p-cust-id').value = det.CustomerId || '';
+            row.querySelector('.p-cust-master-id').value = det.CustomerMasterId || '';
+            row.querySelector('.p-name').value = det.CustomerName || '';
+            row.querySelector('.p-nat').value = det.Nationality || '';
+        }
+    }
+
+    // ----- Submit -----
+    async function submitTransaction() {
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true; btn.innerHTML = 'Submitting...';
+
+        const multi = document.querySelector('input[name="isMultiParty"]:checked').value === '1';
+        const parties = [];
+        if (multi) {
+            document.querySelectorAll('#partiesList .party-row').forEach(r => {
+                parties.push({
+                    PartyRole: r.querySelector('.p-role').value,
+                    CustomerId: r.querySelector('.p-cust-id').value,
+                    CustomerMasterId: parseInt(r.querySelector('.p-cust-master-id').value || '0') || null,
+                    CustomerName: r.querySelector('.p-name').value,
+                    Nationality: r.querySelector('.p-nat').value,
+                    SharePercentage: parseFloat(r.querySelector('.p-share').value) || null
+                });
+            });
+        }
+
+        const payload = {
+            SectorId:           parseInt(document.getElementById('sectorId').value || '0'),
+            TranRefNo:          document.getElementById('tranRefNo').value,
+            TranDate:           document.getElementById('tranDate').value,
+            TranType:           document.getElementById('tranType').value,
+            TranMode:           document.getElementById('tranMode').value,
+            DeliveryChannel:    document.getElementById('deliveryChannel').value,
+            Amount:             parseFloat(document.getElementById('amount').value || '0'),
+            Currency:           document.getElementById('currency').value || 'AED',
+            CustomerId:         selectedCustomerData?.CustomerId || '',
+            CustomerName:       selectedCustomerData?.CustomerName || '',
+            CustomerType:       selectedCustomerData?.CustomerType || '',
+            CustomerNationality: document.getElementById('customerNationality').value,
+            RemitterId:         document.getElementById('remitterId').value,
+            RemitterName:       document.getElementById('remitterName').value,
+            RemitterCountry:    document.getElementById('remitterCountry').value,
+            BeneficiaryName:    document.getElementById('beneficiaryName').value,
+            BeneficiaryCountry: document.getElementById('beneficiaryCountry').value,
+            PolicyNo:           document.getElementById('policyNo').value,
+            PolicyInceptionDate: document.getElementById('policyInceptionDate').value || null,
+            PropertyRef:        document.getElementById('propertyRef').value,
+            PropertyValue:      parseFloat(document.getElementById('propertyValue').value || '0') || null,
+            PropertyPurchaseDate: document.getElementById('propertyPurchaseDate').value || null,
+            Purpose:            document.getElementById('purpose').value,
+            HasPep:             document.getElementById('hasPep').checked ? 1 : 0,
+            IsMultiParty:       multi ? 1 : 0,
+            Parties:            parties
+        };
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const r = await fetch('/stm/transactions/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'RequestVerificationToken': token } : {})
+                },
+                body: JSON.stringify(payload)
+            });
+            const j = await r.json();
+            const panel = document.getElementById('resultPanel');
+            const body = document.getElementById('resultBody');
+            panel.classList.remove('hidden');
+            if (j.success && j.data) {
+                const d = j.data;
+                const hits = (d.ruleResults || []).filter(rr => rr.isHit);
+                body.innerHTML = `
+                    <div class="${d.anyRuleHit ? 'bg-red-50 text-red-800' : 'bg-emerald-50 text-emerald-800'} p-4 rounded-lg mb-3">
+                        <div class="font-semibold">${d.anyRuleHit ? '⚠ Rules hit — case created' : '✓ No rules hit'}</div>
+                        <div class="text-sm mt-1">Transaction Ref: <code>${d.tranRefNo}</code> · TxnID: ${d.transactionId} ${d.caseRefNo ? ' · Case: ' + d.caseRefNo : ''}</div>
+                    </div>
+                    <div class="space-y-2">
+                        ${(d.ruleResults || []).map(r => `
+                            <div class="p-3 rounded-lg border ${r.isHit ? 'border-red-200 bg-red-50' : 'border-slate-200'}">
+                                <div class="flex justify-between"><div class="font-semibold">${r.ruleCode}: ${r.ruleName}</div><span class="stm-badge ${r.isHit ? 'high' : 'low'}">${r.isHit ? 'HIT' : 'pass'}</span></div>
+                                <div class="text-xs text-slate-600 mt-1">${(r.conditionResults || []).join('<br>')}</div>
+                            </div>`).join('')}
+                    </div>
+                    <div class="mt-4">
+                        <a href="/stm/transactions" class="stm-btn stm-btn-secondary">New Transaction</a>
+                        ${d.caseId ? `<a href="/stm/cases/view/${d.caseId}" class="stm-btn stm-btn-primary ml-2">View Case</a>` : ''}
+                    </div>`;
+            } else {
+                body.innerHTML = `<div class="bg-red-50 text-red-800 p-4 rounded-lg">${j.message || 'Submission failed'}</div>`;
+            }
+            // Bring the result into view. scrollIntoView walks up through any scroll
+            // container (the AdminLTE content wrapper), which window.scrollTo + offsetTop
+            // does not - that left the result hidden below the fold after submit.
+            requestAnimationFrame(() => {
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Briefly highlight so it's obvious something appeared.
+                panel.classList.add('ring-2', 'ring-blue-400');
+                setTimeout(() => panel.classList.remove('ring-2', 'ring-blue-400'), 1600);
+            });
+        } catch (err) {
+            alert('Error: ' + err.message);
+        } finally {
+            btn.disabled = false; btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Submit & Run Rules';
+            if (window.lucide) lucide.createIcons();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
+</script>
+
+@Html.AntiForgeryToken()

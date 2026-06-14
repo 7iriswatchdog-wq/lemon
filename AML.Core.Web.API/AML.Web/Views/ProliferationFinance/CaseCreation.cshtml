@@ -1,0 +1,1147 @@
+@using Microsoft.AspNetCore.Http;
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@inject IHttpContextAccessor HttpContextAccessor
+@using Newtonsoft.Json;
+@{
+    ViewData["Title"] = "Proliferation Finance - Case Creation";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@model AML.ViewModel.ViewModels.ProliferationFinance.ProliferationFinanceModel
+
+<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.0.min.js" type="text/javascript"></script>
+<script src="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/jquery-ui.min.js" type="text/javascript"></script>
+<link href="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/themes/blitzer/jquery-ui.css" rel="Stylesheet" type="text/css" />
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proliferation Finance Case Creation</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        [x-cloak] { display: none !important; }
+        .scrollbar-thin::-webkit-scrollbar { width: 5px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dt-loader { display: inline-block; position: relative; width: 80px; height: 20px; }
+        .dt-loader div { position: absolute; top: 8px; width: 13px; height: 13px; border-radius: 50%; background: #2563eb; animation-timing-function: cubic-bezier(0, 1, 1, 0); }
+        .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+        .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+        @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+        @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+    </style>
+</head>
+
+<body class="bg-[#f8fafc] text-textprimary overflow-hidden" x-data="caseCreationData()">
+    <div class="flex h-screen overflow-hidden">
+        <div id="loadingeffect" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-[9999]" style="display:none;" x-show="isLoading">
+            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        </div>
+
+        <div class="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
+            <!-- Header -->
+            <header class="h-16 bg-surface border-b border-bordercolor flex items-center justify-between px-8 sticky top-0 z-40 shrink-0">
+                <div class="flex items-center gap-4">
+                    <button @@click="sidebarOpen = !sidebarOpen" class="p-2 hover:bg-slate-100 rounded-lg transition-colors text-textmuted">
+                        <i data-lucide="panel-left-close" class="w-5 h-5"></i>
+                    </button>
+                    <h2 class="text-xl font-bold text-textprimary tracking-tight">Case Creation</h2>
+                </div>
+            </header>
+
+            <!-- Page Body -->
+            <main class="flex-1 overflow-hidden p-8">
+                <div class="flex h-full gap-8 max-w-[1600px] mx-auto">
+
+                    <!-- Left: Method Selection -->
+                    <div class="w-full lg:w-1/4 flex flex-col h-full bg-surface rounded-[32px] border border-bordercolor shadow-sm overflow-hidden min-w-[340px]">
+                        <div class="p-8 space-y-8 flex-1 overflow-y-auto scrollbar-thin">
+                        <div class="space-y-1">
+                            <h1 class="text-2xl font-extrabold text-textprimary tracking-tight">Case Creation</h1>
+                            <p class="text-textmuted text-sm font-medium leading-relaxed">Select an input method to get started.</p>
+                        </div>
+
+                        <div class="grid gap-3">
+                            <!-- Goods Details Card (Consolidated) -->
+                            <div @@click="selectedMethod = 'goods'; showResults = false"
+                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-4 group"
+                                 :class="selectedMethod === 'goods' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-bordercolor bg-surface hover:border-blue-200 hover:bg-appbg'">
+                                <div class="p-2 rounded-lg shrink-0 transition-colors"
+                                     :class="selectedMethod === 'goods' ? 'bg-blue-100 text-primary' : 'bg-slate-100 text-textmuted group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                    <i data-lucide="package" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-bold text-sm tracking-tight" :class="selectedMethod === 'goods' ? 'text-blue-900' : 'text-textprimary'">Goods Details</h3>
+                                    <p class="text-[11px] font-medium text-textmuted mt-0.5 leading-relaxed">Search via Chemical Details or Keywords</p>
+                                </div>
+                                <i data-lucide="check-circle-2" class="w-5 h-5 text-primary absolute top-4 right-4" x-show="selectedMethod === 'goods'"></i>
+                            </div>
+
+                            <!-- Bulk Upload Card -->
+                            <div @@click="selectedMethod = 'bulkupload'; showResults = false"
+                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-4 group"
+                                 :class="selectedMethod === 'bulkupload' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-bordercolor bg-surface hover:border-blue-200 hover:bg-appbg'">
+                                <div class="p-2 rounded-lg shrink-0 transition-colors"
+                                     :class="selectedMethod === 'bulkupload' ? 'bg-blue-100 text-primary' : 'bg-slate-100 text-textmuted group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                    <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-bold text-sm tracking-tight" :class="selectedMethod === 'bulkupload' ? 'text-blue-900' : 'text-textprimary'">Bulk Upload</h3>
+                                    <p class="text-[11px] font-medium text-textmuted mt-0.5 leading-relaxed">Upload multiple cases via Excel template</p>
+                                </div>
+                                <i data-lucide="check-circle-2" class="w-5 h-5 text-primary absolute top-4 right-4" x-show="selectedMethod === 'bulkupload'"></i>
+                            </div>
+
+                            <!-- Goods Search Card -->
+                            <div @@click="selectedMethod = 'goodssearch'; showResults = false"
+                                 class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-4 group"
+                                 :class="selectedMethod === 'goodssearch' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-bordercolor bg-surface hover:border-blue-200 hover:bg-appbg'">
+                                <div class="p-2 rounded-lg shrink-0 transition-colors"
+                                     :class="selectedMethod === 'goodssearch' ? 'bg-blue-100 text-primary' : 'bg-slate-100 text-textmuted group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                    <i data-lucide="search" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-bold text-sm tracking-tight" :class="selectedMethod === 'goodssearch' ? 'text-blue-900' : 'text-textprimary'">Goods Search</h3>
+                                    <p class="text-[11px] font-medium text-textmuted mt-0.5 leading-relaxed">Search UAE Control List directly</p>
+                                </div>
+                                <i data-lucide="check-circle-2" class="w-5 h-5 text-primary absolute top-4 right-4" x-show="selectedMethod === 'goodssearch'"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                    <!-- Right: Dynamic Content Area -->
+                    <div class="flex-1 bg-surface rounded-2xl border border-bordercolor shadow-sm overflow-hidden flex flex-col">
+                        <div class="flex-1 overflow-y-auto p-8 scrollbar-thin">
+
+                            <!-- Creation Forms -->
+                            <div x-show="!showResults" class="space-y-6">
+                                <!-- FORM HEADER -->
+                                <div class="pb-6 border-b mb-6">
+                                    <h2 class="text-2xl font-extrabold text-textprimary tracking-tight" x-text="selectedMethod === 'goods' ? 'Goods Details Input' : (selectedMethod === 'bulkupload' ? 'Bulk Screening Upload' : 'Goods Search')"></h2>
+                                    <p class="text-sm text-textmuted font-medium mt-1" x-text="selectedMethod === 'goods' ? 'Enter Corporate ID and at least one chemical or keyword detail to search and create a case.' : (selectedMethod === 'bulkupload' ? 'Upload an Excel file to process multiple cases simultaneously.' : 'Search the UAE Control List for chemicals or non-chemical goods.')"></p>
+                                </div>
+
+                                <!-- GOODS DETAILS FORM (Consolidated) -->
+                                <div x-show="selectedMethod === 'goods'" x-transition:enter="transition duration-300" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-8">
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-10 gap-6 items-end">
+                                        <!-- Corporate / Individual ID -->
+                                        <div class="space-y-2 md:col-span-4">
+                                            <label class="text-[13px] font-bold text-textlabel">Corporate / Individual ID <span class="text-red-500">*</span></label>
+                                            <input type="text" x-model="formData.corporateId" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary placeholder:text-textmuted focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter Corporate or Individual ID">
+                                        </div>
+                                        <!-- Fetch Button -->
+                                        <div class="md:col-span-2">
+                                            <button type="button" @@click="fetchCorporateDetails()" class="w-full h-11 bg-primary hover:bg-primary-hover text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center justify-center">
+                                                Fetch Name
+                                            </button>
+                                        </div>
+                                        <!-- Fetched Name Display -->
+                                        <div class="space-y-2 md:col-span-4">
+                                            <label class="text-[13px] font-bold text-textlabel">Name</label>
+                                            <input type="text" x-model="formData.companyName" disabled class="w-full h-11 bg-appbg border border-bordercolor rounded-xl px-4 text-sm font-medium text-textlabel cursor-not-allowed">
+                                        </div>
+                                    </div>
+
+                                    <!-- Goods Search Fields (Hidden until Company Found) -->
+                                    <div x-show="formData.companyName" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-8 mt-8" style="display:none;">
+                                        <div class="col-span-2 pt-4 border-t border-bordercolor">
+                                            <h3 class="text-sm font-bold text-textprimary mb-4">Screening Details <span class="text-xs font-normal text-textmuted ml-2">(Fill at least one to search)</span></h3>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+                                            <div class="space-y-2">
+                                                <label class="text-[13px] font-bold text-textlabel">HS Code</label>
+                                                <input type="text" x-model="formData.hsCode" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter HS Code">
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                <label class="text-[13px] font-bold text-textlabel">CAS Number</label>
+                                                <input type="text" x-model="formData.casNumber" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter CAS Number">
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                <label class="text-[13px] font-bold text-textlabel">ECCN</label>
+                                                <input type="text" x-model="formData.eccn" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter ECCN">
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                <label class="text-[13px] font-bold text-textlabel">Product Name</label>
+                                                <input type="text" x-model="formData.chemicalName" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter Product Name">
+                                            </div>
+
+                                            <div class="space-y-2 col-span-2 md:col-span-1">
+                                                <label class="text-[13px] font-bold text-textlabel">Synonym Name</label>
+                                                <input type="text" x-model="formData.synonymName" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter Synonym Name">
+                                            </div>
+                                        </div>
+
+                                        <!-- Actions -->
+                                        <div class="grid grid-cols-4 gap-4 mt-12 pt-8 border-t border-bordercolor">
+                                            <button type="button" @@click="submitSearch()" :disabled="isLoading" class="col-span-3 h-14 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white font-extrabold rounded-2xl shadow-xl shadow-blue-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3">
+                                                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" x-show="isLoading"></div>
+                                                <span x-text="isLoading ? 'Creating Case...' : 'Create Case'"></span>
+                                            </button>
+                                            <button type="button" @@click="resetForm()" class="h-14 bg-surface border-2 border-bordercolor text-textlabel font-extrabold rounded-2xl hover:bg-appbg transition-all flex items-center justify-center gap-2">
+                                                Reset
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <!-- GOODS SEARCH MODULE (New) -->
+                                <div x-show="selectedMethod === 'goodssearch'" x-transition:enter="transition duration-300" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-8" style="display:none;">
+                                    <!-- Tabs -->
+                                    <div class="flex items-center gap-2 p-1 bg-slate-100 rounded-xl w-fit">
+                                        <button @@click="selectedSearchType = 'chemical'; showGoodsSearchResults = false" 
+                                                class="px-6 py-2 rounded-lg text-xs font-bold transition-all"
+                                                :class="selectedSearchType === 'chemical' ? 'bg-surface text-primary shadow-sm' : 'text-textmuted hover:text-textlabel'">
+                                            Chemical Search
+                                        </button>
+                                        <button @@click="selectedSearchType = 'nonchemical'; showGoodsSearchResults = false" 
+                                                class="px-6 py-2 rounded-lg text-xs font-bold transition-all"
+                                                :class="selectedSearchType === 'nonchemical' ? 'bg-surface text-primary shadow-sm' : 'text-textmuted hover:text-textlabel'">
+                                            Non-Chemical Search
+                                        </button>
+                                        <button @@click="selectedSearchType = 'military'; showGoodsSearchResults = false" 
+                                                class="px-6 py-2 rounded-lg text-xs font-bold transition-all"
+                                                :class="selectedSearchType === 'military' ? 'bg-surface text-primary shadow-sm' : 'text-textmuted hover:text-textlabel'">
+                                            Military Goods Search
+                                        </button>
+                                    </div>
+
+                                    <!-- Chemical Search Form -->
+                                    <div x-show="selectedSearchType === 'chemical'" class="space-y-6">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div class="space-y-2">
+                                                <label class="text-[13px] font-bold text-textlabel">HS Code</label>
+                                                <input type="text" x-model="searchForm.chemical.hsCode" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm" placeholder="Enter HS Code">
+                                            </div>
+                                            <div class="space-y-2">
+                                                <label class="text-[13px] font-bold text-textlabel">CAS Number</label>
+                                                <input type="text" x-model="searchForm.chemical.casNumber" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm" placeholder="Enter CAS Number">
+                                            </div>
+                                            <div class="space-y-2">
+                                                <label class="text-[13px] font-bold text-textlabel">ECCN</label>
+                                                <input type="text" x-model="searchForm.chemical.eccn" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm" placeholder="Enter ECCN">
+                                            </div>
+                                            <div class="space-y-2">
+                                                <label class="text-[13px] font-bold text-textlabel">Chemical Name</label>
+                                                <input type="text" x-model="searchForm.chemical.chemicalName" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm" placeholder="Enter Chemical Name">
+                                            </div>
+                                            <div class="space-y-2 md:col-span-2">
+                                                <label class="text-[13px] font-bold text-textlabel">Synonym Name</label>
+                                                <input type="text" x-model="searchForm.chemical.synonymName" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm" placeholder="Enter Synonym Name">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Non-Chemical Search Form -->
+                                    <div x-show="selectedSearchType === 'nonchemical'" class="space-y-6" style="display:none;">
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Search Keyword</label>
+                                            <input type="text" x-model="searchForm.nonchemical.keyword" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm" placeholder="Search across documents...">
+                                        </div>
+                                    </div>
+
+                                    <!-- Military Goods Search Form -->
+                                    <div x-show="selectedSearchType === 'military'" class="space-y-6" style="display:none;">
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Search Keyword</label>
+                                            <input type="text" x-model="searchForm.military.keyword" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm" placeholder="Search across military munitions list...">
+                                        </div>
+                                    </div>
+
+                                    <!-- Search Button -->
+                                    <div class="pt-4">
+                                        <button type="button" @@click="searchGoods()" class="w-full md:w-fit px-12 h-12 bg-primary hover:bg-primary-hover text-white font-extrabold rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+                                            Search
+                                        </button>
+                                    </div>
+
+                                    <!-- Results Area -->
+                                    <div x-show="showGoodsSearchResults" x-transition class="space-y-6 pt-10 border-t border-bordercolor">
+                                        <div class="flex items-center justify-between">
+                                            <h3 class="text-base font-bold text-textprimary tracking-tight">Search Results</h3>
+                                            <div class="flex items-center gap-4">
+                                                <span class="text-xs font-bold text-textmuted uppercase tracking-widest" x-text="goodsSearchResults.length + ' Matches Found'"></span>
+                                                <button @@click="downloadAllResultsPDF()" title="Download Results" class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-primary hover:bg-blue-100 rounded-lg text-xs font-bold transition-colors">
+                                                    Download Report
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Chemical Result Cards -->
+                                        <template x-if="selectedSearchType === 'chemical'">
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <template x-for="(result, index) in goodsSearchResults" :key="index">
+                                                    <div class="bg-surface rounded-xl border border-bordercolor shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-all duration-300">
+                                                        <div class="h-1.5 w-full bg-primary"></div>
+                                                        <div class="p-5 flex-1 space-y-4">
+                                                            <div class="space-y-1">
+                                                                <p class="text-[10px] font-bold text-textmuted uppercase tracking-widest">Chemical Name</p>
+                                                                <p class="text-sm font-extrabold text-textprimary line-clamp-2 min-h-[40px]" x-text="result.chemicalName || result.ChemicalName || '-'"></p>
+                                                            </div>
+                                                            <div class="grid grid-cols-2 gap-4">
+                                                                <div class="space-y-1">
+                                                                    <p class="text-[10px] font-bold text-textmuted uppercase tracking-widest">HS Code</p>
+                                                                    <p class="text-[11px] font-bold text-textlabel" x-text="result.hsCode || result.HsCode || '-'"></p>
+                                                                </div>
+                                                                <div class="space-y-1">
+                                                                    <p class="text-[10px] font-bold text-textmuted uppercase tracking-widest">CAS Number</p>
+                                                                    <p class="text-[11px] font-bold text-textlabel" x-text="result.casNumber || result.CasNumber || '-'"></p>
+                                                                </div>
+                                                                <div class="space-y-1">
+                                                                    <p class="text-[10px] font-bold text-textmuted uppercase tracking-widest">ECCN</p>
+                                                                    <p class="text-[11px] font-bold text-textlabel" x-text="result.eccn || result.Eccn || '-'"></p>
+                                                                </div>
+                                                                <div class="space-y-1">
+                                                                    <p class="text-[10px] font-bold text-textmuted uppercase tracking-widest">Synonym</p>
+                                                                    <p class="text-[11px] font-bold text-textlabel truncate" x-text="result.synonymName || result.SynonymName || '-'"></p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex border-t border-bordercolor">
+                                                            <button @@click="openModal(result)" class="flex-1 h-10 bg-appbg hover:bg-slate-100 text-textlabel font-bold text-[11px] transition-colors uppercase tracking-wider">
+                                                                View Details
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+
+                                        <!-- Non-Chemical / Military Result Paragraphs -->
+                                        <template x-if="selectedSearchType === 'nonchemical' || selectedSearchType === 'military'">
+                                            <div class="space-y-4">
+                                                <template x-for="(para, index) in goodsSearchResults" :key="index">
+                                                    <div class="bg-surface p-6 rounded-2xl border border-bordercolor shadow-sm group hover:border-blue-200 transition-all relative overflow-hidden">
+                                                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                                        <div class="flex items-center justify-between mb-3">
+                                                            <span class="text-[10px] font-bold text-primary bg-blue-50 px-2 py-1 rounded uppercase tracking-wider">
+                                                                Paragraph <span x-text="index + 1"></span> of <span x-text="goodsSearchResults.length"></span>
+                                                            </span>
+                                                        </div>
+                                                        <p class="text-sm text-textlabel leading-relaxed italic" x-html="highlightKeyword(para, selectedSearchType === 'military' ? searchForm.military.keyword : searchForm.nonchemical.keyword)"></p>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+
+                                        <!-- No results state -->
+                                        <div x-show="goodsSearchResults.length === 0" class="flex flex-col items-center justify-center py-20 text-center bg-appbg rounded-3xl border border-dashed border-bordercolor">
+                                            <div class="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4 text-slate-300 shadow-sm">
+                                                <i data-lucide="search-x" class="w-8 h-8"></i>
+                                            </div>
+                                            <h3 class="text-lg font-bold text-textprimary tracking-tight">No matches found</h3>
+                                            <p class="text-sm text-textmuted mt-1 max-w-[280px] font-medium">Try different keywords or check the inputs for spelling errors.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <!-- BULK UPLOAD FORM -->
+                                <div x-show="selectedMethod === 'bulkupload'" x-transition:enter="transition duration-300" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-8" style="display:none;">
+                                    <!-- Instruction Block -->
+                                    <div class="bg-blue-50/80 border border-blue-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
+                                        <div class="flex items-center gap-5">
+                                            <div class="w-12 h-12 bg-surface rounded-xl shadow-sm flex items-center justify-center text-primary">
+                                                <i data-lucide="info" class="w-6 h-6"></i>
+                                            </div>
+                                            <div class="space-y-1">
+                                                <h3 class="text-[15px] font-extrabold text-blue-900 leading-none">Need a template?</h3>
+                                                <p class="text-xs text-blue-700 font-bold opacity-80">Download our template to ensure proper formatting and faster processing.</p>
+                                            </div>
+                                        </div>
+                                        <a href="/ProliferationFinance/DownloadBulkTemplate" class="px-6 h-11 bg-primary text-white font-extrabold rounded-xl shadow-lg shadow-blue-500/20 hover:bg-primary-hover transition-all active:scale-95 flex items-center gap-2 text-sm leading-none">
+                                            <i data-lucide="download" class="w-4 h-4"></i> Download
+                                        </a>
+                                    </div>
+
+                                    <div class="space-y-6">
+                                        <!-- Drag & Drop Area -->
+                                        <div @@dragover.prevent="isDragging = true"
+                                             @@dragleave.prevent="isDragging = false"
+                                             @@drop.prevent="isDragging = false; handleFileSelect($event.dataTransfer.files[0])"
+                                             @@click="$refs.fileInput.click()"
+                                             class="border-2 border-dashed rounded-[32px] p-20 text-center transition-all cursor-pointer group"
+                                             :class="isDragging ? 'border-blue-500 bg-blue-50/50 scale-[0.99]' : 'border-bordercolor hover:border-primary hover:bg-appbg'">
+                                            
+                                            <input type="file" x-ref="fileInput" class="hidden" accept=".xlsx, .xls" @@change="handleFileSelect($event.target.files[0])">
+                                            
+                                            <div class="w-20 h-20 bg-slate-100 rounded-[24px] flex items-center justify-center mx-auto mb-8 transition-transform group-hover:scale-110 duration-500">
+                                                <i data-lucide="file-spreadsheet" class="w-10 h-10 text-textmuted group-hover:text-blue-500 transition-colors"></i>
+                                            </div>
+                                            
+                                            <h3 class="text-xl font-extrabold text-textprimary tracking-tight">Drag and drop your file here</h3>
+                                            <p class="text-sm font-bold text-textmuted mt-2 mb-8 uppercase tracking-widest">or</p>
+                                            
+                                            <button type="button" class="bg-primary text-white font-extrabold px-12 h-14 rounded-2xl shadow-xl shadow-blue-500/20 hover:scale-105 transition-transform">
+                                                Browse Files
+                                            </button>
+                                            
+                                            <p class="text-[11px] font-extrabold text-textmuted mt-8 uppercase tracking-widest opacity-60">Supported formats: XLSX, XLS</p>
+                                        </div>
+
+                                        <!-- Selected File Status -->
+                                        <div x-show="selectedFile" class="animate-in fade-in slide-in-from-bottom-4">
+                                            <div class="bg-surface border-2 border-blue-50 relative overflow-hidden rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                                                <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div>
+                                                <div class="flex items-center gap-4">
+                                                    <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                                                        <i data-lucide="file-text" class="w-6 h-6 text-primary"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-extrabold text-textprimary text-[15px]" x-text="selectedFile ? selectedFile.name : ''"></p>
+                                                        <p class="text-xs font-bold text-textmuted" x-text="selectedFile ? (selectedFile.size / 1024).toFixed(2) + ' KB' : ''"></p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-3">
+                                                    <span class="text-xs font-extrabold text-primary bg-blue-50 px-3 py-1.5 rounded-full">File Selected</span>
+                                                    <button type="button" @@click="selectedFile = null; bulkResults = null" class="p-2 text-textmuted hover:text-red-500 transition-colors">
+                                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        
+                                        <!-- Action Buttons -->
+                                        <div class="flex gap-4 pt-4 border-t border-bordercolor">
+                                            <button type="button" @@click="submitBulkUpload()" :disabled="!selectedFile || isLoading"
+                                                    class="flex-1 h-14 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white font-extrabold rounded-2xl shadow-xl shadow-blue-500/20 transition-all active:scale-95 flex items-center justify-center gap-3">
+                                                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" x-show="isLoading"></div>
+                                                <span x-text="isLoading ? 'Processing...' : 'Run Screening'"></span>
+                                            </button>
+                                            <button type="button" @@click="resetForm()" class="px-8 h-14 border-2 border-bordercolor text-textlabel font-extrabold rounded-2xl hover:bg-appbg transition-all">
+                                                Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bulk Progress / Results View -->
+                                <template x-if="bulkResults">
+                                    <div x-show="bulkResults" x-transition class="space-y-6 pt-6 border-t border-bordercolor">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <h3 class="text-base font-bold text-textprimary tracking-tight">Processing Result</h3>
+                                                <p class="text-xs text-textmuted font-medium">Summary of your bulk upload request</p>
+                                            </div>
+                                            <div class="flex items-center gap-2 bg-slate-100 px-4 py-1.5 rounded-full font-bold text-[11px] text-textlabel">
+                                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                                                ROWS PROCESSED: <span x-text="bulkResults.total" class="text-textprimary border-l border-slate-300 ml-1 pl-1"></span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-3 gap-6">
+                                            <div class="bg-surface border-2 border-emerald-100 p-5 rounded-2xl shadow-sm">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Success</p>
+                                                    <div class="p-1.5 bg-emerald-50 rounded-lg text-emerald-600"><i data-lucide="check" class="w-4 h-4"></i></div>
+                                                </div>
+                                                <p class="text-3xl font-black text-textprimary mt-1" x-text="bulkResults.success"></p>
+                                            </div>
+                                            <div class="bg-surface border-2 border-blue-100 p-5 rounded-2xl shadow-sm">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <p class="text-[10px] font-bold text-primary uppercase tracking-widest">Matches Found</p>
+                                                    <div class="p-1.5 bg-blue-50 rounded-lg text-primary"><i data-lucide="search" class="w-4 h-4"></i></div>
+                                                </div>
+                                                <p class="text-3xl font-black text-textprimary mt-1" x-text="bulkResults.matches"></p>
+                                            </div>
+                                            <div class="bg-surface border-2 border-red-100 p-5 rounded-2xl shadow-sm">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <p class="text-[10px] font-bold text-red-600 uppercase tracking-widest">Failed / Errors</p>
+                                                    <div class="p-1.5 bg-red-50 rounded-lg text-red-600"><i data-lucide="alert-triangle" class="w-4 h-4"></i></div>
+                                                </div>
+                                                <p class="text-3xl font-black text-textprimary mt-1" x-text="bulkResults.failed"></p>
+                                            </div>
+                                        </div>
+
+                                        <div x-show="bulkResults.errors && bulkResults.errors.length > 0" class="bg-red-50/30 border border-red-100 rounded-2xl p-6">
+                                            <div class="flex items-center gap-2 text-red-700 mb-4 font-bold text-sm">
+                                                <i data-lucide="x-circle" class="w-4 h-4"></i> Detailed Error Log
+                                            </div>
+                                            <div class="space-y-3 max-h-60 overflow-y-auto pr-2 scrollbar-thin">
+                                                <template x-for="err in bulkResults.errors">
+                                                    <div class="flex items-start gap-4 p-3 bg-surface/50 border border-red-100/50 rounded-xl text-xs text-textlabel group hover:border-red-200 transition-colors">
+                                                        <span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded-md min-w-[50px] text-center" x-text="'Row ' + err.row"></span>
+                                                        <span class="flex-1 font-medium leading-relaxed" x-text="err.message"></span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                         <div x-show="bulkResults.results && bulkResults.results.length > 0" class="mt-8 border-t border-bordercolor pt-8">
+                                             <div class="flex items-center gap-2 mb-4">
+                                                 <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-primary">
+                                                     <i data-lucide="list" class="w-4 h-4"></i>
+                                                 </div>
+                                                 <h3 class="text-sm font-bold text-textprimary">Detailed Screening Results</h3>
+                                             </div>
+                                             
+                                             <div class="overflow-x-auto rounded-2xl border border-bordercolor shadow-sm">
+                                                 <table class="w-full text-left border-collapse bg-surface">
+                                                     <thead class="bg-appbg border-b border-bordercolor">
+                                                         <tr>
+                                                             <th class="px-5 py-4 text-[10px] font-bold text-textmuted uppercase tracking-widest">Row</th>
+                                                             <th class="px-5 py-4 text-[10px] font-bold text-textmuted uppercase tracking-widest">Corporate ID</th>
+                                                             <th class="px-5 py-4 text-[10px] font-bold text-textmuted uppercase tracking-widest">Result</th>
+                                                             <th class="px-5 py-4 text-[10px] font-bold text-textmuted uppercase tracking-widest text-right">Action</th>
+                                                         </tr>
+                                                     </thead>
+                                                     <tbody class="divide-y divide-slate-50">
+                                                         <template x-for="res in bulkResults.results">
+                                                             <tr class="hover:bg-appbg transition-colors">
+                                                                 <td class="px-5 py-4 text-xs font-bold text-textmuted" x-text="res.row"></td>
+                                                                 <td class="px-5 py-4 font-bold text-textprimary text-sm" x-text="res.corporateId"></td>
+                                                                 <td class="px-5 py-4">
+                                                                     <span class="text-xs font-bold tracking-widest px-2.5 py-1 rounded-full"
+                                                                           :class="res.caseId > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-appbg text-textmuted'"
+                                                                           x-text="res.message"></span>
+                                                                 </td>
+                                                                 <td class="px-5 py-4 text-right">
+                                                                     <template x-if="res.caseId > 0">
+                                                                         <a :href="'/ProliferationFinance/Process/' + res.caseId" 
+                                                                            class="text-primary hover:text-primary-hover font-bold text-xs inline-flex items-center gap-1">
+                                                                             Process
+                                                                         </a>
+                                                                     </template>
+                                                                 </td>
+                                                             </tr>
+                                                         </template>
+                                                     </tbody>
+                                                 </table>
+                                             </div>
+                                         </div>
+
+                                         <div class="flex justify-center pt-8">
+                                             <a href="/ProliferationFinance/CaseManager" class="h-14 px-8 bg-slate-900 text-white rounded-2xl font-bold text-[15px] hover:bg-slate-800 transition-all flex items-center gap-3 shadow-xl shadow-slate-900/10">
+                                                 Go to Case
+                                             </a>
+                                         </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- State: Results View (Removed for Individual Search, only Success Modal shown) -->
+<template x-if="false">
+                            <div x-show="showResults" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-8" style="display:none;">
+                                <div class="flex items-center justify-between pb-6 border-b border-bordercolor">
+                                    <button @@click="showResults = false" class="flex items-center gap-2 text-textmuted hover:text-textprimary font-bold transition-colors">
+                                        <i data-lucide="arrow-left" class="w-5 h-5"></i> <span class="text-sm">Back to Search</span>
+                                    </button>
+                                    <span x-show="(selectedMethod === 'chemical' && searchResults.length > 0) || (selectedMethod === 'nonchemical' && formData.matchedParagraph)" class="bg-emerald-100 text-emerald-700 text-xs font-bold px-4 py-1.5 rounded-full ring-1 ring-emerald-200/50">
+                                        Search Completed & Case Created
+                                    </span>
+                                </div>
+                                <h2 class="text-xl font-bold text-textprimary tracking-tight">Search Results</h2>
+                                
+                                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="results-container">
+                                     <!-- Chemical Result Cards -->
+                                     <template x-if="selectedMethod === 'chemical'">
+                                         <template x-for="(result, index) in searchResults" :key="index">
+                                             <div class="bg-surface rounded-xl border border-blue-600/30 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300">
+                                                 <div class="h-2 w-full bg-primary"></div>
+                                                 <div class="p-6 space-y-4">
+                                                     <div class="flex justify-between items-start border-b border-slate-50 pb-3">
+                                                         <div class="flex-1">
+                                                              <p class="text-[10px] font-bold text-textmuted uppercase tracking-widest">Product Name</p>
+                                                              <p class="text-[15px] font-bold text-textprimary mt-0.5 leading-snug" x-text="(result.chemicalName || result.ChemicalName) || 'N/A'"></p>
+                                                         </div>
+                                                     </div>
+                                                     <div class="grid grid-cols-2 gap-x-6 gap-y-4 pt-1">
+                                                         <div>
+                                                              <p class="text-[10px] font-bold text-textmuted uppercase tracking-widest">HS Code</p>
+                                                              <p class="text-sm font-semibold text-textlabel mt-0.5" x-text="(result.hsCode || result.HsCode) || 'N/A'"></p>
+                                                         </div>
+                                                         <div>
+                                                              <p class="text-[10px] font-bold text-textmuted uppercase tracking-widest">CAS Number</p>
+                                                              <p class="text-sm font-semibold text-textlabel mt-0.5" x-text="(result.casNumber || result.CasNumber) || 'N/A'"></p>
+                                                         </div>
+                                                         <div class="col-span-2">
+                                                              <p class="text-[10px] font-bold text-textmuted uppercase tracking-widest">ECCN</p>
+                                                              <p class="text-sm font-semibold text-textlabel mt-0.5" x-text="(result.eccn || result.Eccn) || 'N/A'"></p>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         </template>
+                                     </template>
+
+                                     <!-- Non-Chemical Result Card -->
+                                     <template x-if="selectedMethod === 'nonchemical' && formData.matchedParagraph">
+                                         <div class="col-span-2">
+                                             <div class="bg-surface rounded-xl border border-blue-600/30 shadow-sm overflow-hidden p-6 space-y-4">
+                                                 <div class="flex items-center gap-3 border-b border-slate-50 pb-4">
+                                                     <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-primary">
+                                                         <i data-lucide="file-check" class="w-6 h-6"></i>
+                                                     </div>
+                                                     <div>
+                                                         <h3 class="text-sm font-bold text-textprimary">PDF Match Found</h3>
+                                                         <p class="text-[11px] text-textmuted">Keyword: <span class="font-bold text-primary" x-text="formData.searchKeyword"></span></p>
+                                                     </div>
+                                                 </div>
+                                                 <div class="bg-appbg p-6 rounded-xl border border-bordercolor italic text-textlabel leading-relaxed text-sm whitespace-pre-wrap" x-html="highlightKeyword(formData.matchedParagraph, formData.searchKeyword)"></div>
+                                                 <div class="flex items-center gap-2 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full w-fit">
+                                                     <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                                                     CASE CREATED SUCCESSFULLY
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </template>
+                                 </div>
+
+                                <!-- No Results State -->
+                                <div x-show="showResults && searchResults.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
+                                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-textmuted">
+                                        <i data-lucide="search-x" class="w-8 h-8"></i>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-textprimary">No matches found</h3>
+                                    <p class="text-sm text-textmuted mt-1 max-w-[250px]">Try adjusting your search terms to find a match in the UAE Control List.</p>
+                                </div>
+                            </div>
+</template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UAE Good Details Modal -->
+                <div x-show="isModalOpen" 
+                     class="fixed inset-0 z-50 overflow-y-auto" 
+                     aria-labelledby="modal-title" 
+                     role="dialog" 
+                     aria-modal="true"
+                     style="display:none;">
+                    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div x-show="isModalOpen" 
+                             x-transition:enter="ease-out duration-300" 
+                             x-transition:enter-start="opacity-0" 
+                             x-transition:enter-end="opacity-100" 
+                             x-transition:leave="ease-in duration-200" 
+                             x-transition:leave-start="opacity-100" 
+                             x-transition:leave-end="opacity-0" 
+                             class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+                             aria-hidden="true"></div>
+
+                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div x-show="isModalOpen" 
+                             x-transition:enter="ease-out duration-300" 
+                             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
+                             x-transition:leave="ease-in duration-200" 
+                             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
+                             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                             class="inline-block align-bottom bg-surface text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle w-full sm:max-w-4xl border-t-4 border-blue-600">
+                            
+                            <div class="bg-surface px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div class="flex justify-between items-center mb-6 pb-4 border-b">
+                                    <h3 class="text-xl leading-6 font-medium text-gray-900" id="modal-title">
+                                        UAE Good Details
+                                    </h3>
+                                    <button @@click="isModalOpen = false" class="text-gray-400 hover:text-gray-500">
+                                        <i data-lucide="x" class="w-6 h-6"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div class="col-span-2 space-y-6">
+                                        <div class="grid grid-cols-2 gap-6">
+                                            <div>
+                                                <h4 class="text-primary text-sm font-medium">CAS Number</h4>
+                                                <p class="text-textprimary mt-1" x-text="(selectedResult.casNumber || selectedResult.CasNumber) || '-'"></p>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-primary text-sm font-medium">Synonym Name</h4>
+                                                <p class="text-textprimary mt-1" x-text="(selectedResult.synonymName || selectedResult.SynonymName) || '-'"></p>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-primary text-sm font-medium">HS Code</h4>
+                                                <p class="text-textprimary mt-1" x-text="(selectedResult.hsCode || selectedResult.HsCode) || '-'"></p>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-primary text-sm font-medium">Chemical Name</h4>
+                                                <p class="text-textprimary mt-1" x-text="(selectedResult.chemicalName || selectedResult.ChemicalName) || '-'"></p>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-primary text-sm font-medium">ECCN</h4>
+                                                <p class="text-textprimary mt-1" x-text="(selectedResult.eccn || selectedResult.Eccn) || '-'"></p>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-primary text-sm font-medium">Physical State</h4>
+                                                <p class="text-textprimary mt-1" x-text="(selectedResult.physicalState || selectedResult.PhysicalState) || '-'"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t">
+                                <button type="button" @@click="isModalOpen = false" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2 bg-primary text-base font-medium text-white hover:bg-primary-hover focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Alpine.js Application Logic -->
+    <script>
+        function caseCreationData() {
+            return {
+                sidebarOpen: true,
+                selectedMethod: 'goods',
+                isLoading: false,
+                showResults: false,
+                isModalOpen: false,
+                isSuccessModalOpen: false,
+                caseRefId: '',
+                score: '0',
+                copied: false,
+                formData: {
+                    customerType: 'Goods',
+                    corporateId: '',
+                    companyName: '',
+                    hsCode: '',
+                    casNumber: '',
+                    eccn: '',
+                    chemicalName: '',
+                    synonymName: '',
+                    searchKeyword: '',
+                    matchedParagraph: ''
+                },
+                isDragging: false,
+                bulkResults: null,
+                selectedFile: null,
+                selectedResult: null,
+                selectedSearchType: 'chemical',
+                showGoodsSearchResults: false,
+                goodsSearchResults: [],
+                searchForm: {
+                    chemical: { hsCode: '', casNumber: '', eccn: '', chemicalName: '', synonymName: '' },
+                    nonchemical: { keyword: '' },
+                    military: { keyword: '' }
+                },
+
+                resetForm() {
+                    this.formData = {
+                        customerType: 'Goods',
+                        corporateId: this.formData.corporateId, 
+                        companyName: this.formData.companyName,
+                        hsCode: '',
+                        casNumber: '',
+                        eccn: '',
+                        chemicalName: '',
+                        synonymName: '',
+                        searchKeyword: '',
+                        matchedParagraph: ''
+                    };
+                    this.showResults = false;
+                    this.showGoodsSearchResults = false;
+                    this.searchResults = [];
+                    this.goodsSearchResults = [];
+                    this.nonChemicalResults = [];
+                    this.selectedFile = null;
+                    this.bulkResults = null;
+                    this.isDragging = false;
+                    this.searchForm = {
+                        chemical: { hsCode: '', casNumber: '', eccn: '', chemicalName: '', synonymName: '' },
+                        nonchemical: { keyword: '' },
+                        military: { keyword: '' }
+                    };
+                },
+
+                async fetchCorporateDetails() {
+                    if (!this.formData.corporateId) {
+                        toastr.error('Please enter a Corporate or Individual ID.', {
+                            tapToDismiss: true,
+                            showMethod: 'fadeIn',
+                            showDuration: 200
+                        });
+                        return;
+                    }
+                    this.isLoading = true;
+                    try {
+                        const searchTypes = ['C', 'I'];
+                        for (const type of searchTypes) {
+                            const formData = new URLSearchParams();
+                            formData.append('CompanyCode', this.formData.corporateId);
+                            formData.append('CustomerType', type);
+                            
+                            let result = await fetch('/Corporate/SearchCompanyCode', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded'
+                                },
+                                body: formData
+                            });
+                            let data = await result.json();
+                            if (data && data.length > 0) {
+                                this.formData.companyName = data[0].firstName || data[0].lastName;
+                                return;
+                            }
+                        }
+                        
+                        this.formData.companyName = '';
+                        toastr.error('No ID was found for the entered value.', {
+                            tapToDismiss: true,
+                            showMethod: 'fadeIn',
+                            showDuration: 200
+                        });
+                    } catch (err) {
+                        console.error(err);
+                        toastr.error('Error fetching company details.', {
+                            tapToDismiss: true,
+                            showMethod: 'fadeIn',
+                            showDuration: 200
+                        });
+                        
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                async submitSearch() {
+                    // Validation: At least one field populated
+                    const fd = this.formData;
+                    if (!fd.hsCode && !fd.casNumber && !fd.eccn && !fd.chemicalName && !fd.synonymName && !fd.searchKeyword) {
+                       toastr.error('Please fill at least one screening detail field.', {
+                            tapToDismiss: true,
+                            showMethod: 'fadeIn',
+                            showDuration: 200
+                        });
+                       
+                        return;
+                    }
+                    if (!fd.corporateId) {
+                        toastr.error('Corporate ID is required to create a case.', {
+                            tapToDismiss: true,
+                            showMethod: 'fadeIn',
+                            showDuration: 200
+                        });
+                        
+                        return;
+                    }
+
+                    this.isLoading = true;
+                    try {
+                        let response = await fetch('/ProliferationFinance/SearchChemicals', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.formData)
+                        });
+                        
+                        let data = await response.json();
+                        
+                        if (data && data.success) {
+                            this.caseRefId = data.caseRefId;
+                            this.score = data.score || '0';
+                            this.isSuccessModalOpen = true;
+                        } else {
+                             toastr.error(data.message || 'Error creating case', {
+                            tapToDismiss: true,
+                            showMethod: 'fadeIn',
+                            showDuration: 200
+                        });
+                            
+                        }
+                    } catch (e) {
+                         console.error(e);
+                          toastr.error('Server error occurred.', {
+                            tapToDismiss: true,
+                            showMethod: 'fadeIn',
+                            showDuration: 200
+                        });
+                         
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+
+                closeSuccess() {
+                    this.isSuccessModalOpen = false;
+                    this.resetForm();
+                },
+
+                highlightKeyword(text, keyword) {
+                    if (!text || !keyword) return text || '';
+                    // Escape special regex chars in keyword, then wrap matches in <mark>
+                    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const regex = new RegExp(`(${escaped})`, 'gi');
+                    return text.replace(regex, '<mark style="background:#fef08a;color:#713f12;border-radius:3px;padding:0 2px;font-weight:600;">$1</mark>');
+                },
+
+                openModal(resultItem) {
+                    this.selectedResult = resultItem;
+                    this.isModalOpen = true;
+                },
+
+                downloadAllResultsPDF() {
+                    if (this.goodsSearchResults.length === 0) return;
+
+                    try {
+                        toastr.info('Generating Master PDF...', { showDuration: 200, timeOut: 2000 });
+                        const payload = {
+                            CorporateId: this.formData.corporateId || '-',
+                            CompanyName: this.formData.companyName || '-',
+                            CustomerType: this.selectedSearchType === 'chemical' ? 'Chemical' : (this.selectedSearchType === 'military' ? 'Military' : 'Non-Chemical')
+                        };
+
+                        if (this.selectedSearchType === 'chemical') {
+                            const terms = [];
+                            if (this.searchForm.chemical.chemicalName) terms.push("Chemical Name: " + this.searchForm.chemical.chemicalName);
+                            if (this.searchForm.chemical.hsCode) terms.push("HS Code: " + this.searchForm.chemical.hsCode);
+                            if (this.searchForm.chemical.casNumber) terms.push("CAS Number: " + this.searchForm.chemical.casNumber);
+                            if (this.searchForm.chemical.eccn) terms.push("ECCN: " + this.searchForm.chemical.eccn);
+                            if (this.searchForm.chemical.synonymName) terms.push("Synonym Name: " + this.searchForm.chemical.synonymName);
+                            
+                            payload.MatchedChemicalName = terms.join("\n") || "-";
+
+                            this.goodsSearchResults.forEach((res, index) => {
+                                payload[`MatchedChemicals[${index}].ChemicalName`] = res.chemicalName || res.ChemicalName || '-';
+                                payload[`MatchedChemicals[${index}].HsCode`] = res.hsCode || res.HsCode || '-';
+                                payload[`MatchedChemicals[${index}].CasNumber`] = res.casNumber || res.CasNumber || '-';
+                                payload[`MatchedChemicals[${index}].Eccn`] = res.eccn || res.Eccn || '-';
+                                payload[`MatchedChemicals[${index}].SynonymName`] = res.synonymName || res.SynonymName || '-';
+                            });
+                        } else {
+                            payload.MatchedChemicalName = this.selectedSearchType === 'military' ? (this.searchForm.military.keyword || '-') : (this.searchForm.nonchemical.keyword || '-');
+                            payload.SearchHitDetails = this.goodsSearchResults.join('|||');
+                        }
+                        
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = '/ProliferationFinance/DownloadGoodsSearchPDF';
+                        
+                        for (const key in payload) {
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = key;
+                            input.value = payload[key];
+                            form.appendChild(input);
+                        }
+                        
+                        document.body.appendChild(form);
+                        form.submit();
+                        form.remove();
+                    } catch(e) {
+                        console.error(e);
+                        toastr.error('Error generating PDF.');
+                    }
+                },
+
+                handleFileSelect(file) {
+                    if (!file) return;
+                    this.selectedFile = file;
+                    this.bulkResults = null;
+                },
+
+                async submitBulkUpload() {
+                    if (!this.selectedFile) return;
+                    
+                    this.isLoading = true;
+                    this.bulkResults = null;
+                    
+                    const formData = new FormData();
+                    formData.append('file', this.selectedFile);
+
+                    try {
+                        let response = await fetch('/ProliferationFinance/BulkUploadCases', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        let data = await response.json();
+                        if (data && data.success) {
+                            this.bulkResults = data.summary;
+                            this.$nextTick(() => lucide.createIcons());
+                        } else {
+                             toastr.error(data.message || 'Error occurred during bulk upload', {
+                            tapToDismiss: true,
+                            showMethod: 'fadeIn',
+                            showDuration: 200
+                        });
+                            
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        toastr.error('Server error processing Excel file.', {
+                            tapToDismiss: true,
+                            showMethod: 'fadeIn',
+                            showDuration: 200
+                        });
+                        
+                    } finally {
+                        this.isLoading = false;
+                        // Reset file input
+                        if (this.$refs.fileInput) {
+                            this.$refs.fileInput.value = '';
+                        }
+                    }
+                },
+
+                async searchGoods() {
+                    const type = this.selectedSearchType;
+                    const criteria = type === 'chemical' ? this.searchForm.chemical : (type === 'military' ? { chemicalName: this.searchForm.military.keyword } : { chemicalName: this.searchForm.nonchemical.keyword });
+                    
+                    // Basic validation
+                    if (type === 'chemical' && !Object.values(criteria).some(x => x)) {
+                        toastr.warning('Please enter at least one search criterion.');
+                        return;
+                    }
+                    if (type === 'nonchemical' && !criteria.chemicalName) {
+                        toastr.warning('Please enter a search keyword.');
+                        return;
+                    }
+                    if (type === 'military' && !criteria.chemicalName) {
+                        toastr.warning('Please enter a search keyword.');
+                        return;
+                    }
+
+                    this.isLoading = true;
+                    this.showGoodsSearchResults = false;
+                    this.goodsSearchResults = [];
+
+                    try {
+                        let response = await fetch('/ProliferationFinance/SearchChemicalsOnly', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ...criteria,
+                                customerType: type === 'chemical' ? 'Chemical' : (type === 'military' ? 'Military' : 'Non-Chemical')
+                            })
+                        });
+                        
+                        let data = await response.json();
+                        if (data && data.success) {
+                            if ((type === 'nonchemical' || type === 'military') && data.results && data.results.length === 1 && typeof data.results[0] === 'string') {
+                                this.goodsSearchResults = data.results[0].split(/\n\n|---/).filter(s => s.trim() !== '');
+                            } else {
+                                this.goodsSearchResults = data.results || [];
+                            }
+                            this.showGoodsSearchResults = true;
+                            this.$nextTick(() => lucide.createIcons());
+                        } else {
+                            toastr.error(data.message || 'Error fetching search results');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                async addToCaseFromSearch(result) {
+                    if (!this.formData.corporateId) {
+                        toastr.error('Please enter and fetch a Corporate/Individual ID first.');
+                        // Switch back to goods tab to fill ID
+                        // Or I could just scroll up.
+                        return;
+                    }
+
+                    this.isLoading = true;
+                    try {
+                        // Prepare full search payload from result
+                        const payload = {
+                            corporateId: this.formData.corporateId,
+                            companyName: this.formData.companyName,
+                            hsCode: result.hsCode || result.HsCode || '',
+                            casNumber: result.casNumber || result.CasNumber || '',
+                            eccn: result.eccn || result.Eccn || '',
+                            chemicalName: result.chemicalName || result.ChemicalName || '',
+                            synonymName: result.synonymName || result.SynonymName || '',
+                            customerType: result.customerType || (this.selectedSearchType === 'chemical' ? 'Chemical' : (this.selectedSearchType === 'military' ? 'Military' : 'Non-Chemical'))
+                        };
+
+                        let response = await fetch('/ProliferationFinance/SearchChemicals', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        
+                        let data = await response.json();
+                        if (data && data.success) {
+                            this.caseRefId = data.caseRefId;
+                            this.score = data.score || '0';
+                            this.isSuccessModalOpen = true;
+                        } else {
+                            toastr.error(data.message || 'Error creating case');
+                        }
+                    } catch (e) {
+                         console.error(e);
+                         toastr.error('Error creating case from search result.');
+                    } finally {
+                        this.isLoading = false;
+                    }
+                }
+            }
+        }
+
+        // Initialize Lucide icons
+        document.addEventListener('alpine:init', () => {
+             lucide.createIcons();
+        });
+    </script>
+
+    <!-- MODAL: SUCCESS -->
+    <div x-show="isSuccessModalOpen" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md transition-all duration-200"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        <div @@click.away="closeSuccess()"
+             class="bg-surface rounded-[32px] shadow-2xl w-full max-w-md p-10 text-center relative overflow-hidden">
+            <button @@click="closeSuccess()"
+                    class="absolute top-5 right-5 text-textmuted hover:text-textlabel transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="absolute top-0 left-0 right-0 h-2 bg-emerald-500"></div>
+            <div class="flex flex-col items-center gap-8">
+                <div class="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center ring-8 ring-emerald-50/50">
+                    <i data-lucide="check-circle" class="w-12 h-12 text-emerald-500"></i>
+                </div>
+                <div class="space-y-3">
+                    <h2 class="text-2xl font-extrabold text-textprimary tracking-tight">Case Created Successful!</h2>
+                    <div class="flex items-center justify-center gap-6 py-2">
+                        <div>
+                            <p class="text-[10px] font-bold text-textmuted uppercase tracking-widest mb-1">Reference ID</p>
+                            <p class="text-xl font-black text-primary" x-text="caseRefId"></p>
+                        </div>
+                    </div>
+                    <p class="text-sm font-medium text-textmuted leading-relaxed px-4">
+                        <br><br><br>
+                    </p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 w-full pt-4">
+                    <button class="h-14 border-2 border-bordercolor rounded-2xl font-extrabold text-textlabel hover:bg-appbg flex items-center justify-center gap-2"
+                            @@click="navigator.clipboard.writeText(caseRefId);copied=true;setTimeout(()=>copied = false, 2000);">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                    </button>
+                    <a href="/ProliferationFinance/CaseManager"
+                       class="h-14 bg-primary text-white font-extrabold rounded-2xl flex items-center justify-center w-full">
+                        Go to Case
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

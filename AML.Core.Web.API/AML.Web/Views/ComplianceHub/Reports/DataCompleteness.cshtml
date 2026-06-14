@@ -1,0 +1,109 @@
+@using AML.ViewModel.ViewModels.ComplianceHub
+@using System.Linq
+@model DataCompletenessVM
+@{
+    ViewData["Title"] = "Data Completeness";
+    ViewData["ReportTitle"] = "Customer Data Completeness Scorecard";
+    ViewData["ReportSubtitle"] = "Per-field null-rate across the customer book + per-customer score. Surfaces onboarding gaps.";
+    ViewData["Theme"] = "Lifecycle";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+    string ScoreColor(double pct) => pct >= 80 ? "#059669" : pct >= 50 ? "#d97706" : "#dc2626";
+    string ScoreBg(double pct) => pct >= 80 ? "#d1fae5" : pct >= 50 ? "#fef3c7" : "#fee2e2";
+}
+
+<style>
+    .ring-wrap { width:120px; height:120px; position:relative; margin:0 auto; }
+    .ring-wrap svg { transform: rotate(-90deg); }
+    .ring-wrap .center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .ring-wrap .center .n { font-size:28px; font-weight:800; line-height:1; }
+    .ring-wrap .center .l { font-size:10px; text-transform:uppercase; font-weight:700; color:#94a3b8; margin-top:4px; }
+
+    .field-row { display:grid; grid-template-columns: 180px 1fr 60px; gap:14px; align-items:center; padding:10px 0; }
+    .field-row + .field-row { border-top:1px solid #f1f5f9; }
+    .field-name { font-weight:600; color:#334155; font-size:13px; }
+    .field-bar { height:10px; background:#f1f5f9; border-radius:5px; overflow:hidden; }
+    .field-bar > span { display:block; height:100%; border-radius:5px; transition: width .8s ease; }
+    .field-pct { font-size:13px; font-weight:800; text-align:right; }
+
+    .cust-bar { display:inline-block; width:100px; height:8px; background:#f1f5f9; border-radius:4px; vertical-align:middle; overflow:hidden; }
+    .cust-bar > span { display:block; height:100%; border-radius:4px; }
+</style>
+
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="_ReportShell" />
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white border border-slate-200 rounded-xl p-5">
+                <div class="ring-wrap">
+                    @{
+                        var pct = Model.OverallScore;
+                        var c = 100 * 2 * Math.PI * 50 / 100; // not exact but visual
+                        var dash = pct * 3.14;
+                        var color = ScoreColor(pct);
+                    }
+                    <svg width="120" height="120" viewBox="0 0 120 120">
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="#f1f5f9" stroke-width="14"/>
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="@color" stroke-width="14"
+                                stroke-dasharray="@(pct * 3.14) 314" stroke-linecap="round"/>
+                    </svg>
+                    <div class="center"><div class="n" style="color:@color;">@pct%</div><div class="l">Overall</div></div>
+                </div>
+                <div class="text-center mt-3 text-xs text-slate-500">Average completeness across @Model.TotalCustomers customers and @Model.Fields.Count fields.</div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl p-5 md:col-span-2">
+                <div class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">Field-level completeness</div>
+                @foreach (var f in Model.Fields.OrderByDescending(x => x.Pct))
+                {
+                    var col = ScoreColor(f.Pct);
+                    <div class="field-row">
+                        <div class="field-name">@f.DisplayName</div>
+                        <div class="field-bar"><span style="width:@(f.Pct)%; background:@col;"></span></div>
+                        <div class="field-pct" style="color:@col;">@f.Pct%</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">Customers — lowest score first</h3>
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50">
+                    <tr class="text-left text-xs uppercase font-bold text-slate-500">
+                        <th class="p-3">Customer</th>
+                        <th class="p-3">Score</th>
+                        <th class="p-3">Filled</th>
+                        <th class="p-3">Missing fields</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (!Model.Customers.Any())
+                {
+                    <tr><td colspan="4" class="p-12 text-center text-slate-500">No customers to score.</td></tr>
+                }
+                else
+                {
+                    foreach (var cust in Model.Customers.Take(200))
+                    {
+                        var col = ScoreColor(cust.Pct);
+                        <tr class="border-t border-slate-100 hover:bg-slate-50">
+                            <td class="p-3"><div class="font-semibold text-slate-800">@cust.FullName</div><div class="text-xs text-slate-500 font-mono">@cust.CustomerCode</div></td>
+                            <td class="p-3"><span style="color:@col;font-weight:800;">@cust.Pct%</span> <span class="cust-bar"><span style="width:@(cust.Pct)%; background:@col;"></span></span></td>
+                            <td class="p-3 text-slate-600">@cust.FilledCount / @cust.TotalChecked</td>
+                            <td class="p-3"><div class="flex flex-wrap gap-1">
+                                @foreach (var m in cust.MissingFields.Take(8))
+                                {
+                                    <span class="text-[10px] px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-100">@m</span>
+                                }
+                                @if (cust.MissingFields.Count > 8) { <span class="text-[10px] text-slate-400">+@(cust.MissingFields.Count - 8)</span> }
+                            </div></td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

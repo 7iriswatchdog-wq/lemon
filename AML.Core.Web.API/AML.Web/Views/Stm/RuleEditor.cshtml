@@ -1,0 +1,301 @@
+@model AML.ViewModel.ViewModels.SectoralTMS.StmRuleModel
+@{
+    ViewData["Title"] = Model.Id > 0 ? "Edit Rule" : "Create Rule";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    ViewBag.StmActive = "rules";
+}
+
+@await Html.PartialAsync("_StmLayout")
+
+<div class="px-6 pb-12">
+  <form id="ruleForm" method="post" action="/stm/rules/save">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="Id" value="@Model.Id" />
+
+    <div class="stm-card mb-4">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <div class="stm-page-title">@(Model.Id > 0 ? "Edit Rule" : "Create New Rule")</div>
+                <div class="stm-page-sub">Define a transaction monitoring rule. The system will run this rule on every new transaction.</div>
+            </div>
+            <a href="/stm/rules" class="stm-btn stm-btn-secondary"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Rules</a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+                <label class="stm-label">Rule Code *</label>
+                <input class="stm-input" name="RuleCode" value="@Model.RuleCode" placeholder="e.g. INS-R009" required />
+            </div>
+            <div>
+                <label class="stm-label">Sector *</label>
+                <select class="stm-select" name="SectorId" asp-items="Model.SectorList" required>
+                    <option value="">-- Select sector --</option>
+                </select>
+            </div>
+            <div>
+                <label class="stm-label">Risk Rating *</label>
+                <select class="stm-select" name="RiskRating">
+                    <option value="High"   selected="@(Model.RiskRating == "High")">High</option>
+                    <option value="Medium" selected="@(Model.RiskRating == "Medium")">Medium</option>
+                    <option value="Low"    selected="@(Model.RiskRating == "Low")">Low</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="md:col-span-2">
+                <label class="stm-label">Rule Name *</label>
+                <input class="stm-input" name="RuleName" value="@Model.RuleName" placeholder="e.g. High-Value Cash Property Purchase" required />
+            </div>
+            <div>
+                <label class="stm-label">Score (1-100)</label>
+                <input class="stm-input" type="number" name="RuleScore" value="@Model.RuleScore" min="1" max="100" />
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="stm-label">Description (what this rule detects)</label>
+            <textarea class="stm-input" name="RuleDescription" rows="2" placeholder="In plain English, describe what this rule looks for">@Model.RuleDescription</textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="stm-label">Combine conditions using</label>
+                <select class="stm-select" name="LogicalOperator">
+                    <option value="AND" selected="@(Model.LogicalOperator == "AND")">All conditions (AND)</option>
+                    <option value="OR"  selected="@(Model.LogicalOperator == "OR")">Any condition (OR)</option>
+                </select>
+            </div>
+            <div>
+                <label class="stm-label">Action on hit</label>
+                <select class="stm-select" name="ActionOnHit">
+                    <option value="CREATE_CASE" selected="@(Model.ActionOnHit == "CREATE_CASE")">Create case for review</option>
+                    <option value="FLAG"        selected="@(Model.ActionOnHit == "FLAG")">Flag only (no case)</option>
+                    <option value="BLOCK"       selected="@(Model.ActionOnHit == "BLOCK")">Block transaction</option>
+                </select>
+            </div>
+            <div>
+                <label class="stm-label">Active</label>
+                <select class="stm-select" name="IsActive">
+                    <option value="1" selected="@(Model.IsActive == 1)">Yes</option>
+                    <option value="0" selected="@(Model.IsActive == 0)">No</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conditions builder -->
+    <div class="stm-card mb-4">
+        <div class="flex items-center justify-between mb-3">
+            <div class="stm-section-title mb-0">Conditions <span class="text-xs font-normal text-slate-500">- a rule hits when these conditions are met</span></div>
+            <button type="button" class="stm-btn stm-btn-secondary" onclick="addCondition()"><i data-lucide="plus" class="w-4 h-4"></i> Add Condition</button>
+        </div>
+
+        <div id="conditionsList" class="space-y-3"></div>
+    </div>
+
+    <div class="flex justify-end gap-3">
+        <a href="/stm/rules" class="stm-btn stm-btn-secondary">Cancel</a>
+        <button type="submit" class="stm-btn stm-btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Save Rule</button>
+    </div>
+  </form>
+</div>
+
+@*
+   Hidden template for one condition row. Cloned by JS when "Add Condition" is clicked.
+   Inputs use the indexed binder convention required by ASP.NET model binding for List<T>.
+*@
+<template id="conditionTemplate">
+    <div class="condition-row bg-slate-50 rounded-lg p-4 border border-slate-200">
+        <div class="grid grid-cols-12 gap-3 items-end">
+            <div class="col-span-6 md:col-span-2">
+                <label class="stm-label">Aggregation</label>
+                <select class="stm-select cond-agg">
+                    <option value="">None (this transaction)</option>
+                    <option value="Count">Count (over time)</option>
+                    <option value="Sum">Sum (over time)</option>
+                </select>
+            </div>
+            <div class="col-span-6 md:col-span-3">
+                <label class="stm-label">Field</label>
+                <select class="stm-select cond-field">
+                    <option value="">-- field --</option>
+                    <optgroup label="Transaction">
+                      <option value="Amount">Amount</option>
+                      <option value="Currency">Currency</option>
+                      <option value="TranType">Transaction Type</option>
+                      <option value="TranMode">Payment Mode</option>
+                      <option value="DeliveryChannel">Delivery Channel</option>
+                      <option value="Product">Product</option>
+                    </optgroup>
+                    <optgroup label="Customer">
+                      <option value="CustomerType">Customer Type (I/C)</option>
+                      <option value="CustomerNationality">Customer Nationality</option>
+                      <option value="CustomerId">Customer ID</option>
+                      <option value="IsHighRiskCustomer">High-Risk Customer Flag</option>
+                      <option value="HasPEP">Has PEP (politically exposed)</option>
+                    </optgroup>
+                    <optgroup label="Counter-party">
+                      <option value="BeneficiaryCountry">Beneficiary Country</option>
+                      <option value="RemitterCountry">Remitter Country</option>
+                      <option value="BeneficiaryName">Beneficiary Name</option>
+                      <option value="RemitterId">Remitter ID</option>
+                    </optgroup>
+                    <optgroup label="Insurance">
+                      <option value="PolicyNo">Policy No.</option>
+                      <option value="PolicyAgeMonths">Policy Age (Months)</option>
+                      <option value="NomineeNationality">Nominee Nationality</option>
+                      <option value="PriorTranType">Prior Tran Type (history)</option>
+                      <option value="SubsequentTranType">Subsequent Tran Type (history)</option>
+                    </optgroup>
+                    <optgroup label="Real Estate">
+                      <option value="PropertyValue">Property Value</option>
+                      <option value="PriceDeviationPct">Price Deviation %</option>
+                      <option value="PreviousOwnershipDays">Previous Ownership Days</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="col-span-6 md:col-span-2">
+                <label class="stm-label">Operator</label>
+                <select class="stm-select cond-op" onchange="toggleCompareField(this)">
+                    <option value="equals">equals</option>
+                    <option value="not_equals">not equals</option>
+                    <option value="equals_field">equals field</option>
+                    <option value="not_equals_field">not equals field</option>
+                    <option value="gt">greater than (&gt;)</option>
+                    <option value="gte">greater or equal (&gt;=)</option>
+                    <option value="lt">less than (&lt;)</option>
+                    <option value="lte">less or equal (&lt;=)</option>
+                    <option value="contains">contains</option>
+                    <option value="not_contains">does not contain</option>
+                    <option value="in">in list</option>
+                    <option value="not_in">not in list</option>
+                    <option value="in_high_risk_list">in high-risk country list</option>
+                    <option value="between">between</option>
+                </select>
+            </div>
+            <div class="col-span-6 md:col-span-3 cond-value-wrap">
+                <label class="stm-label">Value</label>
+                <input class="stm-input cond-value" placeholder="value (or comma-sep for list)" />
+            </div>
+            <div class="col-span-6 md:col-span-3 cond-compare-wrap hidden">
+                <label class="stm-label">Compare to field</label>
+                <select class="stm-select cond-compare-field">
+                    <option value="">-- field --</option>
+                    <optgroup label="Transaction">
+                      <option value="Amount">Amount</option>
+                      <option value="Currency">Currency</option>
+                      <option value="TranType">Transaction Type</option>
+                      <option value="TranMode">Payment Mode</option>
+                    </optgroup>
+                    <optgroup label="Customer">
+                      <option value="CustomerType">Customer Type (I/C)</option>
+                      <option value="CustomerNationality">Customer Nationality</option>
+                      <option value="CustomerId">Customer ID</option>
+                    </optgroup>
+                    <optgroup label="Counter-party">
+                      <option value="BeneficiaryCountry">Beneficiary Country</option>
+                      <option value="RemitterCountry">Remitter Country</option>
+                      <option value="RemitterId">Remitter ID</option>
+                    </optgroup>
+                    <optgroup label="Insurance">
+                      <option value="NomineeNationality">Nominee Nationality</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="col-span-6 md:col-span-2">
+                <label class="stm-label">Timeframe</label>
+                <div class="flex gap-1">
+                    <input class="stm-input cond-tf-val" placeholder="#" style="max-width:60px" />
+                    <select class="stm-select cond-tf-unit">
+                        <option value="">--</option>
+                        <option value="Day">Day(s)</option>
+                        <option value="Week">Week(s)</option>
+                        <option value="Month">Month(s)</option>
+                        <option value="Year">Year(s)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-span-4 md:col-span-1">
+                <label class="stm-label">Join</label>
+                <select class="stm-select cond-conj">
+                    <option value="AND">AND</option>
+                    <option value="OR">OR</option>
+                </select>
+            </div>
+            <div class="col-span-2 md:col-span-1 text-right">
+                <button type="button" class="stm-btn stm-btn-danger" onclick="this.closest('.condition-row').remove(); refreshNames();" title="Remove">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    // ----- Data bootstrap from server-side model -----
+    const initialConditions = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Conditions ?? new List<AML.ViewModel.ViewModels.SectoralTMS.StmRuleConditionModel>()));
+
+    function addCondition(c) {
+        const tpl = document.getElementById('conditionTemplate');
+        const node = tpl.content.cloneNode(true);
+        if (c) {
+            node.querySelector('.cond-agg').value   = c.fieldAggregation || c.FieldAggregation || '';
+            node.querySelector('.cond-field').value = c.fieldName || c.FieldName || '';
+            node.querySelector('.cond-op').value    = c.operator || c.Operator || 'equals';
+            node.querySelector('.cond-value').value = c.compareValue || c.CompareValue || '';
+            node.querySelector('.cond-compare-field').value = c.compareField || c.CompareField || '';
+            node.querySelector('.cond-tf-val').value = c.timeframeValue || c.TimeframeValue || '';
+            node.querySelector('.cond-tf-unit').value = c.timeframeUnit || c.TimeframeUnit || '';
+            node.querySelector('.cond-conj').value   = c.conjunction || c.Conjunction || 'AND';
+        }
+        document.getElementById('conditionsList').appendChild(node);
+        // Apply the compare-field visibility to the row we just added (the last one).
+        const rows = document.querySelectorAll('#conditionsList .condition-row');
+        toggleCompareField(rows[rows.length - 1].querySelector('.cond-op'));
+        refreshNames();
+        if (window.lucide) lucide.createIcons();
+    }
+
+    // Show "Compare to field" instead of "Value" for *_field operators.
+    function toggleCompareField(opSelect) {
+        const row = opSelect.closest('.condition-row');
+        const isField = (opSelect.value || '').endsWith('_field');
+        row.querySelector('.cond-value-wrap').classList.toggle('hidden', isField);
+        row.querySelector('.cond-compare-wrap').classList.toggle('hidden', !isField);
+    }
+
+    function refreshNames() {
+        // Set proper indexed input names so model binder rebuilds the list on POST.
+        const rows = document.querySelectorAll('#conditionsList .condition-row');
+        rows.forEach((row, idx) => {
+            row.querySelector('.cond-agg').name      = `Conditions[${idx}].FieldAggregation`;
+            row.querySelector('.cond-field').name    = `Conditions[${idx}].FieldName`;
+            row.querySelector('.cond-op').name       = `Conditions[${idx}].Operator`;
+            row.querySelector('.cond-value').name    = `Conditions[${idx}].CompareValue`;
+            row.querySelector('.cond-compare-field').name = `Conditions[${idx}].CompareField`;
+            row.querySelector('.cond-tf-val').name   = `Conditions[${idx}].TimeframeValue`;
+            row.querySelector('.cond-tf-unit').name  = `Conditions[${idx}].TimeframeUnit`;
+            row.querySelector('.cond-conj').name     = `Conditions[${idx}].Conjunction`;
+            // Hidden sequence
+            let seq = row.querySelector('input[type=hidden].cond-seq');
+            if (!seq) {
+                seq = document.createElement('input');
+                seq.type = 'hidden';
+                seq.className = 'cond-seq';
+                row.appendChild(seq);
+            }
+            seq.name = `Conditions[${idx}].SequenceNo`;
+            seq.value = idx + 1;
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) lucide.createIcons();
+        if (initialConditions && initialConditions.length) {
+            initialConditions.forEach(c => addCondition(c));
+        } else {
+            addCondition(); // start with 1 blank condition
+        }
+    });
+</script>

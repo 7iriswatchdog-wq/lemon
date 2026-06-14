@@ -1,0 +1,285 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+
+@{
+    ViewData["Title"] = @localizer["Transaction Case Report"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+@model AML.ViewModel.ViewModels.Report.ReportLogSearchModel
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<style>
+select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.41 0L6 4.59L10.59 0L12 1.42L6 7.42L0 1.42L1.41 0Z' fill='white'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position-x: calc(100% - 20px) !important;
+    background-position-y: 50% !important;
+}
+
+select option {
+    background-color: #1a2038;
+}
+</style>
+<div class="container-fluid aml-transaction-case-report">
+    <div class="sas-breadcrumbs aml-breadcrumbs pb-3">
+        <ul class="mb-0 pl-0 d-flex">
+            <li><a href="#">Home</a></li>/
+            <li><a href="#">Reports</a></li>/
+            <li><a href="#">Transaction Case Report</a></li>
+        </ul>
+    </div>
+    <div class="page-heading">
+        <div class="sas-card rounded-card br-20 mb-2 bg-blue">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><b>Transaction  Case Report</b></h4>
+                <div class="menu-icon">
+                    <i class="lni lni-microsoft"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.card-header -->
+    <!-- form start -->
+    <!--form role="form" asp-controller="Case" asp-action="SanctionScreening" class="form-horizontal" enctype="multipart/form-data" method="post"-->
+    <div class="sas-card rounded-card mb-2 bg-blue">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">Transaction Monitor Filter</h6>
+        </div>
+        <hr />
+        <div class="form-contents">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="dtDOB">@localizer["Start Date"]</label>
+                    <input type="date" asp-for="StartDate" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="dtStartDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder="Start Date">
+                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="dtDOB">@localizer["End Date"]</label>
+                    <input type="date" asp-for="EndDate" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="dtEndDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder="End Date">
+                    @*<input type="date" asp-for="EndDate" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="dtEndDate" min="@(DateTime.Now.ToString("yyyy-MM-dd"))" max="3000-12-30" placeholder="End Date">*@
+                    <span asp-validation-for="EndDate" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+       @* <div class="row">*@
+            @*  <div class="col-sm">
+                    <div class="form-group">
+                        <label for="userID">@localizer["Customer Type"]</label>
+                        <select asp-for="CustomerType" class="custom-select rounded-0" asp-items="@Model.CustomerCategories" id="customertype">
+                            <option value="0">--@localizer["SELECT"]--</option>
+                        </select>
+                    </div>
+                </div>*@
+            @*<div class="col-sm">
+                    <div class="form-group">
+                        <label for="caseStatusID">@localizer["Case Status"]</label>
+                        <select asp-for="CaseStatus" class="custom-select rounded-0" asp-items="@Model.CaseStatusList" id="caseStatusID">
+                        </select>
+                    </div>
+                </div>
+                 <div class="col-sm">
+                    <div class="form-group">
+                        <label for="UpdatedByUserID">@localizer["Updated by"]</label>
+                        <select asp-for="UpdatedByUserID" class="custom-select rounded-0" asp-items="@Model.Users" id="UpdatedByUserID">
+                            <option value="0">--@localizer["SELECT"]--</option>
+                        </select>
+                    </div>
+                </div>*@
+        @*</div>*@
+        @*<div class="row">*@
+            @* <div class="col-sm">
+                    <div class="form-group">
+                        <label for="CreatedByUserID">@localizer["Created by"]</label>
+                        <select asp-for="CreatedByUserID" class="custom-select rounded-0" asp-items="@Model.Users" id="CreatedByUserID">
+                            <option value="0">--@localizer["SELECT"]--</option>
+                        </select>
+                    </div>
+                </div>*@
+
+        @*</div>*@
+   
+    <div class="row justify-content-end">
+            <button type="submit" id="btnSearch" class="h-10 px-4 rounded-lg border border-bordercolor bg-surface hover:bg-appbg text-textprimary text-[13px] font-bold transition-colors" onclick="LoadTable();">@localizer["Go"]</button>
+            <button type="reset" id="btnReset" class="h-10 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[13px] font-bold transition-colors ml-2 mr-3">Reset</button>
+    </div>
+     </div>
+    <!-- /.card-body -->
+    <!--/form-->
+</div>
+
+
+
+    <div class="sas-card rounded-card mb-2 bg-blue">
+        <div class="d-flex justify-content-between align-items-center mt-3">
+        <div style="width: 100%; padding-left: -10px;">
+            <div class="table-responsive">
+                @*  <button type="button" onclick="ExportList(true);" class="btn btn-default mb-2" style="background-color:#f8f9fa;border-color:#ddd;">@localizer["Export to PDF"]<i class="fas fa-file-pdf"></i></button>
+                    <button type="button" onclick="ExportList(false);" class="btn btn-default mb-2" style="background-color:#f8f9fa;border-color:#ddd;">@localizer["Export to Excel"]<i class="fas fa-file-excel-o"></i></button>*@
+                <table id="filterTable" class="w-full text-sm text-left" cellspacing="0">
+                    <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                        <tr>
+                            <th id="KYCDetails">@localizer["Details"]</th>
+                            <th>@localizer["Transaction RefNo"]</th>
+                            <th>@localizer["Case Count"]</th>
+                            <th>@localizer["Pending Count"]</th>
+                            <th>@localizer["Approved Count"]</th>
+                            <th>@localizer["Rejected Count"]</th>
+                            <th>@localizer["Created Date"]</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        LoadTable();
+
+    });
+
+    function LoadTable() {
+        $('#filterTable').DataTable({
+            "serverSide": true, "processing": true,
+            ajax: {
+                url: '/Report/TransactionCaseReportCustompagination',
+                type: 'POST',
+                data: function (d) {
+
+                    d.startDate = $('#dtStartDate').val(),
+                    d.endDate = $('#dtEndDate').val()
+
+                }
+            },
+            columns: [
+                 {
+                    data: "view", "name": "View", "autoWidth": true,
+                    "render": function (data, type, full, meta)
+                    {
+                        return '<a class="btn btn-info" href="/Report/ViewTransactionCaseDetails/' + full.tranrefno + '">@localizer["View"]</a>'; }
+
+                    },
+
+                   {
+                    "data": "tranrefno", "name": "Tran Ref No", "autoWidth": true,
+                    "render": function (data, type, row) {
+                        return row.tranrefno;
+                    }
+                },
+
+
+                //{
+                //    "data": "createdon", "name": "Created On", "autoWidth": true,
+                //    "render": function (data, type, row) {
+
+                //         var createdDate = new Date(row.custCreatedOn);
+                //        createdDate = createdDate.getMonth() + 1 + "/" + createdDate.getDate() + "/" + createdDate.getFullYear();
+                //        return createdDate;
+                //    }
+                //},
+
+                  {
+                    "data": "caseCount", "name": "Case #", "autoWidth": true,
+                    "render": function (data, type, row) {
+                        return row.caseCount;
+                    }
+
+               },
+                 {
+                    "data": "pending", "name": "Pending #", "autoWidth": true,
+                    "render": function (data, type, row) {
+                        return row.pending;
+                    }
+
+               },
+               {
+                    "data": "approved", "name": "Approved #", "autoWidth": true,
+                    "render": function (data, type, row) {
+                        return row.approved;
+                    }
+
+               },
+               {
+                    "data": "rejected", "name": "Rejected #", "autoWidth": true,
+                    "render": function (data, type, row) {
+                        return row.rejected;
+                    }
+
+               },
+                { data: "createdOn" }
+
+
+            ],
+            error: function (e, message) {
+                jQuery("#filterTable").dataTable({
+
+                }),
+                    alert(message);
+            },
+
+            destroy: true
+
+        });
+        if ($('#dtStartDate').val() == '0001-01-01') {
+            $('#dtStartDate').val('');
+            $('#dtEndDate').val('');
+        }
+    }
+
+    function saveByteArray(reportName, byte) {
+        var blob = new Blob([byte], {type: "application/pdf"});
+        var link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        var fileName = reportName;
+        link.download = fileName;
+        link.click();
+    };
+
+    function ExportList(isPDF) {
+        console.log('Get file from', `/Report/ExportCaseReport?${new URLSearchParams({
+            createdByUserId: $('#CreatedByUserID').val(),
+            updatedByUserId: $('#UpdatedByUserID').val(),
+            startDate: $('#dtStartDate').val(),
+            endDate: $("#dtEndDate").val(),
+            status: $('#caseStatusID').val(),
+            IsPDF: isPDF
+        })}`)
+        window.location = `/Report/ExportCaseReport?${new URLSearchParams({
+            createdByUserId: $('#CreatedByUserID').val(),
+            updatedByUserId: $('#UpdatedByUserID').val(),
+            startDate: $('#dtStartDate').val(),
+            endDate: $("#dtEndDate").val(),
+            status: $('#caseStatusID').val(),
+            IsPDF: isPDF
+        })}`;
+    }
+    $("#btnReset").click(function () {
+        var date = new Date();
+        var day = date.getDate();
+        var month = date.getMonth() + 1;
+        var year = date.getFullYear();
+        if (month < 10) month = "0" + month;
+        if (day < 10) day = "0" + day;
+        var today = year + "-" + month + "-" + day;
+        var ddate = new Date(date.setDate(date.getDate() - 7));
+        var day1 = ddate.getDate();
+        var month1 = ddate.getMonth() + 1;
+        var year1 = ddate.getFullYear();
+        if (month1 < 10) month1 = "0" + month1;
+        if (day1 < 10) day1 = "0" + day1;
+        var stdate = year1 + "-" + month1 + "-" + day1;
+        $('#dtStartDate').val(stdate);
+        $('#dtEndDate').val(today);
+        LoadTable();
+    });
+</script>

@@ -1,0 +1,52 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@using System.Collections.Generic
+@model List<AuditLogItemVM>
+@{
+    ViewData["Title"] = "Tracker Audit Log";
+    ViewData["ActiveTab"] = "AuditLog";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+<section class="content py-6 px-4">
+    <div class="max-w-[1300px] mx-auto">
+        <div class="mb-3">
+            <h1 class="text-2xl font-semibold text-slate-800">Tracker Audit Log</h1>
+            <p class="text-sm text-slate-500">Every batch action recorded against the Tracker (most recent first).</p>
+        </div>
+
+        <partial name="_TrackerTabs" />
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left">
+                        <th class="px-3 py-2">When</th>
+                        <th class="px-3 py-2">User</th>
+                        <th class="px-3 py-2">Action</th>
+                        <th class="px-3 py-2 text-right">Affected</th>
+                        <th class="px-3 py-2">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="5" class="px-3 py-12 text-center text-slate-500">No audit entries yet.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var a in Model)
+                        {
+                            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                <td class="px-3 py-2 text-slate-600 whitespace-nowrap">@(a.CreatedOn?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")</td>
+                                <td class="px-3 py-2">@a.UserName</td>
+                                <td class="px-3 py-2"><span class="px-2 py-0.5 text-xs rounded bg-slate-100 text-slate-700">@a.Action</span></td>
+                                <td class="px-3 py-2 text-right font-semibold">@a.AffectedCount</td>
+                                <td class="px-3 py-2 text-xs text-slate-600">@a.Details</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

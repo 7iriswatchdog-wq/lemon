@@ -1,0 +1,97 @@
+@model List<AML.ViewModel.ViewModels.SectoralTMS.StmRuleModel>
+@{
+    ViewData["Title"] = "STM - Rules";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    ViewBag.StmActive = "rules";
+}
+
+@await Html.PartialAsync("_StmLayout")
+
+<div class="px-6 pb-12">
+    <div class="stm-card">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+                <div class="stm-page-title">Monitoring Rules</div>
+                <div class="stm-page-sub">Define how transactions are evaluated for AML/CFT risk</div>
+            </div>
+            <a href="/stm/rules/create" class="stm-btn stm-btn-primary">
+                <i data-lucide="plus" class="w-4 h-4"></i> New Rule
+            </a>
+        </div>
+
+        <div class="flex flex-wrap gap-3 mb-4">
+            <a href="/stm/rules" class="stm-nav-pill @(string.IsNullOrEmpty(ViewBag.ActiveSector as string) ? "active" : "")">All Sectors</a>
+            <a href="/stm/rules?sector=INS" class="stm-nav-pill @((ViewBag.ActiveSector as string) == "INS" ? "active" : "")">Insurance</a>
+            <a href="/stm/rules?sector=RE" class="stm-nav-pill @((ViewBag.ActiveSector as string) == "RE" ? "active" : "")">Real Estate</a>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="stm-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Rule Name</th>
+                        <th>Sector</th>
+                        <th>Risk</th>
+                        <th>Score</th>
+                        <th>Conditions</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model == null || Model.Count == 0)
+                    {
+                        <tr><td colspan="8" class="text-center text-slate-500 py-8">No rules found. Click "New Rule" to create one.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var rule in Model)
+                        {
+                            <tr>
+                                <td class="font-mono text-xs">@rule.RuleCode</td>
+                                <td>
+                                    <div class="font-medium text-slate-900">@rule.RuleName</div>
+                                    <div class="text-xs text-slate-500">@rule.RuleDescription</div>
+                                </td>
+                                <td>@rule.SectorName</td>
+                                <td><span class="stm-badge @(rule.RiskRating?.ToLower() ?? "low")">@rule.RiskRating</span></td>
+                                <td>@rule.RuleScore</td>
+                                <td>@(rule.Conditions?.Count ?? 0)</td>
+                                <td>
+                                    <label class="inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="rule-toggle" data-id="@rule.Id" @(rule.IsActive == 1 ? "checked" : "") />
+                                        <span class="ml-2 text-xs text-slate-600">@(rule.IsActive == 1 ? "Active" : "Inactive")</span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <a href="/stm/rules/edit/@rule.Id" class="text-blue-600 hover:text-blue-800 text-xs font-medium"><i data-lucide="edit-2" class="w-4 h-4 inline"></i> Edit</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) lucide.createIcons();
+        document.querySelectorAll('.rule-toggle').forEach(t => {
+            t.addEventListener('change', async (e) => {
+                const id = e.target.dataset.id;
+                const isActive = e.target.checked ? 1 : 0;
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                const fd = new FormData(); fd.append('isActive', isActive);
+                try {
+                    const r = await fetch('/stm/rules/toggle/' + id, { method: 'POST', body: fd, headers: token ? { 'RequestVerificationToken': token } : {} });
+                    const j = await r.json();
+                    if (!j.success) alert('Failed: ' + (j.message || ''));
+                } catch (err) { alert('Error: ' + err.message); }
+            });
+        });
+    });
+</script>
+@Html.AntiForgeryToken()

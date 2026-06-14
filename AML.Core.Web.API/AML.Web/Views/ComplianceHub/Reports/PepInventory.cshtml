@@ -1,0 +1,99 @@
+@using AML.ViewModel.ViewModels.ComplianceHub
+@using System.Linq
+@model PepInventoryVM
+@{
+    ViewData["Title"] = "PEP Inventory";
+    ViewData["ReportTitle"] = "Politically Exposed Person (PEP) Inventory";
+    ViewData["ReportSubtitle"] = "All customers flagged as a confirmed Domestic or Foreign PEP, plus jurisdictional concentration.";
+    ViewData["Theme"] = "Screening";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+    var max = Model.ByJurisdiction.Any() ? Model.ByJurisdiction.Max(j => j.Value) : 1;
+}
+
+<style>
+    .pep-stat-row { display:grid; grid-template-columns: repeat(3,1fr); gap:12px; margin-bottom:18px; }
+    .pep-stat { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:18px; display:flex; align-items:center; gap:14px; }
+    .pep-stat .ic { width:50px; height:50px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; }
+    .pep-stat .n { font-size:28px; font-weight:800; line-height:1; }
+    .pep-stat .l { font-size:11px; text-transform:uppercase; font-weight:700; color:#64748b; margin-top:6px; }
+
+    .juris-row { display:grid; grid-template-columns: 180px 1fr 50px; gap:14px; align-items:center; padding:8px 0; }
+    .juris-row + .juris-row { border-top:1px solid #f1f5f9; }
+    .juris-name { font-size:13px; font-weight:600; color:#334155; }
+    .juris-bar { height:10px; background:#f1f5f9; border-radius:5px; overflow:hidden; }
+    .juris-bar > span { display:block; height:100%; background:linear-gradient(90deg,#a855f7,#7c3aed); border-radius:5px; }
+    .juris-cnt { font-size:14px; font-weight:800; text-align:right; color:#7c3aed; }
+</style>
+
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="_ReportShell" />
+
+        <div class="pep-stat-row">
+            <div class="pep-stat">
+                <div class="ic" style="background:#f3e8ff;color:#6b21a8;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M5 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg></div>
+                <div><div class="n" style="color:#6b21a8;">@Model.Rows.Count</div><div class="l">Total PEPs</div></div>
+            </div>
+            <div class="pep-stat">
+                <div class="ic" style="background:#dbeafe;color:#1e40af;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+                <div><div class="n" style="color:#1e40af;">@Model.Domestic</div><div class="l">Domestic PEPs</div></div>
+            </div>
+            <div class="pep-stat">
+                <div class="ic" style="background:#ccfbf1;color:#115e59;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/></svg></div>
+                <div><div class="n" style="color:#115e59;">@Model.Foreign</div><div class="l">Foreign PEPs</div></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="bg-white border border-slate-200 rounded-xl p-5 lg:col-span-1">
+                <div class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">By jurisdiction</div>
+                @if (!Model.ByJurisdiction.Any())
+                {
+                    <div class="text-sm text-slate-500 py-8 text-center">No PEP customers recorded.</div>
+                }
+                else
+                {
+                    foreach (var j in Model.ByJurisdiction)
+                    {
+                        var pct = max == 0 ? 0 : (j.Value * 100 / max);
+                        <div class="juris-row">
+                            <div class="juris-name">@j.Key</div>
+                            <div class="juris-bar"><span style="width:@(pct)%"></span></div>
+                            <div class="juris-cnt">@j.Value</div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl overflow-hidden lg:col-span-2">
+                <div class="text-sm font-bold uppercase tracking-wider text-slate-500 px-5 py-4 border-b border-slate-100">PEP register</div>
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50"><tr class="text-left text-xs uppercase font-bold text-slate-500"><th class="p-3">Customer</th><th class="p-3">Type</th><th class="p-3">Nationality</th><th class="p-3">Status</th><th class="p-3">Created</th></tr></thead>
+                    <tbody>
+                    @if (!Model.Rows.Any())
+                    {
+                        <tr><td colspan="5" class="p-12 text-center text-slate-500">No PEPs flagged.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var r in Model.Rows)
+                        {
+                            <tr class="border-t border-slate-100 hover:bg-slate-50">
+                                <td class="p-3"><div class="font-semibold text-slate-800">@r.FullName</div><div class="text-xs text-slate-500 font-mono">@r.CustomerCode</div></td>
+                                <td class="p-3">
+                                    @if (r.IsDomestic) {<span class="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 font-semibold mr-1">Domestic</span>}
+                                    @if (r.IsForeign)  {<span class="text-[10px] px-2 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-100 font-semibold">Foreign</span>}
+                                </td>
+                                <td class="p-3 text-slate-600">@r.Nationality</td>
+                                <td class="p-3 text-xs text-slate-600">@r.CaseStatus</td>
+                                <td class="p-3 text-xs text-slate-500">@r.CreatedOn.ToString("yyyy-MM-dd")</td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>

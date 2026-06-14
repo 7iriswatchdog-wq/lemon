@@ -1,0 +1,362 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Risk Report";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@model AML.ViewModel.ViewModels.Risk.RiskRequestModel
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Loader -->
+<div id="loadingRiskTypeCategory" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+</div>
+
+<style>
+    /* Loader animation */
+    .dt-loader {
+        position: relative;
+        width: 80px;
+        height: 20px;
+        display: inline-block;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0,1,1,0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+
+    /* Table design */
+    #riskReportTbl, #riskReportTbl th, #riskReportTbl td {
+        border: none !important;
+        border-radius: 0 !important;
+    }
+
+    #riskReportTbl {
+        border-collapse: collapse;
+    }
+
+    th.sortable {
+        position: relative;
+        padding-right: 20px;
+        cursor: pointer;
+    }
+
+        th.sortable::after {
+            content: '▲\A▼';
+            white-space: pre;
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: #bbb;
+            text-align: center;
+            line-height: 1;
+        }
+
+        th.sortable.active.asc::after {
+            content: '▲';
+            color: #000;
+        }
+
+        th.sortable.active.desc::after {
+            content: '\A▼';
+            color: #000;
+        }
+</style>
+<div class="max-w-screen h-full items-center ">
+    <!-- Header -->
+    @* <nav class="border-b mb-6">
+    <div class="flex justify-between p-5">
+        <h2 class="text-2xl font-bold">Risk Report</h2>
+        <div class="hidden md:block"><img src="@Clientlogo" alt="Client Logo" width="50px" /></div>
+    </div>
+</nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Risk Report
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+
+    <div class="h-auto bg-gray-50 items-center  ">
+        <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4  mx-auto space-y-4">
+            <!-- Filter Section (unchanged) -->
+            <div class="w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+                <h1 class="text-lg font-semibold mb-4">Risk Report Filter</h1>
+                <form id="filterForm" class="space-y-6">
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Date Range, Risk Type/Level, Duplicate, Created By -->
+                        <div>
+                            <label class="block mb-2 text-sm">From Date</label>
+                            <input type="date" asp-for="FromDate" id="dtFromDate" class="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm"
+                                   max="@DateTime.Now:yyyy-MM-dd" />
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm">To Date</label>
+                            <input type="date" asp-for="ToDate" id="dtToDate" class="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm"
+                                   max="@DateTime.Now:yyyy-MM-dd" />
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm">Risk Type</label>
+                            <select asp-for="RiskType" id="ddlRiskType" class="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm">
+                                <option value="All">All</option>
+                                <option value="Individual">Individual</option>
+                                <option value="Corporate">Corporate</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm">Risk Level</label>
+                            <select asp-for="RiskLevel" id="ddlRiskLevel" class="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm">
+                                <option value="0">All</option>
+                                <option value="1">Low</option>
+                                <option value="2">Medium</option>
+                                <option value="3">High</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm">With Duplicate</label>
+                            <select asp-for="WithDuplicate" id="ddlWithDuplicate" class="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm">
+                                <option value="false">No</option>
+                                <option value="true">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm">Created By</label>
+                            <select asp-for="userID" id="CreatedByUserID" asp-items="@Model.Users" class="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm">
+                                <option value="0">--SELECT--</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row justify-end gap-4 mt-6">
+                        <button type="button" id="btnSearch" class="px-6 py-2.5 bg-primary text-white rounded-md hover:bg-primary-hover transition duration-200">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                        <button type="button" id="btnClear"
+                                class="px-6 py-2.5 border border-gray-300 text-gray-700 bg-surface rounded-md hover:bg-gray-200 transition duration-200">
+                            <i class="fas fa-undo mr-1"></i> Clear All
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Table Section -->
+            <div class="w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+                <div class="flex flex-col lg:flex-row justify-between items-center space-y-2 lg:space-y-0 mb-4">
+                    <div class="flex flex-col sm:flex-row items-center gap-2">
+                        <label class="text-sm">Show</label>
+                        @* <select id="rowsPerPage" class="h-10 w-40 border border-gray-300 rounded-md px-3 text-sm"> *@
+                        <select id="rowsPerPage" class="h-10 ml-2 rounded-md border-gray-300 py-1 pl-3 pr-8 text-sm text-[#94A3B8]">
+                            <option value="10" selected>10 items</option>
+                            <option value="25">25 items</option>
+                            <option value="50">50 items</option>
+                            <option value="100">100 items</option>
+                        </select>
+                        <input type="text" id="searchInput" placeholder="Search customer..." class="h-10 border border-gray-300 rounded-md px-3 text-sm" />
+                    </div>
+                    <button onclick="ExportList()" class="px-6 py-2 border border-gray-400 text-black bg-surface rounded-md font-medium hover:bg-gray-100 text-sm">
+                        <i class="fas fa-file-excel mr-1"></i> Export to Excel
+                    </button>
+                </div>
+
+                <!-- Table -->
+                <div class="relative w-full overflow-x-auto">
+                    <table id="riskReportTbl" class="min-w-[640px] w-full text-left text-sm text-gray-800">
+                        <thead class="bg-[#E9EFFD] font-semibold">
+                            <tr>
+                                <th class="px-4 py-3">Action</th>
+                                <th data-column="customerCode" class="sortable px-4 py-3 text-left text-sm font-semibold text-gray-900">Customer Code</th>
+                                <th data-column="customerName" class="sortable px-4 py-3 text-left text-sm font-semibold text-gray-900">Customer Name</th>
+                                <th data-column="riskType" class="sortable px-4 py-3 text-left text-sm font-semibold text-gray-900">Risk Type</th>
+                                <th data-column="override" class="sortable px-4 py-3 text-left text-sm font-semibold text-gray-900">Override</th>
+                                <th data-column="assessmentVersion" class="sortable px-4 py-3 text-left text-sm font-semibold text-gray-900">Assessment Version</th>
+                                <th data-column="user" class="sortable px-4 py-3 text-left text-sm font-semibold text-gray-900">Created By</th>
+                                <th data-column="remarks" class="sortable px-4 py-3 text-left text-sm font-semibold text-gray-900">Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-bordercolor"></tbody>
+                    </table>
+                </div>
+
+
+                <div class="pagination-controls mt-4 flex flex-col sm:flex-row justify-center gap-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1, totalPages = 1, pageSize = 25, draw = 1;
+    let sortCol = 'customerCode', sortDir = 'asc';
+
+    function getColIndex(col) {
+      return ['action','customerCode','customerName','riskType','override','assessmentVersion','user','remarks'].indexOf(col);
+    }
+
+    function fetchData(search='', page=1) {
+      pageSize = +$('#rowsPerPage').val();
+      $('#loadingRiskTypeCategory').show();
+      $.ajax({
+        url: '/Risk/RiskReportCustomPagination',
+        type: 'POST',
+        data: {
+          draw, start: (page-1)*pageSize, length: pageSize,
+          search: { value: search },
+          order: [{ column: getColIndex(sortCol), dir: sortDir }],
+          columns: [
+            {data:'customerCode'},{data:'customerName'},{data:'riskType'},
+            {data:'scoreBeforeOverride'},{data:'assessmentVersion'},{data:'user'},{data:'remarks'} ],
+          fromDate: $('#dtFromDate').val(), toDate: $('#dtToDate').val(),
+          riskType: $('#ddlRiskType').val(), riskLevel: $('#ddlRiskLevel').val(),
+          withDuplicate: $('#ddlWithDuplicate').val(), createdByUserID: $('#CreatedByUserID').val()
+        },
+        success(res) {
+          renderTable(res.data);
+          totalPages = Math.max(1, Math.ceil((res.recordsFiltered||0)/pageSize));
+          renderPager(page);
+          draw++;
+        },
+        error() { alert('Error loading data'); },
+        complete() { $('#loadingRiskTypeCategory').hide(); }
+      });
+    }
+
+    function renderTable(rows) {
+      const $tb = $('#riskReportTbl tbody').empty();
+      if (!rows || rows.length === 0) {
+        $tb.append('<tr><td colspan="8" class="py-4 text-center">No records found</td></tr>');
+        return;
+      }
+      rows.forEach(r => {
+        const over = (r.finalScore !== r.scoreBeforeOverride) ? 'Yes' : 'No';
+        const versionCell = (r.assessmentVersion!=='1')
+          ? `<a href="javascript:void(0)" onclick="assessmentVersion('${r.customerCode}','${r.riskType}')">${r.assessmentVersion}</a>`
+          : r.assessmentVersion;
+
+        $tb.append(`
+          <tr>
+            <td class="px-4 py-3"><a href="/Risk/ViewIndividualRiskDetail?id=${r.id}&type=${r.riskType}" class="text-primary underline">View</a></td>
+            <td class="px-4 py-3">${r.customerCode}</td>
+            <td class="px-4 py-3">${r.customerName}</td>
+            <td class="px-4 py-3">${r.riskType}</td>
+            <td class="px-4 py-3">${over}</td>
+            <td class="px-4 py-3">${versionCell}</td>
+            <td class="px-4 py-3">${r.user}</td>
+            <td class="px-4 py-3">${r.remarks}</td>
+          </tr>`);
+      });
+    }
+
+    function renderPager(page) {
+      const $pg = $('.pagination-controls').empty();
+      const btn = (label,p,dis,act) =>
+        `<button class="px-3 py-1 border rounded ${act?'bg-primary text-white':'bg-surface text-primary'} ${dis?'opacity-50':''}" data-page="${p}" ${dis?'disabled':''}>${label}</button>`;
+      $pg.append(btn('First',1,page===1,false));
+      $pg.append(btn('Prev',page-1,page===1,false));
+      for(let i=Math.max(1,page-2); i<=Math.min(totalPages,page+2); i++){
+        $pg.append(btn(i,i,false,i===page));
+      }
+      $pg.append(btn('Next',page+1,page===totalPages,false));
+      $pg.append(btn('Last',totalPages,page===totalPages,false));
+    }
+
+    $('#btnSearch').on('click', ()=> fetchData($('#searchInput').val(),1));
+    $('#btnClear').on('click', ()=> { $('#filterForm')[0].reset(); fetchData('',1); });
+    $('#rowsPerPage, #searchInput').on('change keyup', ()=> fetchData($('#searchInput').val(),1));
+    $('.pagination-controls').on('click','button',function(){
+      const pg=+$(this).data('page'); if(!isNaN(pg)) fetchData($('#searchInput').val(),pg);
+    });
+    $('#riskReportTbl thead').on('click','th.sortable',function(){
+      const col=$(this).data('column');
+      if(sortCol===col) sortDir = sortDir==='asc'?'desc':'asc';
+      else { sortCol=col; sortDir='asc'; }
+      $('#riskReportTbl th.sortable').removeClass('active asc desc');
+      $(this).addClass(`active ${sortDir}`);
+      fetchData($('#searchInput').val(),1);
+    });
+
+    function ExportList() {
+      const q=$.param({
+        fromDate: $('#dtFromDate').val(), toDate: $('#dtToDate').val(),
+        riskType: $('#ddlRiskType').val(), riskLevel: $('#ddlRiskLevel').val(),
+        withDuplicate: $('#ddlWithDuplicate').val(), createdByUserID: $('#CreatedByUserID').val()
+      });
+      window.location = '/Risk/ExportRiskReport?' + q;
+    }
+
+    function assessmentVersion(c, t) {
+      alert(`Assessment version clicked for ${c} (${t})`);
+    }
+
+    $(document).ready(() => {
+      $('#riskReportTbl th.sortable[data-column="' + sortCol + '"]').addClass(`active ${sortDir}`);
+      fetchData('',1);
+    });
+</script>

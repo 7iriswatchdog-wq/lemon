@@ -1,0 +1,148 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    ViewData["Title"] = @localizer["Transaction Screening Case"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+<script src="~/plugins/jquery/jquery.min.js"></script>
+@model AML.ViewModel.ViewModels.TransactionScreening.PendingCasesRequestModel
+
+@*<div class="se-pre-con1"></div>*@
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="bg-surface rounded-xl border border-bordercolor shadow-none mb-4">
+
+
+<div class="card card-primary">
+    <div class="px-6 py-4 border-b border-bordercolor">
+        @localizer["Pending cases of Transaction Reference No: " + (Model.tranrefno)]
+    </div>
+   
+    <div class="p-6">
+         <input id="hdntranrefno" type="hidden" name="tranrefno" value="@(Model.tranrefno)" />
+
+       @* <div class="row">
+            <div class="col-sm-4">
+                <div class="form-group">
+                    <label for="dtStartDate">@localizer["Start Date"]</label>
+                    <input type="date"  class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="dtStartDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder="Start Date">
+                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="form-group">
+                    <label for="dtEndDate">@localizer["End Date"]</label>
+                    <input type="date"  class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="dtEndDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder="End Date">
+                    <span asp-validation-for="EndDate" class="text-danger"></span>
+                </div>
+            </div>
+          
+         </div>*@
+            
+        </div>
+
+   @* <div class="card-footer fc-center">
+        <button type="submit" id="btnSearch" class="btn btn-primary center" onclick="LoadTable();" title="@localizer["Go"]" aria-label="@localizer["Go"]"><i class="fas fa-search"></i></button>
+    </div>*@
+    <!-- /.card-body -->
+    <!--/form-->
+</div>
+
+                    <div class="p-6">
+                        <div style="width: 100%; padding-left: -10px;">
+                            <div class="table-responsive">
+                                <table id="example" class="w-full text-sm text-left" cellspacing="0">
+                                    <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                                        <tr>
+                                           <th>@localizer["Action"]</th>
+                                            <th>@localizer["Case ID"]</th>
+                                             <th>@localizer["Customer ID"]</th>
+                                            <th>@localizer["Customer Name"]</th>
+                                            <th>@localizer["Created On"]</th>
+                                            <th>@localizer["Match Score"]</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+
+<script type="text/javascript">
+    function confirmSubmit()
+    {
+        var agree = confirm("Are you sure you wish to continue?");
+        if (agree)
+            return true;
+        else
+            return false;
+    }
+    var table;
+
+
+
+    $(document).ready(function () {
+
+        LoadTable();
+
+    });
+
+
+function LoadTable() {
+     var tranref = $("#hdntranrefno").val();
+
+        table = $('#example').DataTable({
+            "processing": true, // for show progress bar
+            "serverSide": true, // for process server side
+            "filter": true, // this is for disable filter (search box)
+            "orderMulti": false, // for disable multiple column at once
+            "order": [[0, 'asc']], // default sorting column(1 = "id") and sorting order
+            "iDisplayLength": 25,
+            "destroy": true,
+            ajax: {
+                url: '/transactioncase/pendingcases',
+                type: 'POST',
+                data : function(d)
+                        {
+                             d.tranrefno = tranref
+                        },
+
+                complete: function (data) {
+                console.log(data);
+                wait = false; }
+                 
+            },
+            columns: [
+                {
+                    "render": function (data, type, full, meta) { return '<a class="btn btn-info btn-sm" title="@localizer["Process"]" href="/transactioncase/process/' + full.id + '"><i class="fas fa-arrow-right"></i></a>'; }
+                },
+                { data: "id" },
+                { data: "custrefno" },
+                { data: "name" },
+                { data: "createdOnDB" },       
+                { data: "matchscore" },
+            ],
+            error: function (e, message) {
+                jQuery("#example").dataTable({
+
+                }),
+                    alert(message);
+            },
+
+            destroy: true
+            
+        });
+        $.fn.dataTable.ext.errMode = 'throw';
+      
+    }
+  
+</script>

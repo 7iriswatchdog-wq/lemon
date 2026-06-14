@@ -1,0 +1,168 @@
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@model AML.ViewModel.ViewModels.InternalWathcList.WatchListModel
+
+@{
+    ViewData["Title"] = "Blocklist - Edit Entry";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .scrollbar-thin::-webkit-scrollbar { width: 5px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        .dt-loader { display: inline-block; position: relative; width: 80px; height: 20px; }
+        .dt-loader div { position: absolute; top: 8px; width: 13px; height: 13px; border-radius: 50%; background: #2563eb; animation-timing-function: cubic-bezier(0, 1, 1, 0); }
+        .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+        .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+        @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+        @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+    </style>
+</head>
+
+<body class="bg-[#f8fafc] text-textprimary overflow-hidden">
+    <div class="flex h-screen overflow-hidden">
+        <div id="loadingeffect" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-50" style="display:none;">
+            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        </div>
+
+        <div class="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
+            <!-- Header -->
+            <header class="h-16 bg-surface border-b border-bordercolor flex items-center justify-between px-8 sticky top-0 z-40 shrink-0">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-xl font-bold text-textprimary tracking-tight">Edit Blocklist Entry</h2>
+                </div>
+                <div x-show="'@Clientlogo' != ''">
+                    <img src="@Clientlogo" alt="Client Logo" class="h-10 w-auto object-contain" />
+                </div>
+            </header>
+
+            <!-- Page Body -->
+            <main class="flex-1 overflow-hidden p-8">
+                <div class="flex h-full gap-8 max-w-[1200px] mx-auto">
+
+                    <!-- Left: Info Card -->
+                    <div class="w-1/3 flex flex-col bg-surface rounded-[32px] border border-bordercolor shadow-sm overflow-hidden hidden lg:flex">
+                         <div class="p-8 space-y-6">
+                            <div class="space-y-2">
+                                <h1 class="text-2xl font-extrabold text-textprimary tracking-tight">Entry Details</h1>
+                                <p class="text-textmuted text-sm font-medium leading-relaxed">Updating record for <br/><span class="text-primary font-bold">@Model.UID</span></p>
+                            </div>
+
+                            <div class="p-4 bg-appbg rounded-2xl border border-bordercolor flex items-start gap-3">
+                                <div class="p-2 bg-blue-100 text-primary rounded-lg">
+                                    <i data-lucide="info" class="w-4 h-4"></i>
+                                </div>
+                                <p class="text-[11px] font-bold text-textmuted leading-relaxed uppercase tracking-wider">
+                                    Changes made here will be logged and visible in the Blocklist Update Logs report.
+                                </p>
+                            </div>
+                         </div>
+                    </div>
+
+                    <!-- Right: Edit Form -->
+                    <div class="flex-1 bg-surface rounded-[32px] border border-bordercolor shadow-sm overflow-hidden flex flex-col">
+                        <div class="flex-1 overflow-y-auto p-8 scrollbar-thin">
+                            
+                            <div class="space-y-8">
+                                <div class="pb-6 border-b">
+                                    <h2 class="text-2xl font-extrabold text-textprimary tracking-tight">Edit Information</h2>
+                                    <p class="text-sm text-textmuted font-medium mt-1">Modify the required fields below.</p>
+                                </div>
+
+                                <form asp-controller="InternalWatchList" asp-action="Edit" method="post" class="space-y-8" onsubmit="document.getElementById('loadingeffect').style.display='flex'">
+                                    <input type="hidden" asp-for="Id" />
+                                    <input type="hidden" asp-for="CreatedBy" />
+                                    <input type="hidden" asp-for="UID" />
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+                                        <!-- Type -->
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Type <span class="text-red-500">*</span></label>
+                                            <select asp-for="Type" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" required>
+                                                <option value="CORPORATE">Corporate</option>
+                                                <option value="INDIVIDUAL">Individual</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Full Name -->
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Full Name <span class="text-red-500">*</span></label>
+                                            <input type="text" asp-for="FullName" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter Full Name" required>
+                                        </div>
+
+                                        <!-- Nationality -->
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Nationality/Country of Incorporation</label>
+                                            <select asp-for="Nationality" asp-items="@Model.Nationalities" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all">
+                                                <option value="0">--EMPTY--</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- DOB -->
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Date of Birth/Incorporation</label>
+                                            <input type="date" asp-for="DOB" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all">
+                                        </div>
+
+                                        <!-- Data Source -->
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Data Source <span class="text-red-500">*</span></label>
+                                            <select asp-for="Source" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" required>
+                                                <option value="CBWL">Central Bank Watch List</option>
+                                                <option value="BL">Black List</option>
+                                                <option value="INTERNAL">Block List</option>
+                                                <option value="UAE IEC LIST">UAE IEC LIST</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- ID Number -->
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">ID Number</label>
+                                            <input type="text" asp-for="IdNumber" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter ID Number">
+                                        </div>
+
+                                        <!-- Remarks -->
+                                        <div class="md:col-span-2 space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Remarks</label>
+                                            <textarea asp-for="Remarks" class="w-full h-24 bg-surface border border-bordercolor rounded-xl p-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all resize-none" placeholder="Enter any additional remarks..."></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex gap-4 pt-8 border-t border-bordercolor">
+                                        <button type="submit" class="flex-1 h-14 bg-primary hover:bg-primary-hover text-white font-extrabold rounded-2xl shadow-xl shadow-blue-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3">
+                                            Update Record
+                                        </button>
+                                        <a asp-controller="Report" asp-action="GetBlocklistUpdateLogs" class="px-8 h-14 border-2 border-bordercolor text-textlabel font-extrabold rounded-2xl hover:bg-appbg transition-all flex items-center justify-center">
+                                            Cancel
+                                        </a>
+                                    </div>
+                                </form>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

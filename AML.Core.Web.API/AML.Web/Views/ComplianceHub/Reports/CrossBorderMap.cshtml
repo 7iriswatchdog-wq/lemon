@@ -1,0 +1,131 @@
+@using AML.ViewModel.ViewModels.ComplianceHub
+@using System.Linq
+@model CrossBorderMapVM
+@{
+    ViewData["Title"] = "Cross-Border Customer Map";
+    ViewData["ReportTitle"] = "Cross-Border Customer Map";
+    ViewData["ReportSubtitle"] = "Geographic exposure across customer nationality, residence and source-of-wealth countries. FATF grey/black overlay.";
+    ViewData["Theme"] = "Geography";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+    var maxTotal = Model.Countries.Any() ? Model.Countries.Max(c => c.Total) : 1;
+    if (maxTotal == 0) maxTotal = 1;
+}
+
+<style>
+    .map-strip { display:grid; grid-template-columns: repeat(3,1fr); gap:12px; margin-bottom:18px; }
+    .map-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:16px 18px; }
+    .map-card .n { font-size:30px; font-weight:800; line-height:1; }
+    .map-card .l { font-size:11px; text-transform:uppercase; font-weight:700; color:#64748b; margin-top:6px; }
+
+    #cbm-map { width:100%; height:520px; background:#f1f5f9; border-radius:14px; border:1px solid #e2e8f0; }
+    .leaflet-container { font: inherit !important; }
+
+    .country-row { display:grid; grid-template-columns: 24px 1fr 60px 60px 60px 60px 80px; gap:8px; align-items:center; padding:10px 12px; border-top:1px solid #f1f5f9; font-size:13px; }
+    .country-row:hover { background:#f8fafc; }
+    .country-row.head { background:#f8fafc; font-size:11px; text-transform:uppercase; color:#64748b; font-weight:700; border-top:none; }
+    .country-bar { height:6px; background:#f1f5f9; border-radius:3px; overflow:hidden; margin-top:4px; }
+    .country-bar > span { display:block; height:100%; background:linear-gradient(90deg,#0d9488,#115e59); border-radius:3px; }
+    .fatf-badge { display:inline-block; padding:2px 7px; border-radius:9999px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+    .fatf-Black { background:#1f2937; color:#fff; }
+    .fatf-Grey  { background:#cbd5e1; color:#1e293b; }
+</style>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="_ReportShell" />
+
+        <div class="map-strip">
+            <div class="map-card" style="border-left:4px solid #0d9488;"><div class="n" style="color:#0f766e;">@Model.DistinctCountries</div><div class="l">Distinct countries</div></div>
+            <div class="map-card" style="border-left:4px solid #2563eb;"><div class="n" style="color:#1e40af;">@Model.TotalCustomers</div><div class="l">Total country touches</div></div>
+            <div class="map-card" style="border-left:4px solid #dc2626;"><div class="n" style="color:#991b1b;">@Model.HighRiskExposure</div><div class="l">FATF grey + black exposure</div></div>
+        </div>
+
+        <div id="cbm-map" class="mb-4"></div>
+
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div class="country-row head"><span></span><span>Country</span><span>Nat.</span><span>Res.</span><span>SOW</span><span>Total</span><span>FATF</span></div>
+            @if (!Model.Countries.Any())
+            {
+                <div class="p-12 text-center text-slate-500">No country data recorded.</div>
+            }
+            else
+            {
+                foreach (var c in Model.Countries)
+                {
+                    var pct = c.Total * 100 / maxTotal;
+                    <div class="country-row">
+                        <span class="text-base">@(c.FatfStatus == "Black" ? "⚫" : c.FatfStatus == "Grey" ? "🟡" : "🌐")</span>
+                        <div>
+                            <div class="font-semibold text-slate-800">@c.Name</div>
+                            <div class="country-bar"><span style="width:@(pct)%;"></span></div>
+                        </div>
+                        <span class="text-slate-700">@c.NationalityCount</span>
+                        <span class="text-slate-700">@c.ResidenceCount</span>
+                        <span class="text-slate-700">@c.SowCount</span>
+                        <span class="font-bold text-teal-700">@c.Total</span>
+                        <span>@(c.FatfStatus != null ? Html.Raw($"<span class='fatf-badge fatf-{c.FatfStatus}'>{c.FatfStatus}</span>") : Html.Raw("<span class='text-slate-300 text-xs'>—</span>"))</span>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</section>
+
+<script>
+(function(){
+    var map = L.map('cbm-map', { worldCopyJump:true, minZoom:1, maxZoom:6 }).setView([20,10], 2);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap, © CARTO',
+        subdomains: 'abcd', maxZoom: 19
+    }).addTo(map);
+
+    var countries = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Countries));
+
+    // Tiny lookup table — only what the demo data needs. Extend as more countries appear.
+    var coords = {
+        "United Arab Emirates":[24,54],"UAE":[24,54],"India":[22,79],"Pakistan":[30,69],"Iran":[32,53],
+        "United Kingdom":[55,-3],"UK":[55,-3],"United States":[39,-95],"USA":[39,-95],
+        "Saudi Arabia":[24,45],"Egypt":[26,30],"Lebanon":[34,36],"Jordan":[31,36],"Syria":[35,38],
+        "Yemen":[15,48],"Iraq":[33,44],"Oman":[21,57],"Qatar":[25,51],"Bahrain":[26,50],"Kuwait":[29,47],
+        "Russia":[61,105],"China":[35,103],"Japan":[36,138],"Korea":[37,127],"Korea, Democratic People's Republic of":[40,127],
+        "North Korea":[40,127],"Myanmar":[22,96],"Burma":[22,96],"Philippines":[12,122],"Vietnam":[14,108],
+        "Singapore":[1.3,103.8],"Malaysia":[4,102],"Thailand":[15,101],"Indonesia":[-2,118],
+        "Australia":[-25,134],"Canada":[56,-106],"France":[46,2],"Germany":[51,10],"Spain":[40,-4],
+        "Italy":[41,12],"Switzerland":[47,8],"Netherlands":[52,5],"Belgium":[50,4],
+        "Brazil":[-14,-51],"Argentina":[-38,-63],"Mexico":[23,-102],"Turkey":[39,35],
+        "South Africa":[-30,25],"Nigeria":[10,8],"Kenya":[1,38],"Tanzania":[-6,35],
+        "Algeria":[28,2],"Morocco":[31,-7],"Tunisia":[34,9],"Sudan":[16,30],
+        "Venezuela":[6,-66],"Colombia":[4,-74],"Peru":[-9,-75],"Chile":[-30,-71]
+    };
+    function color(c){
+        if (c.FatfStatus === 'Black') return '#1f2937';
+        if (c.FatfStatus === 'Grey')  return '#f59e0b';
+        return '#0d9488';
+    }
+    var maxT = Math.max.apply(null, countries.map(function(c){return c.Total||0;})) || 1;
+    countries.forEach(function(c){
+        var pos = coords[c.Name] || coords[c.Code];
+        if (!pos) return;
+        var radius = 6 + Math.sqrt((c.Total||1) / maxT) * 22;
+        var marker = L.circleMarker(pos, {
+            radius: radius, color: color(c), weight: 2, opacity: .9,
+            fillColor: color(c), fillOpacity: .35
+        }).addTo(map);
+        marker.bindPopup(
+            '<div style="font-family:inherit;min-width:180px;">' +
+              '<div style="font-weight:800;color:#0f172a;font-size:14px;margin-bottom:4px;">' + c.Name + '</div>' +
+              (c.FatfStatus ? '<div style="display:inline-block;background:'+color(c)+';color:#fff;padding:2px 8px;border-radius:9999px;font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:8px;">FATF '+c.FatfStatus+'</div>' : '') +
+              '<div style="font-size:12px;color:#475569;line-height:1.6;">' +
+                '<div>Nationality: <b>'+(c.NationalityCount||0)+'</b></div>' +
+                '<div>Residence: <b>'+(c.ResidenceCount||0)+'</b></div>' +
+                '<div>SOW country: <b>'+(c.SowCount||0)+'</b></div>' +
+              '</div>' +
+            '</div>'
+        );
+    });
+})();
+</script>

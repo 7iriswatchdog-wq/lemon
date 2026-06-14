@@ -1,0 +1,2460 @@
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@model AML.ViewModel.ViewModels.Common.ClientMaster
+@{
+    ViewData["Title"] = "Admin Management - Details";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+    int clientId = ViewBag.ClientId;
+}
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<style>
+    body { font-family: 'Inter', sans-serif; }
+    .dt-loader { position: relative; width: 80px; height: 20px; }
+    .dt-loader div { position: absolute; top: 8px; width: 13px; height: 13px; border-radius: 50%; background: #2563eb; animation-timing-function: cubic-bezier(0,1,1,0); }
+    .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+    .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+    .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+    .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+    @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+    @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+    @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+
+    th.sortable { cursor: pointer; position: relative; padding-right: 20px; }
+    th.sortable::after {
+        content: "▲\A▼";
+        white-space: pre;
+        font-size: 10px;
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #bbb;
+        line-height: 1;
+        text-align: center;
+    }
+    th.sortable.active.asc::after { content: "▲"; color: #2563eb; }
+    th.sortable.active.desc::after { content: '\A▼'; color: #2563eb; }
+
+    .flatpickr-wrapper {
+        width: 100% !important;
+    }
+
+    .flatpickr-alt-input {
+        width: 100% !important;
+        display: block !important;
+    }
+</style>
+
+<div id="loader" class="fixed inset-0 bg-surface bg-opacity-75 items-center justify-center z-50 hidden">
+    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+</div>
+
+<div class="bg-appbg min-h-screen text-textprimary">
+    <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <div class="flex items-center gap-2 text-textmuted text-xs mb-2">
+                    <a href="/AdminManagement/Index" class="hover:text-primary">Admin Management</a>
+                    <i data-lucide="chevron-right" class="h-3 w-3"></i>
+                    <span class="text-textprimary font-medium">@Model.ClientName</span>
+                </div>
+                <h1 class="text-2xl font-bold text-textprimary tracking-tight">Client Details</h1>
+                <p class="text-textmuted text-sm mt-1">Configure client settings and manage delegated users.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="/AdminManagement/Index" class="bg-surface border border-bordercolor shadow-sm hover:bg-appbg text-textlabel font-bold h-10 px-5 rounded-md flex items-center gap-2 transition-colors text-sm">
+                    Back
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 gap-8">
+            <!-- Usage & Notifications Overview -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Usage Stats -->
+                <div class="bg-surface rounded-xl border border-bordercolor shadow-sm overflow-hidden flex flex-col">
+                    <div class="px-6 py-4 border-b border-bordercolor bg-appbg">
+                        <h3 class="text-sm font-bold text-textprimary uppercase tracking-tight flex items-center gap-2">
+                            <i data-lucide="bar-chart-3" class="h-4 w-4 text-primary"></i>
+                            Usage Statistics
+                        </h3>
+                    </div>
+                    <div class="p-6 grow grid grid-cols-2 gap-4">
+                        <div class="bg-appbg rounded-lg p-4 border border-bordercolor">
+                            <p class="text-[10px] font-bold text-textmuted uppercase tracking-wider mb-1">User Limit</p>
+                            <p class="text-2xl font-bold text-textprimary leading-none">@ViewBag.userlimit</p>
+                        </div>
+                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                            <p class="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">Total Usage</p>
+                            <p class="text-2xl font-bold text-blue-700 leading-none">@ViewBag.totalcount</p>
+                        </div>
+                        <div class="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
+                            <p class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">Individual Cases</p>
+                            <p class="text-2xl font-bold text-indigo-700 leading-none">@ViewBag.individualCount</p>
+                        </div>
+                        <div class="bg-appbg rounded-lg p-4 border border-bordercolor">
+                            <p class="text-[10px] font-bold text-textmuted uppercase tracking-wider mb-1">Corporate Cases</p>
+                            <p class="text-2xl font-bold text-textprimary leading-none">@ViewBag.corporateCount</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notification Logs -->
+                <div class="bg-surface rounded-xl border border-bordercolor shadow-sm overflow-hidden flex flex-col">
+                    <div class="px-6 py-4 border-b border-bordercolor bg-appbg">
+                        <h3 class="text-sm font-bold text-textprimary uppercase tracking-tight flex items-center gap-2">
+                            <i data-lucide="mail" class="h-4 w-4 text-primary"></i>
+                            Email Notifications Logs
+                        </h3>
+                    </div>
+                    <div class="p-6 grow">
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-3">
+                                <div class="h-8 w-8 rounded-full bg-green-50 flex items-center justify-center shrink-0 border border-green-100">
+                                    <i data-lucide="check-circle-2" class="h-4 w-4 text-green-600"></i>
+                                </div>
+                                <div class="grow pt-0.5">
+                                    <div class="flex justify-between items-center mb-0.5">
+                                        <h4 class="text-xs font-bold text-textprimary">100% Limit Reached</h4>
+                                        <span class="text-[10px] font-bold text-textmuted">@ViewBag.hundredemail</span>
+                                    </div>
+                                    <p class="text-[11px] text-textmuted">Critical: Usage cap successfully reached and notification dispatched.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 border border-blue-100">
+                                    <i data-lucide="info" class="h-4 w-4 text-primary"></i>
+                                </div>
+                                <div class="grow pt-0.5">
+                                    <div class="flex justify-between items-center mb-0.5">
+                                        <h4 class="text-xs font-bold text-textprimary">80% Threshold Warning</h4>
+                                        <span class="text-[10px] font-bold text-textmuted">@ViewBag.Eightemail</span>
+                                    </div>
+                                    <p class="text-[11px] text-textmuted">Usage alert: 400 out of 500 licenses currently in utilization.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="h-8 w-8 rounded-full bg-appbg flex items-center justify-center shrink-0 border border-bordercolor">
+                                    <i data-lucide="clock" class="h-4 w-4 text-textmuted"></i>
+                                </div>
+                                <div class="grow pt-0.5">
+                                    <div class="flex justify-between items-center mb-0.5">
+                                        <h4 class="text-xs font-bold text-textprimary">30 Days Notice</h4>
+                                        <span class="text-[10px] font-bold text-textmuted">@ViewBag.beforeexpdemail</span>
+                                    </div>
+                                    <p class="text-[11px] text-textmuted">Subscription renewal reminder sent to compliance officer.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="h-8 w-8 rounded-full bg-rose-50 flex items-center justify-center shrink-0 border border-rose-100">
+                                    <i data-lucide="calendar-x" class="h-4 w-4 text-rose-600"></i>
+                                </div>
+                                <div class="grow pt-0.5">
+                                    <div class="flex justify-between items-center mb-0.5">
+                                        <h4 class="text-xs font-bold text-textprimary">Expiry Date Dispatch</h4>
+                                        <span class="text-[10px] font-bold text-textmuted">@ViewBag.onexpemail</span>
+                                    </div>
+                                    <p class="text-[11px] text-textmuted">Terminated: Subscription expired and final notice delivered.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Client Configuration Card -->
+            <div class="bg-surface rounded-xl border border-bordercolor shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-bordercolor bg-appbg">
+                    <h3 class="text-sm font-bold text-textprimary uppercase tracking-tight flex items-center gap-2">
+                        <i data-lucide="settings" class="h-4 w-4 text-primary"></i>
+                        Client Configuration
+                    </h3>
+                </div>
+                <form id="frmClient" class="p-6">
+                    <input type="hidden" id="hdnClientId" asp-for="ClientId" />
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold text-textmuted uppercase ml-0.5">Client Name</label>
+                            <input type="text" asp-for="ClientName" id="txtClientName" class="flex h-10 w-full rounded-md border border-bordercolor bg-appbg px-3 py-2 text-sm focus:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold text-textmuted uppercase ml-0.5">Prefix</label>
+                            <input type="text" asp-for="Prefix" id="txtPrefix" class="flex h-10 w-full rounded-md border border-bordercolor bg-appbg px-3 py-2 text-sm focus:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold text-textmuted uppercase ml-0.5">Description</label>
+                            <input type="text" asp-for="Description" id="txtDescription" class="flex h-10 w-full rounded-md border border-bordercolor bg-appbg px-3 py-2 text-sm focus:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold text-textmuted uppercase ml-0.5">C6 Username</label>
+                            <input type="text" asp-for="C6Username" id="txtC6Username" class="flex h-10 w-full rounded-md border border-bordercolor bg-appbg px-3 py-2 text-sm focus:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold text-textmuted uppercase ml-0.5">C6 Base API Url</label>
+                            <input type="text" asp-for="C6BaseUrl" id="txtC6BaseUrl" class="flex h-10 w-full rounded-md border border-bordercolor bg-appbg px-3 py-2 text-sm focus:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold text-textmuted uppercase ml-0.5">Threshold</label>
+                            <input type="number" asp-for="Threshold" id="txtThreshold" min="0"
+                                   max="100" class="flex h-10 w-full rounded-md border border-bordercolor bg-appbg px-3 py-2 text-sm focus:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold text-textmuted uppercase ml-0.5">Search Limit</label>
+                            <input type="number" value="@ViewBag.userlimit" id="txtSearchCount" asp-for="SearchCount" class="flex h-10 w-full rounded-md border border-bordercolor bg-appbg px-3 py-2 text-sm focus:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold text-textmuted uppercase ml-0.5">Creation Date</label>
+                            <p class="text-sm font-medium text-textprimary mt-1 flex h-10 w-full rounded-md border border-bordercolor bg-slate-100 px-3 py-2 text-sm text-textmuted cursor-not-allowed transition-all">@(Model.CreatedOn?.ToString("dd/MM/yyyy") ?? "-")</p>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold text-textmuted uppercase ml-0.5">Contract Start Date</label>
+                            <input type="text" id="txtApplicationStartDate" asp-for="ApplicationStartDate" placeholder="DD/MM/YYYY"
+                                   class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium">
+                            @* <input type="date" asp-for="ApplicationStartDate" id="" class="flex h-10 w-full rounded-md border border-bordercolor bg-appbg px-3 py-2 text-sm focus:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">*@
+                        </div> 
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold text-textmuted uppercase ml-0.5">Contract End Date</label>
+                                <input type="text" id="txtApplicationEndDate" asp-for="ApplicationEndDate" placeholder="DD/MM/YYYY"
+                                       class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium">
+                            @* <input type="date" asp-for="" value="@ViewBag.contractExpiryDate" id="" class="flex h-10 w-full rounded-md border border-bordercolor bg-appbg px-3 py-2 text-sm focus:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"> *@
+                        </div>
+                    </div>
+                    <div class="mt-8 pt-6 border-t border-bordercolor flex justify-end">
+                        <button type="submit" class="bg-primary hover:bg-primary-hover text-white font-bold h-10 px-8 rounded-md shadow-sm transition-colors text-sm flex items-center gap-2">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+           
+            <!-- Client Rights Card -->
+            <div class="bg-surface rounded-xl border border-bordercolor shadow-sm overflow-hidden flex flex-col">
+    <div class="px-6 py-4 border-b border-bordercolor bg-appbg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h3 class="text-sm font-bold text-textprimary uppercase tracking-tight flex items-center gap-2">
+            <i data-lucide="shield-check" class="h-4 w-4 text-primary"></i>
+            Module Rights
+        </h3>
+        <button type="button" id="btnSaveClientRights"
+                class="bg-primary hover:bg-primary-hover text-white font-bold h-9 px-5 rounded-md shadow-sm transition-colors text-xs flex items-center gap-2">
+            Save Rights
+        </button>
+    </div>
+
+    <div class="p-6 grow text-sm">
+        <div id="clientRightsContainer"
+             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <!-- Rights will be injected here -->
+        </div>
+    </div>
+</div>
+
+ <form id="myform">
+            <div class="bg-surface rounded-xl border border-bordercolor shadow-sm overflow-hidden flex flex-col">
+       
+                <!-- Header -->
+                <div class="px-6 py-4 border-b border-bordercolor bg-appbg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <h3 class="text-sm font-bold text-textprimary uppercase tracking-tight flex items-center gap-2">
+                        <i data-lucide="shield-check" class="h-4 w-4 text-primary"></i>
+                        Risk Configuration
+                    </h3>
+                </div>
+
+                <!-- Body -->
+                 
+                    <div class="p-6 space-y-6">
+
+                    <!-- Risk Category -->
+                    <div>
+                        <label for="txtRiskCategory" class="block text-gray-700 font-semibold mb-2">
+                            @localizer["Risk Category"]
+                        </label>
+
+                        <select id="ddlRiskCategory"
+                                class="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                asp-for="RiskCategoryID"
+                                asp-items="Model.RiskCategories"
+                                onchange="ValidateRiskSelection()">
+                            <option value="0">--@localizer["Select"]--</option>
+                        </select>
+
+                        <input type="hidden" asp-for="RiskCategory" id="txtRiskCategory">
+
+                        <label id="validateddl"
+                               class="hidden text-red-600 text-sm mt-2">
+                            @localizer["Please Select a Risk Category"]
+                        </label>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                        <div>
+                            <input type="hidden" id="rowIndex1" value="0" />
+                            <input type="hidden" id="hndclient" asp-for="@Model.ClientId"/>
+                            <button type="button"
+                                    id="addCategory"
+                                    onclick="DisplayCategory()"
+                                    class="w-full bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled>
+                                @localizer["Add Risk Category"]
+                            </button>
+                        </div>
+
+                        <div>
+                            <input type="hidden" id="rowIndex2" value="0" />
+                            <button type="button"
+                                    id="addSubcategory"
+                                    onclick="DisplayCategoryType()"
+                                    class="w-full bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled>
+                                @localizer["Add Risk Type"]
+                            </button>
+                        </div>
+
+                    
+
+                        <div>
+                            <input type="hidden" id="rowIndex3" value="0" />
+                            <button type="button"
+                                    id="addRow"
+                                    onclick="selectRiskCategories()"
+                                    class="w-full bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled>
+                                @localizer["Add Risk Item"]
+                            </button>
+                        </div>
+                     </div>
+                        <div id="divCategoryType" class="relative hidden">
+                            <div id="loadingRiskCategory" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+                                <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                            </div>
+                            <div class="mb-4">
+                                <input type="hidden" id="rowIndex" value="0" />
+                                <button type="button" id="addMoreCategory" onclick="addCategoryRow()" class="bg-primary text-white px-4 py-2 rounded hover:bg-primary-hover mt-2">
+                                    @localizer["Add More Risk Category Type"]
+                                </button>
+                                @* <div id="dvRiskCategoryList" class="hidden"></div> *@
+                                <!-- Scrollable container for your full dynamic table (header + body) -->
+                                <div id="scrollWrapper" class="overflow-x-auto ">
+                                    <div id="dvRiskCategoryList" class="hidden ">
+
+                                        <!-- The full table (with headers and rows) will be appended here via JS -->
+
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div id="divRiskTypeCategory" class="hidden">
+                                <div class="space-y-4">
+                                    <div class="flex flex-col md:flex-row justify-end items-center gap-4">
+                                        <div class="relative w-full md:w-80">
+                                            <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-textmuted"></i>
+                                            <input id="riskTypeCatSearch" type="text" placeholder="Search" 
+                                                   class="pl-9 h-9 w-full rounded-md border border-bordercolor bg-surface px-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                                        </div>
+                                        <button type="button" onclick="resetRiskTypeCatFilters()" class="h-9 px-4 rounded-md border border-bordercolor bg-surface text-textlabel text-xs font-bold hover:bg-appbg transition-colors shadow-sm flex items-center gap-2">
+                                            Reset
+                                        </button>
+                                    </div>
+
+                                    <div class="overflow-x-auto border border-bordercolor rounded-lg">
+                                        <table id="availableRiskTypeCategory" class="w-full text-sm text-left whitespace-nowrap">
+                                            <thead class="text-[10px] text-textmuted uppercase bg-appbg border-b border-bordercolor">
+                                                <tr>
+                                                    <th class="px-6 py-3 font-semibold sortable active asc" data-col="LovCategoryType">@localizer["Risk Category"]</th>
+                                                    <th class="px-6 py-3 font-semibold text-center">@localizer["Active Y/N"]</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100" style="font-size: 12px;"></tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="px-6 py-4 bg-appbg border-t border-bordercolor flex items-center justify-between">
+                                        <div class="flex items-center gap-4">
+                                            <div class="flex items-center gap-2">
+                                                <label class="text-xs font-bold text-textmuted uppercase tracking-wider">Show</label>
+                                                <select id="riskTypeCatPageSize" onchange="changeRiskTypeCatPageSize()"
+                                                        class="h-8 w-20 rounded-md border border-bordercolor bg-surface pl-3 pr-8 text-xs font-bold text-textlabel focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer">
+                                                    <option value="10">10</option>
+                                                    <option value="25">25</option>
+                                                    <option value="50">50</option>
+                                                    <option value="100">100</option>
+                                                </select>
+                                            </div>
+                                            <div class="h-4 w-px bg-slate-200"></div>
+                                            <div class="text-xs font-bold text-textmuted uppercase tracking-wider">
+                                                Showing <span id="riskTypeCatShowingStart" class="text-textprimary">0</span> - <span id="riskTypeCatShowingEnd" class="text-textprimary">0</span> 
+                                                <span class="mx-1 text-slate-300">of</span> 
+                                                <span id="riskTypeCatTotalRecords" class="text-textprimary">0</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-2">
+                                            <button type="button" id="riskTypeCatPrevBtn" onclick="previousRiskTypeCatPage()"
+                                                        class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                                                    <i data-lucide="chevron-left" class="h-3.5 w-3.5"></i>
+                                                    Previous
+                                                </button>
+                                                <button type="button" id="riskTypeCatNextBtn" onclick="nextRiskTypeCatPage()"
+                                                        class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                                                    Next
+                                                    <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
+                                                </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            
+                            <div class="mt-8 pt-6 border-t border-bordercolor flex justify-end">
+                                <button type="submit" id="btnTypeCategorySubmit"
+                                            class="bg-primary hover:bg-primary-hover text-white font-bold h-10 px-8 rounded-md shadow-sm transition-colors text-sm flex items-center gap-2 hidden">
+
+                                        <span>Save</span>
+
+                                    </button>
+                                </div>
+                        </div>
+
+                        <div id="divRiskTypeFull" class="relative hidden">
+                            @* <!-- Loader  with Loading ...-->
+                                              <div id="loadingRiskTypeCategory" class="absolute inset-0 bg-surface bg-opacity-75 flex item-enter justifenterz-10">
+                                                  <span class="text-gray-600 text-sm">Loading...</span>
+                                              </div> *@
+                            <!-- Loader  with circle and loading -->
+                            @* <div id="loadingRiskTypeCategory" class="absolute inset-0 bg-surface bg-opacity-75 flex item-enter justifenterz-10">
+                                                  <div class="flex items-center space-x-2">
+                                                      <!-- Spinner Circle -->
+                                                      <div class="w-5 h-5 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                                                      <!-- Loading Text -->
+                                                      <span class="text-gray-600 text-sm">Loading...</span>
+                                                  </div>
+                                              </div> *@
+
+                            <div id="loadingRiskTypeCategory" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+                                <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                            </div>
+
+                            <!-- Dropdown Content -->
+                            <div class="flex flex-wrap mb-4">
+                                <div id="divRiskTypeCategoryddl" class="w-full sm:w-7/12">
+                                    <label class="block mb-2">@localizer["Please Select the Risk type category you want to add the subcategory to"]</label>
+                                    <select asp-for="RiskTypeCategoryID" class="form-select w-full onded" asp-items="Model.RiskTypeCategory" id="ddlRiskTypeCategory">
+                                        <option value="0">--@localizer["Select"]--</option>
+                                    </select>
+                                    <input type="hidden" asp-for="RiskTypeCategoryName" id="txtRiskTypeCategoryName">
+                                </div>
+                            </div>
+
+                            <div id="divRiskTypeonddl" class="hidden">
+                                <div class="mb-4">
+                                    <input type="hidden" id="rowIndex" value="0" />
+                                    <button type="button" id="addMoreSubCategory" onclick="addSubcategoryRow()" class="bg-primary text-white px-4 py-2 rounded hover:bg-primary-hover mt-2 hidden">
+                                        @localizer["Add More Risk Type"]
+                                    </button>
+                                    <div id="scrollWrapper" class="overflow-x-auto">
+                                        <div id="dvRiskSubcategoryList" class="hidden"></div>
+                                    </div>
+                                </div>
+                                <div id="divRiskType" class="hidden mt-4">
+                                    <div class="space-y-4">
+                                        <div class="flex flex-col md:flex-row justify-end items-center gap-4">
+                                            <div class="relative w-full md:w-80">
+                                                <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-textmuted"></i>
+                                                <input id="riskTypeSearch" type="text" placeholder="Search" 
+                                                       class="pl-9 h-9 w-full rounded-md border border-bordercolor bg-surface px-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                                            </div>
+                                            <button type="button" onclick="resetRiskTypeFilters()" class="h-9 px-4 rounded-md border border-bordercolor bg-surface text-textlabel text-xs font-bold hover:bg-appbg transition-colors shadow-sm flex items-center gap-2">
+                                                Reset
+                                            </button>
+                                        </div>
+
+                                        <div class="overflow-x-auto border border-bordercolor rounded-lg">
+                                            <table id="availableRiskType" class="w-full text-sm text-left whitespace-nowrap">
+                                                <thead class="text-[10px] text-textmuted uppercase bg-appbg border-b border-bordercolor">
+                                                    <tr>
+                                                        <th class="px-6 py-3 font-semibold sortable active asc" data-col="LovTypeName">@localizer["Risk Type"]</th>
+                                                        <th class="px-6 py-3 font-semibold text-center">@localizer["Active Y/N"]</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-slate-100" style="font-size: 12px;"></tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        <div class="px-6 py-4 bg-appbg border-t border-bordercolor flex items-center justify-between">
+                                            <div class="flex items-center gap-4">
+                                                <div class="flex items-center gap-2">
+                                                    <label class="text-xs font-bold text-textmuted uppercase tracking-wider">Show</label>
+                                                    <select id="riskTypePageSize" onchange="changeRiskTypePageSize()"
+                                                            class="h-8 w-20 rounded-md border border-bordercolor bg-surface pl-3 pr-8 text-xs font-bold text-textlabel focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer">
+                                                        <option value="10">10</option>
+                                                        <option value="25">25</option>
+                                                        <option value="50">50</option>
+                                                        <option value="100">100</option>
+                                                    </select>
+                                                </div>
+                                                <div class="h-4 w-px bg-slate-200"></div>
+                                                <div class="text-xs font-bold text-textmuted uppercase tracking-wider">
+                                                    Showing <span id="riskTypeShowingStart" class="text-textprimary">0</span> - <span id="riskTypeShowingEnd" class="text-textprimary">0</span> 
+                                                    <span class="mx-1 text-slate-300">of</span> 
+                                                    <span id="riskTypeTotalRecords" class="text-textprimary">0</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="flex items-center gap-2">
+                                                <button type="button" id="riskTypePrevBtn" onclick="previousRiskTypePage()"
+                                                            class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                                                        <i data-lucide="chevron-left" class="h-3.5 w-3.5"></i>
+                                                        Previous
+                                                    </button>
+                                                    <button type="button" id="riskTypeNextBtn" onclick="nextRiskTypePage()"
+                                                            class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                                                        Next
+                                                        <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
+                                                    </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                               
+                               
+                                <div class="mt-8 pt-6 border-t border-bordercolor flex justify-end">
+                                    <button type="submit" id="btnTypeSubmit"
+                                            class="bg-primary hover:bg-primary-hover text-white font-bold h-10 px-8 rounded-md shadow-sm transition-colors text-sm flex items-center gap-2 hidden">
+
+                                        <span>Save</span>
+
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                            <div id="divRiskitemsFull" class=" relative hidden">
+
+                                <div id="loadingRiskItemCategory1" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+                                    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                                </div>
+
+                                <div class="flex flex-col mb-4" id="divRiskitems">
+                                    <div class="w-full sm:w-1/2">
+                                        <label class="block mb-2">@localizer["Please Select the Risk type category  and subcategory to add risk items"]</label>
+                                        <label class="block mb-2" for="txtRiskTypeCategoryName">@localizer["Risk Type Category"]</label>
+                                        <select asp-for="RiskTypeCategoryID" class="form-select w-full rounded" asp-items="Model.RiskTypeCategory" id="ddlRiskTypeCategory2">
+                                            <option value="0">--@localizer["Select"]--</option>
+                                        </select>
+                                        <input type="hidden" asp-for="RiskTypeCategoryName" id="txtRiskTypeCategoryName2">
+                                    </div>
+
+                                    <div id="loadingRiskItemCategory2" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+                                        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                                    </div>
+
+                                    <div id="divddlRiskType" class="w-full sm:w-1/2 hidden">
+                                        <label class="block mb-2" for="txtRiskTypeName">@localizer["Risk Type"]</label>
+                                        <select asp-for="RiskTypeID" class="form-select w-full rounded" asp-items="Model.RiskTypes" id="ddlRiskType">
+                                            <option value="0">--@localizer["Select"]--</option>
+                                        </select>
+                                        <input type="hidden" asp-for="RiskTypeName" id="txtRiskTypeName">
+                                    </div>
+                                </div>
+
+                                <div id="divRiskItemddl" class="hidden">
+                                    <div class="mb-4">
+                                        <input type="hidden" id="rowIndex" value="0" />
+                                        <button type="button" id="addMoreRiskItems" onclick="addListRow()" class="bg-primary text-white px-4 py-2 rounded hover:bg-primary-hover mt-2 hidden">
+                                            @localizer["Add More Risk Items"]
+                                        </button>
+                                        <div id="scrollWrapper" class="overflow-x-auto">
+                                            <div id="dvRiskItemList" class="hidden"></div>
+                                        </div>
+                                    </div>
+
+                                    <div id="divRiskTtemtable" class="mt-4 mb-4">
+                                        <div class="space-y-4">
+                                            <div class="flex flex-col md:flex-row justify-end items-center gap-4">
+                                                <div class="relative w-full md:w-80">
+                                                    <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-textmuted"></i>
+                                                    <input id="riskItemSearch" type="text" placeholder="Search" 
+                                                           class="pl-9 h-9 w-full rounded-md border border-bordercolor bg-surface px-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                                                </div>
+                                                <button type="button" onclick="resetRiskItemFilters()" class="h-9 px-4 rounded-md border border-bordercolor bg-surface text-textlabel text-xs font-bold hover:bg-appbg transition-colors shadow-sm flex items-center gap-2">
+                                                    Reset
+                                                </button>
+                                            </div>
+
+                                            <div class="overflow-x-auto border border-bordercolor rounded-lg">
+                                                <table id="availableRiskItems" class="w-full text-sm text-left whitespace-nowrap">
+                                                    <thead class="text-[10px] text-textmuted uppercase bg-appbg border-b border-bordercolor">
+                                                        <tr>
+                                                            <th class="px-6 py-3 font-semibold sortable active asc" data-col="LovRiskData">@localizer["Risk Item"]</th>
+                                                            <th class="px-6 py-3 font-semibold sortable" data-col="LovRiskScore">@localizer["Risk Score"]</th>
+                                                            <th class="px-6 py-3 font-semibold sortable" data-col="OverrideScore">@localizer["Override Score"]</th>
+                                                            <th class="px-6 py-3 font-semibold text-center sortable" data-col="IsActive">@localizer["Active Y/N"]</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-slate-100" style="font-size: 12px;"></tbody>
+                                                </table>
+                                            </div>
+                                            
+                                            <div class="px-6 py-4 bg-appbg border-t border-bordercolor flex items-center justify-between">
+                                                <div class="flex items-center gap-4">
+                                                    <div class="flex items-center gap-2">
+                                                        <label class="text-xs font-bold text-textmuted uppercase tracking-wider">Show</label>
+                                                        <select id="riskItemPageSize" onchange="changeRiskItemPageSize()"
+                                                                class="h-8 w-20 rounded-md border border-bordercolor bg-surface pl-3 pr-8 text-xs font-bold text-textlabel focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer">
+                                                            <option value="10">10</option>
+                                                            <option value="25">25</option>
+                                                            <option value="50">50</option>
+                                                            <option value="100">100</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="h-4 w-px bg-slate-200"></div>
+                                                    <div class="text-xs font-bold text-textmuted uppercase tracking-wider">
+                                                        Showing <span id="riskItemShowingStart" class="text-textprimary">0</span> - <span id="riskItemShowingEnd" class="text-textprimary">0</span> 
+                                                        <span class="mx-1 text-slate-300">of</span> 
+                                                        <span id="riskItemTotalRecords" class="text-textprimary">0</span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="flex items-center gap-2">
+                                                    <div id="riskItemPagination" class="flex gap-1 hidden"></div>
+                                                    <button type="button" id="riskItemPrevBtn" onclick="previousRiskItemPage()"
+                                                                class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                                                            <i data-lucide="chevron-left" class="h-3.5 w-3.5"></i>
+                                                            Previous
+                                                        </button>
+                                                        <button type="button" id="riskItemNextBtn" onclick="nextRiskItemPage()"
+                                                            class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                                                            Next
+                                                            <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
+                                                        </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    
+                                <div class="mt-8 pt-6 border-t border-bordercolor flex justify-end">
+                                    <button type="submit" id="btnitemSubmit"
+                                            class="bg-primary hover:bg-primary-hover text-white font-bold h-10 px-8 rounded-md shadow-sm transition-colors text-sm flex items-center gap-2 hidden">
+
+                                        <span>Save</span>
+
+                                    </button>
+                                </div>
+                                </div>
+                            </div>
+                       
+                    </div>
+                   
+                </div>
+                </form> 
+            </div>
+             
+                  
+
+            <!-- User Management Card -->
+            <div class="bg-surface rounded-xl border border-bordercolor shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-bordercolor bg-appbg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-textprimary uppercase tracking-tight flex items-center gap-2">
+                            <i data-lucide="users" class="h-4 w-4 text-primary"></i>
+                            User Management
+                        </h3>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="/UserGroup/Index?clientId=@clientId" class="h-9 px-4 rounded-md border border-bordercolor bg-surface text-textlabel text-xs font-bold flex items-center gap-2 hover:bg-appbg transition-colors shadow-sm">
+                            User Groups
+                        </a>
+                        <a href="/usergroup/create?clientId=@clientId" class="h-9 px-4 rounded-md border border-bordercolor bg-surface text-textlabel text-xs font-bold flex items-center gap-2 hover:bg-appbg transition-colors shadow-sm">
+                            New Group
+                        </a>
+                        <a href="/user/create?clientId=@clientId" class="h-9 px-4 rounded-md bg-primary text-white text-xs font-bold flex items-center gap-2 hover:bg-primary-hover transition-colors shadow-sm">
+                            Add New Users 
+                        </a>
+                    </div>
+                </div>
+
+                <div class="p-6 space-y-4">
+                    <div class="flex flex-col md:flex-row justify-end items-center gap-4">
+                        
+                        <div class="relative w-full md:w-80">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-textmuted"></i>
+                            <input id="userSearch" type="text" placeholder="Search" 
+                                   class="pl-9 h-9 w-full rounded-md border border-bordercolor bg-surface px-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                        </div>
+                        <button onclick="resetUserFilters()" class="h-9 px-4 rounded-md border border-bordercolor bg-surface text-textlabel text-xs font-bold hover:bg-appbg transition-colors shadow-sm flex items-center gap-2">
+                            Reset
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto border border-bordercolor rounded-lg">
+                        <table id="usersTable" class="w-full text-sm text-left whitespace-nowrap">
+                            <thead class="text-[10px] text-textmuted uppercase bg-appbg border-b border-bordercolor">
+                                <tr>
+                                    <th class="px-6 py-3 font-semibold sortable active asc" data-col="empCode">Emp Code</th>
+                                    <th class="px-6 py-3 font-semibold sortable" data-col="fName">Full Name</th>
+                                    <th class="px-6 py-3 font-semibold sortable" data-col="userName">Username</th>
+                                    <th class="px-6 py-3 font-semibold text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100" style="font-size: 12px;">
+                                <!-- User rows will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="px-6 py-4 bg-appbg border-t border-bordercolor flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-bold text-textmuted uppercase tracking-wider">Show</label>
+                            <select id="pageSize" onchange="changePageSize()"
+                                    class="h-8 w-20 rounded-md border border-bordercolor bg-surface pl-3 pr-8 text-xs font-bold text-textlabel focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <div class="h-4 w-px bg-slate-200"></div>
+                        <div class="text-xs font-bold text-textmuted uppercase tracking-wider">
+                            Showing <span id="showingStart" class="text-textprimary">0</span> - <span id="showingEnd" class="text-textprimary">0</span> 
+                            <span class="mx-1 text-slate-300">of</span> 
+                            <span id="totalRecords" class="text-textprimary">0</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button id="prevBtn" onclick="previousPage()"
+                                class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                            <i data-lucide="chevron-left" class="h-3.5 w-3.5"></i>
+                            Previous
+                        </button>
+                        <button id="nextBtn" onclick="nextPage()"
+                                class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                            Next
+                            <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+         </div>
+       </div>
+     </div>
+  </div>
+       
+
+<script>
+    const clientId = @clientId;
+    let userPage = 1;
+    let userPageSize = 10;
+    let userSort = 'empCode';
+    let userDir = 'asc';
+
+    $(document).ready(function() {
+        lucide.createIcons();
+        loadUsers();
+        loadClientRights();
+
+        $('#userRowsPerPage').on('change', function() {
+            userPageSize = parseInt($(this).val());
+            userPage = 1;
+            loadUsers();
+        });
+
+        $('#userSearch').on('input', function() {
+            userPage = 1;
+            loadUsers();
+        });
+
+        $('#usersTable').on('click', 'th.sortable', function() {
+            const col = $(this).data('col');
+            $('.sortable').removeClass('active asc desc');
+            if (userSort === col) {
+                userDir = userDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                userSort = col;
+                userDir = 'asc';
+            }
+            $(this).addClass('active ' + userDir);
+            loadUsers();
+        });
+
+        $('#frmClient').submit(function(e) {
+            e.preventDefault();
+            $('#loader').removeClass('hidden').addClass('flex');
+            const formData = new FormData(this);
+            $.ajax({
+                url: '/client/create',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function() {
+
+                    toastr.success('Client configuration updated successfully');
+                    setTimeout(() => location.reload(), 1500);
+
+                },
+                complete: function() {
+                    $('#loader').addClass('hidden').removeClass('flex');
+                }
+            });
+        });
+    });
+
+    function loadUsers() {
+        $('#loader').removeClass('hidden').addClass('flex');
+        $.ajax({
+            url: '/adminmanagement/userpagination',
+            type: 'POST',
+            data: {
+                draw: 1,
+                start: (userPage - 1) * userPageSize,
+                length: userPageSize,
+                Id: clientId,
+                search: { value: $('#userSearch').val() },
+                order: [{ column: 0, dir: userDir }],
+                columns: [{ data: userSort }]
+            },
+            success: function(resp) {
+                renderUserTable(resp.data);
+                renderUserPagination(resp.recordsFiltered);
+                updateShowingEntries(resp.recordsFiltered);
+                $('#userTotalVisible').text(resp.data ? resp.data.length : 0);
+            },
+            complete: function() { 
+                $('#loader').addClass('hidden').removeClass('flex'); 
+            }
+        });
+    }
+
+    function renderUserTable(data) {
+        const tbody = $('#usersTable tbody').empty();
+        if (!data || data.length === 0) {
+            tbody.append('<tr><td colspan="4" class="px-6 py-12 text-center text-textmuted">No users found for this client</td></tr>');
+            return;
+        }
+        data.forEach(u => {
+            const blockIcon = u.isBlocked 
+                ? '<i data-lucide="lock" class="h-3.5 w-3.5 text-red-600"></i>' 
+                : '<i data-lucide="unlock" class="h-3.5 w-3.5 text-green-600"></i>';
+            const blockColor = u.isBlocked ? 'hover:bg-red-50 hover:border-red-100' : 'hover:bg-green-50 hover:border-green-100';
+            const blockTitle = u.isBlocked ? 'Unblock User' : 'Block User';
+
+            tbody.append(`
+                <tr class="hover:bg-appbg/80 transition-colors">
+                    <td class="px-6 py-4 font-medium text-textlabel font-bold">${u.empCode}</td>
+                    <td class="px-6 py-4 text-textprimary">${u.fName} ${u.lName || ''}</td>
+                    <td class="px-6 py-4 text-textmuted">${u.userName}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center gap-2">
+                            <a href="/user/edit/${u.id}" class="h-8 w-8 flex items-center justify-center rounded-md border border-bordercolor bg-surface text-textlabel hover:text-primary hover:border-blue-100 hover:bg-blue-50 transition-all shadow-sm" title="Edit User">
+                                <i data-lucide="edit-3" class="h-3.5 w-3.5"></i>
+                            </a>
+                            <button onclick="BlockData(${u.id}, ${u.isBlocked ? 0 : 1})" class="h-8 w-8 flex items-center justify-center rounded-md border border-bordercolor bg-surface text-textlabel ${blockColor} transition-all shadow-sm" title="${blockTitle}">
+                                ${blockIcon}
+                            </button>
+                            <button onclick="deleteUser(${u.id})" class="h-8 w-8 flex items-center justify-center rounded-md border border-bordercolor bg-surface text-textlabel hover:text-red-600 hover:border-red-100 hover:bg-red-50 transition-all shadow-sm" title="Delete User">
+                                <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `);
+        });
+        lucide.createIcons();
+    }
+
+    function renderUserPagination(total) {
+        const container = $('#userPagination').empty();
+        const pages = Math.ceil(total / userPageSize);
+        if (pages <= 1) return;
+        
+        const maxVisible = 5;
+        let start = Math.max(1, userPage - Math.floor(maxVisible / 2));
+        let end = Math.min(pages, start + maxVisible - 1);
+        if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+
+        for (let i = start; i <= end; i++) {
+            container.append(`
+                <button onclick="goUserPage(${i})" 
+                        class="h-7 w-7 flex items-center justify-center text-[11px] font-bold border rounded transition-all
+                        ${i === userPage ? 'bg-primary text-white border-blue-600 shadow-sm' : 'bg-surface border-bordercolor text-textlabel hover:bg-appbg'}">
+                    ${i}
+                </button>
+            `);
+        }
+    }
+
+        function updateShowingEntries(totalRecords) {
+
+        if (totalRecords === 0) {
+            $('#showingStart').text(0);
+            $('#showingEnd').text(0);
+            $('#totalRecords').text(0);
+            return;
+        }
+
+        let start = (userPage - 1) * userPageSize + 1;
+        let end = Math.min(userPage * userPageSize, totalRecords);
+
+        $('#showingStart').text(start);
+        $('#showingEnd').text(end);
+        $('#totalRecords').text(totalRecords);
+    }
+
+    function goUserPage(p) { userPage = p; loadUsers(); }
+
+    function BlockData(id, status) {
+        const title = status === 1 ? 'Block User' : 'Unblock User';
+        const msg = `Are you sure you want to ${status === 1 ? 'block' : 'unblock'} this user?`;
+        
+        confirmModal(title, msg, function() {
+            $('#loader').removeClass('hidden').addClass('flex');
+            $.ajax({
+                url: `/User/Block?Id=${id}&Status=${status}`,
+                type: 'POST',
+                success: function () { 
+                    toastr.success('User status updated successfully');
+                    loadUsers(); 
+                },
+                complete: function() {
+                    $('#loader').addClass('hidden').removeClass('flex');
+                }
+            });
+        });
+    }
+
+    function deleteUser(id) {
+        confirmModal('Delete User', 'Are you sure you want to delete this user? This action cannot be undone.', function() {
+            $('#loader').removeClass('hidden').addClass('flex');
+            $.ajax({
+                url: '/user/delete/' + id,
+                type: 'DELETE',
+                success: function() { 
+                    toastr.success('User deleted successfully');
+                    loadUsers(); 
+                }
+            });
+        });
+    }
+
+    function resetUserFilters() {
+        $('#userSearch').val('');
+        $('#userSearch').trigger('input');
+    }
+
+     function loadClientRights() {
+        $('#loader').removeClass('hidden').addClass('flex');
+        $.ajax({
+            url: '/client/GetClientRightsData/' + clientId,
+            type: 'GET',
+            success: function(resp) {
+                const container = $('#clientRightsContainer').empty();
+                if (!resp || resp.length === 0) {
+                    container.append('<p class="text-textmuted">No rights available.</p>');
+                    return;
+                }
+                console.log(resp);
+                
+                // Add Chatbot Toggle manually at the beginning for visibility
+                // const chatbotRight = resp.find(m => m.menu_Name === "AgenticChatBot");
+                // if (chatbotRight) {
+                //     const checkedStr = chatbotRight.isChecked ? 'checked' : '';
+                //     container.append(`
+                //         <div class="flex items-center space-x-2 p-2 bg-blue-50/50 rounded-lg border border-blue-100/50">
+                //             <input type="checkbox" id="chkMenu_Chatbot" value="${chatbotRight.menu_Id}" 
+                //                    class="client-right-checkbox h-4 w-4 rounded border-slate-300 text-primary focus:ring-blue-500" ${checkedStr}>
+                //             <label for="chkMenu_Chatbot" class="text-sm text-blue-800 font-bold">Agentic ChatBot Assistant</label>
+                //         </div>
+                //     `);
+                // }
+
+                resp.forEach((m, idx) => {
+                    // Skip if manually added or internal-only
+                    if (m.menu_Name === "Risk Assessmnet" || m.menu_Name === "User Management") {
+                        return;
+                    }
+                    const chkId = 'chkMenu_' + m.menu_Id;
+                    const checkedStr = m.isChecked ? 'checked' : '';
+                    container.append(`
+                        <div class="flex items-center space-x-2 p-2 rounded-lg border border-transparent hover:bg-appbg transition-colors">
+                            <input type="checkbox" id="${chkId}" value="${m.menu_Id}" class="client-right-checkbox h-4 w-4 rounded border-slate-300 text-primary focus:ring-blue-500" ${checkedStr}>
+                            <label for="${chkId}" class="text-sm text-textlabel font-medium">${m.menu_Name}</label>
+                        </div>
+                    `);
+                });
+            },
+            complete: function() {
+                $('#loader').addClass('hidden').removeClass('flex');
+            }
+        });
+    }
+
+    $('#btnSaveClientRights').click(function() {
+        const selectedIds = [];
+        $('.client-right-checkbox:checked').each(function() {
+            selectedIds.push($(this).val());
+        });
+        
+        $('#loader').removeClass('hidden').addClass('flex');
+        $.ajax({
+            url: '/client/ClientRight',
+            type: 'POST',
+            data: { ClientId: clientId, MenuIds: selectedIds },
+            success: function() {
+                toastr.success('Client rights updated successfully');
+            },
+            complete: function() {
+                $('#loader').addClass('hidden').removeClass('flex');
+            }
+        });
+    });
+
+    // Custom Confirmation Modal Helper
+    function confirmModal(title, message, onConfirm) {
+        $('#confirmModalTitle').text(title);
+        $('#confirmModalMessage').text(message);
+        $('#confirmModalOkBtn').off('click').on('click', function() {
+            onConfirm();
+            closeConfirmModal();
+        });
+        $('#confirmModal').removeClass('hidden').addClass('flex');
+    }
+
+    function closeConfirmModal() {
+        $('#confirmModal').addClass('hidden').removeClass('flex');
+    }
+   document.getElementById("txtThreshold").addEventListener("input", function () {
+        if (this.value > 100) {
+            this.value = 100;
+        }
+    });
+</script>
+
+<!--Risk Configuration Scripts -->
+<script>
+
+    function ValidateRiskSelection () {
+
+        var ddl = $("#ddlRiskCategory");
+        if (ddl.val() == "0") {
+            //If the "Select" option is selected display error.
+            document.getElementById('addCategory').disabled = true;
+            document.getElementById('addSubcategory').disabled = true;
+            document.getElementById('addRow').disabled = true;
+            document.getElementById('validateddl').style.display = "block";
+
+            var x = document.getElementById('divRiskitemsFull');
+            x.style.display = "none";
+            var a = document.getElementById('divRiskTypeFull');
+            a.style.display = "none";
+            var b = document.getElementById('divCategoryType');
+            b.style.display = "none";
+        }
+        else {
+            document.getElementById('addCategory').disabled = false;
+            document.getElementById('addSubcategory').disabled = false;
+            document.getElementById('addRow').disabled = false;
+            document.getElementById('validateddl').style.display = "none";
+
+            var x = document.getElementById('divRiskitemsFull');
+            x.style.display = "none";
+            var a = document.getElementById('divRiskTypeFull');
+            a.style.display = "none";
+            var b = document.getElementById('divCategoryType');
+            b.style.display = "none";
+        }
+
+    }
+
+    var arrHead = new Array();
+
+    $(document).ready(function () {
+        $('#ddlRiskCategory').val("0");
+    });
+
+    $('#ddlRiskCategory').change(function () {
+        $("#availableRiskTypeCategory tbody").empty();
+        $("#availableRiskType tbody").empty();
+        $("#availableRiskItems tbody").empty();
+
+
+        LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+
+    });
+    $('#ddlRiskTypeCategory').change(function () {
+        $("#availableRiskType tbody").empty();
+
+        $('#txtRiskTypeCategoryName').val($('#ddlRiskTypeCategory :selected').text());
+        var x = document.getElementById('addMoreSubCategory');
+        x.style.display = "block";
+        x = document.getElementById('divRiskTypeonddl');
+        x.style.display = "block";
+        $("#RiskTypeSubcategoryList").find("tr").find("input[type=text]").val('');
+        //addSubcategoryRow();
+        $("#RiskTypeSubcategoryList").find("tr:gt(1)").remove();
+
+        LoadRiskTypeTable($('#ddlRiskTypeCategory').val());
+        if ($('#ddlRiskTypeCategory').val() == 0) {
+            $('#divRiskTypeonddl').hide();
+        }
+    });
+    $('#ddlRiskTypeCategory2').change(function () {
+        var x = document.getElementById('divddlRiskType');
+        x.style.display = "block";
+
+        $('#txtRiskTypeCategoryName2').val($('#ddlRiskTypeCategory2 :selected').text());
+        getRiskTypes($('#ddlRiskTypeCategory2').val());
+        $('#dvRiskItemList').hide();
+        $("#RiskItemList").find("tr").find("input[type=text]").val('');
+        $("#RiskItemList").find("tr").find("select").val('0');
+        $("#RiskItemList").find("tr:gt(1)").remove();
+        $('#addMoreRiskItems').hide();
+        $('#divRiskTtemtable').hide();
+        if ($('#ddlRiskTypeCategory2').val() == 0) {
+            $('#divddlRiskType').hide();
+            $('#divRiskItemddl').hide();
+        }
+    });
+
+    $('#ddlRiskType').change(function () {
+        $('#txtRiskTypeName').val($('#ddlRiskType :selected').text());
+        //addListRow();
+        var x = document.getElementById('dvRiskItemList');
+        x.style.display = "block";
+        x = document.getElementById('divRiskItemddl');
+        x.style.display = "block";
+        x = document.getElementById('addMoreRiskItems');
+        x.style.display = "block";
+        LoadTable($('#ddlRiskType').val());
+        //  $("RiskItemList").find("tr:gt(0)").remove();
+        $("#RiskItemList").find("tr").find("input[type=text]").val('');
+        $("#RiskItemList").find("tr").find("select").val('0');
+        document.getElementById("AddedItems[0].OverrideScore").setAttribute('disabled', 'true');
+        $("#RiskItemList").find("tr:gt(1)").remove();
+        $('#addMoreRiskItems').show();
+        $('#divRiskTtemtable').show();
+        if ($('#ddlRiskType').val() == 0) {
+            $('#divRiskItemddl').hide();
+        }
+    });
+
+    arrHead = ['@localizer["Risk Item"]', '@localizer["Risk Score"]', '@localizer["Override Score"]', '@localizer["Action"]', ''];
+    contarr = []
+    // first create TABLE structure with the headers.
+    function createTable () {
+        var empTable = document.createElement('table');
+        empTable.setAttribute('id', 'RiskItemList'); // table id.
+
+        empTable.className = "text-sm border-separate border-spacing-x-4 border-spacing-y-2";
+
+        var tr = empTable.insertRow(-1);
+        for (var h = 0; h < arrHead.length; h++) {
+            var th = document.createElement('th');// create table headers
+           th.className = "px-2 py-2 text-left font-semibold text-textlabel";
+            th.innerHTML = arrHead[h];
+            tr.appendChild(th);
+        }
+
+        var div = document.getElementById('dvRiskItemList');
+        div.appendChild(empTable);  // add the TABLE to the container.
+    }
+
+    arrHead1 = ['@localizer["Risk Type Category"]', '@localizer["Action"]', ''];
+    contarr1 = []
+    // first create TABLE structure with the headers.
+    function createRiskTypeCategoryTable () {
+        var empTable = document.createElement('table');
+        empTable.setAttribute('id', 'RiskTypeCategoryList'); // table id.
+        empTable.className = "text-sm border-separate border-spacing-x-4 border-spacing-y-2";
+
+
+
+        var tr = empTable.insertRow(-1);
+        for (var h = 0; h < arrHead1.length; h++) {
+            var th = document.createElement('th');// create table headers
+            th.className = "px-2 py-2 text-left font-semibold text-textlabel";
+            th.innerHTML = arrHead1[h];
+            tr.appendChild(th);
+        }
+
+        var div = document.getElementById('dvRiskCategoryList');
+        div.appendChild(empTable);  // add the TABLE to the container.
+    }
+
+    arrHead2 = ['@localizer["Risk Type"]', '@localizer["Action"]', ''];
+    contarr2 = []
+    // first create TABLE structure with the headers.
+    function createRiskTypeTable () {
+        var empTable = document.createElement('table');
+        empTable.setAttribute('id', 'RiskTypeSubcategoryList'); // table id.
+        empTable.className = "text-sm border-separate border-spacing-x-4 border-spacing-y-2";
+
+        var tr = empTable.insertRow(-1);
+        for (var h = 0; h < arrHead2.length; h++) {
+            var th = document.createElement('th');// create table headers
+            th.className = "px-2 py-2 text-left font-semibold text-textlabel";
+            th.innerHTML = arrHead2[h];
+            tr.appendChild(th);
+        }
+
+        var div = document.getElementById('dvRiskSubcategoryList');
+        div.appendChild(empTable);  // add the TABLE to the container.
+    }
+
+    function addCategoryRow () {
+        
+
+        var empTab = document.getElementById('RiskTypeCategoryList');
+        var rowIndexVal = $('#rowIndex1').val();
+        var rowCnt = empTab.rows.length;   // table row count.
+        var tr = empTab.insertRow(rowCnt); // the table row.
+        @* tr = empTab.insertRow(rowCnt); *@
+
+        for (var c = 0; c < arrHead1.length; c++) {
+            var td = document.createElement('td'); // table definition.
+            td.className = "px-2 py-2";
+            td = tr.insertCell(c);
+
+            if (c == 1) {      // the first column.
+                // add a button in every new row in the last column.
+                var button = document.createElement('input');
+
+                // set input attributes.
+                button.setAttribute('type', 'button');
+                button.setAttribute('class','h-9 px-8 text-white rounded-md bg-red-600');
+                button.setAttribute('value', '@localizer["Remove"]');
+
+                // add button's 'onclick' event.
+                button.setAttribute('onclick', 'removeRow(this)');
+
+                td.appendChild(button);
+            }
+            else {
+                // 1nd, 2rd,Url3rd and 4th column, will have textbox.
+                var ele = document.createElement('input');
+                if (c == 0) {
+                    var hiddenIndex = document.createElement('input');
+                    hiddenIndex.setAttribute('type', 'hidden');
+                    hiddenIndex.setAttribute('class', 'px-3 py-2 rounded border border-gray-300 text-sm');
+                    hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                    hiddenIndex.setAttribute('id', 'Index')
+                    td.appendChild(hiddenIndex);
+                    ele = addCategoryTypeRow(ele, 'RiskTypeCategory', '');
+                    td.appendChild(ele);
+                } else {
+                    ele.setAttribute('type', 'hidden');
+                    ele.setAttribute('class', 'px-3 py-2 rounded border border-gray-300 text-sm');
+                    ele.setAttribute('value', false);
+                    ele.setAttribute('name', 'AddedRiskTypeCategory[' + $('#rowIndex1').val() + '].isDeletedInUI');
+                    ele.setAttribute('id', 'AddedRiskTypeCategory[' + $('#rowIndex1').val() + '].isDeletedInUI');
+                    ele.setAttribute('maxlength', 500);
+                    ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                    td.appendChild(ele);
+                }
+
+            }
+        }
+
+        $('#rowIndex1').val(parseInt(rowIndexVal) + 1);
+    }
+
+    function DisplayCategory () {
+        var x = document.getElementById('divRiskitemsFull');
+        x.style.display = "none";
+        var a = document.getElementById('divRiskTypeFull');
+        a.style.display = "none";
+        var b = document.getElementById('divCategoryType');
+        b.style.display = "block";
+        var x = document.getElementById('dvRiskCategoryList');
+        x.style.display = "block";
+        var y = document.getElementById('divRiskTypeCategory');
+        y.style.display = "block";
+        var z = document.getElementById('btnTypeCategorySubmit');
+        z.style.display = "block";
+        z = document.getElementById('addMoreCategory');
+        z.style.display = "block";
+        $("#RiskItemList").find("tr").find("input[type=text]").val('');
+        $("#RiskTypeCategoryList").find("tr").find("input[type=text]").val('');
+        $("#RiskTypeCategoryList").find("tr:gt(1)").remove();
+        LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+
+
+    }
+
+    function DisplayCategoryType () {
+        var x = document.getElementById('dvRiskCategoryList');
+        x.style.display = "none";
+        var y = document.getElementById('divRiskTypeCategory');
+        y.style.display = "none";
+        var z = document.getElementById('btnTypeCategorySubmit');
+        z.style.display = "none";
+        var a = document.getElementById('divRiskitemsFull');
+        a.style.display = "none";
+        a = document.getElementById('divCategoryType');
+        a.style.display = "none";
+        var x = document.getElementById('divRiskTypeonddl');
+        x.style.display = "none";
+        var b = document.getElementById('divRiskTypeFull');
+        b.style.display = "block";
+        b = document.getElementById('addMoreSubCategory');
+        b.style.display = "block;"
+        $("#availableRiskTypeCategory tbody").empty();
+        $('#txtRiskCategory').val($('#ddlRiskCategory :selected').text());
+
+        getRiskTypeCategory($('#ddlRiskCategory').val());
+        var x = document.getElementById('divRiskTypeCategoryddl');
+        x.style.display = "block";
+
+    }
+
+    function selectRiskCategories () {
+        x = document.getElementById('divRiskItemddl');
+        x.style.display = "none";
+        x = document.getElementById('divddlRiskType');
+        x.style.display = "none";
+        var x = document.getElementById('divRiskitemsFull');
+        x.style.display = "block";
+        var y = document.getElementById('divRiskTypeFull');
+        y.style.display = "none";
+        var z = document.getElementById('divCategoryType');
+        z.style.display = "none";
+
+
+
+        $('#txtRiskCategory').val($('#ddlRiskCategory :selected').text());
+        getRiskTypeCategory2($('#ddlRiskCategory').val());
+        var x = document.getElementById('divRiskitems');
+        x.style.display = "block";
+    }
+
+
+
+
+         $(document).ready(function () {
+        $("#btnTypeCategorySubmit").click(function (e) {
+            e.preventDefault();                           // keep page in place
+
+            const $btn    = $(this);                      // cache button
+            const $loader = $("#loadingRiskCategory");    // overlay div
+
+            $.ajax({
+                type:  "POST",
+                url:   "/Risk/SaveCategoryType",
+                data:  $("#myform").serialize(),
+                dataType: "json",
+
+                /* ---------- BEFORE SEND ---------- */
+                beforeSend() {
+                    $loader.css("display", "flex");       // show overlay
+                    $btn.prop("disabled", true)           // lock button
+                        .addClass("opacity-50 cursor-not-allowed");
+                },
+
+                /* ---------- SUCCESS ---------- */
+                success(data) {
+                    console.log(data);
+                    $("input[type='text'],textarea").val("");
+                    $("select").val("0");
+                },
+
+                /* ---------- ERROR ---------- */
+                error() {
+                    $("input[type='text'],textarea").val("");
+                    LoadRiskTypeCategoryTable($("#ddlRiskCategory").val());
+                },
+
+                /* ---------- COMPLETE ---------- */
+                complete() {
+                    $loader.fadeOut();                    // hide overlay
+                    $btn.prop("disabled", false)          // unlock button
+                        .removeClass("opacity-50 cursor-not-allowed");
+                    ReloadAfterSubmit();
+                }
+            });
+
+            return false;                                 // stop normal submit
+        });
+    });
+
+
+    
+
+
+        $(document).ready(function () {
+        $("#btnTypeSubmit").click(function (e) {
+            e.preventDefault();                           // keep the form on the page
+            const $btn    = $(this);                     // cache button for enable/disable
+            const $loader = $("#loadingRiskTypeCategory");
+
+            $.ajax({
+                type: 'POST',
+                url: '/Risk/SaveType',
+                data: $('#myform').serialize(),
+                dataType: 'json',
+
+                /* ---------- BEFORE SEND ---------- */
+                beforeSend: function () {
+                    $loader.css("display", "flex");      // show overlay
+                    $btn.prop("disabled", true)          // lock button
+                         .addClass("opacity-50 cursor-not-allowed");
+                    $(".card-header").fadeOut();
+                },
+
+                /* ---------- SUCCESS ---------- */
+                success: function (data) {
+                    console.log(data);
+                    $('input[type="text"],textarea').val('');
+                    $('select').val('0');
+                },
+
+                /* ---------- ERROR ---------- */
+                error: function () {
+                    $('input[type="text"],textarea').val('');
+                    LoadRiskTypeTable($('#ddlRiskTypeCategory').val());
+                },
+
+                /* ---------- COMPLETE ---------- */
+                complete: function () {
+                    $loader.fadeOut();                   // hide overlay
+                    $btn.prop("disabled", false)         // unlock button
+                         .removeClass("opacity-50 cursor-not-allowed");
+                    $(".card-header").show();
+                    ReloadAfterSubmit();
+                }
+            });
+
+            return false;                                // stop normal submit
+        });
+    });
+
+
+   
+
+        $(document).ready(function () {
+        $("#btnitemSubmit").click(function (e) {
+            e.preventDefault();                         // keep page in place
+
+            const $btn    = $(this);                    // cache the button
+            const $loader = $("#loadingRiskItemCategory1");
+
+            $.ajax({
+                type: "POST",
+                url:  "/Risk/SaveRiskItems",
+                data: $("#myform").serialize(),
+                dataType: "json",
+
+                /* ---------- BEFORE SEND ---------- */
+                beforeSend() {
+                    $loader.css("display", "flex");     // show overlay
+                    $btn.prop("disabled", true)         // lock button
+                        .addClass("opacity-50 cursor-not-allowed");
+                },
+
+                /* ---------- SUCCESS ---------- */
+                success(result) {
+                    console.log(result);
+                    $("input[type='text'],textarea").val("");
+                    $("select").val("0");
+                    // LoadTable($("#ddlRiskType").val()); // uncomment if needed
+                },
+
+                /* ---------- ERROR ---------- */
+                error() {
+                    $("input[type='text'],textarea").val("");
+                    $("select").val("0");
+                    LoadTable($("#ddlRiskType").val());
+                },
+
+                /* ---------- COMPLETE ---------- */
+                complete() {
+                    $loader.fadeOut();                  // hide overlay
+                    $btn.prop("disabled", false)        // unlock button
+                        .removeClass("opacity-50 cursor-not-allowed");
+                    ReloadAfterSubmit();
+                }
+            });
+
+            return false;                               // stop normal submit
+        });
+    });
+
+
+    function addSubcategoryRow () {
+        // array for header.
+        var x = document.getElementById('dvRiskSubcategoryList');
+        x.style.display = "block";
+        var z = document.getElementById('btnTypeSubmit');
+        z.style.display = "block";
+        var y = document.getElementById('divRiskType');
+        y.style.display = "block";
+        var empTab = document.getElementById('RiskTypeSubcategoryList');
+        var rowIndexVal = $('#rowIndex2').val();
+
+        var rowCnt = empTab.rows.length;   // table row count.
+        var tr = empTab.insertRow(rowCnt); // the table row.
+        @* tr = empTab.insertRow(rowCnt); *@
+
+        for (var c = 0; c < arrHead2.length; c++) {
+            var td = document.createElement('td'); // table definition.
+            td.className = "px-2 py-2";
+            td = tr.insertCell(c);
+
+            if (c == 1) {      // the first column.
+                // add a button in every new row in the last column.
+                var button = document.createElement('input');
+
+                // set input attributes.
+                button.setAttribute('type', 'button');
+                button.setAttribute('class','h-9 px-8 text-white rounded-md bg-red-600');
+                button.setAttribute('value', '@localizer["Remove"]');
+
+                // add button's 'onclick' event.
+                button.setAttribute('onclick', 'removeRow(this)');
+
+                td.appendChild(button);
+            }
+            else {
+                // 1st column will have textbox.
+                var ele = document.createElement('input');
+                if (c == 0) {
+                    var hiddenIndex = document.createElement('input');
+                    hiddenIndex.setAttribute('type', 'hidden');
+                    hiddenIndex.setAttribute('class', 'px-3 py-2 rounded border border-gray-300 text-sm');
+                    hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                    hiddenIndex.setAttribute('id', 'Index')
+                    td.appendChild(hiddenIndex);
+
+                    ele = addTypeRow(ele, 'RiskType', '');
+                    td.appendChild(ele);
+                } else {
+                    ele.setAttribute('type', 'hidden');
+                    ele.setAttribute('class', 'px-3 py-2 rounded border border-gray-300 text-sm');
+                    ele.setAttribute('value', false);
+                    ele.setAttribute('name', 'AddedRiskType[' + $('#rowIndex2').val() + '].isDeletedInUI');
+                    ele.setAttribute('id', 'AddedRiskType[' + $('#rowIndex2').val() + '].isDeletedInUI');
+                    ele.setAttribute('maxlength', 500);
+                    ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                    td.appendChild(ele);
+                }
+
+            }
+        }
+
+        $('#rowIndex2').val(parseInt(rowIndexVal) + 1);
+    }
+
+
+    // now, add a new to the TABLE.
+    function addListRow () {
+        // array for header.
+        var z = document.getElementById('btnitemSubmit');
+      z.style.display = "block";
+        var empTab = document.getElementById('RiskItemList');
+        var rowIndexVal = $('#rowIndex3').val();
+
+        var rowCnt = empTab.rows.length;   // table row count.
+        var tr = empTab.insertRow(rowCnt); // the table row.
+        @* tr = empTab.insertRow(rowCnt); *@
+
+        for (var c = 0; c < arrHead.length; c++) {
+            var td = document.createElement('td'); // table definition.
+            td.className = "px-2 py-2";
+            td = tr.insertCell(c);
+
+            if (c == 3) {      // the first column.
+                // add a button in every new row in the last column.
+                var button = document.createElement('input');
+
+                // set input attributes.
+                button.setAttribute('type', 'button');
+                button.setAttribute('class','h-9 px-8 text-white rounded-md bg-red-600');
+                button.setAttribute('value', '@localizer["Remove"]');
+
+                // add button's 'onclick' event.
+                button.setAttribute('onclick', 'removeRow(this)');
+
+                td.appendChild(button);
+            }
+            else {
+                // 1nd, 2rd, 3rd and 4th column, will have textbox.
+                var ele = document.createElement('input');
+                if (c == 0) {
+                    var hiddenIndex = document.createElement('input');
+                    hiddenIndex.setAttribute('type', 'hidden');
+                    hiddenIndex.setAttribute('class', 'px-3 py-2 rounded border border-gray-300 text-sm');
+                    hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                    hiddenIndex.setAttribute('id', 'Index')
+                    td.appendChild(hiddenIndex);
+
+                    ele = addRow(ele, 'RiskItem', '');
+                    td.appendChild(ele);
+                } else if (c == 1) {
+                   
+                    var selectEle = document.createElement("SELECT");
+                    selectEle.setAttribute('class', 'px-3 py-2 pr-8 rounded border border-gray-300 text-sm bg-surface');
+                    var option = '';
+                    for (var i = 0; i <= 3; i++) {
+                        option = document.createElement("OPTION");
+                        option.text = i;
+                        selectEle.add(option);
+                    }
+                    selectEle = addRow(selectEle, 'RiskScore', '');
+                    td.appendChild(selectEle);
+                    //vidya
+                } else if (c == 2) {
+                    //vidya
+                    //ele = addRow(ele, 'OverrideScore', '');
+                    //td.appendChild(ele);
+                    var selectEle = document.createElement("SELECT");
+                    selectEle.setAttribute('class', 'px-3 py-2 pr-8 rounded border border-gray-300 text-sm bg-surface');
+                    var option1 = document.createElement("OPTION");
+                    option1.text = 0;
+                    selectEle.add(option1);
+                    var option2 = document.createElement("OPTION");
+                    option2.text = 3;
+                    selectEle.add(option2);
+                    selectEle = addRow(selectEle, 'OverrideScore', '');
+                    td.appendChild(selectEle);
+                    //vidya
+                } else {
+                    ele.setAttribute('type', 'hidden');
+                    ele.setAttribute('class', 'px-3 py-2 rounded border border-gray-300 text-sm');
+                    ele.setAttribute('value', false);
+                    ele.setAttribute('name', 'AddedItems[' + $('#rowIndex3').val() + '].isDeletedInUI');
+                    ele.setAttribute('id', 'AddedItems[' + $('#rowIndex3').val() + '].isDeletedInUI');
+                    ele.setAttribute('maxlength', 500);
+                    ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                    td.appendChild(ele);
+                }
+
+            }
+        }
+
+        $('#rowIndex3').val(parseInt(rowIndexVal) + 1);
+    }
+    function addRow (ele, elementName, value) {
+        var rowIndex = $('#rowIndex3').val();
+        if (elementName == 'RiskScore' || elementName == 'OverrideScore') {
+            ele.setAttribute('max', 3);
+            ele.setAttribute('min', 0);
+
+            ele.setAttribute('type', 'number');
+            ele.setAttribute('name', 'AddedItems[' + rowIndex + '].' + elementName);
+            ele.setAttribute('id', 'AddedItems[' + rowIndex + '].' + elementName);
+            if (elementName == 'RiskScore') {
+                ele.setAttribute('onchange', 'riskScoreOnChange(' + rowIndex + ')');
+            } else if (elementName == 'OverrideScore') {
+                ele.setAttribute('disabled', 'true');
+            }
+        }
+        else {
+            ele.setAttribute('type', 'text');
+            ele.setAttribute('class', 'form-control');
+            ele.setAttribute('value', value);
+            ele.setAttribute('name', 'AddedItems[' + rowIndex + '].' + elementName);
+            ele.setAttribute('id', 'AddedItems[' + rowIndex + '].' + elementName);
+            ele.setAttribute('maxlength', 500);
+            ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+        }
+        return ele;
+    }
+
+    function addCategoryTypeRow (ele, elementName, value) {
+        var rowIndex = $('#rowIndex1').val();
+        ele.setAttribute('type', 'text');
+        ele.setAttribute('class', 'form-control');
+        ele.setAttribute('value', value);
+        ele.setAttribute('name', 'AddedRiskTypeCategory[' + rowIndex + '].' + elementName);
+        ele.setAttribute('id', 'AddedRiskTypeCategory[' + rowIndex + '].' + elementName);
+        ele.setAttribute('maxlength', 500);
+        ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+
+        return ele;
+    }
+
+    function addTypeRow (ele, elementName, value) {
+        var rowIndex = $('#rowIndex2').val();
+        ele.setAttribute('type', 'text');
+        ele.setAttribute('class', 'form-control');
+        ele.setAttribute('value', value);
+        ele.setAttribute('name', 'AddedRiskType[' + rowIndex + '].' + elementName);
+        ele.setAttribute('id', 'AddedRiskType[' + rowIndex + '].' + elementName);
+        ele.setAttribute('maxlength', 500);
+        ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+
+        return ele;
+    }
+    function isEmpty (obj) {
+        return Object.keys(obj).length === 0;
+    }
+    // delete TABLE row function.
+    function removeRow (e) {
+
+        e.closest('tr').style.display = 'none';//hide the div
+        e.closest('tr').querySelectorAll('input[type=hidden]')[1].value = true;
+
+
+    }
+
+   
+        function getRiskTypeCategory(riskCategoryID) {
+        // Show outer container and loader
+        $('#divRiskTypeFull').removeClass('hidden');
+        $('#loadingRiskTypeCategory').show();
+        $('#divRiskTypeCategoryddl').hide();
+
+        $.ajax({
+            url: '/Risk/GetRiskCategoryTypes',
+            type: 'GET',
+            data: { 'riskCategoryID': riskCategoryID,'clientId' :@Model.ClientId },
+            dataType: 'json',
+            beforeSend: function () {
+                $(".se-pre-con").show();
+                $(".card-header").fadeOut();
+            },
+            success: function (data) {
+                let options = "<option value='0'>--Select--</option>";
+                $.each(data, function (i, riskCategoryTypes) {
+                    options += "<option value='" + riskCategoryTypes.value + "'>" + riskCategoryTypes.text + "</option>";
+                });
+                $('#ddlRiskTypeCategory').html(options);
+            },
+            error: function (request, error) {
+                alert("Request: " + JSON.stringify(request));
+            },
+            complete: function () {
+                $(".se-pre-con").fadeOut();
+                $(".card-header").show();
+
+                // Hide loader and show dropdown section
+                $('#loadingRiskTypeCategory').hide();
+                $('#divRiskTypeCategoryddl').fadeIn();
+            }
+        });
+    }
+
+    function getRiskTypeCategory2 (riskCategoryID) {
+
+        @* new added contnet *@
+        $('#divRiskitemsFull').removeClass('hidden');
+        $('#loadingRiskItemCategory1').show();
+        $('#divRiskitems').hide();
+
+        $.ajax({
+
+            url: '/Risk/GetRiskCategoryTypes',
+            type: 'GET',
+            data: {
+                'riskCategoryID': riskCategoryID
+            },
+            dataType: 'json',
+            beforeSend: function () {
+                // Show image container
+                $(".se-pre-con").show();
+                $(".card-header").fadeOut()
+            },
+
+
+            success: function (data) {
+                var item = '';
+                $('#ddlRiskTypeCategory2').empty();
+                item += "<option value='0'>--@localizer["Select"]--</option>";
+                $.each(data, function (i, riskCategoryTypes) {
+                    item += "<option value='" + riskCategoryTypes.value + "'>" + riskCategoryTypes.text + "</option>";
+                });
+                $('#ddlRiskTypeCategory2').html(item);
+            },
+            error: function (request, error) {
+                alert("Request: " + JSON.stringify(request));
+            },
+            complete: function (data) {
+                $(".se-pre-con").fadeOut();
+                $(".card-header").show()
+
+                // Hide loader and show dropdown section
+                $('#loadingRiskItemCategory1').hide();
+                $('#divRiskitems').fadeIn();
+            }
+
+        });
+    }
+
+    function getRiskTypes (riskTypeCategoryID) {
+
+        @* new added contnet *@
+        $('#loadingRiskItemCategory2').show();
+        $('#divddlRiskType').hide();
+
+        $.ajax({
+
+            url: '/Risk/GetRiskTypes',
+            type: 'GET',
+            data: {
+                'riskTypeCategoryID': riskTypeCategoryID,
+                'clientId' : @Model.ClientId
+            },
+            dataType: 'json',
+            beforeSend: function () {
+                // Show image container
+                $(".se-pre-con").show();
+                $(".card-header").fadeOut()
+            },
+
+
+            success: function (data) {
+                var item = '';
+                $('#ddlRiskType').empty();
+                item += "<option value='0'>--@localizer["Select"]--</option>";
+                $.each(data, function (i, riskTypes) {
+
+                    //Code for hide Nationality from risk type
+
+                    console.log(riskTypes)
+                        if(riskTypes.text == "Country of Incorporation" || riskTypes.text == "Nationality Partner 1" || riskTypes.text == "Nationality Partner 2" || riskTypes.text == "Nationality Partner 3" || riskTypes.text == "Nationality" || riskTypes.text == "Second Nationality (if applicable)") {
+                        item += "<option value='" + riskTypes.value + "' disabled>" + riskTypes.text + " (Can only be changed from Masters > Country)</option>";
+                    } else {
+                        item += "<option value='" + riskTypes.value + "'>" + riskTypes.text + "</option>";
+
+
+                    }
+                });
+
+                $('#ddlRiskType').html(item);
+
+            },
+            error: function (request, error) {
+                alert("Request: " + JSON.stringify(request));
+            },
+
+            complete: function (data) {
+                $(".se-pre-con").fadeOut();
+                $(".card-header").show()
+
+                // Hide loader and show dropdown section
+                $('#loadingRiskItemCategory2').hide();
+                $('#divddlRiskType').fadeIn();
+            }
+        });
+    }
+
+
+    let riskItemPage = 1;
+    let riskItemPageSize = 10;
+    let riskItemSort = 'LovRiskData';
+    let riskItemDir = 'asc';
+
+    $(document).ready(function() {
+        $('#riskItemSearch').on('input', function() {
+            riskItemPage = 1;
+            LoadTable($('#ddlRiskType').val());
+        });
+
+        $('#availableRiskItems').on('click', 'th.sortable', function() {
+            const col = $(this).data('col');
+            if (!col) return;
+            $('#availableRiskItems .sortable').removeClass('active asc desc');
+            if (riskItemSort === col) {
+                riskItemDir = riskItemDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                riskItemSort = col;
+                riskItemDir = 'asc';
+            }
+            $(this).addClass('active ' + riskItemDir);
+            LoadTable($('#ddlRiskType').val());
+        });
+    });
+
+    function changeRiskItemPageSize() {
+        riskItemPageSize = parseInt($('#riskItemPageSize').val());
+        riskItemPage = 1;
+        LoadTable($('#ddlRiskType').val());
+    }
+
+    function previousRiskItemPage() {
+        if (riskItemPage > 1) { 
+            riskItemPage--; 
+            LoadTable($('#ddlRiskType').val()); 
+        }
+    }
+
+    function nextRiskItemPage() {
+        if (riskItemPage < Math.ceil(parseInt($('#riskItemTotalRecords').text()) / riskItemPageSize)) {
+            riskItemPage++; 
+            LoadTable($('#ddlRiskType').val());
+        }
+    }
+
+    function resetRiskItemFilters() {
+        $('#riskItemSearch').val('');
+        riskItemPage = 1;
+        LoadTable($('#ddlRiskType').val());
+    }
+
+    function LoadTable(riskTypeID) {
+        if (!riskTypeID || riskTypeID === '0' || riskTypeID === 0) return;
+        $('#loadingeffect').show();
+        $.ajax({
+            url: '/risk/custompaginationRiskItems',
+            type: 'POST',
+            data: {
+                draw: 1,
+                start: (riskItemPage - 1) * riskItemPageSize,
+                length: riskItemPageSize,
+                riskTypeID: riskTypeID,
+                clientId:@Model.ClientId,
+                search: { value: $('#riskItemSearch').val() },
+                order: [{ column: 0, dir: riskItemDir }],
+                columns: [{ data: riskItemSort }]
+            },
+            success: function(resp) {
+                renderRiskItemsTable(resp.data);
+                updateRiskItemPagination(resp.recordsFiltered);
+                lucide.createIcons();
+            },
+            complete: function() {
+                $('#loadingeffect').hide();
+            }
+        });
+    }
+
+    function renderRiskItemsTable(data) {
+        const tbody = $('#availableRiskItems tbody').empty();
+        if (!data || data.length === 0) {
+            tbody.append('<tr><td colspan="4" class="px-6 py-4 text-center text-textmuted">No risk items found</td></tr>');
+            return;
+        }
+
+        data.forEach((full, i) => {
+            let idx = i; 
+
+            // Risk Item Column
+            let col1 = '<input type="text" value="' + (full.lovRiskData || '') + '" name="AvailableItems[' + idx + '].RiskItem" maxlength="500" class="w-full px-2 py-1 text-sm border border-bordercolor rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20" onkeypress="alphaNumericCheck(event)" />';
+            col1 += '<input type="hidden" value="' + full.id + '" name="AvailableItems[' + idx + '].Id" />';
+
+            // Risk Score Column
+            let col2 = '<select value="' + full.lovRiskScore + '" id="AvailableItems[' + idx + '].RiskScore" onchange="tableRiskScoreOnChange(' + idx + ')" name="AvailableItems[' + idx + '].RiskScore" class="w-full px-2 py-1 text-sm border border-bordercolor rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20">';
+            for (let s = 0; s <= 3; s++) {
+                col2 += '<option value="' + s + '" ' + (s == full.lovRiskScore ? 'selected' : '') + '>' + s + '</option>';
+            }
+            col2 += '</select>';
+
+            // Override Score Column
+            let col3 = '<select value="' + full.overrideScore + '" id="AvailableItems[' + idx + '].OverrideScore" name="AvailableItems[' + idx + '].OverrideScore" class="w-full px-2 py-1 text-sm border border-bordercolor rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20" ' + (full.lovRiskScore == '3' ? '' : 'disabled') + '>';
+            col3 += '<option value="0" ' + (full.overrideScore == '0' ? 'selected' : '') + '>0</option>';
+            col3 += '<option value="3" ' + (full.overrideScore == '3' ? 'selected' : '') + '>3</option>';
+            col3 += '</select>';
+
+            // Active Y/N Column
+            let isActiveChecked = (full.isActive === true || full.isActive === 'True' || full.isActive === 'true') ? 'checked' : '';
+            let col4 = '<input type="checkbox" onchange="ChangeStatus(' + idx + ',this);" ' + isActiveChecked + ' class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-blue-500"/>';
+            col4 += '<input type="hidden" value="' + (isActiveChecked ? 'true' : 'false') + '" name="AvailableItems[' + idx + '].isActive" />';
+
+            tbody.append(`
+                <tr class="hover:bg-appbg transition-colors">
+                    <td class="px-6 py-2">${col1}</td>
+                    <td class="px-6 py-2">${col2}</td>
+                    <td class="px-6 py-2">${col3}</td>
+                    <td class="px-6 py-2 text-center items-center justify-center">${col4}</td>
+                </tr>
+            `);
+        });
+    }
+
+    function updateRiskItemPagination(totalRecords) {
+        if (totalRecords === 0) {
+            $('#riskItemShowingStart').text(0);
+            $('#riskItemShowingEnd').text(0);
+            $('#riskItemTotalRecords').text(0);
+            $('#riskItemPrevBtn, #riskItemNextBtn').prop('disabled', true);
+            return;
+        }
+
+        let start = (riskItemPage - 1) * riskItemPageSize + 1;
+        let end = Math.min(riskItemPage * riskItemPageSize, totalRecords);
+
+        $('#riskItemShowingStart').text(start);
+        $('#riskItemShowingEnd').text(end);
+        $('#riskItemTotalRecords').text(totalRecords);
+
+        $('#riskItemPrevBtn').prop('disabled', riskItemPage === 1);
+        $('#riskItemNextBtn').prop('disabled', end >= totalRecords);
+    }
+
+
+    let riskTypeCatPage = 1;
+    let riskTypeCatPageSize = 10;
+    let riskTypeCatSort = 'LovCategoryType';
+    let riskTypeCatDir = 'asc';
+
+    $(document).ready(function() {
+        $('#riskTypeCatSearch').on('input', function() {
+            riskTypeCatPage = 1;
+            LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+        });
+
+        $('#availableRiskTypeCategory').on('click', 'th.sortable', function() {
+            const col = $(this).data('col');
+            if (!col) return;
+            $('#availableRiskTypeCategory .sortable').removeClass('active asc desc');
+            if (riskTypeCatSort === col) {
+                riskTypeCatDir = riskTypeCatDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                riskTypeCatSort = col;
+                riskTypeCatDir = 'asc';
+            }
+            $(this).addClass('active ' + riskTypeCatDir);
+            LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+        });
+    });
+
+    function changeRiskTypeCatPageSize() {
+        riskTypeCatPageSize = parseInt($('#riskTypeCatPageSize').val());
+        riskTypeCatPage = 1;
+        LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+    }
+
+    function previousRiskTypeCatPage() {
+        if (riskTypeCatPage > 1) { 
+            riskTypeCatPage--; 
+            LoadRiskTypeCategoryTable($('#ddlRiskCategory').val()); 
+        }
+    }
+
+    function nextRiskTypeCatPage() {
+        if (riskTypeCatPage < Math.ceil(parseInt($('#riskTypeCatTotalRecords').text()) / riskTypeCatPageSize)) {
+            riskTypeCatPage++; 
+            LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+        }
+    }
+
+    function resetRiskTypeCatFilters() {
+        $('#riskTypeCatSearch').val('');
+        riskTypeCatPage = 1;
+        LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+    }
+    
+    function LoadRiskTypeCategoryTable(riskCategoryID) {
+        if (!riskCategoryID || riskCategoryID === '0' || riskCategoryID === 0) return;
+        $('#loadingeffect').show();
+        $.ajax({
+            url: '/risk/CustomPaginationRiskTypeCategory',
+            type: 'POST',
+            data: {
+                draw: 1,
+                start: (riskTypeCatPage - 1) * riskTypeCatPageSize,
+                length: riskTypeCatPageSize,
+                riskCategoryID: riskCategoryID,
+                clientId:@Model.ClientId,
+                search: { value: $('#riskTypeCatSearch').val() },
+                order: [{ column: 0, dir: riskTypeCatDir }],
+                columns: [{ data: riskTypeCatSort }]
+            },
+            success: function(resp) {
+                renderRiskTypeCatTable(resp.data);
+                updateRiskTypeCatPagination(resp.recordsFiltered);
+                if(typeof lucide !== 'undefined') lucide.createIcons();
+            },
+            complete: function() {
+                $('#loadingeffect').hide();
+            }
+        });
+    }
+
+    function renderRiskTypeCatTable(data) {
+        const tbody = $('#availableRiskTypeCategory tbody').empty();
+        if (!data || data.length === 0) {
+            tbody.append('<tr><td colspan="2" class="px-6 py-4 text-center text-textmuted">No risk categories found</td></tr>');
+            return;
+        }
+        data.forEach((full, i) => {
+            let idx = i; 
+            let col1 = '<input type="text" value="' + (full.lovCategoryType || '') + '" name="AvailableRiskTypeCategory[' + idx + '].RiskTypeCategory" maxlength="500" class="w-full px-2 py-1 text-sm border border-bordercolor rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20" onkeypress="alphaNumericCheck(event)" />';
+            col1 += '<input type="hidden" value="' + full.lovTypeCategoryId + '" name="AvailableRiskTypeCategory[' + idx + '].Id" />';
+
+            let isActiveChecked = (full.isActive === true || full.isActive === 'True' || full.isActive === 'true') ? 'checked' : '';
+            let col2 = '<input type="checkbox" onchange="ChangeRiskTypeCategoryStatus(' + idx + ',this);" ' + isActiveChecked + ' class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-blue-500"/>';
+            col2 += '<input type="hidden" value="' + (isActiveChecked ? 'true' : 'false') + '" name="AvailableRiskTypeCategory[' + idx + '].isActive" />';
+
+            tbody.append(`
+                <tr class="hover:bg-appbg transition-colors">
+                    <td class="px-6 py-2">${col1}</td>
+                    <td class="px-6 py-2 text-center items-center justify-center">${col2}</td>
+                </tr>
+            `);
+        });
+    }
+
+    function updateRiskTypeCatPagination(totalRecords) {
+        if (totalRecords === 0) {
+            $('#riskTypeCatShowingStart').text(0);
+            $('#riskTypeCatShowingEnd').text(0);
+            $('#riskTypeCatTotalRecords').text(0);
+            $('#riskTypeCatPrevBtn, #riskTypeCatNextBtn').prop('disabled', true);
+            return;
+        }
+        let start = (riskTypeCatPage - 1) * riskTypeCatPageSize + 1;
+        let end = Math.min(riskTypeCatPage * riskTypeCatPageSize, totalRecords);
+        $('#riskTypeCatShowingStart').text(start);
+        $('#riskTypeCatShowingEnd').text(end);
+        $('#riskTypeCatTotalRecords').text(totalRecords);
+        $('#riskTypeCatPrevBtn').prop('disabled', riskTypeCatPage === 1);
+        $('#riskTypeCatNextBtn').prop('disabled', end >= totalRecords);
+    }
+
+
+    let riskTypePage = 1;
+    let riskTypePageSize = 10;
+    let riskTypeSort = 'LovTypeName';
+    let riskTypeDir = 'asc';
+
+    $(document).ready(function() {
+        $('#riskTypeSearch').on('input', function() {
+            riskTypePage = 1;
+            LoadRiskTypeTable($('#ddlRiskTypeCategory').val());
+        });
+
+        $('#availableRiskType').on('click', 'th.sortable', function() {
+            const col = $(this).data('col');
+            if (!col) return;
+            $('#availableRiskType .sortable').removeClass('active asc desc');
+            if (riskTypeSort === col) {
+                riskTypeDir = riskTypeDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                riskTypeSort = col;
+                riskTypeDir = 'asc';
+            }
+            $(this).addClass('active ' + riskTypeDir);
+            LoadRiskTypeTable($('#ddlRiskTypeCategory').val());
+        });
+    });
+
+    function changeRiskTypePageSize() {
+        riskTypePageSize = parseInt($('#riskTypePageSize').val());
+        riskTypePage = 1;
+        LoadRiskTypeTable($('#ddlRiskTypeCategory').val());
+    }
+
+    function previousRiskTypePage() {
+        if (riskTypePage > 1) { 
+            riskTypePage--; 
+            LoadRiskTypeTable($('#ddlRiskTypeCategory').val()); 
+        }
+    }
+
+    function nextRiskTypePage() {
+        if (riskTypePage < Math.ceil(parseInt($('#riskTypeTotalRecords').text()) / riskTypePageSize)) {
+            riskTypePage++; 
+            LoadRiskTypeTable($('#ddlRiskTypeCategory').val());
+        }
+    }
+
+    function resetRiskTypeFilters() {
+        $('#riskTypeSearch').val('');
+        riskTypePage = 1;
+        LoadRiskTypeTable($('#ddlRiskTypeCategory').val());
+    }
+    
+    function LoadRiskTypeTable(RiskTypeCategoryID) {
+        if (!RiskTypeCategoryID || RiskTypeCategoryID === '0' || RiskTypeCategoryID === 0) return;
+        $('#loadingeffect').show();
+        $.ajax({
+            url: '/risk/CustomPaginationRiskType',
+            type: 'POST',
+            data: {
+                draw: 1,
+                start: (riskTypePage - 1) * riskTypePageSize,
+                length: riskTypePageSize,
+                RiskTypeCategoryID: RiskTypeCategoryID,
+                clientId:@Model.ClientId,
+                search: { value: $('#riskTypeSearch').val() },
+                order: [{ column: 0, dir: riskTypeDir }],
+                columns: [{ data: riskTypeSort }]
+            },
+            success: function(resp) {
+                renderRiskTypeTable(resp.data);
+                updateRiskTypePagination(resp.recordsFiltered);
+                if(typeof lucide !== 'undefined') lucide.createIcons();
+            },
+            complete: function() {
+                $('#loadingeffect').hide();
+            }
+        });
+    }
+
+    function renderRiskTypeTable(data) {
+        const tbody = $('#availableRiskType tbody').empty();
+        if (!data || data.length === 0) {
+            tbody.append('<tr><td colspan="2" class="px-6 py-4 text-center text-textmuted">No risk types found</td></tr>');
+            return;
+        }
+        data.forEach((full, i) => {
+            let idx = i; 
+            let col1 = '<input type="text" value="' + (full.lovTypeName || '') + '" name="AvailableRiskType[' + idx + '].RiskType" maxlength="500" class="w-full px-2 py-1 text-sm border border-bordercolor rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20" onkeypress="alphaNumericCheck(event)" />';
+            col1 += '<input type="hidden" value="' + full.lovTypeId + '" name="AvailableRiskType[' + idx + '].Id" />';
+
+            let isActiveChecked = (full.isActive === true || full.isActive === 'True' || full.isActive === 'true') ? 'checked' : '';
+            let col2 = '<input type="checkbox" onchange="ChangeTypeStatus(' + idx + ',this);" ' + isActiveChecked + ' class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-blue-500"/>';
+            col2 += '<input type="hidden" value="' + (isActiveChecked ? 'true' : 'false') + '" name="AvailableRiskType[' + idx + '].isActive" />';
+
+            tbody.append(`
+                <tr class="hover:bg-appbg transition-colors">
+                    <td class="px-6 py-2">${col1}</td>
+                    <td class="px-6 py-2 text-center items-center justify-center">${col2}</td>
+                </tr>
+            `);
+        });
+    }
+
+    function updateRiskTypePagination(totalRecords) {
+        if (totalRecords === 0) {
+            $('#riskTypeShowingStart').text(0);
+            $('#riskTypeShowingEnd').text(0);
+            $('#riskTypeTotalRecords').text(0);
+            $('#riskTypePrevBtn, #riskTypeNextBtn').prop('disabled', true);
+            return;
+        }
+        let start = (riskTypePage - 1) * riskTypePageSize + 1;
+        let end = Math.min(riskTypePage * riskTypePageSize, totalRecords);
+        $('#riskTypeShowingStart').text(start);
+        $('#riskTypeShowingEnd').text(end);
+        $('#riskTypeTotalRecords').text(totalRecords);
+        $('#riskTypePrevBtn').prop('disabled', riskTypePage === 1);
+        $('#riskTypeNextBtn').prop('disabled', end >= totalRecords);
+    }
+
+    function ChangeStatus (index, that) {
+        var status = false;
+        if ($(that).prop("checked")) {
+            status = true;
+        }
+        $('input[name="AvailableItems[' + index + '].isActive"]').val(status)
+    }
+
+
+    function ChangeRiskTypeCategoryStatus (index, that) {
+        var status = false;
+        if ($(that).prop("checked")) {
+            status = true;
+        }
+        $('input[name="AvailableRiskTypeCategory[' + index + '].isActive"]').val(status)
+    }
+
+    function ChangeTypeStatus (index, that) {
+        var status = false;
+        if ($(that).prop("checked")) {
+            status = true;
+        }
+        $('input[name="AvailableRiskType[' + index + '].isActive"]').val(status)
+    }
+   
+
+    function riskScoreOnChange (rowIndex) {
+        var riskScore = document.getElementById('AddedItems[' + rowIndex + '].RiskScore').value;
+        if (riskScore == 3) {
+            document.getElementById('AddedItems[' + rowIndex + '].OverrideScore').removeAttribute('disabled');
+            document.getElementById('AddedItems[' + rowIndex + '].OverrideScore').setAttribute('enabled', 'true');
+        } else {
+            document.getElementById('AddedItems[' + rowIndex + '].OverrideScore').removeAttribute('enabled');
+            document.getElementById('AddedItems[' + rowIndex + '].OverrideScore').value = 0;
+            document.getElementById('AddedItems[' + rowIndex + '].OverrideScore').setAttribute('disabled', 'true');
+        }
+    }
+    function tableRiskScoreOnChange (rowIndex) {
+        var riskScore = document.getElementById('AvailableItems[' + rowIndex + '].RiskScore').value;
+        if (riskScore == 3) {
+            document.getElementById('AvailableItems[' + rowIndex + '].OverrideScore').removeAttribute('disabled');
+            document.getElementById('AvailableItems[' + rowIndex + '].OverrideScore').setAttribute('enabled', 'true');
+        } else {
+            document.getElementById('AvailableItems[' + rowIndex + '].OverrideScore').removeAttribute('enabled');
+            document.getElementById('AvailableItems[' + rowIndex + '].OverrideScore').value = 0;
+            document.getElementById('AvailableItems[' + rowIndex + '].OverrideScore').setAttribute('disabled', 'true');
+        }
+    }
+    function alphaNumericCheck (e) {
+        var key = e.keyCode;
+        if (!(key > 43 && key < 60) && !(key > 62 && key < 91) && !(key > 94 && key < 123) && !(key > 37 && key < 43)) {
+            if (key == 34 || key == 32) {
+
+            } else {
+                e.preventDefault();
+            }
+        }
+
+    }
+
+         $(document).ready(function () {
+        $(".se-pre-con").fadeOut("slow");
+        createRiskTypeCategoryTable();
+        createRiskTypeTable();
+        createTable();
+        addCategoryRow();
+        addSubcategoryRow();
+        addListRow();
+    });
+    function ReloadAfterSubmit () {
+        $('#ddlRiskCategory').val('0');
+        $('#divCategoryType').hide();
+        $('#divRiskTypeFull').hide();
+        $('#divRiskitemsFull').hide();
+        $("#addCategory").prop("disabled", true);
+        $("#addSubcategory").prop("disabled", true);
+        $("#addRow").prop("disabled", true);
+        $('#rowIndex1').val('1');
+        $('#rowIndex2').val('1');
+        $('#rowIndex3').val('1');
+    }
+
+        function initDatePicker(selector, defaultDate, options = {}) {
+        const elements = document.querySelectorAll(selector);
+
+        elements.forEach(el => {
+            if (el._flatpickr) return; // prevent duplicate init
+
+            flatpickr(el, {
+                dateFormat: "Y-m-d",       // actual value posted to backend
+                altInput: true,            // user sees altInput
+                altFormat: "d/m/Y",        // display format
+                altInputClass: "block w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium",
+                allowInput: true,
+                defaultDate: defaultDate,
+                appendTo: document.body,   // calendar floats over card
+                ...options,
+
+                // ------------------ Custom key restrictions & auto-format ------------------
+                onReady: function (selectedDates, dateStr, instance) {
+                    const input = instance.altInput;
+
+                    // Restrict keys to numbers and navigation
+                    input.addEventListener("keydown", function (e) {
+                        const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+                        if (allowedKeys.includes(e.key) || (e.key >= "0" && e.key <= "9")) return;
+                        e.preventDefault();
+                    });
+
+                    // Auto-format as dd/MM/yyyy while typing
+                    input.addEventListener("input", function () {
+                        let value = input.value.replace(/\D/g, '');
+                        if (value.length > 8) value = value.substring(0, 8);
+
+                        let formatted = '';
+                        if (value.length > 0) formatted += value.substring(0, 2);
+                        if (value.length >= 3) formatted += '/' + value.substring(2, 4);
+                        if (value.length >= 5) formatted += '/' + value.substring(4, 8);
+
+                        input.value = formatted;
+                    });
+                },
+
+                // ------------------ Sync with Alpine ------------------
+                onChange: function (selectedDates, dateStr, instance) {
+                    if (el._x_model) {
+                        el._x_model.set(dateStr);
+                    }
+                },
+
+                // ------------------ Final validation ------------------
+                onClose: function (selectedDates, dateStr, instance) {
+                    if (selectedDates.length > 0) return; // date picked by calendar, safe
+
+                    let val = instance.altInput.value;
+                    if (!val) return;
+
+                    // Validate manually typed value dd/MM/yyyy
+                    let regex = /^\d{2}\/\d{2}\/\d{4}$/;
+                    if (!regex.test(val)) {
+                        instance.clear();
+                        return;
+                    }
+
+                    let parts = val.split('/');
+                    let dd = parseInt(parts[0], 10);
+                    let mm = parseInt(parts[1], 10);
+                    let yyyy = parseInt(parts[2], 10);
+
+                    let date = new Date(yyyy, mm - 1, dd);
+                    if (date.getFullYear() !== yyyy || date.getMonth() !== mm - 1 || date.getDate() !== dd) {
+                        instance.clear();
+                        return;
+                    }
+
+                    // ✅ Set Flatpickr date correctly for backend
+                    instance.setDate(`${yyyy}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`, true);
+                }
+            });
+        });
+    }
+
+    // ------------------ Example usage ------------------
+    document.addEventListener("DOMContentLoaded", function () {
+
+        initDatePicker(
+            "#txtApplicationStartDate",
+            "@(Model.ApplicationStartDate.HasValue? Model.ApplicationStartDate.Value.ToString("yyyy-MM-dd") : null)",
+            { maxDate: "today" }
+        );
+
+        initDatePicker(
+            "#txtApplicationEndDate",
+            "@(ViewBag.contractExpiryDate != null ? ((DateTime)ViewBag.contractExpiryDate).ToString("yyyy-MM-dd") : null)",
+            { minDate: "today" }
+        );
+
+    });
+             
+            
+            function initAllDatePickers() {
+                            const elements = document.querySelectorAll(".date-picker");
+
+                console.log("Date elements found:", elements.length); // 👈 DEBUG
+                                        initDatePicker(".date-picker-dob", null, {
+                                    maxDate: "today",
+                                    static: true
+                                });
+
+                                initDatePicker(".date-picker-past", null, {
+                                    maxDate: "today",
+                                    static: true
+                                });
+
+                                // ✅ Future dates (Expiry)
+                                initDatePicker(".date-picker-future", null, {
+                                    minDate: "today",
+                                    static: true
+                                });
+            }
+</script>
+
+<!-- Custom Confirmation Modal -->
+<div id="confirmModal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/40">
+    <div class="bg-surface rounded-lg shadow-xl w-full max-w-md p-6 space-y-4">
+        <h3 id="confirmModalTitle" class="text-lg font-bold text-textprimary">Confirm Action</h3>
+        <p id="confirmModalMessage" class="text-sm text-textlabel">Are you sure you want to proceed?</p>
+        <div class="flex justify-end gap-3 pt-4">
+            <button onclick="closeConfirmModal()" class="h-9 px-8 text-textlabel rounded-md bg-slate-100 hover:bg-slate-200 font-semibold transition-colors">
+                Cancel
+            </button>
+            <button id="confirmModalOkBtn" class="bg-primary hover:bg-primary-hover text-white font-bold h-9 px-8 rounded-md transition-colors text-xs uppercase tracking-wider">
+                OK
+            </button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,102 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model ChatAnalyticsVM
+@{
+    ViewData["Title"] = "AI Chat Analytics";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "AI Chat Analytics";
+    ViewData["ReportSubtitle"] = $"Ollama chat usage over the last {ViewBag.Days} days. Live — populates as users interact.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var maxDay = Model.DailyVolume.Count == 0 ? 1 : Math.Max(1, Model.DailyVolume.Max(p => p.Messages));
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1300px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="flex gap-2 my-3">
+            <a href="?days=7" class="px-3 py-1.5 text-xs border rounded @(ViewBag.Days == 7 ? "bg-blue-50 border-blue-300" : "border-slate-300")">7d</a>
+            <a href="?days=30" class="px-3 py-1.5 text-xs border rounded @(ViewBag.Days == 30 ? "bg-blue-50 border-blue-300" : "border-slate-300")">30d</a>
+            <a href="?days=90" class="px-3 py-1.5 text-xs border rounded @(ViewBag.Days == 90 ? "bg-blue-50 border-blue-300" : "border-slate-300")">90d</a>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Total Messages</div><div class="text-2xl font-semibold text-slate-800">@Model.TotalMessages</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">User Messages</div><div class="text-2xl font-semibold text-blue-700">@Model.UserMessages</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Assistant Messages</div><div class="text-2xl font-semibold text-emerald-700">@Model.AssistantMessages</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Unique Users</div><div class="text-2xl font-semibold text-slate-800">@Model.UniqueUsers</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Sessions</div><div class="text-2xl font-semibold text-slate-800">@Model.UniqueSessions</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Last 7 Days</div><div class="text-2xl font-semibold text-slate-800">@Model.Last7Days</div></div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg p-4 mb-4">
+            <h3 class="font-semibold text-slate-800 mb-2">Daily volume</h3>
+            @if (Model.DailyVolume.Any())
+            {
+                var width = 700.0 / Math.Max(1, Model.DailyVolume.Count);
+                <svg viewBox="0 0 700 140" preserveAspectRatio="none" class="w-full h-32">
+                    @{ double x = 0; }
+                    @foreach (var p in Model.DailyVolume)
+                    {
+                        var h = p.Messages * 130.0 / maxDay;
+                        var y = 140 - h;
+                        <rect x="@(x.ToString("0.0"))" y="@(y.ToString("0.0"))" width="@((width-1).ToString("0.0"))" height="@(h.ToString("0.0"))" fill="#4f46e5" />
+                        x += width;
+                    }
+                </svg>
+            }
+            else { <div class="py-6 text-center text-slate-500">No chat activity yet in this window.</div> }
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 font-semibold">Top Users</div>
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr class="text-left"><th class="px-3 py-2">User</th><th class="px-3 py-2 text-right">Msgs</th><th class="px-3 py-2 text-right">Sessions</th><th class="px-3 py-2">Last</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.TopUsers.Any())
+                        { <tr><td colspan="4" class="px-3 py-12 text-center text-slate-500">—</td></tr> }
+                        else
+                        {
+                            foreach (var u in Model.TopUsers)
+                            {
+                                <tr class="border-b border-slate-100">
+                                    <td class="px-3 py-2 font-medium">@(string.IsNullOrWhiteSpace(u.UserName) ? $"User #{u.UserId}" : u.UserName)</td>
+                                    <td class="px-3 py-2 text-right">@u.Messages</td>
+                                    <td class="px-3 py-2 text-right">@u.Sessions</td>
+                                    <td class="px-3 py-2 text-xs text-slate-500">@(u.LastActivity?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 font-semibold">Recent Messages</div>
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr class="text-left"><th class="px-3 py-2">When</th><th class="px-3 py-2">User</th><th class="px-3 py-2">Role</th><th class="px-3 py-2">Snippet</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.RecentMessages.Any())
+                        { <tr><td colspan="4" class="px-3 py-12 text-center text-slate-500">—</td></tr> }
+                        else
+                        {
+                            foreach (var m in Model.RecentMessages)
+                            {
+                                var rolePill = m.Role == "user" ? "bg-blue-100 text-blue-800" : "bg-emerald-100 text-emerald-800";
+                                <tr class="border-b border-slate-100">
+                                    <td class="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">@(m.CreatedOn?.ToString("MM-dd HH:mm") ?? "")</td>
+                                    <td class="px-3 py-2 text-xs">@m.UserName</td>
+                                    <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[10px] rounded @rolePill">@m.Role</span></td>
+                                    <td class="px-3 py-2 text-xs text-slate-700 truncate max-w-md" title="@m.Snippet">@m.Snippet</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>

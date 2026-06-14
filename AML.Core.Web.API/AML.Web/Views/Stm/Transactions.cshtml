@@ -1,0 +1,61 @@
+@model List<AML.ViewModel.ViewModels.SectoralTMS.StmTransactionModel>
+@{
+    ViewData["Title"] = "STM - Transactions";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    ViewBag.StmActive = "transactions";
+}
+
+@await Html.PartialAsync("_StmLayout")
+
+<div class="px-6 pb-12">
+    <div class="stm-card">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+                <div class="stm-page-title">Transactions</div>
+                <div class="stm-page-sub">All monitored transactions across Insurance and Real Estate</div>
+            </div>
+            <a href="/stm/transactions/create" class="stm-btn stm-btn-primary"><i data-lucide="plus" class="w-4 h-4"></i> New Transaction</a>
+        </div>
+
+        <div class="flex flex-wrap gap-3 mb-4">
+            <a href="/stm/transactions" class="stm-nav-pill @(string.IsNullOrEmpty(ViewBag.ActiveSector as string) ? "active" : "")">All</a>
+            <a href="/stm/transactions?sector=INS" class="stm-nav-pill @((ViewBag.ActiveSector as string) == "INS" ? "active" : "")">Insurance</a>
+            <a href="/stm/transactions?sector=RE" class="stm-nav-pill @((ViewBag.ActiveSector as string) == "RE" ? "active" : "")">Real Estate</a>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="stm-table">
+                <thead>
+                    <tr><th>Ref No.</th><th>Date</th><th>Sector</th><th>Type</th><th>Customer</th><th>Amount</th><th>Status</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @if (Model == null || Model.Count == 0)
+                    {
+                        <tr><td colspan="8" class="text-center text-slate-500 py-8">No transactions found.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var t in Model)
+                        {
+                            var statusClass = t.RuleHitStatus == "HIT" ? "high" : t.RuleHitStatus == "NO_HIT" ? "low" : "review";
+                            <tr>
+                                <td class="font-mono text-xs">@t.TranRefNo</td>
+                                <td>@t.TranDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@t.SectorName</td>
+                                <td>@t.TranType</td>
+                                <td><div>@t.CustomerName</div><div class="text-xs text-slate-500">@t.CustomerId</div></td>
+                                <td>@t.Amount.ToString("N2") @t.Currency</td>
+                                <td><span class="stm-badge @statusClass">@t.RuleHitStatus</span></td>
+                                <td><a href="/stm/transactions/view/@t.Id" class="text-blue-600 hover:underline text-xs font-medium">View</a></td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
+</script>

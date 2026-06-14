@@ -1,0 +1,74 @@
+﻿@{
+    ViewData["Title"] = "Parameter Master";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+<script src="~/plugins/jquery/jquery.min.js"></script>
+
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="bg-surface rounded-xl border border-bordercolor shadow-none mb-4">
+                    <div class="px-6 py-4 border-b border-bordercolor">
+                        <h3 class="card-title">List</h3>
+                        <a href="@Url.Action("Create", "parametermaster")" type="button" class="btn btn-info btn-sm float-right">Add New</a>
+                    </div>
+                    <div class="p-6">
+                        <div style="width: 100%; padding-left: -10px;">
+                            <div class="table-responsive">
+                                <table id="example" class="w-full text-sm text-left" cellspacing="0">
+                                    <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>value</th>
+                                            <th>Type</th>  
+                                            <th>Edit</th>
+                                            <th>Delete</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<script type="text/javascript">
+
+    var table;
+    $(document).ready(function () {
+        table = $('#example').DataTable({
+            "serverSide": true, "processing": true,
+            order: [[0, 'desc']],
+            ajax: {
+                url: 'parametermaster/custompagination',
+                type: 'POST'
+            },
+            columns: [
+                { data: "paraCode" },
+                { data: "paraValue" },
+                { data: "paraType" },
+                {
+                    "render": function (data, type, full, meta, row) { return '<a class="btn btn-info btn-sm" title="Edit" href="parametermaster/edit/' + full.paraCode + '/' + full.paraType + '"><i class="fas fa-pen"></i></a>'; }
+                },
+                {
+                    
+                    "render": function (data, type, full, meta, row) {
+                        return '<a class="btn btn-danger btn-sm" title="Delete" href="codesmaster/delete/' + full.paraCode + '/' + full.paraType + '"><i class="fas fa-trash"></i></a>';
+                    }
+                },
+            ]
+        });
+    });
+
+
+   
+</script>
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}

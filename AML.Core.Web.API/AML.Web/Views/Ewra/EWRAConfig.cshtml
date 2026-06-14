@@ -1,0 +1,2919 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    //ViewData["Title"] = "Risk Configuration Master";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var jsonItems = Newtonsoft.Json.JsonConvert.SerializeObject(Model.EWRAQuantitativeConfigModel[0].Nationalities);
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@model AML.ViewModel.ViewModels.EWRA.EWRAConfigModel
+<script src="~/plugins/jquery/jquery.min.js"></script>
+@*<script src="~/plugins/datatables/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.4/css/jquery.dataTables.css">*@
+<style>
+    #availabledivCounterparty {
+        border-collapse: separate !important;
+        border-spacing: 0 10px !important; /* Adjust 10px for more/less space */
+    }
+
+    thead {
+        text-align: center;
+    }
+
+    td {
+        text-align: center;
+    }
+
+    .no-js #loader {
+        display: none;
+    }
+
+    .js #loader {
+        display: block;
+        position: absolute;
+        left: 100px;
+        top: 0;
+    }
+
+    /*    .se-pre-con {
+                position: fixed;
+                left: 0px;
+                top: 0px;
+                width: 100%;
+                height: 100%;
+                z-index: 9999;
+                background: url(/img/loader1.gif) center no-repeat #fff;
+                opacity: 0.8
+            }*/
+
+    table.dataTable.nowrap th, table.dataTable.nowrap td {
+        background: none;
+    }
+
+    #divRiskAspect {
+        display: block !important;
+    }
+
+    .nav-tabs {
+        border-bottom: 3px solid #007bff;
+    }
+
+    a.nav-link.active {
+        background-color: #007afd !important;
+        color: #fff !important;
+    }
+
+    .select2-container .select2-selection--single {
+        height: auto !important;
+        padding: 0.5rem 0.75rem !important;
+        border-radius: 0.375rem !important;
+        font-weight: 200 !important;
+        border-color: #D1D5DB !important;
+        width: 100% !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        top: 50% !important;
+        right: 6px !important; /* Move it slightly left */
+        transform: translateY(-50%);
+        position: absolute;
+        width: 24px;
+        height: 24px;
+    }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow b {
+            display: inline-block !important;
+            width: 8px !important; /* Bigger width */
+            height: 8px !important; /* Bigger height */
+            border: solid #6b7280 !important;
+            border-width: 0 2px 2px 0 !important;
+            transform: rotate(45deg) !important;
+            margin-left: -4px !important;
+            margin-top: -4px !important;
+            transition: transform 0.2s ease !important;
+        }
+
+    .select2-container {
+        width: 100% !important; /* Adjust this to your desired width (e.g., 300px or 50%) */
+        max-width: 350px; /* Optional: Set a max width */
+    }
+
+        .select2-container .select2-selection--single {
+            height: 42px !important; /* Decrease height */
+            padding: 0.25rem 0.5rem !important; /* Adjust vertical/horizontal padding */
+            font-size: 14px !important;
+            border-radius: 0.375rem !important;
+        }
+
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+
+    th.sortable {
+        position: relative;
+        padding-right: 20px;
+        cursor: pointer;
+    }
+
+        /* Show vertical gray arrows by default */
+        th.sortable::after {
+            content: '▲\A▼';
+            white-space: pre; /* respect \A (newline) */
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: #bbb;
+            line-height: 1;
+            text-align: center;
+        }
+
+        /* Only ▲ when sorting ascending */
+        th.sortable.active.asc::after {
+            content: '▲';
+            color: #000;
+        }
+
+        /* Only ▼ when sorting descending */
+        th.sortable.active.desc::after {
+            content: '\A▼';
+            color: #000;
+        }
+</style>
+@*<div class="se-pre-con"></div>*@
+<div class="card card-primary">
+    @*<div class="card-header bg-blue txt-white mb-5 p-4" style="border-radius: 10px;">
+            <h3 class="card-title">@localizer["EWRA - Configuration"]</h3>
+        </div>*@
+    @* <nav class="border-b">
+        <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+            <div>
+                <h2 class="text-2xl font-bold">EWRA - Configuration</h2>
+            </div>
+            <div class="md:block hidden">
+               <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                EWRA - Configuration
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+    <div class="h-full bg-gray-50 items-center ">
+        <div id="block1" class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4  mx-auto">
+            <div class="sas-card rounded-card w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100 relative">
+                <form id="myform" role="form" asp-controller="EWRA" class="form-horizontal" enctype="multipart/form-data" method="post">
+                    @*<div class="configDivs">
+                            <ul class="nav nav-tabs aml-tabs" role="tablist">
+                                <li class="nav-item active" style="width:50%;text-align:center;">
+                                    <a class="nav-link active" role="tab" data-toggle="tab" href="#quantitative" style="color:black;">@localizer["QUANTITATIVE"]</a>
+                                </li>
+                                <li class="nav-item" style="width:50%;text-align:center;">
+                                    <a class="nav-link" role="tab" data-toggle="tab" href="#qualitative" style="color:black;">@localizer["QUALITATIVE"]</a>
+                                </li>
+                            </ul>
+                        </div>*@
+                    <div class="border-b mb-6 w-fit">
+                        <nav class="flex flex-col md:flex-row space-x-2 sm:space-x-2 sm:flex-wrap sm:gap-4">
+                            <a href="#quantitative"
+                               class="border-b-2 rounded-t-lg border-blue-600 pb-4 font-normal text-md">
+                                @localizer["QUANTITATIVE"]
+                            </a>
+                            <a href="#qualitative"
+                               class="text-[#64748B] font-extralight rounded-t-lg pb-4">
+                                @localizer["QUALITATIVE"]
+                            </a>
+                        </nav>
+                    </div>
+
+                    <div class="tab-content">
+                        <div id="quantitative" class="card card-body tab-pane active block" role="tabpanel">
+                            <div class="p-6">
+                                <div class="w-full" id="subTab1">
+                                    <nav class="flex flex-col md:flex-row space-x-2 sm:space-x-2 sm:flex-wrap sm:gap-4">
+
+                                        <a class="border-b-2 rounded-t-lg border-blue-600 pb-4 font-normal text-md" id="addMoreCustomerType" role="tab" data-toggle="tab" href="#divCustomerType" onclick="addCustomerType()" style="margin-top:10px;">@localizer["Add More Customer Type"]</a>
+
+                                        <input type="hidden" id="rowIndex1" value="0" />
+
+                                        <a class="text-[#64748B] font-extralight rounded-t-lg pb-4" id="addMoreCounterparty" role="tab" data-toggle="tab" href="#divCounterparty" onclick="addCounterpartyType()" style="margin-top:10px;">@localizer["Add More Counterparty"]</a>
+                                        <input type="hidden" id="rowIndex1" value="0" />
+
+                                    </nav>
+                                </div>
+
+                                <div id="divCustomerType" class="tab-pane fade show active" role="tabpanel">
+
+                                    <div id="divCustomerType" style="border-style: groove;" class="card card-body tab-pane active" role="tabpanel">
+                                        <button type="button" id="addMoreCustomerType" role="tab" data-toggle="tab" href="#divCustomerType" onclick="addCustomerTypeRow()" class="btn btn-primary bg-primary hover:bg-primary-hover text-white font-semibold py-2 px-6 rounded shadow transition duration-300 ease-in-out my-4" style="margin-top:10px;">@localizer["Add More Customer Type"]</button>
+                                        <div id="dvCustomerTypeList" class="w-full overflow-x-auto">
+                                            <table id="Add">
+                                            </table>
+                                        </div>
+                                        <input type="hidden" id="rowIndex1" value="0" />
+                                        <div></div>
+                                        <div id="divRiskAspect">
+                                            <div class="flex flex-col md:flex-row items-center md:justify-between gap-4">
+                                                <div class="flex items-center ml-8">
+                                                    <span class="text-sm text-gray-700">Show</span>
+                                                    <select id="rowsPerPageCustomer" class="h-10 ml-2 rounded-md border-gray-300 py-1 pl-3 pr-8 text-sm text-[#94A3B8]">
+                                                        <option value="10" selected>10 items</option>
+                                                        <option value="25">25 items</option>
+                                                        <option value="50">50 items</option>
+                                                        <option value="100">100 items</option>
+                                                    </select>
+                                                </div>
+                                                <div class="relative w-full sm:w-96">
+                                                    <input type="text"
+                                                           id="customerSearchBox"
+                                                           placeholder="Search anything..."
+                                                           class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                         class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                                         fill="none"
+                                                         viewBox="0 0 24 24"
+                                                         stroke="currentColor">
+                                                        <path stroke-linecap="round"
+                                                              stroke-linejoin="round"
+                                                              stroke-width="2"
+                                                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-contents">
+                                            <div class="row overflow-x-auto">
+                                                <div style="width: 100%; padding-left: -10px;">
+                                                    <div class="table-responsive my-4 relative">
+                                                        <table id="availableCustomerType" class="w-[100%] table table-striped table-hover dt-responsive display nowrap" cellspacing="0">
+                                                            <thead class="bg-[#E9EFFD] p-4 rounded-lg mb-4 h-12">
+                                                                <tr class="row m-0 text-center">
+                                                                    <th data-column="0" class="sortable w-[50%] p-3 min-w-[120px]">@localizer["Customer Type"]</th>
+                                                                    <th class="w-[50%] p-3 min-w-[120px]">@localizer["Active Y/N"]</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody id="customerTypeTbody">
+                                                                @for (var i = 0; i < Model.EWRAQuantitativeConfigModel.Count; i++)
+                                                                {
+                                                                    for (var j = 0; j < Model.EWRAQuantitativeConfigModel[i].CustomerType.Count; j++)
+                                                                    {
+
+                                                                        <tr class="customer-row">
+                                                                            <td class="py-1">
+                                                                                <input type="text" class="px-3 py-2 border border-gray-300 rounded-md font-extralight" value="@Model.EWRAQuantitativeConfigModel[i].CustomerType[j].CustType" name="EWRAQuantitativeConfigModel[@i].AvailableCustomerType[@j].CustType" asp-for="EWRAQuantitativeConfigModel[i].AvailableCustomerType[j].CustType" maxlength="500" onkeypress="alphaNumericCheck(event)" />
+                                                                                <input type="hidden" value="@Model.EWRAQuantitativeConfigModel[i].CustomerType[j].CustTypeId" name="EWRAQuantitativeConfigModel[@i].AvailableCustomerType[@j].CustTypeId" asp-for="EWRAQuantitativeConfigModel[i].AvailableCustomerType[j].CustTypeId" />
+                                                                            </td>
+                                                                            <td class="py-1">
+                                                                                @if (Model.EWRAQuantitativeConfigModel[i].CustomerType[j].isActive == 1)
+                                                                                {
+                                                                                    <input type="checkbox" onchange="ChangeStatus(@j,this,1);" checked />
+                                                                                    <input type="hidden" value="1" name="EWRAQuantitativeConfigModel[@i].AvailableCustomerType[@j].isActive" id="EWRAQuantitativeConfigModel_@(i)_AvailableCustomerType_@(j)_isActive" asp-for="EWRAQuantitativeConfigModel[i].AvailableCustomerType[j].isActive" />
+                                                                                }
+                                                                                else
+                                                                                {
+                                                                                    <input type="checkbox" onchange="ChangeStatus(@j,this,1);" />
+                                                                                    <input type="hidden" value="0" name="EWRAQuantitativeConfigModel[@i].AvailableCustomerType[@j].isActive" id="EWRAQuantitativeConfigModel_@(i)_AvailableCustomerType_@(j)_isActive" asp-for="EWRAQuantitativeConfigModel[i].AvailableCustomerType[j].isActive" />
+                                                                                }
+                                                                            </td>
+
+                                                                        </tr>
+                                                                    }
+                                                                }
+                                                            </tbody>
+                                                        </table>
+                                                        <div id="customerLoading"
+                                                             class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-50 hidden">
+                                                            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div id="customerPagination" class=" mt-4 flex flex-col sm:flex-row justify-center gap-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+                            <div id="divCounterparty" class="tab-pane fade" role="tabpanel">
+
+                                <div id="divCounterparty" style="border-style: groove;" class="card card-body tab-pane active" role="tabpanel">
+                                    <button type="button" id="addMoreCounterparty" role="tab" data-toggle="tab" href="#divCounterparty" onclick="addCounterpartyTypeRow()" class="btn btn-primary bg-primary hover:bg-primary-hover text-white font-semibold py-2 px-6 rounded shadow transition duration-300 ease-in-out my-4" style="margin-top:10px">@localizer["Add More CounterParty"]</button>
+                                    <div id="dvCustomerTypeList" class="w-full overflow-x-auto">
+                                        <table id="Add1">
+                                        </table>
+                                        @* <select class="w-full border border-gray-300 rounded px-2 py-1 bg-surface text-gray-800 focus:outline-none focus:ring focus:ring-blue-300 my-2" id="countrylist" style="display:none">
+                                                    <option value="India">India</option>
+                                                    <option value="USA">USA</option>
+                                                </select> *@
+
+                                    </div>
+                                    <input type="hidden" id="rowIndex2" value="0" />
+                                    <div id="divRiskAspect">
+                                        <div class="flex flex-col md:flex-row items-center md:justify-between gap-4">
+                                            <div class="flex items-center ml-8">
+                                                <span class="text-sm text-gray-700">Show</span>
+                                                <select id="rowsPerPageCounterparty" class="h-10 ml-2 rounded-md border-gray-300 py-1 pl-3 pr-8 text-sm text-[#94A3B8]">
+                                                    <option value="10" selected>10 items</option>
+                                                    <option value="25">25 items</option>
+                                                    <option value="50">50 items</option>
+                                                    <option value="100">100 items</option>
+                                                </select>
+                                            </div>
+                                            <div class="relative w-full sm:w-96">
+                                                <input type="text" id="searchCounterparty" placeholder="Search..." class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" onkeyup="searchCounterpartyTable()" />
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                                     fill="none"
+                                                     viewBox="0 0 24 24"
+                                                     stroke="currentColor">
+                                                    <path stroke-linecap="round"
+                                                          stroke-linejoin="round"
+                                                          stroke-width="2"
+                                                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="form-contents">
+                                            <div class="row overflow-x-auto">
+                                                <div style="width: 100%; padding-left: -10px;">
+                                                    <div class="table-responsive my-4 relative">
+                                                        <table id="availabledivCounterparty" class="w-[100%] table table-striped table-hover dt-responsive display nowrap table-auto rounded-t-lg overflow-x-auto justify-center" cellspacing="0">
+                                                            <thead class="bg-[#E9EFFD] p-4 rounded-lg mb-4 h-12">
+                                                                <tr class="row m-0 text-center">
+                                                                    <th data-column="0" class="sortable w-[33%] p-3 min-w-[120px]">@localizer["Counterparty"]</th>
+                                                                    <th data-column="1" class="sortable w-[34%] p-3 min-w-[120px]">@localizer["Country"]</th>
+                                                                    <th class="w-[33%] p-3 min-w-[120px]">@localizer["Active Y/N"]</th>
+                                                                </tr>
+                                                            </thead>
+                                                            @{
+                                                                int a = 0;
+                                                            }
+                                                            @for (var i = 0; i < Model.EWRAQuantitativeConfigModel.Count; i++)
+                                                            {
+
+                                                                for (var j = 0; j < Model.EWRAQuantitativeConfigModel[i].EWRACounterPartyType.Count; j++)
+                                                                {
+                                                                    for (var k = 0; k < Model.EWRAQuantitativeConfigModel[i].EWRACounterPartyType[j].EWRACounterPartyList.Count; k++)
+                                                                    {
+                                                                        <tr class="counterparty-row space-y-2">
+                                                                            <td>
+                                                                                <input type="text" class="px-3 py-2 border border-gray-300 rounded-md font-extralight" value="@Model.EWRAQuantitativeConfigModel[i].EWRACounterPartyType[j].EWRACounterPartyList[k].CounterParty"
+                                                                                       asp-for="EWRAQuantitativeConfigModel[i].EWRACounterPartyType[j].EWRACounterPartyList[k].CounterParty"
+                                                                                       maxlength="500" />
+                                                                            </td>
+
+                                                                            <td>
+                                                                                <select id="ddlNationalities" class="form-control px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-items="Model.EWRAQuantitativeConfigModel[i].Nationalities" asp-for="EWRAQuantitativeConfigModel[i].EWRACounterPartyType[j].EWRACounterPartyList[k].Country">
+                                                                                </select>
+                                                                                @* <select id="countrylist" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-items="Model.EWRAQuantitativeConfigModel[i].Nationalities" style="display:none"></select> *@
+                                                                            </td>
+                                                                            @if (Model.EWRAQuantitativeConfigModel[i].EWRACounterPartyType[j].EWRACounterPartyList[k].isActive == 1)
+                                                                            {
+                                                                                <td><input type="checkbox" onchange="ChangecounterpartyStatus(@k,this,1);" checked /></td>
+
+                                                                                <td><input type="hidden" value="1" name="EWRAQuantitativeConfigModel[@i].EWRACounterPartyType[@j].EWRACounterPartyList[@k].isActive" id="EWRAQuantitativeConfigModel_@(i)_EWRACounterPartyType_@(j)_EWRACounterPartyList_@(k)_isActive" asp-for="EWRAQuantitativeConfigModel[i].EWRACounterPartyType[j].EWRACounterPartyList[k].isActive" /></td>
+
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                <td><input type="checkbox" onchange="ChangecounterpartyStatus(@k,this,1);" /></td>
+                                                                                <td><input type="hidden" value="0" name="EWRAQuantitativeConfigModel[@i].EWRACounterPartyType[@j].EWRACounterPartyList[@k].isActive" id="EWRAQuantitativeConfigModel_@(i)_EWRACounterPartyType_@(j)_EWRACounterPartyList_@(k)_isActive" asp-for="EWRAQuantitativeConfigModel[i].EWRACounterPartyType[j].EWRACounterPartyList[k].isActive" /></td>
+
+                                                                            }
+                                                                            <td><input type="hidden" asp-for="EWRAQuantitativeConfigModel[i].EWRACounterPartyType[j].EWRACounterPartyList[k].Id" /></td>
+                                                                            <td><input type="hidden" name="EWRAQuantitativeConfigModel[@i].EWRACounterPartyType[@j].EWRACounterPartyList[@k].isActive" id="EWRAQuantitativeConfigModel_@(i)_EWRACounterPartyType_@(j)_EWRACounterPartyList_@(k)_isActive" asp-for="EWRAQuantitativeConfigModel[i].EWRACounterPartyType[j].EWRACounterPartyList[k].isActive" /></td>
+                                                                        </tr>
+                                                                        a = a + 1;
+                                                                    }
+                                                                }
+                                                            }
+                                                        </table>
+                                                        <div id="counterpartyLoading"
+                                                             class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-50 hidden">
+                                                            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div id="counterpartyPagination" class=" mt-4 flex flex-col sm:flex-row justify-center gap-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+
+                        </div>
+                    </div>
+                    <div id="qualitative" class="card card-body tab-pane fade hidden" role="tabpanel">
+                        <div class="p-6">
+                            <div class="row">
+                                <div class="col-sm">
+                                    <div class="form-group">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1" for="txtRiskCategory">@localizer["Risk Type"]</label>
+                                        <select id="ddlRiskType" class="form-control w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="@Model.EWRAQualitativeConfigModel[0].RiskTypeId" asp-items="@Model.EWRAQualitativeConfigModel[0].EWRARiskTypeList" onchange="RiskTypeOnChange()" style="border-bottom: 2px solid #fff !important;border-radius: 0 !important;">
+                                            <option value="0">--@localizer["Select"]--</option>
+                                        </select>
+                                        <input type="hidden" asp-for="@Model.EWRAQualitativeConfigModel[0].RiskType" id="txtRiskType">
+                                        <input type="hidden" asp-for="@Model.EWRAQualitativeConfigModel[0].RiskTypeId" id="txtRiskTypeId">
+                                        <label id="validateddl" class="text-danger text-red-500 text-base mt-2">@localizer["Please Select Risk Type"]</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" id="subTab" style="display:none;">
+                                <div class="w-full configDivs my-4">
+                                    <nav class="flex flex-col md:flex-row md:space-x-4 flex-wrap gap-4">
+
+                                        <a class="border-b-2 border-blue-600 text-black font-medium rounded-t-lg pb-2" role="tab" data-toggle="tab" href="#description" style="color:black;">@localizer["Add Risk Description"]</a>
+
+
+                                        <a class="text-gray-500 font-light rounded-t-lg pb-2" role="tab" data-toggle="tab" href="#inherent" style="color:black;">@localizer["Add Inherent Risk"]</a>
+
+
+                                        <a class="text-gray-500 font-light rounded-t-lg pb-2" role="tab" data-toggle="tab" href="#key" style="color:black;">@localizer["Add Key Control/Mitigation"]</a>
+
+
+                                        <a class="text-gray-500 font-light rounded-t-lg pb-2" role="tab" data-toggle="tab" href="#residual" style="color:black;">@localizer["Add Residual Risk"]</a>
+                                    </nav>
+
+                                </div>
+                                <div class="tab-content">
+                                    <div id="description" class="tab-pane mt-4 active" role="tabpanel">
+                                        <div class="p-6">
+                                            <div class="row">
+                                                <div class="col-sm">
+                                                    <div class="form-group">
+                                                        <input type="hidden" id="rowIndexDesc" value="0" />
+                                                        <button type="button" id="addMoreRiskDescription" onclick="addRiskDescriptionRow()" class="btn btn-primary bg-primary hover:bg-primary-hover text-white font-semibold py-2 px-6 rounded shadow transition duration-300 ease-in-out my-4" style="margin-top:10px;">@localizer["Add More Risk Description"]</button>
+                                                        <div id="dvRiskDescriptionList" class="w-full overflow-x-auto">
+                                                            <table id="AddDesc">
+                                                            </table>
+                                                        </div>
+                                                        <input type="hidden" id="rowIndexDesc1" value="0" />
+                                                    </div>
+                                                    <div id="divRiskDescription" class="p-6">
+                                                        <div class="flex flex-col md:flex-row items-center md:justify-between gap-4">
+                                                            <div class="flex items-center ml-8">
+                                                                <span class="text-sm text-gray-700">Show</span>
+                                                                <select id="rowsPerPagerisk" class="h-10 ml-2 rounded-md border-gray-300 my-2 py-1 pl-3 pr-8 text-sm text-[#94A3B8]">
+                                                                    @*<option value="1" selected>1 items</option>*@
+                                                                    <option value="10" selected>10 items</option>
+                                                                    <option value="25">25 items</option>
+                                                                    <option value="50">50 items</option>
+                                                                    <option value="100">100 items</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="relative w-full sm:w-96">
+                                                                <input type="text"
+                                                                       id="riskSearchBox"
+                                                                       placeholder="Search anything..."
+                                                                       class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                                     class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                                                     fill="none"
+                                                                     viewBox="0 0 24 24"
+                                                                     stroke="currentColor">
+                                                                    <path stroke-linecap="round"
+                                                                          stroke-linejoin="round"
+                                                                          stroke-width="2"
+                                                                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-contents">
+                                                            <div class="row overflow-x-auto">
+                                                                <div style="width: 100%; padding-left: -10px;">
+                                                                    <div class="table-responsive relative my-2">
+                                                                        <table id="availableRiskDescription" class="w-full text-sm text-left" cellspacing="0" style="width:100%;">
+                                                                            <thead class="bg-[#E9EFFD] p-4 rounded-lg mb-4 h-12">
+                                                                                <tr class="row m-0 text-center">
+                                                                                    <th data-column="riskDescription" class="sortable text-gray-900 cursor-pointer w-[50%] p-3 min-w-[120px]">@localizer["Risk Description"]</th>
+                                                                                    <th class="w-[50%] p-3 min-w-[120px]">@localizer["Active Y/N"]</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody class="divide-y divide-bordercolor"></tbody>
+                                                                        </table>
+                                                                        <div id="riskLoading"
+                                                                             class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-50 hidden">
+                                                                            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="risk-pagination-controls mt-4 flex flex-col sm:flex-row justify-center gap-2"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="inherent" class="tab-pane mt-4 hidden" role="tabpanel">
+                                        <div class="p-6">
+                                            <div class="row">
+                                                <div class="col-sm">
+                                                    <div class="form-group">
+                                                        <input type="hidden" id="rowIndexInherent" value="0" />
+                                                        <button type="button" id="addMoreInherentRisk" onclick="addInherentRiskRow()" class="btn btn-primary bg-primary hover:bg-primary-hover text-white font-semibold py-2 px-6 rounded shadow transition duration-300 ease-in-out my-4" style="margin-top:10px;">@localizer["Add More Inherent Risk"]</button>
+                                                        <div id="dvInherentRiskList" class="w-full overflow-x-auto">
+                                                            <table id="AddInherent">
+                                                            </table>
+                                                        </div>
+                                                        <input type="hidden" id="rowIndexInherent1" value="0" />
+                                                    </div>
+                                                    <div id="divInherentRisk" class="p-6" style="border-style: groove;">
+                                                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                                            <div class="flex items-center ml-8">
+                                                                <span class="text-sm text-gray-700">Show</span>
+                                                                <select id="rowsPerPageinherent" class="h-10 ml-2 rounded-md border-gray-300 my-2 py-1 pl-3 pr-8 text-sm text-[#94A3B8]">
+                                                                    @*<option value="1" selected>1 items</option>*@
+                                                                    <option value="10" selected>10 items</option>
+                                                                    <option value="25">25 items</option>
+                                                                    <option value="50">50 items</option>
+                                                                    <option value="100">100 items</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="relative w-full sm:w-96">
+                                                                <input type="text"
+                                                                       id="inherentSearchBox"
+                                                                       placeholder="Search anything..."
+                                                                       class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                                     class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                                                     fill="none"
+                                                                     viewBox="0 0 24 24"
+                                                                     stroke="currentColor">
+                                                                    <path stroke-linecap="round"
+                                                                          stroke-linejoin="round"
+                                                                          stroke-width="2"
+                                                                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-contents">
+                                                            <div class="row overflow-x-auto">
+                                                                <div style="width: 100%; padding-left: -10px;">
+                                                                    <div class="table-responsive relative my-2">
+                                                                        <table id="availableInherentRisk" class="w-full text-sm text-left" cellspacing="0" style="width:100%;">
+                                                                            <thead class="bg-[#E9EFFD] p-4 rounded-lg mb-4 h-12">
+                                                                                <tr class="row m-0 text-center">
+                                                                                    <th data-column="InherentRiskDescription" class="sortable text-gray-900 cursor-pointer w-[50%] p-3 min-w-[120px]">@localizer["Inherent Risk"]</th>
+                                                                                    <th class="w-[50%] p-3 min-w-[120px]">@localizer["Active Y/N"]</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody class="divide-y divide-bordercolor"></tbody>
+                                                                        </table>
+                                                                        <div id="inherentLoading"
+                                                                             class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-50 hidden">
+                                                                            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="inherent-pagination-controls mt-4 flex flex-col sm:flex-row justify-center gap-2"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="key" class="tab-pane mt-4 hidden" role="tabpanel">
+                                        <div class="p-6">
+                                            <div class="row">
+                                                <div class="col-sm">
+                                                    <div class="form-group">
+                                                        <input type="hidden" id="rowIndexKeyControl" value="0" />
+                                                        <button type="button" id="addMoreKey" onclick="addKeyControlRow()" class="btn btn-primary bg-primary hover:bg-primary-hover text-white font-semibold py-2 px-6 rounded shadow transition duration-300 ease-in-out my-4" style="margin-top:10px;">@localizer["Add More Key Control/Mitigation"]</button>
+                                                        <div id="dvKeyList" class="w-full overflow-x-auto">
+                                                            <table id="AddKeyControl">
+                                                            </table>
+                                                        </div>
+                                                        <input type="hidden" id="rowIndexKeyControl1" value="0" />
+                                                    </div>
+                                                    <div id="divKey" class="p-6" style="border-style: groove;">
+                                                        <div class="flex flex-col md:flex-row items-center md:justify-between gap-4">
+                                                            <div class="flex items-center ml-8">
+                                                                <span class="text-sm text-gray-700">Show</span>
+                                                                <select id="rowsPerPageKey" class="h-10 ml-2 rounded-md border-gray-300 my-2 py-1 pl-3 pr-8 text-sm text-[#94A3B8]">
+                                                                    <option value="10" selected>10 items</option>
+                                                                    <option value="25">25 items</option>
+                                                                    <option value="50">50 items</option>
+                                                                    <option value="100">100 items</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="relative w-full sm:w-96">
+                                                                <input type="text"
+                                                                       id="keySearchBox"
+                                                                       placeholder="Search anything..."
+                                                                       class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                                     class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                                                     fill="none"
+                                                                     viewBox="0 0 24 24"
+                                                                     stroke="currentColor">
+                                                                    <path stroke-linecap="round"
+                                                                          stroke-linejoin="round"
+                                                                          stroke-width="2"
+                                                                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-contents">
+                                                            <div class="row overflow-x-auto">
+                                                                <div style="width: 100%; padding-left: -10px;">
+                                                                    <div class="table-responsive relative my-2">
+                                                                        <table id="availableKey" class="w-full text-sm text-left" cellspacing="0" style="width:100%;">
+                                                                            <thead class="bg-[#E9EFFD] p-4 rounded-lg mb-4 h-12">
+                                                                                <tr class="row m-0 text-center">
+                                                                                    <th data-column="keyControl" class="sortable text-gray-900 cursor-pointer w-[50%] p-3 min-w-[120px]">@localizer["Key Control/Mitigation"]</th>
+                                                                                    <th class="w-[50%] p-3 min-w-[120px]">@localizer["Active Y/N"]</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody class="divide-y divide-bordercolor"></tbody>
+                                                                        </table>
+                                                                        <div id="keyLoading"
+                                                                             class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-50 hidden">
+                                                                            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="key-pagination-controls mt-4 flex flex-col sm:flex-row justify-center gap-2"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="residual" class="tab-pane mt-4 hidden" role="tabpanel">
+                                        <div class="p-6">
+                                            <div class="row">
+                                                <div class="col-sm">
+                                                    <div class="form-group">
+                                                        <input type="hidden" id="rowIndexResidual" value="0" />
+                                                        <button type="button" id="addMoreResidual" onclick="addResidualRiskRow()" class="btn btn-primary bg-primary hover:bg-primary-hover text-white font-semibold py-2 px-6 rounded shadow transition duration-300 ease-in-out my-4" style="margin-top:10px;">@localizer["Add More Residual Risk"]</button>
+                                                        <div id="dvResidualList" class="w-full overflow-x-auto">
+                                                            <table id="AddResidual">
+                                                            </table>
+                                                        </div>
+                                                        <input type="hidden" id="rowIndexResidual1" value="0" />
+                                                    </div>
+                                                    <div id="divKey" class="p-6" style="border-style: groove;">
+                                                        <div class="flex flex-col md:flex-row items-center md:justify-between gap-4">
+                                                            <div class="flex items-center ml-8">
+                                                                <span class="text-sm text-gray-700">Show</span>
+                                                                <select id="rowsPerPageResidual" class="h-10 ml-2 rounded-md border-gray-300 my-2 py-1 pl-3 pr-8 text-sm text-[#94A3B8]">
+                                                                    <option value="10" selected>10 items</option>
+                                                                    <option value="25">25 items</option>
+                                                                    <option value="50">50 items</option>
+                                                                    <option value="100">100 items</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="relative w-full sm:w-96">
+                                                                <input type="text"
+                                                                       id="residualSearchBox"
+                                                                       placeholder="Search anything..."
+                                                                       class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                                     class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                                                     fill="none"
+                                                                     viewBox="0 0 24 24"
+                                                                     stroke="currentColor">
+                                                                    <path stroke-linecap="round"
+                                                                          stroke-linejoin="round"
+                                                                          stroke-width="2"
+                                                                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-contents">
+                                                            <div class="row overflow-x-auto">
+                                                                <div style="width: 100%; padding-left: -10px;">
+                                                                    <div class="table-responsive relative my-2">
+                                                                        <table id="availableResidual" class="w-full text-sm text-left" cellspacing="0" style="width:100%;">
+                                                                            <thead class="bg-[#E9EFFD] p-4 rounded-lg mb-4 h-12">
+                                                                                <tr class="row m-0 text-center">
+                                                                                    <th data-column="ResidualRiskDescription" class="sortable text-gray-900 cursor-pointer w-[50%] p-3 min-w-[120px]">@localizer["Residual Risk"]</th>
+                                                                                    <th class="w-[50%] p-3 min-w-[120px]">@localizer["Active Y/N"]</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody class="divide-y divide-bordercolor"></tbody>
+                                                                        </table>
+                                                                        <div id="residualLoading"
+                                                                             class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-50 hidden">
+                                                                            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="residual-pagination-controls mt-4 flex flex-col sm:flex-row justify-center gap-2"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-4 p-4 border-t" style="padding-left:1%;">
+                        <button id="btnCustomerTypeSubmit" type="submit" value="Submit" class="btn btn-primary bg-primary hover:bg-primary-hover text-white font-semibold py-2 px-5 rounded transition">@localizer["Submit"]</button>
+                    </div>
+                    <div id="loading"
+                         class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-50 hidden">
+                        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                    </div>
+                    @* </div> *@
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // === MAIN TAB SWITCHING ===
+        const mainTabs = ['#quantitative', '#qualitative'];
+
+        mainTabs.forEach(selector => {
+            document.querySelector(`a[href="${selector}"]`)?.addEventListener("click", function (e) {
+                e.preventDefault();
+
+                // Hide all main tab panes
+                mainTabs.forEach(id => {
+                    const pane = document.querySelector(id);
+                    if (pane) pane.classList.add("hidden");
+                });
+
+                // Show the clicked pane
+                const targetId = this.getAttribute("href");
+                document.querySelector(targetId)?.classList.remove("hidden");
+
+                // Toggle main tab styles
+                mainTabs.forEach(s => {
+                    const tab = document.querySelector(`a[href="${s}"]`);
+                    tab?.classList.remove("border-b-2", "border-blue-600", "text-black", "font-normal");
+                    tab?.classList.add("text-[#64748B]", "font-extralight");
+                });
+
+                this.classList.remove("text-[#64748B]", "font-extralight");
+                this.classList.add("border-b-2", "border-blue-600", "text-black", "font-normal");
+            });
+        });
+
+        // === SUB-TAB SWITCHING INSIDE #qualitative ===
+        const subTabLinks = document.querySelectorAll('#subTab1 a[role="tab"]');
+
+        subTabLinks.forEach(link => {
+            link.addEventListener("click", function (e) {
+                e.preventDefault();
+
+                const targetId = this.getAttribute("href").substring(1);
+                const targetPane = document.getElementById(targetId);
+                if (!targetPane) return;
+
+                // Reset all tab links to inactive styles
+                subTabLinks.forEach(tab => {
+                    tab.classList.remove('border-b-2', 'border-blue-600', 'text-black', 'font-normal', 'text-md');
+                    tab.classList.add('text-[#64748B]', 'font-extralight');
+                });
+
+                // Activate the clicked tab
+                this.classList.remove('text-[#64748B]', 'font-extralight');
+                this.classList.add('border-b-2', 'border-blue-600', 'text-black', 'font-normal', 'text-md');
+            });
+        });
+
+        const riskTabs = ['#description', '#inherent', '#key', '#residual'];
+
+        riskTabs.forEach(selector => {
+            document.querySelector(`a[href="${selector}"]`)?.addEventListener("click", function (e) {
+                e.preventDefault();
+
+                // Hide all tab panes
+                riskTabs.forEach(id => {
+                    document.querySelector(id)?.classList.add("hidden");
+                });
+
+                // Show selected tab pane
+                const targetId = this.getAttribute("href");
+                document.querySelector(targetId)?.classList.remove("hidden");
+
+                // Reset all tab styles
+                riskTabs.forEach(s => {
+                    const tab = document.querySelector(`a[href="${s}"]`);
+                    tab?.classList.remove("border-b-2", "border-blue-600", "text-black", "font-normal");
+                    tab?.classList.add("text-[#64748B]", "font-extralight");
+                });
+
+                // Highlight active tab
+                this.classList.remove("text-[#64748B]", "font-extralight");
+                this.classList.add("border-b-2", "border-blue-600", "text-black", "font-normal");
+            });
+        });
+    });
+</script>
+
+
+
+<script>
+                arrHead1 = ['Customer Type', 'Action', ''];
+                contarr1 = [];
+                @* function addCustomerTypeRow() {
+
+                var empTab = document.getElementById('Add');
+                var rowIndexVal = $('#rowIndex1').val();
+                var rowCnt = empTab.rows.length;   // table row count.
+                var tr = empTab.insertRow(rowCnt); // the table row.
+                tr = empTab.insertRow(rowCnt);
+                for (var c = 0; c < arrHead1.length; c++) {
+                    var td = document.createElement('td'); // table definition.
+                    td = tr.insertCell(c);
+                    if (c == 1) {      // the first column.
+                        // add a button in every new row in the last column.
+                        var button = document.createElement('input');
+
+                        // set input attributes.
+                        button.setAttribute('type', 'button');
+                        button.setAttribute('value', '@localizer["Remove"]');
+
+                        // add button's 'onclick' event.
+                        button.setAttribute('onclick', 'removeRow(this)');
+
+                        td.appendChild(button);
+                    }
+                    else {
+                        // 1nd, 2rd,Url3rd and 4th column, will have textbox.
+                        var ele = document.createElement('input');
+                        if (c == 0) {
+                            var hiddenIndex = document.createElement('input');
+                            hiddenIndex.setAttribute('type', 'hidden');
+                            hiddenIndex.setAttribute('class', 'form-control');
+                            hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                            hiddenIndex.setAttribute('id', 'Index')
+                            td.appendChild(hiddenIndex);
+                            ele = addCategoryTypeRow(ele, 'CustType', '');
+                            ele.className = 'w-full border border-gray-300 rounded px-2 py-1 my-2';
+                            td.appendChild(ele);
+                        } else {
+                            ele.setAttribute('type', 'hidden');
+                            ele.setAttribute('class', 'form-control');
+                            ele.setAttribute('value', false);
+                            ele.setAttribute('name', 'EWRAQuantitativeConfigModel[0].AddedCustomerType[' + $('#rowIndex1').val() + '].isDeletedInUI');
+                            ele.setAttribute('id', 'EWRAQuantitativeConfigModel[0].AddedCustomerType[' + $('#rowIndex1').val() + '].isDeletedInUI');
+                            ele.setAttribute('maxlength', 500);
+                            ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                            td.appendChild(ele);
+                        }
+                    }
+                }
+                $('#rowIndex1').val(parseInt(rowIndexVal) + 1);
+            } *@
+                function addCustomerTypeRow() {
+                    var empTab = document.getElementById('Add');
+                    var rowIndexVal = $('#rowIndex1').val();
+                    var rowCnt = empTab.rows.length;
+
+                    var tr = empTab.insertRow(rowCnt);
+
+                    for (var c = 0; c < arrHead1.length; c++) {
+                        var td = tr.insertCell(c);
+                        if (c == 0) {
+                            td.className = "px-4 py-2 min-w-[250px]"; // Give the input column enough space
+                        } else {
+                            td.className = "px-4 py-2 min-w-[100px]"; // Give the button column enough space
+                        }
+
+
+                        if (c == 1) { // The Remove Button Column
+                            var button = document.createElement('input');
+                            button.setAttribute('type', 'button');
+                            button.setAttribute('value', '@localizer["Remove"]');
+                            button.setAttribute('onclick', 'removeRow(this)');
+
+                            // Optional: Style the button so it matches the theme
+                            button.className = "cursor-pointer";
+
+                            td.appendChild(button);
+                        }
+                        else {
+                            var ele = document.createElement('input');
+                            if (c == 0) {
+                                var hiddenIndex = document.createElement('input');
+                                hiddenIndex.setAttribute('type', 'hidden');
+                                hiddenIndex.setAttribute('class', 'form-control');
+                                hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                                hiddenIndex.setAttribute('id', 'Index');
+                                td.appendChild(hiddenIndex);
+
+                                ele = addCategoryTypeRow(ele, 'CustType', '');
+                                // Added "w-full" to ensure it fills the cell properly
+                                ele.className = 'w-full border border-gray-300 rounded px-2 py-2 my-2';
+                                td.appendChild(ele);
+                            } else {
+                                ele.setAttribute('type', 'hidden');
+                                ele.setAttribute('class', 'form-control');
+                                ele.setAttribute('value', false);
+                                ele.setAttribute('name', 'EWRAQuantitativeConfigModel[0].AddedCustomerType[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('id', 'EWRAQuantitativeConfigModel[0].AddedCustomerType[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('maxlength', 500);
+                                ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                                td.appendChild(ele);
+                            }
+                        }
+                    }
+                    $('#rowIndex1').val(parseInt(rowIndexVal) + 1);
+                }
+                function addCategoryTypeRow(ele, elementName, value) {
+                    var rowIndex = $('#rowIndex1').val();
+                    ele.setAttribute('type', 'text');
+                    ele.setAttribute('class', 'form-control');
+                    ele.setAttribute('value', value);
+                    ele.setAttribute('name', 'EWRAQuantitativeConfigModel[0].AddedCustomerType[' + rowIndex + '].' + elementName);
+                    ele.setAttribute('id', 'EWRAQuantitativeConfigModel[0].AddedCustomerType[' + rowIndex + '].' + elementName);
+                    ele.setAttribute('maxlength', 500);
+                    ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                    return ele;
+                }
+                function removeRow(e) {
+                    e.closest('tr').style.display = 'none';//hide the div
+                    e.closest('tr').querySelectorAll('input[type=hidden]')[1].value = true;
+                }
+
+                function ChangeStatus(index, that, mode) {
+                    var status = 0;
+                    if ($(that).prop("checked")) {
+                        status = 1;
+                    }
+                    if (mode == 1) {
+                        $('#EWRAQuantitativeConfigModel_0_AvailableCustomerType_' + index + '_isActive').val(status);
+                    } else if (mode == 2) {
+                        $('#EWRAQualitativeConfigModel_0_AvailableRiskDescription_' + index + '_IsActive').val(status);
+                    } else if (mode == 3) {
+                        $('#EWRAQualitativeConfigModel_0_AvailableInherentRisk_' + index + '_IsActive').val(status);
+                    } else if (mode == 4) {
+                        $('#EWRAQualitativeConfigModel_0_AvailableKey_' + index + '_IsActive').val(status);
+                    } else if (mode == 5) {
+                        $('#EWRAQualitativeConfigModel_0_AvailableResidualRisk_' + index + '_IsActive').val(status);
+                    }
+                }
+                function ReloadAfterSubmit() {
+
+                }
+                function alphaNumericCheck(e) {
+                    var key = e.keyCode;
+                    if (!(key > 43 && key < 60) && !(key > 62 && key < 91) && !(key > 94 && key < 123) && !(key > 37 && key < 43)) {
+                        if (key == 34 || key == 32) {
+
+                        } else {
+                            e.preventDefault();
+                        }
+                    }
+                }
+                function RiskTypeOnChange() {
+                    var ddl = $("#ddlRiskType");
+                    if (ddl.val() == "0") {
+                        document.getElementById('subTab').style.display = "none";
+                        document.getElementById('validateddl').style.display = "block";
+                    }
+                    else {
+                        document.getElementById('subTab').style.display = "block";
+                        document.getElementById('validateddl').style.display = "none";
+                    }
+                    //$('#availableRiskDescription').dataTable().fnDestroy();
+                    //$('#availableInherentRisk').dataTable().fnDestroy();
+                    //$('#availableKey').dataTable().fnDestroy();
+                    //$('#availableResidual').dataTable().fnDestroy();
+                    $('#rowsPerPagerisk').val(10);
+                    $('#rowsPerPageinherent').val(10);
+                    $('#rowsPerPagekey').val(10);
+                    $('#rowsPerPageresidual').val(10);
+                    showLoader();
+                    LoadRiskDescriptionTable();
+                    LoadInherentRiskTable();
+                    LoadKeyTable();
+                    LoadResidualTable();
+                   // $(".se-pre-con").fadeOut("slow");
+        }
+
+                arrHead2 = ['@localizer["Risk Description"]', '@localizer["Action"]', ''];
+                contarr2 = [];
+                function createRiskDescriptionTable() {
+                }
+        //function LoadRiskDescriptionTable() {
+        //    if ($.fn.DataTable.isDataTable('#availableRiskDescription')) {
+        //        $('#availableRiskDescription').DataTable().clear().destroy();
+        //    }
+        //            var riskType = $('#ddlRiskType').val();
+        //            var table = $('#availableRiskDescription').DataTable({
+        //                "serverSide": true,
+        //                "filter": false,
+        //                "iDisplayLength": 25,
+        //                "processing": true,
+        //                "stateSave": true,
+        //                ajax: {
+        //                    url: '/ewra/CustomPaginationRiskDescription',
+        //                    type: 'POST',
+        //                    data: {
+        //                        'riskTypeID': riskType
+        //                    },
+        //                    dataType: 'json',
+        //                },
+        //                columns: [
+        //                    {
+        //                        "render": function (data, type, full, meta) {
+        //                            var colHtml = '<textarea rows="2" style="width:100%;" type="text" value="' + full.riskDescription + '" name="EWRAQualitativeConfigModel[0].AvailableRiskDescription[' + meta.row + '].RiskDescription" maxlength="500">' + full.riskDescription+'</textarea>';
+        //                            colHtml += '<input type="hidden" value="' + full.descriptionId + '" name="EWRAQualitativeConfigModel[0].AvailableRiskDescription[' + meta.row + '].DescriptionId" />';
+        //                            return colHtml;
+        //                        }
+        //                    },
+        //                    {
+        //                        "render": function (data, type, full, meta) {
+        //                            var colHtml = '';
+        //                            if (full.isActive == 1) {
+        //                                colHtml = '<input type="checkbox" onchange="ChangeStatus(' + meta.row + ',this,2);" checked />';
+        //                                colHtml += '<input type="hidden" value="1" id="EWRAQualitativeConfigModel_0_AvailableRiskDescription_'+meta.row+'_IsActive" name="EWRAQualitativeConfigModel[0].AvailableRiskDescription[' + meta.row + '].IsActive" />';
+        //                            }
+        //                            else {
+        //                                colHtml = '<input type="checkbox" onchange="ChangeStatus(' + meta.row + ', this,2);" />';
+        //                                colHtml += '<input type="hidden" value="0" id="EWRAQualitativeConfigModel_0_AvailableRiskDescription_' + meta.row +'_IsActive" name="EWRAQualitativeConfigModel[0].AvailableRiskDescription[' + meta.row + '].IsActive" />';
+        //                            }
+        //                            return colHtml;
+        //                        }
+        //                    }
+        //                ]
+        //            });
+        //        }
+        let riskDescCurrentPage = 1;
+        let riskDescPageSize = parseInt($('#rowsPerPagerisk').val())||10;
+        let riskDescTotalPages = 1;
+        let riskDescSortColumn = "riskDescription";
+        let riskDescSortDirection = "asc";
+        //$(document).ready(function () {
+        //    fetchRiskDescription();
+        //});
+        function getRiskColumnIndex(columnName) {
+            const columns = ["riskDescription"];
+            return columns.indexOf(columnName);
+        }
+        function LoadRiskDescriptionTable(page = 1) {
+            const riskTypeID = $('#ddlRiskType').val();
+            const searchQuery = $('#riskSearchBox').val()?.trim() || '';
+            riskDescPageSize = parseInt($('#rowsPerPagerisk').val()) || 10;
+            const start = (page - 1) * riskDescPageSize;
+            $.ajax({
+                url: '/ewra/CustomPaginationRiskDescription',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    //riskTypeID: riskTypeID,
+                    //start: start,
+                    //search: { value: searchQuery },
+                    //length: riskDescPageSize
+                    draw: page,
+                    start: start,
+                    length: riskDescPageSize,
+                    search: { value: searchQuery },
+                    order: [{ column: getRiskColumnIndex(riskDescSortColumn), dir: riskDescSortDirection }], // Optional: if sorting manually
+                    columns: [
+                        { data: "riskDescription"}
+                        // add more columns as needed
+                    ],
+                    riskTypeID: riskTypeID
+                },
+                beforeSend: function () {
+                    // $(".se-pre-con").show();
+                    // $(".card-header").fadeOut();
+                },
+                success: function (resp) {
+                    const data = resp.data || [];
+                    const total = resp.recordsFiltered || 0;
+
+                    riskDescTotalPages = Math.ceil(total / riskDescPageSize);
+                    renderRiskDescriptionTable(data);
+                    renderRiskDescriptionPager(page);
+                    $('#riskLoading').addClass('hidden');
+                    hideLoader();
+                },
+                error: function (err) {
+                    console.error("Failed to load data", err);
+                    hideLoader();
+                }
+            });
+        }
+
+        function renderRiskDescriptionTable(data) {
+            const $tbody = $('#availableRiskDescription tbody');
+            $tbody.empty();
+
+            if (!data.length) {
+                $tbody.append(`<tr><td colspan="2" class="text-center">No data found</td></tr>`);
+                return;
+            }
+
+            data.forEach((item, index) => {
+                const isChecked = item.isActive === 1 ? 'checked' : '';
+                const row = `
+                    <tr><td colspan="2" style="height: 8px; border: none;"></td></tr> <!-- spacer row -->
+                    <tr>
+                        <td>
+                            <textarea rows="2" style="width:100%;" maxlength="500"
+                                name="EWRAQualitativeConfigModel[0].AvailableRiskDescription[${index}].RiskDescription">${item.riskDescription}</textarea>
+                            <input type="hidden"
+                                name="EWRAQualitativeConfigModel[0].AvailableRiskDescription[${index}].DescriptionId"
+                                value="${item.descriptionId}" />
+                        </td>
+                        <td>
+                            <input type="checkbox" onchange="ChangeStatus(${index}, this, 2);" ${isChecked} />
+                            <input type="hidden"
+                                id="EWRAQualitativeConfigModel_0_AvailableRiskDescription_${index}_IsActive"
+                                name="EWRAQualitativeConfigModel[0].AvailableRiskDescription[${index}].IsActive"
+                                value="${item.isActive}" />
+                        </td>
+                    </tr>`;
+                $tbody.append(row);
+            });
+        }
+
+        function renderRiskDescriptionPager(page) {
+            const $pager = $('.risk-pagination-controls');
+            $pager.empty();
+
+            if (riskDescTotalPages <= 1) return;
+
+            const createBtn = (label, p, disabled = false, active = false) =>
+                `<button type="button" class="px-3 py-1 border rounded
+                        ${active ? 'bg-primary text-white' : 'bg-surface text-primary'}
+                        ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}"
+                    data-page="${p}" ${disabled ? 'disabled' : ''}>${label}</button>`;
+
+            $pager.append(createBtn('First', 1, page === 1));
+            $pager.append(createBtn('Prev', page - 1, page === 1));
+
+            for (let i = Math.max(1, page - 2); i <= Math.min(riskDescTotalPages, page + 2); i++) {
+                $pager.append(createBtn(i, i, false, i === page));
+            }
+
+            $pager.append(createBtn('Next', page + 1, page === riskDescTotalPages));
+            $pager.append(createBtn('Last', riskDescTotalPages, page === riskDescTotalPages));
+        }
+
+        // Pagination click
+        //$('.risk-pagination-controls').on('click', 'button', function () {
+        //    const pg = parseInt($(this).data('page'));
+        //    if (!isNaN(pg)) {
+        //        riskDescCurrentPage = pg;
+        //        LoadRiskDescriptionTable(pg);
+        //    }
+        //});
+
+        // Handle checkbox status change
+        function ChangeStatus(index, checkbox, mode) {
+            const hiddenInput = $(`#EWRAQualitativeConfigModel_0_AvailableRiskDescription_${index}_IsActive`);
+            hiddenInput.val(checkbox.checked ? 1 : 0);
+        }
+        $('#rowsPerPagerisk').on('change', function () {
+            riskDescCurrentPage = 1;
+            riskDescPageSize = parseInt($(this).val()) || 10;
+            showLoader();
+            LoadRiskDescriptionTable(riskDescCurrentPage);
+
+        });
+        $('.risk-pagination-controls').on('click', 'button', function () {
+            const pg = parseInt($(this).data('page'));
+            if (!isNaN(pg)) {
+                riskDescCurrentPage = pg;
+                $('#riskLoading').removeClass('hidden');
+                LoadRiskDescriptionTable(pg);
+            }
+        });
+        $('#riskSearchBox').on('keyup', function () {
+            riskDescCurrentPage = 1;
+            $('#riskLoading').removeClass('hidden');
+            LoadRiskDescriptionTable(riskDescCurrentPage);
+        });
+        $('#availableRiskDescription thead').on('click', 'th.sortable', function () {
+            const selectedColumn = $(this).data('column');
+
+            if (riskDescSortColumn === selectedColumn) {
+                riskDescSortDirection = riskDescSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                riskDescSortColumn = selectedColumn;
+                riskDescSortDirection = 'asc';
+            }
+
+            $('#availableRiskDescription thead th.sortable')
+                .removeClass('active asc desc');
+
+            $(this).addClass(`active ${riskDescSortDirection}`);
+            riskDescCurrentPage = 1;
+            $('#riskLoading').removeClass('hidden');
+            LoadRiskDescriptionTable(riskDescCurrentPage);
+        });
+
+
+                function RiskDescriptionOnChange() {
+
+                }
+                arrHead3 = ['@localizer["Inherent Risk"]', '@localizer["Action"]', ''];
+                contarr3 = [];
+                //function LoadInherentRiskTable() {
+                //    var riskType = $('#ddlRiskType').val();
+                //    var table = $('#availableInherentRisk').DataTable({
+                //        "serverSide": true,
+                //        "filter": false,
+                //        "iDisplayLength": 25,
+                //        "processing": true,
+                //        "stateSave": true,
+                //        ajax: {
+                //            url: '/ewra/CustomPaginationInherentRisk',
+                //            type: 'GET',
+                //            data: {
+                //                'riskTypeID': riskType
+                //            },
+                //            dataType: 'json',
+                //            beforeSend: function () {
+                //                // Show image container
+                //                $(".se-pre-con").show();
+                //                $(".card-header").fadeOut()
+                //            },
+                //        },
+                //        columns: [
+                //            {
+                //                "render": function (data, type, full, meta) {
+                //                    var colHtml = '<textarea rows="2" style="width:100%;" type="text" value="' + full.inherentRiskDescription + '" name="EWRAQualitativeConfigModel[0].AvailableInherentRisk[' + meta.row + '].InherentRiskDescription" maxlength="500">' + full.inherentRiskDescription + '</textarea>';
+                //                    colHtml += '<input type="hidden" value="' + full.inherentRiskId + '" name="EWRAQualitativeConfigModel[0].AvailableInherentRisk[' + meta.row + '].InherentRiskId" />';
+                //                    return colHtml;
+                //                }
+                //            },
+                //            {
+                //                "render": function (data, type, full, meta) {
+                //                    var colHtml = '';
+                //                    if (full.isActive == 1) {
+                //                        colHtml = '<input type="checkbox" onchange="ChangeStatus(' + meta.row + ',this,3);" checked />';
+                //                        colHtml += '<input type="hidden" value="1" id="EWRAQualitativeConfigModel_0_AvailableInherentRisk_' + meta.row +'_IsActive" name="EWRAQualitativeConfigModel[0].AvailableInherentRisk[' + meta.row + '].IsActive" />';
+                //                    }
+                //                    else {
+                //                        colHtml = '<input type="checkbox" onchange="ChangeStatus(' + meta.row + ', this,3);" />';
+                //                        colHtml += '<input type="hidden" value="0" id="EWRAQualitativeConfigModel_0_AvailableInherentRisk_' + meta.row +'_IsActive" name="EWRAQualitativeConfigModel[0].AvailableInherentRisk[' + meta.row + '].IsActive" />';
+                //                    }
+                //                    return colHtml;
+                //                }
+                //            }
+                //        ]
+                //    });
+                //    $.fn.dataTable.ext.errMode = 'throw';
+        //}
+        let inherentRiskCurrentPage = 1;
+        let inherentRiskPageSize = parseInt($('#rowsPerPageinherent').val()) || 10;
+        let inherentRiskTotalPages = 1;
+        let sortColumnInherent = "InherentRiskDescription";  // Match data-column in <th>
+        let sortDirectionInherent = "asc";
+        function getColumnIndexInherent(columnName) {
+            const columns = ["InherentRiskDescription"];
+            return columns.indexOf(columnName);
+        }
+        function LoadInherentRiskTable(page = 1) {
+            const riskTypeID = $('#ddlRiskType').val();
+            const searchQueryinherent = $('#inherentSearchBox').val()?.trim() || '';
+            inherentRiskPageSize = parseInt($('#rowsPerPageinherent').val()) || 10;
+            const start = (page - 1) * inherentRiskPageSize;
+            $.ajax({
+                url: '/ewra/CustomPaginationInherentRisk',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    riskTypeID: riskTypeID,
+                    start: start,
+                    search: { value: searchQueryinherent },
+                    length: inherentRiskPageSize,
+                    order: [{ column: getColumnIndexInherent(sortColumnInherent), dir: sortDirectionInherent }],
+                    columns: [{ data: "InherentRiskDescription" }]
+                },
+                beforeSend: function () {
+                   // $(".se-pre-con").show();
+                    //$(".card-header").fadeOut();
+                },
+                success: function (resp) {
+                    //$(".se-pre-con").hide();
+                    const data = resp.data || [];
+                    const total = resp.recordsFiltered || 0;
+
+                    inherentRiskTotalPages = Math.ceil(total / inherentRiskPageSize);
+                    renderInherentRiskTable(data);
+                    renderInherentRiskPager(page);
+                    $('#inherentLoading').addClass('hidden');
+                    hideLoader();
+                },
+                error: function (err) {
+                   // $(".se-pre-con").hide();
+                    console.error("Failed to load inherent risks", err);
+                    hideLoader();
+                }
+            });
+        }
+
+        function renderInherentRiskTable(data) {
+            const $tbody = $('#availableInherentRisk tbody');
+            $tbody.empty();
+
+            if (!data.length) {
+                $tbody.append('<tr><td colspan="2" class="text-center">No data available</td></tr>');
+                return;
+            }
+
+            data.forEach((item, index) => {
+                const isChecked = item.isActive === 1 ? 'checked' : '';
+                const row = `
+                <tr><td colspan="2" style="height: 8px; border: none;"></td></tr> <!-- spacer row -->
+                <tr>
+                    <td>
+                        <textarea rows="2" style="width:100%;" maxlength="500"
+                            name="EWRAQualitativeConfigModel[0].AvailableInherentRisk[${index}].InherentRiskDescription">${item.inherentRiskDescription}</textarea>
+                        <input type="hidden"
+                            name="EWRAQualitativeConfigModel[0].AvailableInherentRisk[${index}].InherentRiskId"
+                            value="${item.inherentRiskId}" />
+                    </td>
+                    <td>
+                        <input type="checkbox" onchange="ChangeStatusinherent(${index}, this, 3);" ${isChecked} />
+                        <input type="hidden"
+                            id="EWRAQualitativeConfigModel_0_AvailableInherentRisk_${index}_IsActive"
+                            name="EWRAQualitativeConfigModel[0].AvailableInherentRisk[${index}].IsActive"
+                            value="${item.isActive}" />
+                    </td>
+                </tr>
+            `;
+                $tbody.append(row);
+            });
+        }
+        function ChangeStatusinherent(index, checkbox, mode) {
+            const hiddenInput = $(`#EWRAQualitativeConfigModel_0_AvailableInherentRisk_${index}_IsActive`);
+            hiddenInput.val(checkbox.checked ? 1 : 0);
+        }
+        function renderInherentRiskPager(page) {
+            const $pager = $('.inherent-pagination-controls');
+            $pager.empty();
+
+            if (inherentRiskTotalPages <= 1) return;
+
+            const createBtn = (label, p, disabled = false, active = false) =>
+                `<button type="button" class="px-3 py-1 border rounded
+                ${active ? 'bg-primary text-white' : 'bg-surface text-primary'}
+                ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}"
+                data-page="${p}" ${disabled ? 'disabled' : ''}>${label}</button>`;
+
+            $pager.append(createBtn('First', 1, page === 1));
+            $pager.append(createBtn('Prev', page - 1, page === 1));
+
+            for (let i = Math.max(1, page - 2); i <= Math.min(inherentRiskTotalPages, page + 2); i++) {
+                $pager.append(createBtn(i, i, false, i === page));
+            }
+
+            $pager.append(createBtn('Next', page + 1, page === inherentRiskTotalPages));
+            $pager.append(createBtn('Last', inherentRiskTotalPages, page === inherentRiskTotalPages));
+        }
+
+        // Pagination click handler
+        $('.inherent-pagination-controls').on('click', 'button', function () {
+            const pg = parseInt($(this).data('page'));
+            if (!isNaN(pg)) {
+                inherentRiskCurrentPage = pg;
+                $('#inherentLoading').removeClass('hidden');
+                LoadInherentRiskTable(pg);
+            }
+        });
+        $('#rowsPerPageinherent').on('change', function () {
+            inherentRiskCurrentPage = 1;
+            inherentRiskPageSize = parseInt($(this).val()) || 10;
+            showLoader();
+            LoadInherentRiskTable(inherentRiskCurrentPage);
+
+        });
+        $('#inherentSearchBox').on('keyup', function () {
+            inherentRiskCurrentPage = 1;
+            $('#inherentLoading').removeClass('hidden');
+            LoadInherentRiskTable(inherentRiskCurrentPage);
+        });
+        $('#availableInherentRisk thead').on('click', 'th.sortable', function () {
+            const selectedColumn = $(this).data('column');
+
+            if (sortColumnInherent === selectedColumn) {
+                sortDirectionInherent = sortDirectionInherent === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumnInherent = selectedColumn;
+                sortDirectionInherent = 'asc';
+            }
+
+            // Update UI indicators
+            $('#availableInherentRisk thead th.sortable')
+                .removeClass('active asc desc');
+
+            $(this).addClass(`active ${sortDirectionInherent}`);
+            inherentRiskCurrentPage = 1;
+            $('#inherentLoading').removeClass('hidden');
+            LoadInherentRiskTable(inherentRiskCurrentPage);
+        });
+
+                arrHead4 = ['@localizer["Key Control/Mitigation"]', '@localizer["Action"]', ''];
+                contarr4 = [];
+                //function LoadKeyTable() {
+                //    var riskType = $('#ddlRiskType').val();
+                //    var table = $('#availableKey').DataTable({
+                //        "serverSide": true,
+                //        "filter": false,
+                //        "iDisplayLength": 25,
+                //        "destroy": true,
+                //        "stateSave": true,
+                //        ajax: {
+                //            url: '/ewra/CustomPaginationKey',
+                //            type: 'GET',
+                //            data: {
+                //                'riskTypeID': riskType
+                //            },
+                //            dataType: 'json',
+                //            beforeSend: function () {
+                //                // Show image container
+                //                $(".se-pre-con").show();
+                //                $(".card-header").fadeOut()
+                //            },
+                //        },
+                //        columns: [
+                //            {
+                //                "render": function (data, type, full, meta) {
+                //                    var colHtml = '<textarea rows="2" style="width:100%;" type="text" value="' + full.keyControl + '" name="EWRAQualitativeConfigModel[0].AvailableKey[' + meta.row + '].KeyControl" maxlength="500">' + full.keyControl + '</textarea>';
+                //                    colHtml += '<input type="hidden" value="' + full.keyId + '" name="EWRAQualitativeConfigModel[0].AvailableKey[' + meta.row + '].KeyId" />';
+                //                    return colHtml;
+                //                }
+                //            },
+                //            {
+                //                "render": function (data, type, full, meta) {
+                //                    var colHtml = '';
+                //                    if (full.isActive == 1) {
+                //                        colHtml = '<input type="checkbox" onchange="ChangeStatus(' + meta.row + ',this,4);" checked />';
+                //                        colHtml += '<input type="hidden" value="1" id="EWRAQualitativeConfigModel_0_AvailableKey_' + meta.row +'_IsActive" name="EWRAQualitativeConfigModel[0].AvailableKey[' + meta.row + '].IsActive" />';
+                //                    }
+                //                    else {
+                //                        colHtml = '<input type="checkbox" onchange="ChangeStatus(' + meta.row + ', this,4);" />';
+                //                        colHtml += '<input type="hidden" value="0" id="EWRAQualitativeConfigModel_0_AvailableKey_' + meta.row +'_IsActive" name="EWRAQualitativeConfigModel[0].AvailableKey[' + meta.row + '].IsActive" />';
+                //                    }
+                //                    return colHtml;
+                //                }
+                //            }
+                //        ]
+                //    });
+        //}
+        let keyCurrentPage = 1;
+        let keyPageSize = parseInt($('#rowsPerPageKey').val()) || 10;
+        let keyTotalPages = 1;
+        let sortColumn = "keyControl";
+        let sortDirection = "asc";
+        function getColumnIndex(columnName) {
+            const columns = ["keyControl"];
+            return columns.indexOf(columnName);
+        }
+        function LoadKeyTable(page = 1) {
+            const riskTypeID = $('#ddlRiskType').val();
+            const searchQuerykey = $('#keySearchBox').val()?.trim() || '';
+            keyPageSize = parseInt($('#rowsPerPageKey').val()) || 10;
+            const start = (page - 1) * keyPageSize;
+
+            $.ajax({
+                url: '/ewra/CustomPaginationKey',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    riskTypeID: riskTypeID,
+                    start: start,
+                    search: { value: searchQuerykey },
+                    length: keyPageSize,
+                    order: [{
+                            column: getColumnIndex(sortColumn),
+                            dir: sortDirection
+                    }],
+                    columns: [
+                        { data: "keyControl" }
+                    ]
+                },
+                beforeSend: function () {
+                    //$(".se-pre-con").show();
+                    //$(".card-header").fadeOut();
+                },
+                success: function (resp) {
+                    //$(".se-pre-con").hide();
+                    const data = resp.data || [];
+                    const total = resp.recordsFiltered || 0;
+
+                    keyTotalPages = Math.ceil(total / keyPageSize);
+                    renderKeyTable(data);
+                    renderKeyPager(page);
+                    $('#keyLoading').addClass('hidden');
+                    hideLoader();
+                },
+                error: function (err) {
+                    //$(".se-pre-con").hide();
+                    console.error("Failed to load key control data", err);
+                    hideLoader();
+                }
+            });
+        }
+
+        function renderKeyTable(data) {
+            const $tbody = $('#availableKey tbody');
+            $tbody.empty();
+
+            if (!data.length) {
+                $tbody.append('<tr><td colspan="2" class="text-center">No data available</td></tr>');
+                return;
+            }
+
+            data.forEach((item, index) => {
+                const isChecked = item.isActive === 1 ? 'checked' : '';
+                const row = `
+                <tr><td colspan="2" style="height: 8px; border: none;"></td></tr> <!-- spacer row -->
+            <tr>
+                <td>
+                    <textarea rows="2" style="width:100%;" maxlength="500"
+                        name="EWRAQualitativeConfigModel[0].AvailableKey[${index}].KeyControl">${item.keyControl}</textarea>
+                    <input type="hidden"
+                        name="EWRAQualitativeConfigModel[0].AvailableKey[${index}].KeyId"
+                        value="${item.keyId}" />
+                </td>
+                <td>
+                    <input type="checkbox" onchange="ChangeStatuskey(${index}, this, 4);" ${isChecked} />
+                    <input type="hidden"
+                        id="EWRAQualitativeConfigModel_0_AvailableKey_${index}_IsActive"
+                        name="EWRAQualitativeConfigModel[0].AvailableKey[${index}].IsActive"
+                        value="${item.isActive}" />
+                </td>
+            </tr>
+            `;
+                $tbody.append(row);
+            });
+        }
+        function ChangeStatuskey(index, checkbox, mode) {
+            const hiddenInput = $(`#EWRAQualitativeConfigModel_0_AvailableKey_${index}_IsActive`);
+            hiddenInput.val(checkbox.checked ? 1 : 0);
+        }
+        function renderKeyPager(page) {
+            const $pager = $('.key-pagination-controls');
+            $pager.empty();
+
+            if (keyTotalPages <= 1) return;
+
+            const createBtn = (label, p, disabled = false, active = false) =>
+                `<button type="button" class="px-3 py-1 border rounded
+            ${active ? 'bg-primary text-white' : 'bg-surface text-primary'}
+            ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}"
+            data-page="${p}" ${disabled ? 'disabled' : ''}>${label}</button>`;
+
+            $pager.append(createBtn('First', 1, page === 1));
+            $pager.append(createBtn('Prev', page - 1, page === 1));
+
+            for (let i = Math.max(1, page - 2); i <= Math.min(keyTotalPages, page + 2); i++) {
+                $pager.append(createBtn(i, i, false, i === page));
+            }
+
+            $pager.append(createBtn('Next', page + 1, page === keyTotalPages));
+            $pager.append(createBtn('Last', keyTotalPages, page === keyTotalPages));
+        }
+
+        // Pagination click handler
+        $(document).on('click', '.key-pagination-controls button', function () {
+            const pg = parseInt($(this).data('page'));
+            if (!isNaN(pg)) {
+                keyCurrentPage = pg;
+                $('#keyLoading').removeClass('hidden');
+                LoadKeyTable(pg);
+            }
+        });
+
+        // Rows per page change
+        $('#rowsPerPageKey').on('change', function () {
+            keyCurrentPage = 1;
+            keyPageSize = parseInt($(this).val()) || 10;
+            showLoader();
+            LoadKeyTable(keyCurrentPage);
+        });
+
+        $('#keySearchBox').on('keyup', function () {
+            keyCurrentPage = 1;
+            $('#keyLoading').removeClass('hidden');
+            LoadKeyTable(keyCurrentPage);
+        });
+        $('#availableKey thead').on('click', 'th.sortable', function () {
+            const selectedColumn = $(this).data('column');
+
+            if (sortColumn === selectedColumn) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = selectedColumn;
+                sortDirection = 'asc';
+            }
+
+            // Remove active class from all, reset to gray
+            $('#availableKey thead th.sortable')
+                .removeClass('active asc desc');
+
+            // Add appropriate class to clicked column
+            $(this).addClass(`active ${sortDirection}`);
+            keyCurrentPage = 1;
+            $('#keyLoading').removeClass('hidden');
+            LoadKeyTable(keyCurrentPage);
+        });
+                arrHead5 = ['@localizer["Residual Risk"]', '@localizer["Action"]', ''];
+                contarr5 = [];
+                //function LoadResidualTable() {
+                //    var riskType = $('#ddlRiskType').val();
+                //    var table = $('#availableResidual').DataTable({
+                //        "serverSide": true,
+                //        "filter": false,
+                //        "iDisplayLength": 25,
+                //        "destroy": true,
+                //        "stateSave": true,
+                //        ajax: {
+                //            url: '/ewra/CustomPaginationResidual',
+                //            type: 'GET',
+                //            data: {
+                //                'riskTypeID': riskType
+                //            },
+                //            dataType: 'json',
+                //            beforeSend: function () {
+                //                // Show image container
+                //                $(".se-pre-con").show();
+                //                $(".card-header").fadeOut()
+                //            },
+                //        },
+                //        columns: [
+                //            {
+                //                "render": function (data, type, full, meta) {
+                //                    var colHtml = '<textarea rows="2" style="width:100%;" type="text" value="' + full.residualRiskDescription + '" name="EWRAQualitativeConfigModel[0].AvailableResidualRisk[' + meta.row + '].ResidualRiskDescription" maxlength="500">' + full.residualRiskDescription + '</textarea>';
+                //                    colHtml += '<input type="hidden" value="' + full.residualRiskId + '" name="EWRAQualitativeConfigModel[0].AvailableResidualRisk[' + meta.row + '].ResidualRiskId" />';
+                //                    return colHtml;
+                //                }
+                //            },
+                //            {
+                //                "render": function (data, type, full, meta) {
+                //                    var colHtml = '';
+                //                    if (full.isActive == 1) {
+                //                        colHtml = '<input type="checkbox" onchange="ChangeStatus(' + meta.row + ',this,5);" checked />';
+                //                        colHtml += '<input type="hidden" value="1" id="EWRAQualitativeConfigModel_0_AvailableResidualRisk_' + meta.row +'_IsActive" name="EWRAQualitativeConfigModel[0].AvailableResidualRisk[' + meta.row + '].IsActive" />';
+                //                    }
+                //                    else {
+                //                        colHtml = '<input type="checkbox" onchange="ChangeStatus(' + meta.row + ', this,5);" />';
+                //                        colHtml += '<input type="hidden" value="0" id="EWRAQualitativeConfigModel_0_AvailableResidualRisk_' + meta.row +'_IsActive" name="EWRAQualitativeConfigModel[0].AvailableResidualRisk[' + meta.row + '].IsActive" />';
+                //                    }
+                //                    return colHtml;
+                //                }
+                //            }
+                //        ]
+                //    });
+                //}
+        let residualCurrentPage = 1;
+        let residualPageSize = parseInt($('#rowsPerPageResidual').val()) || 10;
+        let residualTotalPages = 1;
+        let sortColumnResidual = "ResidualRiskDescription";  // Must match your DTO property
+        let sortDirectionResidual = "asc";
+        function getColumnIndexResidual(columnName) {
+            const columns = ["ResidualRiskDescription"];
+            return columns.indexOf(columnName);
+        }
+        function LoadResidualTable(page = 1) {
+            const riskTypeID = $('#ddlRiskType').val();
+            const searchQueryresidual = $('#residualSearchBox').val()?.trim() || '';
+            residualPageSize = parseInt($('#rowsPerPageResidual').val()) || 10;
+            const start = (page - 1) * residualPageSize;
+
+            $.ajax({
+                url: '/ewra/CustomPaginationResidual',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    riskTypeID: riskTypeID,
+                    start: start,
+                    search: { value: searchQueryresidual },
+                    length: residualPageSize,
+                    order: [{ column: getColumnIndexResidual(sortColumnResidual), dir: sortDirectionResidual }],
+                    columns: [{ data: "ResidualRiskDescription" }]
+                },
+                beforeSend: function () {
+                    //$(".se-pre-con").show();
+                    //$(".card-header").fadeOut();
+                },
+                success: function (resp) {
+                    //$(".se-pre-con").hide();
+                    const data = resp.data || [];
+                    const total = resp.recordsFiltered || 0;
+
+                    residualTotalPages = Math.ceil(total / residualPageSize);
+                    renderResidualTable(data);
+                    renderResidualPager(page);
+                    $('#residualLoading').addClass('hidden');
+                    hideLoader();
+                },
+                error: function (err) {
+                    //$(".se-pre-con").hide();
+                    console.error("Failed to load residual risk data", err);
+                    hideLoader();
+                }
+            });
+        }
+
+        function renderResidualTable(data) {
+            const $tbody = $('#availableResidual tbody');
+            $tbody.empty();
+
+            if (!data.length) {
+                $tbody.append('<tr><td colspan="2" class="text-center">No data available</td></tr>');
+                return;
+            }
+
+            data.forEach((item, index) => {
+                const isChecked = item.isActive === 1 ? 'checked' : '';
+                const row = `
+                <tr><td colspan="2" style="height: 8px; border: none;"></td></tr> <!-- spacer row -->
+            <tr>
+                <td>
+                    <textarea rows="2" style="width:100%;" maxlength="500"
+                        name="EWRAQualitativeConfigModel[0].AvailableResidualRisk[${index}].ResidualRiskDescription">${item.residualRiskDescription}</textarea>
+                    <input type="hidden"
+                        name="EWRAQualitativeConfigModel[0].AvailableResidualRisk[${index}].ResidualRiskId"
+                        value="${item.residualRiskId}" />
+                </td>
+                <td>
+                    <input type="checkbox" onchange="ChangeStatusresidual(${index}, this, 5);" ${isChecked} />
+                    <input type="hidden"
+                        id="EWRAQualitativeConfigModel_0_AvailableResidualRisk_${index}_IsActive"
+                        name="EWRAQualitativeConfigModel[0].AvailableResidualRisk[${index}].IsActive"
+                        value="${item.isActive}" />
+                </td>
+            </tr>
+            `;
+                $tbody.append(row);
+            });
+        }
+        function ChangeStatusresidual(index, checkbox, mode) {
+            const hiddenInput = $(`#EWRAQualitativeConfigModel_0_AvailableResidualRisk_${index}_IsActive`);
+            hiddenInput.val(checkbox.checked ? 1 : 0);
+        }
+        function renderResidualPager(page) {
+            const $pager = $('.residual-pagination-controls');
+            $pager.empty();
+
+            if (residualTotalPages <= 1) return;
+
+            const createBtn = (label, p, disabled = false, active = false) =>
+                `<button type="button" class="px-3 py-1 border rounded
+            ${active ? 'bg-primary text-white' : 'bg-surface text-primary'}
+            ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}"
+            data-page="${p}" ${disabled ? 'disabled' : ''}>${label}</button>`;
+
+            $pager.append(createBtn('First', 1, page === 1));
+            $pager.append(createBtn('Prev', page - 1, page === 1));
+
+            for (let i = Math.max(1, page - 2); i <= Math.min(residualTotalPages, page + 2); i++) {
+                $pager.append(createBtn(i, i, false, i === page));
+            }
+
+            $pager.append(createBtn('Next', page + 1, page === residualTotalPages));
+            $pager.append(createBtn('Last', residualTotalPages, page === residualTotalPages));
+        }
+
+        // Pagination click handler
+        $(document).on('click', '.residual-pagination-controls button', function () {
+            const pg = parseInt($(this).data('page'));
+            if (!isNaN(pg)) {
+                residualCurrentPage = pg;
+                $('#residualLoading').removeClass('hidden');
+                LoadResidualTable(pg);
+            }
+        });
+
+        // Rows per page change
+        $('#rowsPerPageResidual').on('change', function () {
+            residualCurrentPage = 1;
+            residualPageSize = parseInt($(this).val()) || 10;
+            showLoader();
+            LoadResidualTable(residualCurrentPage);
+        });
+
+        $('#residualSearchBox').on('keyup', function () {
+            residualCurrentPage = 1;
+            $('#residualLoading').removeClass('hidden');
+            LoadResidualTable(residualCurrentPage);
+        });
+        $('#availableResidual thead').on('click', 'th.sortable', function () {
+            const selectedColumn = $(this).data('column');
+
+            if (sortColumnResidual === selectedColumn) {
+                sortDirectionResidual = sortDirectionResidual === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumnResidual = selectedColumn;
+                sortDirectionResidual = 'asc';
+            }
+
+            // Update visual indicators
+            $('#availableResidual thead th.sortable').removeClass('active asc desc');
+            $(this).addClass(`active ${sortDirectionResidual}`);
+
+            residualCurrentPage = 1;
+            $('#residualLoading').removeClass('hidden');
+            LoadResidualTable(residualCurrentPage);
+        });
+
+                @* function addRiskDescriptionRow() {
+                    var descTab = document.getElementById('AddDesc');
+                    var rowIndexDescVal = $('#rowIndexDesc1').val();
+                    var rowDescCnt = descTab.rows.length;   // table row count.
+                    var tr = descTab.insertRow(rowDescCnt); // the table row.
+                    tr = descTab.insertRow(rowDescCnt);
+                    for (var c = 0; c < arrHead2.length; c++) {
+                        var td = document.createElement('td'); // table definition.
+                        td = tr.insertCell(c);
+                        if (c == 1) {      // the first column.
+                            // add a button in every new row in the last column.
+                            var button = document.createElement('input');
+
+                            // set input attributes.
+                            button.setAttribute('type', 'button');
+                            button.setAttribute('value', 'Remove');
+
+                            // add button's 'onclick' event.
+                            button.setAttribute('onclick', 'removeRow(this)');
+
+                            td.appendChild(button);
+                        }
+                        else {
+                            // 1nd, 2rd,Url3rd and 4th column, will have textbox.
+                            var ele = document.createElement('input');
+                            if (c == 0) {
+                                var hiddenIndex = document.createElement('input');
+                                hiddenIndex.setAttribute('type', 'hidden');
+                                hiddenIndex.setAttribute('class', 'form-control');
+                                hiddenIndex.setAttribute('value', parseInt(rowIndexDescVal));
+                                hiddenIndex.setAttribute('id', 'Index')
+                                td.appendChild(hiddenIndex);
+                                ele = addDescRow(ele, 'RiskDescription', '');
+                                ele.className = 'w-full border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300 my-2';
+                                td.appendChild(ele);
+                            } else {
+                                ele.setAttribute('type', 'hidden');
+                                ele.setAttribute('class', 'form-control');
+                                ele.setAttribute('value', false);
+                                ele.setAttribute('name', 'EWRAQualitativeConfigModel[0].AddedRiskDescription[' + rowIndexDescVal + '].isDeletedInUI');
+                                ele.setAttribute('id', 'EWRAQualitativeConfigModel[0].AddedRiskDescription[' + rowIndexDescVal + '].isDeletedInUI');
+                                ele.setAttribute('maxlength', 500);
+                                ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                                td.appendChild(ele);
+                            }
+                        }
+                    }
+                    $('#rowIndexDesc1').val(parseInt(rowIndexDescVal) + 1);
+                } *@
+                function addRiskDescriptionRow() {
+                    var descTab = document.getElementById('AddDesc');
+                    var rowIndexDescVal = $('#rowIndexDesc1').val();
+                    var rowDescCnt = descTab.rows.length;   // table row count.
+
+                    var tr = descTab.insertRow(rowDescCnt);
+
+                    for (var c = 0; c < arrHead2.length; c++) {
+                        var td = tr.insertCell(c);
+
+                        if (c == 0) {
+                            td.className = "px-4 py-2 min-w-[250px]"; // Risk Description column needs more space
+                        } else if (c == 1) {
+                            td.className = "px-4 py-2 min-w-[100px] text-center"; // Action column
+                        }
+
+                        if (c == 1) { // The "Remove" button column
+                            var button = document.createElement('input');
+
+                            button.setAttribute('type', 'button');
+                            button.setAttribute('value', '@localizer["Remove"]'); // Using localizer for consistency
+                            button.setAttribute('onclick', 'removeRow(this)');
+
+                            // Fixed styling for button to match previous sections
+                            button.className = " cursor-pointer";
+
+                            td.appendChild(button);
+                        }
+                        else {
+                            var ele = document.createElement('input');
+                            if (c == 0) {
+                                var hiddenIndex = document.createElement('input');
+                                hiddenIndex.setAttribute('type', 'hidden');
+                                hiddenIndex.setAttribute('value', parseInt(rowIndexDescVal));
+                                hiddenIndex.setAttribute('id', 'Index');
+                                td.appendChild(hiddenIndex);
+
+                                ele = addDescRow(ele, 'RiskDescription', '');
+
+                                // ✅ FIX: Ensure input fills the cell and looks clean
+                                ele.className = 'w-full border border-gray-300 rounded px-3 py-2 my-2';
+                                td.appendChild(ele);
+                            } else {
+                                // Hidden field logic
+                                ele.setAttribute('type', 'hidden');
+                                ele.setAttribute('class', 'form-control');
+                                ele.setAttribute('value', false);
+                                ele.setAttribute('name', 'EWRAQualitativeConfigModel[0].AddedRiskDescription[' + rowIndexDescVal + '].isDeletedInUI');
+                                ele.setAttribute('id', 'EWRAQualitativeConfigModel[0].AddedRiskDescription[' + rowIndexDescVal + '].isDeletedInUI');
+                                ele.setAttribute('maxlength', 500);
+                                ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                                td.appendChild(ele);
+                            }
+                        }
+                    }
+                    // Increment the row index
+                    $('#rowIndexDesc1').val(parseInt(rowIndexDescVal) + 1);
+                }
+                function addDescRow(ele, elementName, value) {
+                    var rowIndex = $('#rowIndexDesc1').val();
+                    ele.setAttribute('type', 'text');
+                    ele.setAttribute('class', 'form-control');
+                    ele.setAttribute('value', value);
+                    ele.setAttribute('name', 'EWRAQualitativeConfigModel[0].AddedRiskDescription[' + rowIndex + '].' + elementName);
+                    ele.setAttribute('id', 'EWRAQualitativeConfigModel[0].AddedRiskDescription[' + rowIndex + '].' + elementName);
+                    ele.setAttribute('maxlength', 500);
+                    ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                    return ele;
+                }
+                @* function addInherentRiskRow() {
+                    var descTab = document.getElementById('AddInherent');
+                    var rowIndexVal = $('#rowIndexInherent1').val();
+                    var rowCnt = descTab.rows.length;   // table row count.
+                    var tr = descTab.insertRow(rowCnt); // the table row.
+                    tr = descTab.insertRow(rowCnt);
+                    for (var c = 0; c < arrHead2.length; c++) {
+                        var td = document.createElement('td'); // table definition.
+                        td = tr.insertCell(c);
+                        if (c == 1) {      // the first column.
+                            // add a button in every new row in the last column.
+                            var button = document.createElement('input');
+
+                            // set input attributes.
+                            button.setAttribute('type', 'button');
+                            button.setAttribute('value', 'Remove');
+
+                            // add button's 'onclick' event.
+                            button.setAttribute('onclick', 'removeRow(this)');
+
+                            td.appendChild(button);
+                        }
+                        else {
+                            // 1nd, 2rd,Url3rd and 4th column, will have textbox.
+                            var ele = document.createElement('input');
+                            if (c == 0) {
+                                var hiddenIndex = document.createElement('input');
+                                hiddenIndex.setAttribute('type', 'hidden');
+                                hiddenIndex.setAttribute('class', 'form-control');
+                                hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                                hiddenIndex.setAttribute('id', 'Index')
+                                td.appendChild(hiddenIndex);
+                                ele = addInRow(ele, 'InherentRiskDescription', '');
+                                ele.className = 'w-full border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300 my-2';
+                                td.appendChild(ele);
+                            } else {
+                                ele.setAttribute('type', 'hidden');
+                                ele.setAttribute('class', 'form-control');
+                                ele.setAttribute('value', false);
+                                ele.setAttribute('name', 'EWRAQualitativeConfigModel[0].AddedInherentRisk[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('id', 'EWRAQualitativeConfigModel[0].AddedInherentRisk[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('maxlength', 500);
+                                ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                                td.appendChild(ele);
+                            }
+                        }
+                    }
+                    $('#rowIndexInherent1').val(parseInt(rowIndexVal) + 1);
+                } *@
+                function addInherentRiskRow() {
+                    var descTab = document.getElementById('AddInherent');
+                    var rowIndexVal = $('#rowIndexInherent1').val();
+                    var rowCnt = descTab.rows.length;   // table row count.
+
+                    var tr = descTab.insertRow(rowCnt);
+
+                    for (var c = 0; c < arrHead2.length; c++) {
+                        var td = tr.insertCell(c);
+
+                        if (c == 0) {
+                            td.className = "px-4 py-2 min-w-[250px]"; // Column for the Inherent Risk input
+                        } else if (c == 1) {
+                            td.className = "px-4 py-2 min-w-[100px] text-center"; // Column for the Remove button
+                        }
+
+                        if (c == 1) {
+                            // Create Remove button
+                            var button = document.createElement('input');
+                            button.setAttribute('type', 'button');
+                            button.setAttribute('value', '@localizer["Remove"]'); // Using localizer for consistency
+                            button.setAttribute('onclick', 'removeRow(this)');
+
+                            // Standardizing button style with Tailwind
+                            button.className = "cursor-pointer";
+
+                            td.appendChild(button);
+                        }
+                        else {
+                            var ele = document.createElement('input');
+                            if (c == 0) {
+                                // Hidden index logic
+                                var hiddenIndex = document.createElement('input');
+                                hiddenIndex.setAttribute('type', 'hidden');
+                                hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                                hiddenIndex.setAttribute('id', 'Index');
+                                td.appendChild(hiddenIndex);
+
+                                // Add Inherent Risk Input field
+                                ele = addInRow(ele, 'InherentRiskDescription', '');
+
+                                // ✅ FIX: Ensure input fills cell width and looks consistent
+                                ele.className = 'w-full border border-gray-300 rounded px-3 py-2 my-2';
+                                td.appendChild(ele);
+                            } else {
+                                // Hidden field for logical deletion
+                                ele.setAttribute('type', 'hidden');
+                                ele.setAttribute('class', 'form-control');
+                                ele.setAttribute('value', false);
+                                ele.setAttribute('name', 'EWRAQualitativeConfigModel[0].AddedInherentRisk[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('id', 'EWRAQualitativeConfigModel[0].AddedInherentRisk[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('maxlength', 500);
+                                ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                                td.appendChild(ele);
+                            }
+                        }
+                    }
+                    // Update the counter for the next row
+                    $('#rowIndexInherent1').val(parseInt(rowIndexVal) + 1);
+                }
+                function addInRow(ele, elementName, value) {
+                    var rowIndex = $('#rowIndexInherent1').val();
+                    ele.setAttribute('type', 'text');
+                    ele.setAttribute('class', 'form-control');
+                    ele.setAttribute('value', value);
+                    ele.setAttribute('name', 'EWRAQualitativeConfigModel[0].AddedInherentRisk[' + rowIndex + '].' + elementName);
+                    ele.setAttribute('id', 'EWRAQualitativeConfigModel[0].AddedInherentRisk[' + rowIndex + '].' + elementName);
+                    ele.setAttribute('maxlength', 500);
+                    ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                    return ele;
+                }
+                @* function addKeyControlRow() {
+                    var descTab = document.getElementById('AddKeyControl');
+                    var rowIndexVal = $('#rowIndexKeyControl1').val();
+                    var rowCnt = descTab.rows.length;   // table row count.
+                    var tr = descTab.insertRow(rowCnt); // the table row.
+                    tr = descTab.insertRow(rowCnt);
+                    for (var c = 0; c < arrHead2.length; c++) {
+                        var td = document.createElement('td'); // table definition.
+                        td = tr.insertCell(c);
+                        if (c == 1) {      // the first column.
+                            // add a button in every new row in the last column.
+                            var button = document.createElement('input');
+
+                            // set input attributes.
+                            button.setAttribute('type', 'button');
+                            button.setAttribute('value', 'Remove');
+
+                            // add button's 'onclick' event.
+                            button.setAttribute('onclick', 'removeRow(this)');
+
+                            td.appendChild(button);
+                        }
+                        else {
+                            // 1nd, 2rd,Url3rd and 4th column, will have textbox.
+                            var ele = document.createElement('input');
+                            if (c == 0) {
+                                var hiddenIndex = document.createElement('input');
+                                hiddenIndex.setAttribute('type', 'hidden');
+                                hiddenIndex.setAttribute('class', 'form-control');
+                                hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                                hiddenIndex.setAttribute('id', 'Index')
+                                td.appendChild(hiddenIndex);
+                                ele = addKeyRow(ele, 'KeyControl', '');
+                                ele.className = 'w-full border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300 my-2';
+                                td.appendChild(ele);
+                            } else {
+                                ele.setAttribute('type', 'hidden');
+                                ele.setAttribute('class', 'form-control');
+                                ele.setAttribute('value', false);
+                                ele.setAttribute('name', 'EWRAQualitativeConfigModel[0].AddedKey[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('id', 'EWRAQualitativeConfigModel[0].AddedKey[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('maxlength', 500);
+                                ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                                td.appendChild(ele);
+                            }
+                        }
+                    }
+                    $('#rowIndexKeyControl1').val(parseInt(rowIndexVal) + 1);
+                } *@
+                function addKeyControlRow() {
+                    var descTab = document.getElementById('AddKeyControl');
+                    var rowIndexVal = $('#rowIndexKeyControl1').val();
+                    var rowCnt = descTab.rows.length;   // table row count.
+
+                    var tr = descTab.insertRow(rowCnt);
+
+                    for (var c = 0; c < arrHead2.length; c++) {
+                        var td = tr.insertCell(c);
+
+                        if (c == 0) {
+                            td.className = "px-4 py-2 min-w-[250px]"; // Key Control Description needs space
+                        } else if (c == 1) {
+                            td.className = "px-4 py-2 min-w-[100px] text-center"; // Remove button column
+                        }
+
+                        if (c == 1) {
+                            // Create Remove button
+                            var button = document.createElement('input');
+
+                            button.setAttribute('type', 'button');
+                            button.setAttribute('value', '@localizer["Remove"]'); // Consistent localization
+                            button.setAttribute('onclick', 'removeRow(this)');
+
+                            // Apply standardized button styling
+                            button.className = "cursor-pointer";
+
+                            td.appendChild(button);
+                        }
+                        else {
+                            var ele = document.createElement('input');
+                            if (c == 0) {
+                                // Hidden Index logic
+                                var hiddenIndex = document.createElement('input');
+                                hiddenIndex.setAttribute('type', 'hidden');
+                                hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                                hiddenIndex.setAttribute('id', 'Index');
+                                td.appendChild(hiddenIndex);
+
+                                // Add Key Control Input field
+                                ele = addKeyRow(ele, 'KeyControl', '');
+
+                                // ✅ FIX: Ensure input fills the cell and is touch-friendly
+                                ele.className = 'w-full border border-gray-300 rounded px-3 py-2 my-2';
+                                td.appendChild(ele);
+                            } else {
+                                // Hidden field for tracking state
+                                ele.setAttribute('type', 'hidden');
+                                ele.setAttribute('class', 'form-control');
+                                ele.setAttribute('value', false);
+                                ele.setAttribute('name', 'EWRAQualitativeConfigModel[0].AddedKey[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('id', 'EWRAQualitativeConfigModel[0].AddedKey[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('maxlength', 500);
+                                ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                                td.appendChild(ele);
+                            }
+                        }
+                    }
+                    // Update the counter for the next added row
+                    $('#rowIndexKeyControl1').val(parseInt(rowIndexVal) + 1);
+                }
+                function addKeyRow(ele, elementName, value) {
+                    var rowIndex = $('#rowIndexKeyControl1').val();
+                    ele.setAttribute('type', 'text');
+                    ele.setAttribute('class', 'form-control');
+                    ele.setAttribute('value', value);
+                    ele.setAttribute('name', 'EWRAQualitativeConfigModel[0].AddedKey[' + rowIndex + '].' + elementName);
+                    ele.setAttribute('id', 'EWRAQualitativeConfigModel[0].AddedKey[' + rowIndex + '].' + elementName);
+                    ele.setAttribute('maxlength', 500);
+                    ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                    return ele;
+                }
+                @* function addResidualRiskRow() {
+                    var descTab = document.getElementById('AddResidual');
+                    var rowIndexVal = $('#rowIndexResidual1').val();
+                    var rowCnt = descTab.rows.length;   // table row count.
+                    var tr = descTab.insertRow(rowCnt); // the table row.
+                    tr = descTab.insertRow(rowCnt);
+                    for (var c = 0; c < arrHead2.length; c++) {
+                        var td = document.createElement('td'); // table definition.
+                        td = tr.insertCell(c);
+                        if (c == 1) {      // the first column.
+                            // add a button in every new row in the last column.
+                            var button = document.createElement('input');
+
+                            // set input attributes.
+                            button.setAttribute('type', 'button');
+                            button.setAttribute('value', 'Remove');
+
+                            // add button's 'onclick' event.
+                            button.setAttribute('onclick', 'removeRow(this)');
+
+                            td.appendChild(button);
+                        }
+                        else {
+                            // 1nd, 2rd,Url3rd and 4th column, will have textbox.
+                            var ele = document.createElement('input');
+                            if (c == 0) {
+                                var hiddenIndex = document.createElement('input');
+                                hiddenIndex.setAttribute('type', 'hidden');
+                                hiddenIndex.setAttribute('class', 'form-control');
+                                hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                                hiddenIndex.setAttribute('id', 'Index')
+                                td.appendChild(hiddenIndex);
+                                ele = addResidualRow(ele, 'ResidualRiskDescription', '');
+                                ele.className = 'w-full border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300 my-2';
+                                td.appendChild(ele);
+                            } else {
+                                ele.setAttribute('type', 'hidden');
+                                ele.setAttribute('class', 'form-control');
+                                ele.setAttribute('value', false);
+                                ele.setAttribute('name', 'EWRAQualitativeConfigModel[0].AddedResidualRisk[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('id', 'EWRAQualitativeConfigModel[0].AddedResidualRisk[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('maxlength', 500);
+                                ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                                td.appendChild(ele);
+                            }
+                        }
+                    }
+                    $('#rowIndexResidual1').val(parseInt(rowIndexVal) + 1);
+                } *@
+                function addResidualRiskRow() {
+                    var descTab = document.getElementById('AddResidual');
+                    var rowIndexVal = $('#rowIndexResidual1').val();
+                    var rowCnt = descTab.rows.length;   // table row count.
+
+                    var tr = descTab.insertRow(rowCnt);
+
+                    for (var c = 0; c < arrHead2.length; c++) {
+                        var td = tr.insertCell(c);
+
+                        if (c == 0) {
+                            td.className = "px-4 py-2 min-w-[250px]"; // Residual Risk Description column
+                        } else if (c == 1) {
+                            td.className = "px-4 py-2 min-w-[100px] text-center"; // Action/Remove column
+                        }
+
+                        if (c == 1) {
+                            // Create Remove button
+                            var button = document.createElement('input');
+
+                            button.setAttribute('type', 'button');
+                            button.setAttribute('value', '@localizer["Remove"]'); // Using localizer for consistency
+                            button.setAttribute('onclick', 'removeRow(this)');
+
+                            // Apply standardized red button styling
+                            button.className = "cursor-pointer";
+
+                            td.appendChild(button);
+                        }
+                        else {
+                            var ele = document.createElement('input');
+                            if (c == 0) {
+                                // Hidden Index logic
+                                var hiddenIndex = document.createElement('input');
+                                hiddenIndex.setAttribute('type', 'hidden');
+                                hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                                hiddenIndex.setAttribute('id', 'Index');
+                                td.appendChild(hiddenIndex);
+
+                                // Add Residual Risk Input field via your helper function
+                                ele = addResidualRow(ele, 'ResidualRiskDescription', '');
+
+                                // ✅ FIX: Standardized input classes for consistency and touch-friendliness
+                                ele.className = 'w-full border border-gray-300 rounded px-3 py-2 my-2';
+                                td.appendChild(ele);
+                            } else {
+                                // Hidden field for logical deletion tracking
+                                ele.setAttribute('type', 'hidden');
+                                ele.setAttribute('class', 'form-control');
+                                ele.setAttribute('value', false);
+                                ele.setAttribute('name', 'EWRAQualitativeConfigModel[0].AddedResidualRisk[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('id', 'EWRAQualitativeConfigModel[0].AddedResidualRisk[' + rowIndexVal + '].isDeletedInUI');
+                                ele.setAttribute('maxlength', 500);
+                                ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                                td.appendChild(ele);
+                            }
+                        }
+                    }
+                    // Increment the row index for the next entry
+                    $('#rowIndexResidual1').val(parseInt(rowIndexVal) + 1);
+                }
+                function addResidualRow(ele, elementName, value) {
+                    var rowIndex = $('#rowIndexResidual1').val();
+                    ele.setAttribute('type', 'text');
+                    ele.setAttribute('class', 'form-control');
+                    ele.setAttribute('value', value);
+                    ele.setAttribute('name', 'EWRAQualitativeConfigModel[0].AddedResidualRisk[' + rowIndex + '].' + elementName);
+                    ele.setAttribute('id', 'EWRAQualitativeConfigModel[0].AddedResidualRisk[' + rowIndex + '].' + elementName);
+                    ele.setAttribute('maxlength', 500);
+                    ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                    return ele;
+                }
+        $(document).ready(function () {
+            addCustomerType();
+                    //$(".se-pre-con").fadeOut("slow");
+                    //createRiskDescriptionTable();
+                    //RiskTypeOnChange();
+            $("#ddlRiskType").val(0);
+            hideLoader();
+        });
+        $(document).ready(function () {
+            $('#myform').on('submit', function () {
+                showLoader2();
+            });
+        });
+
+                function addCounterpartyType() {
+                    $('#divCounterparty').show();
+                    $("#divCustomerType").hide();
+                }
+                function addCustomerType() {
+
+                    $('#divCustomerType').show();
+                    $('#divCounterparty').hide();
+
+                }
+
+                @* function addCounterpartyTypeRow()
+            {
+
+                arrHead = ['Counterparty', 'Country', 'Action',''];
+                contarr = [];
+                var empTab = document.getElementById('Add1');
+                var rowIndexVal = $('#rowIndex2').val();
+                var rowCnt = empTab.rows.length;   // table row count.
+                var tr = empTab.insertRow(rowCnt); // the table row.
+                for (var c = 0; c < arrHead.length; c++)
+                {
+                   var td = document.createElement('td'); // table definition.
+                    td = tr.insertCell(c);
+
+                    if (c == 2) {      // the first column.
+                     // add a button in every new row in the last column.
+                    var button = document.createElement('input');
+
+                     // set input attributes.
+                     button.setAttribute('type', 'button');
+                     button.setAttribute('value', '@localizer["Remove"]');
+
+                    // add button's 'onclick' event.
+                     button.setAttribute('onclick', 'removeRow(this)');
+
+                      td.appendChild(button);
+                 }
+                    else {
+                        // 1nd, 2rd,Url3rd and 4th column, will have textbox.
+                        var ele = document.createElement('input');
+
+                        if (c == 0)
+                        {
+                            var hiddenIndex = document.createElement('input');
+                            hiddenIndex.setAttribute('type', 'hidden');
+                            hiddenIndex.setAttribute('class', 'form-control');
+                            hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                            hiddenIndex.setAttribute('id', 'Index')
+                            td.appendChild(hiddenIndex);
+
+                            ele = addCounterpartyRow(ele, 'Counterparty', '');
+                            ele.className = 'w-full border border-gray-300 rounded px-2 py-1 my-2 mx-2';
+                            td.appendChild(ele);
+                        } else if (c == 1) {
+
+                            var selectEle = document.createElement("SELECT");
+                            selectEle.setAttribute('class', 'form-control');
+                            //var a = document.getElementById("ddlNationalities");
+                            var emptyOption = document.createElement("OPTION");
+                            emptyOption.text = "--EMPTY--";
+                            emptyOption.value = "";
+                            selectEle.add(emptyOption);
+
+                            var dditems = @Html.Raw(jsonItems);
+                           // console.log("a",a);
+                            console.log(dditems);
+                            var option = '';
+                            // if (!a || a.options.length === 0) {
+                            //     console.warn("No country list found or it has no options.");
+                            //     return;
+                            // }
+
+                            for (var i = 0; i< dditems.length; i++)
+                            {
+                                option = document.createElement("OPTION");
+                                option.text = dditems[i].Text;
+                                option.value=dditems[i].Value;
+
+
+                                selectEle.add(option);
+                            }
+                            selectEle = addCounterpartyRow(selectEle, 'Country', '');
+                            selectEle.className = 'w-full border border-gray-300 rounded px-2 py-1 bg-surface text-gray-800  my-2';
+                            td.appendChild(selectEle);
+                        }
+
+                        else {
+                            ele.setAttribute('type', 'hidden');
+                            ele.setAttribute('class', 'form-control');
+                            ele.setAttribute('value', false);
+                            ele.setAttribute('name', 'EWRAQuantitativeConfigModel[0].AddedCounterparty[' + $('#rowIndex2').val() + '].isDeletedInUI');
+                            ele.setAttribute('id', 'EWRAQuantitativeConfigModel[0].AddedCounterparty[' + $('#rowIndex2').val() + '].isDeletedInUI');
+                            ele.setAttribute('maxlength', 500);
+                            ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                            td.appendChild(ele);
+                        }
+                    }
+                }
+                $('#rowIndex2').val(parseInt(rowIndexVal) + 1);
+            } *@
+                function addCounterpartyTypeRow() {
+        var arrHead = ['Counterparty', 'Country', 'Action', ''];
+        var empTab = document.getElementById('Add1');
+        var rowIndexVal = $('#rowIndex2').val();
+        var rowCnt = empTab.rows.length;
+        var tr = empTab.insertRow(rowCnt);
+
+        for (var c = 0; c < arrHead.length; c++) {
+            var td = tr.insertCell(c);
+
+            if (c == 0) {
+                td.className = "px-4 py-2 min-w-[250px]"; // Counterparty column
+            } else if (c == 1) {
+                td.className = "px-4 py-2 min-w-[200px]"; // Country column
+            } else if (c == 2) {
+                td.className = "px-4 py-2 min-w-[120px] text-center"; // Action column
+            }
+
+            if (c == 2) { // The "Remove" button column
+                var button = document.createElement('input');
+                button.setAttribute('type', 'button');
+                button.setAttribute('value', '@localizer["Remove"]');
+                button.setAttribute('onclick', 'removeRow(this)');
+
+                // Fixed styling for button
+                button.className = "cursor-pointer";
+                td.appendChild(button);
+            }
+            else {
+                var ele = document.createElement('input');
+
+                if (c == 0) { // Counterparty Input
+                    var hiddenIndex = document.createElement('input');
+                    hiddenIndex.setAttribute('type', 'hidden');
+                    hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                    hiddenIndex.setAttribute('id', 'Index');
+                    td.appendChild(hiddenIndex);
+
+                    ele = addCounterpartyRow(ele, 'Counterparty', '');
+                    ele.className = 'w-full border border-gray-300 rounded px-3 py-2 my-2';
+                    td.appendChild(ele);
+                }
+                else if (c == 1) { // Country Select
+                    var selectEle = document.createElement("SELECT");
+                    selectEle.setAttribute('class', 'form-control');
+
+                    var emptyOption = document.createElement("OPTION");
+                    emptyOption.text = "--@localizer["EMPTY"]--";
+                    emptyOption.value = "";
+                    selectEle.add(emptyOption);
+
+                    var dditems = @Html.Raw(jsonItems);
+                    for (var i = 0; i < dditems.length; i++) {
+                        var option = document.createElement("OPTION");
+                        option.text = dditems[i].Text;
+                        option.value = dditems[i].Value;
+                        selectEle.add(option);
+                    }
+
+                    selectEle = addCounterpartyRow(selectEle, 'Country', '');
+                    // Added full width and consistent height
+                    selectEle.className = 'w-full border border-gray-300 rounded px-3 py-2 bg-surface text-gray-800 my-2';
+                    td.appendChild(selectEle);
+                }
+                else { // Hidden field (last column)
+                    ele.setAttribute('type', 'hidden');
+                    ele.setAttribute('value', false);
+                    ele.setAttribute('name', 'EWRAQuantitativeConfigModel[0].AddedCounterparty[' + rowIndexVal + '].isDeletedInUI');
+                    ele.setAttribute('id', 'EWRAQuantitativeConfigModel[0].AddedCounterparty[' + rowIndexVal + '].isDeletedInUI');
+                    td.appendChild(ele);
+                }
+            }
+        }
+        $('#rowIndex2').val(parseInt(rowIndexVal) + 1);
+    }
+        function addCounterpartyRow(ele, elementName, value) {
+            var rowIndex = $('#rowIndex2').val();
+            ele.setAttribute('type', 'text');
+            ele.setAttribute('class', 'form-control');
+            ele.setAttribute('value', value);
+            ele.setAttribute('name', 'EWRAQuantitativeConfigModel[0].AddedCounterparty[' + rowIndex + '].' + elementName);
+            ele.setAttribute('id', 'EWRAQuantitativeConfigModel[0].AddedCounterparty[' + rowIndex + '].' + elementName);
+            ele.setAttribute('maxlength', 500);
+            ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+            return ele;
+        }
+        function ChangecounterpartyStatus(index, that, mode) {
+            var status = 0;
+
+            if ($(that).prop("checked")) {
+                status = 1;
+            }
+            else {
+                status = 0;
+            }
+            $('#EWRAQuantitativeConfigModel_0_EWRACounterPartyType_0_EWRACounterPartyList_' + index + '_isActive').val(status);
+
+        }
+        function showLoader() {
+            $('#loading').removeClass('hidden');
+        }
+        function hideLoader() {
+            $('#loading').addClass('hidden');
+        }
+        function showLoader2() {
+            $('#loading').removeClass('hidden');
+        }
+        function hideLoader2() {
+            $('#loading').addClass('hidden');
+        }
+
+        let currentCustomerPage = 1;
+        let rowsPerPageCustomer = parseInt(document.getElementById('rowsPerPageCustomer').value);
+
+        document.addEventListener('DOMContentLoaded', function () {
+            $('#loading').removeClass('hidden');
+            paginateCustomerTable();
+
+            document.getElementById('rowsPerPageCustomer').addEventListener('change', function () {
+                rowsPerPageCustomer = parseInt(this.value);
+                currentCustomerPage = 1;
+                $('#loading').removeClass('hidden');
+                paginateCustomerTable();
+            });
+
+            document.getElementById('customerSearchBox').addEventListener('keyup', function () {
+                currentCustomerPage = 1;
+                $('#customerLoading').removeClass('hidden');
+                paginateCustomerTable();
+            });
+        });
+
+        function paginateCustomerTable() {
+            setTimeout(() => {
+            const allRows = Array.from(document.querySelectorAll('.customer-row'));
+            const searchQuery = document.getElementById('customerSearchBox').value.toLowerCase();
+
+            const filteredRows = allRows.filter(row => {
+                const tds = row.querySelectorAll('td');
+                let rowText = '';
+                for (let td of tds) {
+                    const input = td.querySelector('input');
+                    if (input) {
+                        rowText += input.value || '';
+                    } else {
+                        rowText += td.textContent;
+                    }
+                }
+                return rowText.toLowerCase().includes(searchQuery);
+            });
+
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPageCustomer);
+
+            allRows.forEach(row => row.style.display = 'none');
+
+            filteredRows.forEach((row, index) => {
+                row.style.display = (index >= (currentCustomerPage - 1) * rowsPerPageCustomer &&
+                    index < currentCustomerPage * rowsPerPageCustomer)
+                    ? '' : 'none';
+            });
+
+                renderCustomerPagination(totalPages);
+                $('#customerLoading').addClass('hidden');
+            hideLoader();
+        }, 300);
+        }
+
+        function renderCustomerPagination(totalPages) {
+            const pager = document.getElementById('customerPagination');
+            pager.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            const createBtn = (label, page, disabled = false, active = false) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = label;
+                btn.className = `px-3 py-1 border rounded ${active ? 'bg-primary text-white' : 'bg-surface text-primary'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`;
+                btn.disabled = disabled;
+                btn.dataset.page = page;
+                return btn;
+            };
+
+            pager.appendChild(createBtn('First', 1, currentCustomerPage === 1));
+            pager.appendChild(createBtn('Prev', currentCustomerPage - 1, currentCustomerPage === 1));
+
+            const maxVisible = 5;
+            let start = Math.max(1, currentCustomerPage - Math.floor(maxVisible / 2));
+            let end = Math.min(totalPages, start + maxVisible - 1);
+            if (end - start < maxVisible - 1) {
+                start = Math.max(1, end - maxVisible + 1);
+            }
+
+            for (let i = start; i <= end; i++) {
+                const btn = createBtn(i, i, false, i === currentCustomerPage);
+                pager.appendChild(btn);
+            }
+
+            pager.appendChild(createBtn('Next', currentCustomerPage + 1, currentCustomerPage === totalPages));
+            pager.appendChild(createBtn('Last', totalPages, currentCustomerPage === totalPages));
+
+            pager.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentCustomerPage = parseInt(btn.dataset.page);
+                    $('#customerLoading').removeClass('hidden');
+                    paginateCustomerTable();
+                });
+            });
+        }
+        //counterparty
+        let currentCounterpartyPage = 1;
+        let rowsPerPageCounterparty = parseInt(document.getElementById('rowsPerPageCounterparty').value);
+
+        document.addEventListener('DOMContentLoaded', function () {
+            $('#loading').removeClass('hidden');
+            paginateCounterpartyTable();
+
+            document.getElementById('rowsPerPageCounterparty').addEventListener('change', function () {
+                rowsPerPageCounterparty = parseInt(this.value);
+                currentCounterpartyPage = 1;
+                $('#loading').removeClass('hidden');
+                paginateCounterpartyTable();
+            });
+
+            document.getElementById('searchCounterparty').addEventListener('keyup', function () {
+                currentCounterpartyPage = 1;
+                $('#counterpartyLoading').removeClass('hidden');
+                paginateCounterpartyTable();
+            });
+        });
+
+        function paginateCounterpartyTable() {
+            setTimeout(() => {
+            const allRows = Array.from(document.querySelectorAll('.counterparty-row'));
+            const searchQuery = document.getElementById('searchCounterparty').value.toLowerCase();
+
+            // Filter rows by search
+            const filteredRows = allRows.filter(row => {
+                const tds = row.querySelectorAll('td');
+                let rowText = '';
+                for (let td of tds) {
+                    const input = td.querySelector('input, select');
+                    if (input) {
+                        rowText += input.value || input.options?.[input.selectedIndex]?.text || '';
+                    } else {
+                        rowText += td.textContent;
+                    }
+                }
+                return rowText.toLowerCase().includes(searchQuery);
+            });
+
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPageCounterparty);
+
+            allRows.forEach(row => row.style.display = 'none'); // Hide all
+            filteredRows.forEach((row, index) => {
+                row.style.display = (index >= (currentCounterpartyPage - 1) * rowsPerPageCounterparty &&
+                                     index < currentCounterpartyPage * rowsPerPageCounterparty)
+                                    ? '' : 'none';
+            });
+
+                renderCounterpartyPagination(totalPages);
+                $('#counterpartyLoading').addClass('hidden');
+            hideLoader();
+        }, 300);
+        }
+
+        function renderCounterpartyPagination(totalPages) {
+            const pager = document.getElementById('counterpartyPagination');
+            pager.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            const createBtn = (label, page, disabled = false, active = false) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = label;
+                btn.className = `px-3 py-1 border rounded ${active ? 'bg-primary text-white' : 'bg-surface text-primary'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`;
+                btn.disabled = disabled;
+                btn.dataset.page = page;
+                return btn;
+            };
+
+            pager.appendChild(createBtn('First', 1, currentCounterpartyPage === 1));
+            pager.appendChild(createBtn('Prev', currentCounterpartyPage - 1, currentCounterpartyPage === 1));
+
+            const maxVisible = 5;
+            let start = Math.max(1, currentCounterpartyPage - Math.floor(maxVisible / 2));
+            let end = Math.min(totalPages, start + maxVisible - 1);
+            if (end - start < maxVisible - 1) {
+                start = Math.max(1, end - maxVisible + 1);
+            }
+
+            for (let i = start; i <= end; i++) {
+                const btn = createBtn(i, i, false, i === currentCounterpartyPage);
+                pager.appendChild(btn);
+            }
+
+            pager.appendChild(createBtn('Next', currentCounterpartyPage + 1, currentCounterpartyPage === totalPages));
+            pager.appendChild(createBtn('Last', totalPages, currentCounterpartyPage === totalPages));
+
+            pager.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentCounterpartyPage = parseInt(btn.dataset.page);
+                    $('#counterpartyLoading').removeClass('hidden');
+                    paginateCounterpartyTable();
+                });
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+        const table = document.getElementById('availableCustomerType');
+        const headers = table.querySelectorAll('th.sortable');
+        let sortDirection = 1;
+        let activeColumn = null;
+
+        headers.forEach(header => {
+            header.addEventListener('click', function () {
+                const columnIndex = parseInt(this.dataset.column);
+
+                // Reset previous sort classes
+                headers.forEach(h => h.classList.remove('active', 'asc', 'desc'));
+
+                // Toggle direction if clicking same column
+                if (activeColumn === columnIndex) {
+                    sortDirection *= -1;
+                } else {
+                    sortDirection = 1;
+                    activeColumn = columnIndex;
+                }
+
+                // Apply new sort class
+                this.classList.add('active');
+                this.classList.add(sortDirection === 1 ? 'asc' : 'desc');
+
+                // Show loader
+                $('#customerLoading').removeClass('hidden');
+
+                // Add a small delay so loader appears
+                setTimeout(() => {
+                    sortTable(columnIndex);
+                    paginateCustomerTable(); // your pagination function if exists
+
+                    // Hide loader after sort
+                    $('#customerLoading').addClass('hidden');
+                }, 300); // Delay for smooth UX
+            });
+        });
+
+        function sortTable(columnIndex) {
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            rows.sort((a, b) => {
+                const cellA = a.children[columnIndex].querySelector('input')?.value?.toLowerCase() || '';
+                const cellB = b.children[columnIndex].querySelector('input')?.value?.toLowerCase() || '';
+
+                if (cellA < cellB) return -1 * sortDirection;
+                if (cellA > cellB) return 1 * sortDirection;
+                return 0;
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const table = document.getElementById('availabledivCounterparty');
+        const headers = table.querySelectorAll('th.sortable');
+        let sortDirection = 1;
+        let activeColumn = null;
+
+        headers.forEach(header => {
+            header.addEventListener('click', function () {
+                const columnIndex = parseInt(this.dataset.column);
+
+                // Reset sort state
+                headers.forEach(h => h.classList.remove('active', 'asc', 'desc'));
+
+                // Toggle sort direction
+                if (activeColumn === columnIndex) {
+                    sortDirection *= -1;
+                } else {
+                    sortDirection = 1;
+                    activeColumn = columnIndex;
+                }
+
+                this.classList.add('active');
+                this.classList.add(sortDirection === 1 ? 'asc' : 'desc');
+
+                // Show loader
+                $('#counterpartyLoading').removeClass('hidden');
+
+                setTimeout(() => {
+                    sortCounterpartyTable(columnIndex);
+                    paginateCounterpartyTable();
+                    $('#counterpartyLoading').addClass('hidden');
+                }, 300);
+            });
+        });
+
+        function sortCounterpartyTable(columnIndex) {
+            const tbody = table.querySelector('tbody') || table;
+            const rows = Array.from(tbody.querySelectorAll('tr.counterparty-row'));
+
+            rows.sort((a, b) => {
+                let cellA, cellB;
+
+                if (columnIndex === 0 || columnIndex === 1) {
+                    // Text columns: Counterparty and Country
+                    cellA = a.children[columnIndex].querySelector('input, select')?.value?.toLowerCase() || '';
+                    cellB = b.children[columnIndex].querySelector('input, select')?.value?.toLowerCase() || '';
+                } else if (columnIndex === 2) {
+                    // Checkbox column: Active Y/N
+                    cellA = a.children[columnIndex].querySelector('input[type="checkbox"]')?.checked ? 1 : 0;
+                    cellB = b.children[columnIndex].querySelector('input[type="checkbox"]')?.checked ? 1 : 0;
+                }
+
+                if (cellA < cellB) return -1 * sortDirection;
+                if (cellA > cellB) return 1 * sortDirection;
+                return 0;
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    });
+</script>

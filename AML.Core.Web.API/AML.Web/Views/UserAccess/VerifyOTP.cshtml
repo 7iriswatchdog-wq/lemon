@@ -1,0 +1,164 @@
+@{
+    Layout = null;
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var clientId = HttpContextAccessor.HttpContext.Session.GetString("SessClientId");
+    var logo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@model AML.ViewModel.ViewModels.User.UserModel
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lemon - Verify OTP</title>
+    <link href="~/css/tailwind.css" rel="stylesheet" />
+    <style>
+        .carousel-item {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+            .carousel-item.active {
+                display: flex;
+                opacity: 1;
+            }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Left Section -->
+        <div class="w-1/2 bg-[#2563EB] p-8 md:flex flex-col relative hidden">
+            <!-- Main Content -->
+            <div class="flex-grow flex flex-col items-center justify-center text-center text-white max-w-md mx-auto relative">
+                <!-- Carousel -->
+                <div id="carousel" class="mb-8 w-full">
+                    <div class="carousel-item active">
+                        <div class="flex flex-col items-center">
+                            <img src="~/img/image1.svg" alt="AML CFT Screening Illustration" style="max-height: 448px; width: auto; height: auto;" />
+                            <h1 class="text-3xl font-bold mb-2">AML CFT Screening</h1>
+                            <p class="text-white/80 mb-2 text-sm max-w-sm">
+                                Carry out Screening of your Customers against Sanction Lists in a simplified and compliant manner
+                            </p>
+                        </div>
+                    </div>
+                    <div class="carousel-item ">
+                        <div class="flex flex-col items-center">
+                            <img src="~/img/image2.svg" alt="AML CFT Risk Assessment Illustration" style="max-height: 448px; width: auto; height: auto;" />
+                            <h1 class="text-3xl font-bold mb-4">AML CFT Risk Assessment</h1>
+                            <p class="text-white/80 mb-2 text-sm max-w-sm">
+                                Identify AML CFT Risk of your customers.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="carousel-item ">
+                        <div class="flex flex-col items-center">
+                            <img src="~/img/image3.svg" alt="Advisory Illustration" style="max-height: 448px; width: auto; height: auto;" />
+                            <h1 class="text-3xl font-bold mb-4">Advisory</h1>
+                            <p class="text-white/80 mb-2 text-sm max-w-sm">
+                                Reach out to us for end to end AML Compliance
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Carousel Dots -->
+                <div class="absolute bottom-[5%] flex gap-2 mt-4">
+                    <div class="w-2 h-2 rounded-full bg-surface cursor-pointer" onclick="setActiveSlide(0)"></div>
+                    <div class="w-2 h-2 rounded-full bg-surface/50 cursor-pointer" onclick="setActiveSlide(1)"></div>
+                    <div class="w-2 h-2 rounded-full bg-surface/50 cursor-pointer" onclick="setActiveSlide(2)"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Section -->
+        <div class="md:w-1/2 w-full p-8 flex items-center justify-center mx-auto">
+            <div class="max-w-md w-full">
+                <div class="mb-8 mt-2 flex items-center justify-start">
+                    <img src="~/img/brand-logo.svg" alt="Search" class="h-10" />
+                </div>
+                <h2 class="md:text-2xl text-xl font-bold mb-2 tracking-wide">Verify OTP</h2>
+                <p class="text-gray-500 md:text-sm text-xs tracking-normal mb-6 font-light">
+                    An OTP has been sent to your email <strong>(@ViewData["Email"])</strong>. Please enter it below.
+                </p>
+
+                <!-- Form -->
+                <form asp-controller="UserAccess" asp-action="VerifyOTP" enctype="multipart/form-data" method="post" class="space-y-4">
+                    
+                    <!-- OTP -->
+                    <div class="flex flex-col">
+                        <label for="OTP" class="text-[13px] font-medium text-[#374151] mb-1">One-Time Password</label>
+                        <input type="text" id="OTP" asp-for="OTP" class="w-full h-[48px] px-[12px] bg-[#FFFFFF] border border-[#D1D5DB] rounded-[8px] focus:outline-none focus:border-[#2563EB] focus:ring-[3px] focus:ring-[#2563EB]/12 transition-shadow tracking-widest text-lg font-bold" required onkeypress="return isNumberKey(event)" placeholder="• • • • • •" />
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full bg-[#2563EB] text-white py-[12px] rounded-lg hover:bg-[#1D4ED8] transition-colors mt-2 font-medium" id="submitBtn">
+                        Verify
+                    </button>
+                    
+                    <div class="mt-4 text-center">
+                        <a href="/auth/login" class="text-[13px] text-[#2563EB] hover:underline font-medium">Back to Sign In</a>
+                    </div>
+                </form>
+
+                @if (!string.IsNullOrEmpty(Convert.ToString(ViewData["Error"])))
+                {
+                    <div class="text-[12px] text-[#DC2626] mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">Invalid OTP provided. Please try again.</div>
+                }
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center text-sm text-gray-600 mt-8 absolute bottom-8">
+                Please contact
+                <a href="mailto:Support@nationalcompliance.ae" class="text-[#2563EB] underline">
+                    support@nationalcompliance.ae
+                </a>
+                or your<br />Account Manager in case of support.
+            </div>
+        </div>
+    </div>
+    
+    <div class="se-pre-con1" style="display:none"></div>
+    <script src="~/plugins/jquery/jquery.min.js"></script>
+    <script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function isNumberKey(evt) {
+            var charCode = (evt.which) ? evt.which : event.keyCode;
+            if (charCode != 46 && charCode > 31 && (charCode < 48 || charCode > 57) && charCode != 13)
+                return false;
+            return true;
+        }
+
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.carousel-item');
+        const dots = document.querySelectorAll('.flex.gap-2.mt-4 > div');
+
+        function setActiveSlide(index) {
+            slides[currentSlide].classList.remove('active');
+            dots[currentSlide].classList.remove('bg-surface');
+            dots[currentSlide].classList.add('bg-surface/50');
+
+            currentSlide = index;
+            slides[currentSlide].classList.add('active');
+            dots[currentSlide].classList.remove('bg-surface/50');
+            dots[currentSlide].classList.add('bg-surface');
+        }
+
+        function nextSlide() {
+            setActiveSlide((currentSlide + 1) % slides.length);
+        }
+
+        // Auto-advance the carousel every 5 seconds
+        setInterval(nextSlide, 5000);
+
+        $('form').on('submit', function () {
+            $('.se-pre-con1').show();
+            $('#submitBtn').prop('disabled', true).text('Verifying...');
+        });
+    </script>
+</body>
+</html>

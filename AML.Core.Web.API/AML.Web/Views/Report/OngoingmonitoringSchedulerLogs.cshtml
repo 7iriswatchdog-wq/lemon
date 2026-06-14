@@ -1,0 +1,612 @@
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Ongoing Monitoring Logs";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+
+    .dt-loader {
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+    .dt-loader div {
+        position: absolute;
+        top: 8px;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: #2563eb;
+        animation-timing-function: cubic-bezier(0,1,1,0);
+    }
+
+    .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+    .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+    .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+    .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+
+    @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+    @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+    @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+
+    th.sortable {
+        cursor: pointer;
+        position: relative;
+        padding-right: 20px;
+    }
+
+    th.sortable::after {
+        content: "▲\A▼";
+        white-space: pre;
+        font-size: 10px;
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #bbb;
+        line-height: 1;
+        text-align: center;
+    }
+
+    th.sortable.active.asc::after { content: "▲"; color: #2563eb; }
+    th.sortable.active.desc::after { content: '\A▼'; color: #2563eb; }
+</style>
+
+<div id="loader" class="fixed inset-0 bg-surface bg-opacity-75 items-center justify-center z-50 hidden">
+    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+</div>
+
+<div class="bg-appbg text-textprimary">
+    @await Html.PartialAsync("_ExportModal")
+    <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
+        <div class="flex items-center gap-2 text-textmuted text-xs mb-2">
+            <span class="text-textprimary font-medium">Reports</span>
+            <i data-lucide="chevron-right" class="h-3 w-3"></i>
+            <span class="text-textprimary font-medium">Scheduler Logs</span>
+        </div>
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-textprimary tracking-tight">Scheduler Logs</h1>
+                <!-- <p class="text-textmuted text-sm mt-1">Ongoing Monitoring Scheduler Logs</p> -->
+            </div>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <img src="@Clientlogo" alt="Client Logo" class="h-10 w-auto" />
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="bg-surface rounded-xl border border-bordercolor p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-sm font-bold text-textprimary tracking-tight">Logs Filter</h3>
+                <button type="button" onclick="clearFilters()" id="resetBtn" title="Reset filters" aria-label="Reset filters"
+                        class="bg-primary hover:bg-primary text-white font-bold h-10 w-10 inline-flex items-center justify-center rounded-md text-sm">
+                    <i data-lucide="rotate-ccw" class="h-4 w-4"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                <!-- Start Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Start Date</label>
+                    <input type="text" id="startDate" name="StartDate"
+                           placeholder="dd/MM/yyyy"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                    <span id="formattedDate" hidden></span>
+                </div>
+
+                <!-- End Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">End Date</label>
+                    <input type="text" id="endDate" name="EndDate"
+                           placeholder="dd/MM/yyyy"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                    <span id="formattedEndDate" hidden></span>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Apply Filters -->
+                    <button onclick="applyFilters()" id="applyBtn"
+                            class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white font-semibold h-10 px-5 rounded-md text-sm transition">
+                        Apply
+                    </button>
+
+                    <button type="button"
+                            onclick="showExportOptions()" title="Export" aria-label="Export"
+                            class="flex items-center justify-center border border-bordercolor bg-surface hover:bg-appbg text-textlabel font-semibold h-10 w-10 rounded-md text-sm transition focus:outline-none shadow-sm">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row gap-4 items-center w-full">
+                <!-- Search wrapper -->
+                <div class="relative flex-1 w-full">
+                    <i data-lucide="search" class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-textmuted"></i>
+                    <input type="text"
+                           id="searchInput"
+                           placeholder="Search anything..."
+                           class="pl-10 h-11 w-full rounded-md border border-bordercolor bg-surface px-3 py-2 text-sm
+                                  ring-offset-white focus-visible:outline-none focus-visible:ring-2
+                                  focus-visible:ring-blue-500/20 focus-visible:border-blue-500
+                                  shadow-sm transition-all placeholder:text-textmuted">
+                </div>
+                <!-- Export Option -->
+                <!-- <div class="relative inline-block text-left group">
+                    <button type="button" class="h-11 px-6 inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-textlabel font-medium rounded-md transition-colors border border-bordercolor focus:outline-none">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                        Export
+                        <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                    </button>
+                    <div class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-surface shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200" role="menu" aria-orientation="vertical">
+                        <div class="py-1" role="none">
+                            <button onclick="ExportList(true);" class="w-full text-left font-medium text-textlabel block px-4 py-2 text-sm hover:bg-slate-100 flex items-center gap-2 transition" role="menuitem">
+                                <i data-lucide="file-text" class="h-4 w-4 text-red-500"></i> Export PDF
+                            </button>
+                            <button onclick="ExportList(false);" class="w-full text-left font-medium text-textlabel block px-4 py-2 text-sm hover:bg-slate-100 flex items-center gap-2 transition" role="menuitem">
+                                <i data-lucide="file-spreadsheet" class="h-4 w-4 text-green-600"></i> Export CSV
+                            </button>
+                        </div>
+                    </div>
+                </div> -->
+            </div>
+
+            <div class="bg-surface rounded-xl border border-bordercolor shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-textmuted  bg-appbg border-b border-bordercolor">
+                            @* <tr>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(0, this)">Source</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(1, this)">Total Hits</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(2, this)">Total Records</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(3, this)">Updated On</th>
+                            </tr>
+                            <tr> *@
+                                @* <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(0, this)">Source</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(1, this)">Total Records</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(2, this)">Total Hits</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(3, this)">Cumulative</th>
+                                <th class="px-6 py-4 font-bold h-12 sortable text-center" onclick="sortTable(4, this)">Updated On</th> *@
+
+                                <th class="px-6 py-4 font-bold h-12 text-center">Source</th>
+                                <th class="px-6 py-4 font-bold h-12 text-center">Total Records</th>
+                                <th class="px-6 py-4 font-bold h-12 text-center">Total Hits</th>
+                                <th class="px-6 py-4 font-bold h-12 text-center">Cumulative</th>
+                                <th class="px-6 py-4 font-bold h-12 text-center">Pending</th>
+                                <th class="px-6 py-4 font-bold h-12 text-center">Updated On</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filterTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-6 py-4 bg-appbg border-t border-bordercolor flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-bold text-textmuted uppercase tracking-wider">Show</label>
+                            <select id="pageSize" onchange="changePageSize()"
+                                    class="h-8 w-20 rounded-md border border-bordercolor bg-surface pl-3 pr-8 text-xs font-bold text-textlabel focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                        </div>
+                        <div class="h-4 w-px bg-slate-200"></div>
+                        <div class="text-xs font-bold text-textmuted uppercase tracking-wider">
+                            Showing <span id="showingStart" class="text-textprimary">0</span> - <span id="showingEnd" class="text-textprimary">0</span> 
+                            <span class="mx-1 text-slate-300">of</span> 
+                            <span id="totalRecords" class="text-textprimary">0</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button id="prevBtn" onclick="previousPage()" title="Previous page" aria-label="Previous page"
+                                class="h-8 w-8 flex items-center justify-center text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                            <i data-lucide="chevron-left" class="h-3.5 w-3.5"></i>
+                        </button>
+                        <div id="pagination-buttons" class="flex gap-1"></div>
+                        <button id="nextBtn" onclick="nextPage()" title="Next page" aria-label="Next page"
+                                class="h-8 w-8 flex items-center justify-center text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                            <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <iframe id="pdfExportFrame" style="position: absolute; left: -9999px; visibility: hidden; width: 1024px; height: 100%;"></iframe>
+    </div>
+</div>
+
+<script type="text/javascript">
+    let pageSize = parseInt($('#pageSize').val()) || 10;
+    let currentPage = 1;
+    let totalPages = 1;
+    let totalRecords = 0;
+    let drawCounter = 1;
+    let allData = [];
+    let currentSortColumn = 0; 
+    let currentSortDirection = 'asc'; 
+
+    function formatDate(value) {
+        if (!value) return null;
+
+        // ✅ Already in yyyy-MM-dd
+        if (value.includes('-') && value.split('-')[0].length === 4) {
+            return value;
+        }
+
+        // ✅ Convert dd/MM/yyyy → yyyy-MM-dd
+        if (value.includes('/')) {
+            let parts = value.split('/');
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+
+        return null;
+    }
+
+    function applyFilters() {
+        fetchData('', 1);
+    }
+
+    function clearFilters() {
+        const today = new Date();
+        const lastYear = new Date();
+        lastYear.setFullYear(today.getFullYear() - 1);
+
+        function formatDateForDisplay(date) {
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            return `${dd}/${mm}/${yyyy}`;
+        }
+
+        function formatDateTime(dateStr) {
+        if (!dateStr) return { date: '-', time: '-' };
+
+        const d = new Date(dateStr);
+
+        return {
+            date: d.toLocaleDateString('en-GB'), // 20/02/2026
+            time: d.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',   // ✅ added
+                hour12: true
+            }) // 06:43:15 PM
+        };
+    }
+        // Reset values with defaults
+        if (document.querySelector("#startDate")._flatpickr) {
+            document.querySelector("#startDate")._flatpickr.setDate(lastYear, true);
+        }
+
+        if (document.querySelector("#endDate")._flatpickr) {
+            document.querySelector("#endDate")._flatpickr.setDate(today, true);
+        }
+
+        fetchData('', 1);
+    }
+
+    $(document).ready(function () {
+        lucide.createIcons();
+        
+        // Initialize date pickers
+        function initDatePicker(selector, defaultDate, isEndDate = false) {
+            return flatpickr(selector, {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                defaultDate: defaultDate,
+                allowInput: true,
+                onClose: function(selectedDates, dateStr, instance) {
+                    fetchData('', 1);
+                }
+            });
+        }
+
+        // ✅ Start Date → 1 year back, max today
+        const startPicker = initDatePicker("#startDate", new Date().fp_incr(-365));
+
+        // ✅ End Date → today, min today
+        const endPicker = initDatePicker("#endDate", new Date(), true);
+
+        fetchData('', 1);
+
+        $('#searchInput').on('input', function () {
+            const keyword = $(this).val().toLowerCase();
+            
+            let filteredData = allData.filter(item =>
+                (item.source || '').toLowerCase().includes(keyword) ||
+                (item.totalHits + '').includes(keyword) ||
+                (item.totalRecords + '').includes(keyword) ||
+                (formatDateForDisplay(item.createdOn) || '').toLowerCase().includes(keyword)
+            );
+
+            currentPage = 1;
+            totalRecords = filteredData.length;
+            totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+            
+            $('#loader').removeClass('hidden').addClass('flex');
+            setTimeout(() => {
+                renderTable(filteredData.slice(0, pageSize));
+                updatePagination();
+                $('#loader').addClass('hidden').removeClass('flex');
+            }, 100);
+        });
+    });
+
+    function fetchData(searchValue = '', page = 1) {
+        $('#loader').removeClass('hidden').addClass('flex');
+        pageSize = parseInt($('#pageSize').val()) || 10;
+        const start = (page - 1) * pageSize;
+
+        $.ajax({
+            url: '/Report/OngoingmonitoringSchedulerLog',
+            type: 'POST',
+            headers: {
+                'RequestVerificationToken': $('meta[name="csrf-token"]').attr('content')
+            },
+            data: {
+                draw: drawCounter++,
+                start: start,
+                length: pageSize,
+                search: { value: searchValue },
+                orderColumn: currentSortColumn,
+                orderDirection: currentSortDirection,
+                startDate: formatDate($('#startDate').val()),
+                endDate: formatDate($('#endDate').val())
+            },
+            success: function (resp) {
+                const rows = resp.data || [];
+                totalRecords = resp.recordsFiltered || 0;
+                allData = resp.allRows || [];
+                totalPages = Math.max(1, Math.ceil((totalRecords * 1.0) / pageSize));
+
+                renderTable(rows);
+                updatePagination();
+            },
+            error: function (xhr) {
+                console.error('Error fetching data:', xhr.statusText);
+            },
+            complete: function () {
+                $('#loader').addClass('hidden').removeClass('flex');
+            }
+        });
+    }
+
+    function renderTable(rows) {
+        console.log(rows);
+        const tbody = $('#filterTableBody').empty();
+
+        if (!rows || rows.length === 0) {
+            tbody.append('<tr><td colspan="5" class="h-24 text-center text-textmuted">No data available</td></tr>');
+            return;
+        }
+
+        rows.forEach((item, index) => {
+            const updated = formatDateTime(item.createdOn);
+            
+            // Link ONLY for the first (most recent) row for pending
+            const pendingContent = (index === 0 && (currentPage === 1 || !currentPage))
+                ? `<a href="/Report/CaseReport?option=OnGoing&caseStatus=6" class="text-primary font-bold hover:underline transition-all">${item.pending}</a>`
+                : item.pending;
+
+            tbody.append(`
+                <tr class="bg-surface border-b border-bordercolor hover:bg-appbg transition-colors">
+                    <td class="px-6 py-4 text-center text-textlabel font-medium">${item.source || ''}</td>
+                    <td class="px-6 py-4 text-center text-textlabel">${item.totalRecords || ''}</td>
+                    <td class="px-6 py-4 text-center text-textlabel">${item.totalHits}</td>
+                    <td class="px-6 py-4 text-center text-textlabel">${item.cumulativeHits}</td>
+                    <td class="px-6 py-4 text-center text-textlabel">${pendingContent}</td>
+                    <td class="px-6 py-4 text-center text-textlabel">
+                             <!-- Updated (only if exists) -->
+                            ${updated ? `
+                                <div class="text-xs text-textlabel">
+                                    <div>${updated?.date || '-'}</div>
+                                    <div class="ml-2">
+                                        ${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </td>
+                    
+                </tr>
+            `);
+        });
+    }
+
+    function formatDate(value) {
+        if (!value) return null;
+
+        // ✅ Already in yyyy-MM-dd
+        if (value.includes('-') && value.split('-')[0].length === 4) {
+            return value;
+        }
+
+        // ✅ Convert dd/MM/yyyy → yyyy-MM-dd
+        if (value.includes('/')) {
+            let parts = value.split('/');
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+
+        return null;
+    }
+        function formatDateTime(dateStr) {
+        if (!dateStr) return { date: '-', time: '-' };
+
+        const d = new Date(dateStr);
+
+        return {
+            date: d.toLocaleDateString('en-GB'), // 20/02/2026
+            time: d.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',   // ✅ added
+                hour12: true
+            }) // 06:43:15 PM
+        };
+    }
+
+    function updatePagination() {
+        const start = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+        const end = Math.min(currentPage * pageSize, totalRecords);
+
+        $('#showingStart').text(start);
+        $('#showingEnd').text(end);
+        $('#totalRecords').text(totalRecords);
+
+        $('#prevBtn').prop('disabled', currentPage === 1);
+        $('#nextBtn').prop('disabled', end >= totalRecords);
+
+        const $pagerButtons = $('#pagination-buttons').empty();
+        if (totalPages > 1) {
+            const maxVisible = 5;
+            let pStart = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let pEnd = pStart + maxVisible - 1;
+
+            if (pEnd > totalPages) {
+                pEnd = totalPages;
+                pStart = Math.max(1, pEnd - maxVisible + 1);
+            }
+
+            for (let i = pStart; i <= pEnd; i++) {
+                const isActive = i === currentPage;
+                const btnClass = isActive 
+                    ? 'h-8 w-8 flex items-center justify-center rounded-md bg-primary text-white font-bold shadow-sm'
+                    : 'h-8 w-8 flex items-center justify-center rounded-md bg-surface border border-bordercolor text-textlabel hover:bg-appbg font-medium transition-colors';
+                
+                $pagerButtons.append(`<button onclick="goToPage(${i})" class="${btnClass}">${i}</button>`);
+            }
+        }
+    }
+
+    function goToPage(page) {
+        if (page >= 1 && page <= totalPages) {
+            currentPage = page;
+            const searchValue = $('#searchInput').val();
+            if (searchValue) {
+                const keyword = searchValue.toLowerCase();
+                let filteredData = allData.filter(item =>
+                    (item.source || '').toLowerCase().includes(keyword) ||
+                    (item.totalHits + '').includes(keyword) ||
+                    (item.totalRecords + '').includes(keyword) ||
+                    (formatDateForDisplay(item.createdOn) || '').toLowerCase().includes(keyword)
+                );
+                const start = (page - 1) * pageSize;
+                renderTable(filteredData.slice(start, start + pageSize));
+                updatePagination();
+            } else {
+                fetchData('', currentPage);
+            }
+        }
+    }
+
+    function previousPage() {
+        if (currentPage > 1) goToPage(currentPage - 1);
+    }
+
+    function nextPage() {
+        if (currentPage < totalPages) goToPage(currentPage + 1);
+    }
+
+    function changePageSize() {
+        pageSize = parseInt($('#pageSize').val());
+        currentPage = 1;
+        const searchValue = $('#searchInput').val();
+        
+        if (searchValue) {
+            const keyword = searchValue.toLowerCase();
+            let filteredData = allData.filter(item =>
+                (item.source || '').toLowerCase().includes(keyword) ||
+                (item.totalHits + '').includes(keyword) ||
+                (item.totalRecords + '').includes(keyword) ||
+                (formatDateForDisplay(item.createdOn) || '').toLowerCase().includes(keyword)
+            );
+            totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+            renderTable(filteredData.slice(0, pageSize));
+            updatePagination();
+        } else {
+            fetchData('', currentPage);
+        }
+    }
+
+    /* 
+    function sortTable(columnIndex, element) {
+        $('.sortable').removeClass('active asc desc');
+        if (currentSortColumn === columnIndex) {
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortColumn = columnIndex;
+            currentSortDirection = 'asc';
+        }
+        $(element).addClass('active ' + currentSortDirection);
+
+        const searchValue = $('#searchInput').val();
+        fetchData(searchValue, 1);
+    }
+    */
+
+    function formatDateForDisplay(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-GB') + ' ' + date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function showExportOptions() {
+        const columns = [
+            { id: "source", label: "Source" },
+            { id: "totalRecords", label: "Total Records" },
+            { id: "totalHits", label: "Total Hits" },
+            { id: "cumulativeHits", label: "Cumulative" },
+            { id: "pending", label: "Pending" },
+            { id: "createdOn", label: "Updated On" }
+        ];
+
+        openExportModal({
+            getColumnsByActiveTab: () => columns,
+            onExport: (format, selectedColumns, orientation) => {
+                ExportList(format === 'pdf', selectedColumns, orientation);
+            }
+        });
+    }
+
+    function ExportList(isPDF, selectedColumns, orientation) {
+        const startDate = formatDate($('#startDate').val());
+        const endDate = formatDate($('#endDate').val());
+        const searchValue = $('#searchInput').val() || '';
+        const params = `startDate=${startDate}&endDate=${endDate}&searchValue=${encodeURIComponent(searchValue)}&selectedColumns=${selectedColumns || ''}&orientation=${orientation || 'portrait'}`;
+
+        if (isPDF) {
+            $('#loader').removeClass('hidden').addClass('flex');
+            const url = `/Report/SchedulerLogs_PDF?${params}`;
+            $('#pdfExportFrame').attr('src', url);
+        } else {
+            const url = `/Report/SchedulerLogsExportReport?${params}`;
+            window.location.href = url;
+            setTimeout(() => $('#loader').addClass('hidden'), 2000);
+        }
+    }
+</script>

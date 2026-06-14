@@ -1,0 +1,184 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+}
+@model AML.DTO.DTO.EWRA.EWRAModelDTO
+<style>
+    #table-scroll {
+        overflow: scroll;
+        margin-top: 20px;
+    }
+
+    .table {
+        width: 150%;
+    }
+
+    #FraudTable {
+        width: 120%;
+        margin-left: 1.8px;
+        overflow: scroll;
+    }
+
+    .table td, .table th {
+        padding: .65rem;
+    }
+
+    table, th {
+        text-align: center;
+    }
+
+    td {
+        vertical-align: bottom;
+        text-align: left !important;
+    }
+
+    .form-control {
+        width: 100%;
+    }
+</style>
+@*<div style="width:100% !important;height:70px !important;">
+
+    </div>*@
+<div id="printDetails" style="width:100%">
+    <br />
+    <div style="width:100%;display:none" id="logodiv">
+        <div style="width:98%;text-align:center;">
+            <h2>@companyName</h2>
+            <img src="~/img/brand-logo.svg" style="width:8%;float:right;" />
+        </div>
+        <br />
+    </div>
+    <br />
+    <div class="card-primary" id="reportViewDetails" style="width:100%;padding-left:1%;">
+        <div class="row" style="width:100%;padding-left:1%;">
+            <h3 style="width:90%">EWRA Report Of @companyName</h3>
+            <input name="b_print" id="b_print" type="button" onClick="printdiv('printDetails');" value=" Print " style="float:right;margin:20px;width:50px;"><br />
+        </div>
+        <div id="jurisdiction" class="card card-body" style="padding-bottom:0px;padding-top:10px;">
+            <div class="card card-header" style="width:100%;float:left;background-color: darkgrey;">
+                <h3 class="card-title">
+                    @localizer["Jurisdictional Risk"]
+                </h3>
+            </div>
+            <div class="card-footer row">
+                <div style="width:50%;">
+                    <label>@localizer["Overall Average Score"]</label>
+                    <div class="form-group" style="width:70%;">
+                        <button id="btnJurisdictionAvgScore" disabled class="dt-button-info form-control risk-button" type="button">@Model.JurisdictionOverallScore</button>
+                        <input type="hidden" id="hdnJurisdictionAvgScore" value="@Model.JurisdictionOverallScore" value="0" />
+                    </div>
+                </div>
+                <div style="width:50%;float:right">
+                    <label>@localizer["Overall Risk Assessement Level"]</label>
+                    <div class="form-group" style="width:70%;">
+                        @if (@Model.JurisdictionOverallRisk == "Low")
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button btn-success" type="button">@Model.JurisdictionOverallRisk</button>
+                        }
+                        else if (@Model.JurisdictionOverallRisk == "Medium")
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button btn-warning" type="button">@Model.JurisdictionOverallRisk</button>
+                        }
+                        else if (@Model.JurisdictionOverallRisk == "High")
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button btn-danger" type="button">@Model.JurisdictionOverallRisk</button>
+                        }
+                        else
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button" type="button">@Model.JurisdictionOverallRisk</button>
+                        }
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div id="jurisdictionRisk" class="card card-body jurisdictionDivs">
+                <div style="width:100% !important;">
+                    <table class="table" id="jurisdictionTable" style="width:100% !important;">
+                        <thead style="display:table-header-group;background-color: white;opacity: 100;">
+                            <tr class="row" style="width:100%;background-color:white">
+                                <th style="vertical-align:middle;width:28% !important;align-items:center;display:flex;">
+                                    @localizer["Jurisdiction for"]
+                                </th>
+                                <th style="vertical-align:middle;width:18% !important;align-items:center;display:flex;">
+                                    @localizer["Risk Score based on Know Your Country Scale"]
+                                </th>
+                                <th style="vertical-align:middle;width:18% !important;align-items:center;display:flex;">
+                                    @localizer["Risk Level Assessed"]
+                                </th>
+                                <th style="vertical-align:middle;width:18% !important;align-items:center;display:flex;">
+                                    @localizer["Risk score based on our scale"]
+                                </th>
+                                <th style="vertical-align:middle;width:18% !important;align-items:center;display:flex;">
+                                    @localizer["Exposure by Amount - Ledger Debit balances only"]
+                                </th>
+                            </tr>
+                        </thead>
+                        @for (var i = 0; i < Model.EWRAJurisdiction.Count; i++)
+                        {
+                            <tr class="row" style="width:100%;">
+                                <th style="width:28% !important;">
+                                    <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="jurCountry_@i" value="@Model.EWRAJurisdiction[i].Country" disabled />
+                                </th>
+                                <th style="width:18% !important;">
+                                    <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="countryRiskScoreJurisdiction_@i" value="@Model.EWRAJurisdiction[i].CountryRiskScore" disabled />
+                                </th>
+                                <th style="width:18% !important;">
+                                    <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="countryRiskLevelJurisdiction_@i" value="@Model.EWRAJurisdiction[i].CountryRiskLevel" disabled />
+                                </th>
+                                <th style="width:18% !important;">
+                                    <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="riskScoreJurisdiction_@i" value="@Model.EWRAJurisdiction[i].CountryRiskRating" disabled />
+                                </th>
+                                <th style="width:18% !important;">
+                                    <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="ledgerBalance_@i" data-field="jurisdictionLedger" value="@Model.EWRAJurisdiction[i].LedgerAmount" disabled />
+                                </th>
+                            </tr>
+                        }
+                    </table>
+                </div>
+
+            </div>
+        </div>
+        <div class="row" style="width:98%;">
+            <div class="col-sm-4">
+                <div class="form-group">
+                    <label for="dtCreatedBy">@localizer["Created By"]</label>
+                    <input type="text" asp-for="@Model.CreatedBy" class="form-control mandatory" id="dtCreatedBy" placeholder="" maxlength="200" readonly>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="form-group">
+                    <label for="dtCreatedOn">@localizer["Created On"]</label>
+                    <input type="text" asp-for="@Model.CreatedOn" class="form-control mandatory" id="dtCreatedOn" placeholder="" maxlength="200" readonly>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+    <div style="width:90%;display:none;padding-left:2%;" id="footdiv">
+        <p>@localizer["Computer generated report; hence no signature is required."]</p>
+    </div>
+</div>
+<script type="text/javascript">
+    function printdiv(printpage) {
+        var headstr1 = "<html><head>";
+        var headstr2 = "<title></title></head><body class='printDiv'>";
+        var footstr = "</body>";
+        var newstr = document.all.item(printpage).innerHTML;
+        var oldstr = document.body.innerHTML;
+        document.body.innerHTML = headstr1 + headstr2 + newstr + footstr;
+        document.getElementById("logodiv").style.display = "";
+        document.getElementById("footdiv").style.display = "";
+        document.getElementById("b_print").style.display = "none";
+        window.print();
+        document.body.innerHTML = oldstr;
+        return false;
+    }
+</script>

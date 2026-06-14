@@ -1,0 +1,322 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+@model AML.ViewModel.ViewModels.TransactionMonitor.TMSMasterModel
+<style>
+    .risk-header {
+        text-align: center;
+    }
+
+    .risk-assessment-div {
+        margin-top: 20px;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .subcategory tr td {
+        border-top: none !important;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .row {
+        display: -ms-flexbox;
+        display: flex;
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+        margin-right: 7.5px;
+        margin-left: -7.5px;
+    }
+
+    .subcategory tr td {
+        border-top: none !important;
+        /* border-bottom: 1px solid #ddd; */
+    }
+
+    .subcategory tr td {
+        /* border-top: none !important; */
+        border-bottom: none !important;
+    }
+
+    .grid-select {
+        width: 300px !important;
+    }
+
+    .pulse-button {
+        position: relative;
+        width: 34px;
+        height: 34px;
+        border: none;
+        box-shadow: 0 0 0 0 rgba(232, 76, 61, 0.7);
+        border-radius: 50%;
+        background-color: #e84c3d;
+        background-size: cover;
+        background-repeat: no-repeat;
+        cursor: pointer;
+        -webkit-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+        -moz-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+        -ms-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+        animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+    }
+
+        .pulse-button:hover {
+            -webkit-animation: none;
+            -moz-animation: none;
+            -ms-animation: none;
+            animation: none;
+        }
+
+
+    @@-webkit-keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    @@-moz-keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    @@-ms-keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    @@keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    #container {
+        display: block;
+        position: relative
+    }
+
+    .ui-autocomplete {
+        position: absolute;
+    }
+</style>
+<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.0.min.js" type="text/javascript"></script>
+<script src="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/jquery-ui.min.js" type="text/javascript"></script>
+<link href="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/themes/blitzer/jquery-ui.css" rel="Stylesheet" type="text/css" />
+<script type="text/javascript">
+    
+</script>
+
+
+<div class="card-primary">
+    <div class="px-6 py-4 border-b border-bordercolor">
+        @localizer["AML Transaction Monitoring Rules"]
+    </div>
+    <!-- form start -->
+    <form role="form" asp-controller="Risk" asp-action="RiskAssessmetnForBank" class="form-horizontal" enctype="multipart/form-data" method="post" onsubmit="ValidateCustomerId(this);">
+
+        <div class="card card-body">
+            <div>
+                <table class="table" id="RiskTable">
+                    <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                        <tr class="row">
+                            <th style="width:15%;">
+                                @localizer["Category"]
+                            </th>
+                            <th style="width:25%;">
+                                @localizer["Scenario Type"]
+                            </th>
+                            <th style="width:30%;">
+                                @localizer["Scenario"]
+                            </th>
+                            <th style="width:10%;">
+                                @localizer["Volume/Amount"]
+                            </th>
+                            <th style="width:10%;">
+                                @localizer["Value/Count"]
+                            </th>
+                            <th style="width:10%;">
+                                @localizer["Duration"]
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-bordercolor">
+                        @for (var i = 0; i < Model.TMSRulesViewModel.Count; i++)
+                        {
+                            <tr class="row">
+                                <td style="width:15%;">
+                                    @Model.TMSRulesViewModel[i].lov_type_category
+                                </td>
+                                <td style="width:25%;">
+                                    @Model.TMSRulesViewModel[i].lov_risk_category
+                                </td>
+                                <td style="width:30%;">
+                                    @Model.TMSRulesViewModel[i].lov_type_name
+                                </td>
+                                <td style="width:10%;">
+                                    @Model.TMSRulesViewModel[i].lov_risk_data
+                                </td>
+                                <td style="width:10%;">
+                                    @Model.TMSRulesViewModel[i].lov_risk_score
+                                </td>
+                                <td style="width:10%;">
+                                    @Model.TMSRulesViewModel[i].Over_ride_Score
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- /.card-body -->
+
+    </form>
+</div>
+
+
+
+
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+
+<script>
+
+    $(document).ready(function () {
+        $('.risk-button').hide();
+
+        //$(".se-pre-con").fadeOut("slow");
+    });
+    var OverRideVariables = [];
+    var b = $('#RiskSubTable tr').length;
+    for (i = 0; i <= b; i++) {
+        OverRideVariables[i] = false
+    }
+    var OverRides = "false";
+
+    $('#dtCustomerCode').keyup(function () {
+        $('#hfCustomerCode').val($("#dtCustomerCode").val());
+    });
+
+    function ItemChange(a) {
+        var score = $("#ddlItem_" + a + " option:selected").val().split("|");
+        var selectedVal = score[0];
+        var overrideScore = score[1];
+        var selectdItemId = score[2];
+        $('#RiskItemTxt_' + a).val($("#ddlItem_" + a + " option:selected").text());
+        $('#RiskItem_' + a).val(selectedVal);
+        $('#RiskItemId_' + a).val(selectdItemId);
+        if (selectedVal == 1) {
+            $('#clrScore_' + a).removeClass('btn btn-warning');
+            $('#clrScore_' + a).removeClass('btn btn-danger pulse-button');
+            $('#clrScore_' + a).addClass('btn btn-success');
+            $('#clrScore_' + a).text(selectedVal);
+            $('#clrScorehdn_' + a).val(selectedVal);
+            OverRideVariables[a] = false;
+        }
+        else if (selectedVal == 2) {
+
+            $('#clrScore_' + a).removeClass('btn btn-success');
+            $('#clrScore_' + a).removeClass('btn btn-danger pulse-button');
+            $('#clrScore_' + a).addClass('btn btn-warning');
+            $('#clrScore_' + a).text(selectedVal);
+            $('#clrScorehdn_' + a).val(selectedVal);
+            OverRideVariables[a] = false;
+        }
+        else if (selectedVal == 3) {
+            $('#clrScore_' + a).removeClass('btn btn-success');
+            $('#clrScore_' + a).removeClass('btn btn-warning');
+            $('#clrScore_' + a).text(selectedVal);
+            $('#clrScorehdn_' + a).val(selectedVal);
+            $('#clrScore_' + a).addClass('btn btn-danger');
+            if (overrideScore == 3) {
+                $('#clrScore_' + a).addClass('pulse-button');
+            } else {
+                $('#clrScore_' + a).removeClass('pulse-button');
+                OverRideVariables[a] = true;
+            }
+        }
+        else if (selectedVal == 0) {
+            $('#clrScore_' + a).removeClass('btn btn-success');
+            $('#clrScore_' + a).removeClass('btn btn-warning');
+            $('#clrScore_' + a).removeClass('btn btn-danger pulse-button');
+            $('#clrScore_' + a).addClass('btn btn-block btn-secondary');
+            $('#clrScore_' + a).text(0);
+            $('#clrScorehdn_' + a).val(0);
+        }
+        else {
+            OverRideVariables[a] = false;
+        }
+        calculateTotal();
+    }
+    function calculateTotal() {
+        var total = 0;
+        var i = 0;
+        var riskStatus = '@localizer["Low Risk"]';
+
+        $(".riskscorehdn").each(function () {
+            total = parseInt(total) + parseInt($(this).val());
+            if ($(this).val() != 0) {
+                i++;
+            }
+        });
+        $('#btntotalscore').text(total);
+        $('#btntotal').text(i);
+
+        var highscoreVal = (i * 3);
+        var mediumScoreVal = (i * 2.24);
+        var lowScoreVal = (i * 1.49);
+
+        $('#lowTxt').text(lowScoreVal.toFixed(2));
+        $('#mediumTxt').text(mediumScoreVal.toFixed(2));
+        $('#highTxt').text(highscoreVal.toFixed(2));
+
+        if (total <= highscoreVal) {
+            riskStatus = '@localizer["High Risk"]';
+            $('#btnRiskAssessmentRating').removeClass();
+            $('#btnRiskAssessmentRating').addClass('btn btn-danger form-control');
+        }
+        if (total <= mediumScoreVal) {
+            riskStatus = '@localizer["Medium Risk"]';
+            $('#btnRiskAssessmentRating').removeClass();
+            $('#btnRiskAssessmentRating').addClass('btn btn-warning form-control');
+        }
+        if (total <= lowScoreVal) {
+            riskStatus = '@localizer["Low Risk"]';
+            $('#btnRiskAssessmentRating').removeClass();
+            $('#btnRiskAssessmentRating').addClass('btn btn-info form-control');
+        }
+        //Set Risk score witout override
+        $('#riskAssessmentRatingWithoutOverrideTxt').val(riskStatus);
+        var OverRides = "false";
+
+        for (x = 0; x <= b; x++) {
+
+            OverRides = OverRides + "||" + OverRideVariables[x];
+            if (OverRides.includes("true")) {
+                riskStatus = '@localizer["High Risk"]';
+                $('#btnRiskAssessmentRating').removeClass();
+                $('#btnRiskAssessmentRating').addClass('btn btn-danger form-control');
+            }
+        }
+
+        //Set final risk score
+        $('#riskAssessmentRatingTxt').val(riskStatus);
+
+
+        $('#btnRiskAssessmentRating').text(riskStatus);
+
+        $('#riskScoreSumTxt').val(total);
+        $('#riskScoreCountTxt').val(i);
+
+    }
+    function fnSubmit() {
+        $(".se-pre-con").show();
+    }
+</script>
+
+
+
+
+
+

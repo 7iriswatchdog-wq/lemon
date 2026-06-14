@@ -1,0 +1,133 @@
+@model List<AML.DTO.DTO.SectoralTMS.StmTxnRiskFactorDTO>
+@{
+    ViewData["Title"] = "STM - Risk Factors";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    ViewBag.StmActive = "risk";
+    var activeSector = ViewBag.ActiveSector as string ?? "INS";
+}
+
+@await Html.PartialAsync("_StmLayout")
+
+<div class="px-6 pb-12">
+    <div class="stm-card mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div>
+                <div class="stm-page-title">Transaction Risk Factors</div>
+                <div class="stm-page-sub">Industry-standard factors evaluated on every transaction. Define new factors or tune the bands of existing ones.</div>
+            </div>
+            <a href="/stm/risk/factors/create?sector=@activeSector" class="stm-btn stm-btn-primary">
+                <i data-lucide="plus" class="w-4 h-4"></i> Add Factor
+            </a>
+        </div>
+
+        <div class="flex flex-wrap gap-3 mb-4">
+            <a href="/stm/risk/factors?sector=INS" class="stm-nav-pill @(activeSector == "INS" ? "active" : "")">Insurance</a>
+            <a href="/stm/risk/factors?sector=RE"  class="stm-nav-pill @(activeSector == "RE" ? "active" : "")">Real Estate</a>
+        </div>
+
+        @if (Model == null || Model.Count == 0)
+        {
+            <div class="text-sm text-slate-500 py-8 text-center">
+                No risk factors configured for this sector. Click <strong>Add Factor</strong> to create the first one.
+            </div>
+        }
+        else
+        {
+            foreach (var f in Model)
+            {
+                <div class="border border-slate-200 rounded-lg p-4 mb-3">
+                    <div class="flex items-start justify-between mb-3 gap-3 flex-wrap">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-mono text-xs text-slate-500">@f.FactorCode</span>
+                                @if (f.IsActive == 0)
+                                {
+                                    <span class="stm-badge closed">Inactive</span>
+                                }
+                            </div>
+                            <div class="font-semibold text-slate-900">@f.FactorName</div>
+                            <div class="text-xs text-slate-500 mt-1">@f.Description</div>
+                            <div class="text-xs text-slate-500 mt-1">
+                                Field: <code>@f.FieldName</code> · Type: <code>@f.FactorType</code> · Weight: @f.Weight · Sequence: @f.SequenceNo
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="inline-flex items-center cursor-pointer mr-2">
+                                <input type="checkbox" class="factor-toggle" data-id="@f.Id" @(f.IsActive == 1 ? "checked" : "") />
+                                <span class="ml-2 text-xs text-slate-600">Active</span>
+                            </label>
+                            <a href="/stm/risk/factors/edit/@f.Id" class="stm-btn stm-btn-secondary" title="Edit">
+                                <i data-lucide="edit-2" class="w-4 h-4"></i> Edit
+                            </a>
+                            <button type="button" class="stm-btn stm-btn-danger" onclick="deleteFactor(@f.Id, '@f.FactorCode')" title="Delete">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <table class="stm-table">
+                        <thead><tr><th>Band</th><th>Range / Match</th><th>Score</th><th>Rating</th></tr></thead>
+                        <tbody>
+                        @if (f.Bands == null || f.Bands.Count == 0)
+                        {
+                            <tr><td colspan="4" class="text-slate-400 text-xs py-3 text-center">No bands configured - edit the factor to add them.</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var b in f.Bands)
+                            {
+                                string range = "";
+                                if (f.FactorType == "NUMERIC")
+                                    range = $"{b.NumericMin?.ToString("N0") ?? "-∞"} … {b.NumericMax?.ToString("N0") ?? "+∞"}";
+                                else if (!string.IsNullOrEmpty(b.MatchValue))
+                                    range = $"== '{b.MatchValue}'";
+                                else if (!string.IsNullOrEmpty(b.MatchInList))
+                                    range = b.MatchInList == "*ELSE*" ? "(fallback)" : $"in [{b.MatchInList}]";
+                                <tr>
+                                    <td>@b.BandLabel</td>
+                                    <td class="font-mono text-xs">@range</td>
+                                    <td>@b.Score</td>
+                                    <td><span class="stm-badge @(b.Rating?.ToLower() ?? "low")">@b.Rating</span></td>
+                                </tr>
+                            }
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) lucide.createIcons();
+        // Wire the active-toggle switches
+        document.querySelectorAll('.factor-toggle').forEach(t => {
+            t.addEventListener('change', async (e) => {
+                const id = e.target.dataset.id;
+                const isActive = e.target.checked ? 1 : 0;
+                const fd = new FormData(); fd.append('isActive', isActive);
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                const r = await fetch('/stm/risk/factors/toggle/' + id, {
+                    method: 'POST', body: fd,
+                    headers: token ? { 'RequestVerificationToken': token } : {}
+                });
+                const j = await r.json();
+                if (!j.success) alert('Toggle failed: ' + (j.message || ''));
+            });
+        });
+    });
+
+    async function deleteFactor(id, code) {
+        if (!confirm(`Delete factor ${code}? Its bands will also be removed. Existing risk results stay unchanged.`)) return;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        const r = await fetch('/stm/risk/factors/delete/' + id, {
+            method: 'POST',
+            headers: token ? { 'RequestVerificationToken': token } : {}
+        });
+        const j = await r.json();
+        if (j.success) location.reload();
+        else alert('Delete failed: ' + (j.message || ''));
+    }
+</script>

@@ -1,0 +1,89 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model DailyCaseDigestVM
+@{
+    ViewData["Title"] = "Daily Case Digest";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = $"Daily Case Digest — {Model.Date:yyyy-MM-dd}";
+    ViewData["ReportSubtitle"] = "Today's snapshot: opened, closed, in-flight, awaiting QA.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 my-3">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3"><div class="text-[10px] uppercase text-blue-700 font-bold">Opened Today</div><div class="text-2xl font-semibold text-blue-700">@Model.OpenedToday</div></div>
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3"><div class="text-[10px] uppercase text-emerald-700 font-bold">Closed Today</div><div class="text-2xl font-semibold text-emerald-700">@Model.ClosedToday</div></div>
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">In Flight</div><div class="text-2xl font-semibold text-slate-800">@Model.InFlight</div></div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3"><div class="text-[10px] uppercase text-amber-700 font-bold">Pending Sr Mgmt</div><div class="text-2xl font-semibold text-amber-700">@Model.PendingSrMgmt</div></div>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3"><div class="text-[10px] uppercase text-indigo-700 font-bold">Awaiting QA</div><div class="text-2xl font-semibold text-indigo-700">@Model.AwaitingQa</div></div>
+            <div class="bg-rose-50 border border-rose-200 rounded-lg p-3"><div class="text-[10px] uppercase text-rose-700 font-bold">SLA Breaching</div><div class="text-2xl font-semibold text-rose-700">@Model.SlaBreaching</div></div>
+            <div class="bg-rose-50 border border-rose-200 rounded-lg p-3"><div class="text-[10px] uppercase text-rose-700 font-bold">High Risk Open</div><div class="text-2xl font-semibold text-rose-700">@Model.HighRiskOpen</div></div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg p-4 mb-4">
+            <h3 class="font-semibold text-slate-800 mb-2">By status</h3>
+            <div class="flex flex-wrap gap-2">
+                @foreach (var b in Model.ByStatus)
+                {
+                    <div class="px-3 py-1.5 border border-slate-200 rounded text-sm">
+                        <span class="text-slate-600">@b.Status:</span> <span class="font-semibold text-slate-800">@b.Count</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                <div class="px-4 py-2 bg-blue-50 border-b border-slate-200 font-semibold text-blue-800">Opened Today (@Model.OpenedToday)</div>
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr class="text-left"><th class="px-3 py-2">Case</th><th class="px-3 py-2">Customer</th><th class="px-3 py-2">Risk</th><th class="px-3 py-2">Status</th><th class="px-3 py-2">Created</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.NewToday.Any())
+                        { <tr><td colspan="5" class="px-3 py-8 text-center text-slate-500">No new cases today.</td></tr> }
+                        else
+                        {
+                            foreach (var r in Model.NewToday)
+                            {
+                                <tr class="border-b border-slate-100">
+                                    <td class="px-3 py-2 font-mono text-xs"><a href="/Case/Process/@r.CaseId" class="text-blue-600 hover:underline">@r.CaseId</a></td>
+                                    <td class="px-3 py-2"><a href="@Url.Action("Customer360","AmlTracker", new { cmid = r.CustomerMasterId })" class="text-blue-600 hover:underline">@r.CustomerName</a></td>
+                                    <td class="px-3 py-2">@r.RiskTier</td>
+                                    <td class="px-3 py-2 text-slate-600">@r.StatusLabel</td>
+                                    <td class="px-3 py-2 text-xs text-slate-500">@(r.CreatedOn?.ToString("HH:mm") ?? "—")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                <div class="px-4 py-2 bg-emerald-50 border-b border-slate-200 font-semibold text-emerald-800">Closed Today (@Model.ClosedToday)</div>
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr class="text-left"><th class="px-3 py-2">Case</th><th class="px-3 py-2">Customer</th><th class="px-3 py-2">Outcome</th><th class="px-3 py-2">Closed</th></tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.ClosedTodayList.Any())
+                        { <tr><td colspan="4" class="px-3 py-8 text-center text-slate-500">Nothing closed today yet.</td></tr> }
+                        else
+                        {
+                            foreach (var r in Model.ClosedTodayList)
+                            {
+                                <tr class="border-b border-slate-100">
+                                    <td class="px-3 py-2 font-mono text-xs"><a href="/Case/Process/@r.CaseId" class="text-blue-600 hover:underline">@r.CaseId</a></td>
+                                    <td class="px-3 py-2"><a href="@Url.Action("Customer360","AmlTracker", new { cmid = r.CustomerMasterId })" class="text-blue-600 hover:underline">@r.CustomerName</a></td>
+                                    <td class="px-3 py-2 text-slate-600">@r.StatusLabel</td>
+                                    <td class="px-3 py-2 text-xs text-slate-500">@(r.UpdatedOn?.ToString("HH:mm") ?? "—")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>

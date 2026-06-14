@@ -1,0 +1,114 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@using System.Collections.Generic
+@model List<SlaConfigVM>
+@{
+    ViewData["Title"] = "SLA Settings";
+    ViewData["ActiveTab"] = "SlaConfig";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+}
+
+<section class="content py-6 px-4">
+    <div class="max-w-[1300px] mx-auto">
+        <div class="mb-3">
+            <h1 class="text-2xl font-semibold text-slate-800">SLA Settings</h1>
+            <p class="text-sm text-slate-500">Per customer-type and risk-tier SLA thresholds. Most-specific match wins; fall through to a wildcard rule (<code>*</code>) if no specific match. Defaults: 7 / 14 days.</p>
+        </div>
+
+        <partial name="_TrackerTabs" />
+
+        @if (!canEdit)
+        {
+            <div class="border bg-amber-50 border-amber-300 text-amber-900 rounded p-3 mb-4 text-sm">
+                Read-only — your role isn't authorized to edit SLA config.
+            </div>
+        }
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden mb-4">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left">
+                        <th class="px-3 py-2">Customer Type</th>
+                        <th class="px-3 py-2">Risk Tier</th>
+                        <th class="px-3 py-2 text-right">Case On-Track ≤</th>
+                        <th class="px-3 py-2 text-right">Case At-Risk ≤</th>
+                        <th class="px-3 py-2 text-right">QA On-Track ≤</th>
+                        <th class="px-3 py-2 text-right">QA At-Risk ≤</th>
+                        <th class="px-3 py-2 text-right">Stale After</th>
+                        <th class="px-3 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="8" class="px-3 py-6 text-center text-slate-500">No rules configured. Defaults apply.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var c in Model)
+                        {
+                            <tr class="border-b border-slate-100">
+                                <td class="px-3 py-2 font-mono">@c.CustomerType</td>
+                                <td class="px-3 py-2 font-mono">@c.RiskTier</td>
+                                <td class="px-3 py-2 text-right">@c.CaseSlaOnTrackDays d</td>
+                                <td class="px-3 py-2 text-right">@c.CaseSlaAtRiskDays d</td>
+                                <td class="px-3 py-2 text-right">@c.QaSlaOnTrackDays d</td>
+                                <td class="px-3 py-2 text-right">@c.QaSlaAtRiskDays d</td>
+                                <td class="px-3 py-2 text-right">@c.StaleCaseDays d</td>
+                                <td class="px-3 py-2">
+                                    @if (canEdit)
+                                    {
+                                        <form method="post" action="@Url.Action("DeleteSlaConfig","AmlTracker", new { id = c.Id })" class="inline" onsubmit="return confirm('Delete this rule?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="text-xs text-rose-600 hover:underline">Delete</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (canEdit)
+        {
+            <div class="bg-white border border-slate-200 rounded-lg p-4">
+                <h3 class="font-semibold text-slate-800 mb-3">Add / update rule</h3>
+                <form method="post" action="@Url.Action("SaveSlaConfig","AmlTracker")">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="0" />
+                    <div class="grid grid-cols-2 md:grid-cols-7 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium mb-1">Customer Type</label>
+                            <select name="CustomerType" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+                                <option value="*">* (any)</option>
+                                <option value="I">Individual</option>
+                                <option value="C">Corporate</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1">Risk Tier</label>
+                            <select name="RiskTier" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+                                <option value="*">* (any)</option>
+                                <option value="High">High</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Low">Low</option>
+                                <option value="Unclassified">Unclassified</option>
+                            </select>
+                        </div>
+                        <div><label class="block text-xs font-medium mb-1">Case On-Track</label><input type="number" name="CaseSlaOnTrackDays" value="7" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" /></div>
+                        <div><label class="block text-xs font-medium mb-1">Case At-Risk</label><input type="number" name="CaseSlaAtRiskDays" value="14" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" /></div>
+                        <div><label class="block text-xs font-medium mb-1">QA On-Track</label><input type="number" name="QaSlaOnTrackDays" value="7" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" /></div>
+                        <div><label class="block text-xs font-medium mb-1">QA At-Risk</label><input type="number" name="QaSlaAtRiskDays" value="14" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" /></div>
+                        <div><label class="block text-xs font-medium mb-1">Stale After</label><input type="number" name="StaleCaseDays" value="30" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" /></div>
+                    </div>
+                    <input type="hidden" name="IsActive" value="true" />
+                    <div class="mt-4">
+                        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded">Add rule</button>
+                    </div>
+                </form>
+            </div>
+        }
+    </div>
+</section>

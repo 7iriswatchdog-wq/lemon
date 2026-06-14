@@ -1,0 +1,775 @@
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = @localizer["TMS Case"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model AML.ViewModel.ViewModels.TransactionMonitor.TMSCase
+<script src="~/plugins/jquery/jquery.min.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script type="text/tailwindcss">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            clifford: '#da373d',
+          }
+        }
+      }
+    }
+    @@layer utilities {
+    }
+</script>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&family=Outfit:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Varela+Round&display=swap');
+
+    .donut-chart {
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        background: conic-gradient( #2563EB 0% 65%, #AD87FF 65% 80%, #38BDF8 80% 100% );
+        position: relative;
+    }
+
+    .donut-hole {
+        position: absolute;
+        width: 60%;
+        height: 60%;
+        background-color: white;
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .percentage {
+        position: absolute;
+        background-color: white;
+        padding: 4px 8px;
+        border-radius: 9999px;
+        font-weight: bold;
+        font-size: 1.25rem;
+    }
+
+    .percent-20 {
+        top: 15%;
+        right: -20%;
+    }
+
+    .percent-65 {
+        bottom: -15%;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .percent-15 {
+        top: 10%;
+        left: -20%;
+    }
+</style>
+
+<style>
+    th.sortable {
+        position: relative;
+        padding-right: 20px;
+        cursor: pointer;
+    }
+
+        /* Show vertical gray arrows by default */
+        th.sortable::after {
+            content: '▲\A▼';
+            white-space: pre; /* respect \A (newline) */
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: #bbb;
+            line-height: 1;
+            text-align: center;
+        }
+
+        /* Only ▲ when sorting ascending */
+        th.sortable.active.asc::after {
+            content: '▲';
+            color: #000;
+        }
+
+        /* Only ▼ when sorting descending */
+        th.sortable.active.desc::after {
+            content: '\A▼';
+            color: #000;
+        }
+
+</style>
+
+@* for the loading effect like data tables ... *@
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }</style>
+
+
+<section class=" h-full content">
+    @* <nav class="border-b">
+        <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+            <div>
+                <h2 class="text-2xl font-bold">TMS Case Management New</h2>
+            </div>
+            <div class="md:block hidden">
+                Client Logo
+            </div>
+        </div>
+    </nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                @localizer["TMS Case Management New"]
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+
+    <div class="custom_container bg-gray-50 items-center ">
+        <div class="h-full bg-gray-50 items-center  ">
+            <div id="loadingeffect" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+                <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+            </div>
+            <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4 container mx-auto">
+                <div class="sas-card rounded-card w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+                        <h6 class="text-xl font-semibold text-gray-900">List</h6>
+
+                        <!-- rows‑per‑page -->
+                        <div class="flex items-center">
+                            <span class="text-sm text-gray-700">Show</span>
+                            <select id="rowsPerPage"
+                                    class="h-10 ml-2 rounded-md border-gray-300 py-1 pl-3 pr-8 text-sm text-gray-600">
+                                <option value="10" selected>10&nbsp;items</option>
+                                <option value="25">25&nbsp;items</option>
+                                <option value="50">50&nbsp;items</option>
+                                <option value="100">100&nbsp;items</option>
+                            </select>
+                        </div>
+
+                        <!-- search -->
+                        <div class="relative w-full sm:w-96">
+                            <input type="text"
+                                   placeholder="Search anything..."
+                                   class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg"
+                                   id="customSearch" />
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    @* <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                        <h6 class="text-xl font-semibold text-gray-900 mb-4">List</h6>
+                        @* <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"> * @
+                        <!-- Rows per page -->
+                        <div class="flex items-center ml-8">
+                            <span class="text-sm text-gray-700">Show</span>
+                            <select id="rowsPerPage" class="h-10 ml-2 rounded-md border-gray-300 py-1 pl-3 pr-8 text-sm text-gray-600">
+                                <option value="10" selected>10&nbsp;items</option>
+                                <option value="25">25&nbsp;items</option>
+                                <option value="50">50&nbsp;items</option>
+                                <option value="100">100&nbsp;items</option>
+                            </select>
+                        </div>
+
+                        <!-- Search + Add Button -->
+                        @* <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto"> * @
+                        <!-- Search -->
+                        <div class="relative flex flex-col md:flex-row md:items-center md:justify-end gap-4 w-full">
+                            <input type="text"
+                                   placeholder="Search anything..."
+                                   class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+
+                    </div> *@
+                    <hr />
+
+                    <div class="form-contents">
+                        <div class="row overflow-x-auto">
+                            <div style="width: 100%; padding-left: -10px;">
+                                <div class="table-responsive">
+                                    <table id="example" class="table table-striped table-hover dt-responsive display nowrap w-full table-auto rounded-t-lg overflow-x-auto" cellspacing="0">
+                                        <thead class="rounded-t-lg bg-[#E9EFFD] text-center">
+                                            <tr>
+                                                <th class=" px-6 py-4 text-left text-sm font-semibold text-gray-900 cursor-pointer">@localizer["Action"]</th>
+
+                                                <th class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900 cursor-pointer" data-column="tranRefno">@localizer["Transaction Ref.No"]</th>
+
+                                                <th class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900 cursor-pointer" data-column="tranDate">@localizer["Transaction Date"]</th>
+
+                                                <th class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900" data-column="customerId">@localizer["Customer Ref.No"]</th>
+
+                                                <th class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900" data-column="customerName">@localizer["Customer Name"]</th>
+
+                                                <th class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900" data-column="ruleViolated">@localizer["Rule Violated"]</th>
+
+                                                <th class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900" data-column="statusDescription">@localizer["Status"]</th>
+
+                                                <th class="sortable px-6 py-4 text-left text-sm font-semibold text-gray-900" data-column="createdOn">@localizer["Created On"]</th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-bordercolor">
+                                            <!-- Rows will be appended here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="pagination-controls mt-4 flex flex-right gap-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@* <div class="max-w-screen h-full">
+    <!-- TOP BAR -->
+    <nav class="border-b">
+        <div class="flex flex-row items-center justify-between md:p-5 p-5">
+            <h2 class="text-2xl font-bold">TMS Case Management New</h2>
+            <div class="hidden md:block">Client Logo</div>
+        </div>
+    </nav>
+
+    <div class="relative custom_container bg-gray-50">
+        <div id="loadingeffect" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        </div>
+        <div class="container mx-auto h-full">
+            <div class="grid grid-cols-1 md:p-8 p-4 gap-6">
+                <div class="w-full bg-surface rounded-xl shadow-sm p-8 border border-blue-100">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                        
+                        <!-- rows‑per‑page -->
+                        <div class="flex items-center">
+                            <span class="text-sm text-gray-700">Show</span>
+                            <select id="rowsPerPage"
+                                    class="h-10 ml-2 rounded-md border-gray-300 py-1 pl-3 pr-8 text-sm text-gray-600">
+                                <option value="10" selected>10&nbsp;items</option>
+                                <option value="25">25&nbsp;items</option>
+                                <option value="50">50&nbsp;items</option>
+                                <option value="100">100&nbsp;items</option>
+                            </select>
+                        </div>
+
+                        <!-- search -->
+                        <div class="relative w-full sm:w-96">
+                            <input type="text"
+                                   placeholder="Search anything..."
+                                   class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg"
+                                   id="customSearch" />
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- table -->
+                    <div class="overflow-x-auto">
+                        <table id="example"
+                               class="w-full table-auto border-collapse rounded-lg">
+                            <thead class="bg-[#E9EFFD] text-gray-900 text-sm">
+                                <tr>
+                                    <th class="px-6 py-4 text-left font-semibold">@localizer["Action"]</th>
+                                    <th class="px-6 py-4 text-left font-semibold">@localizer["Transaction Ref.No"]</th>
+                                    <th class="px-6 py-4 text-left font-semibold">@localizer["Transaction Date"]</th>
+                                    <th class="px-6 py-4 text-left font-semibold">@localizer["Customer Ref.No"]</th>
+                                    <th class="px-6 py-4 text-left font-semibold">@localizer["Customer Name"]</th>
+                                    <th class="px-6 py-4 text-left font-semibold">@localizer["Rule Violated"]</th>
+                                    <th class="px-6 py-4 text-left font-semibold">@localizer["Status"]</th>
+                                    <th class="px-6 py-4 text-left font-semibold">@localizer["Created On"]</th>
+                                </tr>
+                            </thead>
+
+                        </table>
+                    </div>
+                 </div>
+                
+            </div>
+        </div>
+    </div>
+</div> *@
+@*<div class="se-pre-con1"></div>*@
+@* <section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="bg-surface rounded-xl border border-bordercolor shadow-none mb-4">
+                    <div class="px-6 py-4 border-b border-bordercolor">
+                    </div>
+                    <div class="card-body bg-blue">
+                        <div style="width: 100%; padding-left: -10px;">
+                            <div class="table-responsive">
+                                <table id="example" class="w-full text-sm text-left" cellspacing="0">
+                                    <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                                        <tr>
+                                            <th>@localizer["Action"]</th>
+                                            <th>@localizer["Transaction Ref.No"]</th>
+                                            <th>@localizer["Transaction Date"]</th>
+                                            <th>@localizer["Customer Ref.No"]</th>
+                                            <th>@localizer["Customer Name"]</th>
+                                            <th>@localizer["Rule Violated"]</th>
+                                            <th>@localizer["Status"]</th>
+                                            <th>@localizer["Created On"]</th>
+                                        </tr>
+                                    </thead>
+                                   
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section> *@
+
+<script>
+        $(document).ready(function () {
+
+            let sortColumn = "tranRefno";
+            let sortDirection = "asc";
+
+            let pageSize = parseInt($('#rowsPerPage').val()) || 10;
+            let currentPage = 1;
+            let totalPages = 1;
+            let draw = 1;
+            function getColumnIndex(columnName) {
+            const columns = ["tranRefno", "tranDate", "customerId","customerName","ruleViolated","statusDescription","createdOn"];
+            return columns.indexOf(columnName);
+            }
+
+
+            function fetchData(searchValue = '', page = 1) {
+                pageSize = parseInt($('#rowsPerPage').val()) || 10;
+                const start = (page - 1) * pageSize;
+                $('#loadingeffect').show();
+                $.ajax({
+                    url: '/tmscase/casemanagement',
+                    type: 'POST',
+                    headers: {
+                        'RequestVerificationToken': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: {
+                        draw: draw++,
+                        start: start,
+                        length: pageSize,
+                        search: { value: searchValue },
+                        order: [{
+                            column: getColumnIndex(sortColumn),
+                            dir: sortDirection
+                        }],
+
+                        columns: [
+                            // { data: null, orderable: false, searchable: false },
+                            { data: "tranRefno" },
+                            { data: "tranDate" },
+                            { data: "customerId" },
+                            { data: "customerName" },
+                            { data: "ruleViolated" },
+                            { data: "statusDescription" },
+                            { data: "createdOn" }
+                        ]
+
+                    },
+                    success: function (resp) {
+                        console.log(resp.data);
+                        const rows = resp.data || [];
+                        const totalRecords = resp.recordsFiltered || 0;
+                        totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+
+                        renderTable(rows);
+                        renderPager(page);
+                    },
+                    error: function (xhr) {
+                        console.error('Error fetching data:', xhr.statusText);
+                    },
+                    complete:function(data){
+                        $('#loadingeffect').hide();
+                    }
+                });
+            }
+
+            function renderTable(rows) {
+                const $tbody = $('#example tbody').empty();
+
+                if (!rows.length) {
+                    $tbody.append('<tr><td colspan="5" class="text-center py-4">No data available</td></tr>');
+                    return;
+                }
+
+                rows.forEach(r => {
+                    $tbody.append(`
+                        <tr>
+                            <td class="px-6 py-4 text-sm">
+                                <a class="sas-button px-5 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700" href="/tmscase/caseprocess/${r.tranRefno}">Process</a>
+                            </td>
+                            <td class="px-6 py-4 text-sm">${r.tranRefno || ''}</td>
+                            <td class="px-6 py-4 text-sm">${r.tranDate || ''}</td>
+                            <td class="px-6 py-4 text-sm">${r.customerId || ''}</td>
+                            <td class="px-6 py-4 text-sm">${r.customerName || ''}</td>
+                            <td class="px-6 py-4 text-sm">${r.ruleViolated || ''}</td>
+                            <td class="px-6 py-4 text-sm">${r.statusDescription || ''}</td>
+                            <td class="px-6 py-4 text-sm">${r.createdOn || ''}</td>
+                        </tr>`);
+                });
+            }
+
+            function renderPager(page) {
+                const $pager = $('.pagination-controls').empty();
+                if (totalPages <= 1) return;
+
+                const btn = (lbl, pg, disabled, active) =>
+                    `<button class="px-3 py-1 border rounded
+                        ${active ? 'bg-primary text-white' : 'bg-surface text-primary'}
+                        ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}"
+                        data-page="${pg}" ${disabled ? 'disabled' : ''}>
+                        ${lbl}
+                    </button>`;
+
+                $pager.append(btn('First', 1, page === 1));
+                $pager.append(btn('Prev', page - 1, page === 1));
+
+                const maxVisible = 5;
+                let start = Math.max(1, page - Math.floor(maxVisible / 2));
+                let end = start + maxVisible - 1;
+
+                if (end > totalPages) {
+                    end = totalPages;
+                    start = Math.max(1, end - maxVisible + 1);
+                }
+
+                for (let i = start; i <= end; i++) {
+                    $pager.append(btn(i, i, false, i === page));
+                }
+
+                $pager.append(btn('Next', page + 1, page === totalPages));
+                $pager.append(btn('Last', totalPages, page === totalPages));
+            }
+
+            $('#rowsPerPage').on('change', () => {
+                currentPage = 1;
+                fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+            });
+
+            $('input[placeholder="Search anything..."]').on('keyup change', function () {
+                currentPage = 1;
+                fetchData(this.value, currentPage);
+            });
+
+            $('.pagination-controls').on('click', 'button', function () {
+                const pg = parseInt($(this).data('page'));
+                if (!isNaN(pg) && pg >= 1 && pg <= totalPages) {
+                    currentPage = pg;
+                    fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+                }
+            });
+
+            $('#example thead').on('click', 'th.sortable', function () {
+            const selectedColumn = $(this).data('column');
+
+            if (sortColumn === selectedColumn) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = selectedColumn;
+                sortDirection = 'asc';
+            }
+
+            // Remove active class from all, reset to gray
+            $('#example thead th.sortable')
+                .removeClass('active asc desc');
+
+            // Add appropriate class to clicked column
+            $(this).addClass(`active ${sortDirection}`);
+
+            currentPage = 1;
+            fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+            });
+                // This sets the initial sort class for column headers
+            $('#example thead th.sortable[data-column="' + sortColumn + '"]').addClass(`active ${sortDirection}`);
+
+            // ✅ Fetch initial data
+            fetchData('', currentPage);
+
+    });
+</script>
+
+
+@* <script>
+    $(function () {
+        const table = $('#example').DataTable({
+            serverSide: true,
+            processing: true,
+            paging: true,
+            info: true,
+            searching: true,
+            ordering: true,
+            lengthChange: false,
+            pageLength: parseInt($('#rowsPerPage').val()) || 10,
+            dom: 'tip',
+
+            ajax: {
+                url: '/tmscase/casemanagement',
+                type: 'POST',
+                // contentType: "application/json",
+                // data: function (d) {
+                // return JSON.stringify(d)
+                // }
+            },
+
+            columns: [
+                {
+                    orderable: false,
+                    render: function (data, type, full, meta) {
+                        return '<a class="text-primary hover:underline" href="/tmscase/caseprocess/' + full.tranRefno + '">@localizer["Process"]</a>';
+                    }
+                },
+                { data: "tranRefno" },
+                { data: "tranDate" },
+                { data: "customerId" },
+                { data: "customerName" },
+                { data: "ruleViolated" },
+                { data: "statusDescription" },
+                { data: "createdOn" }
+            ],
+
+            drawCallback: function () {
+                $('#example tbody tr').addClass('border-b border-gray-200');
+            }
+        });
+
+        // Rows-per-page selector
+        $('#rowsPerPage').on('change', function () {
+            table.page.len(parseInt(this.value) || 10).draw();
+        });
+
+        // Custom search box
+        $('#customSearch').on('keyup change', function () {
+            table.search(this.value).draw();
+        });
+
+        // Show DataTables errors in console
+        $.fn.dataTable.ext.errMode = 'throw';
+    });
+</script> *@
+
+
+@* 
+@{
+    var localizedProcessText = @Html.Raw(Json.Serialize(localizer["Process"]));
+}
+
+<script type="text/javascript">
+    $(function () {
+        const processText = @localizedProcessText;
+
+        const table = $('#example').DataTable({
+            serverSide   : true,
+            processing   : true,
+            paging       : true,
+            info         : true,
+            searching    : true,
+            ordering     : true,
+            lengthChange : false,
+            pageLength   : parseInt($('#rowsPerPage').val()) || 10,
+            dom          : 'tip',
+
+            ajax: {
+                url: '/tmscase/casemanagement',
+                type: 'POST',
+                dataSrc: function (json) {
+                    console.log('Server Response:', json);
+                    return json.data;
+                }
+            },
+
+            columns: [
+                {
+                    render: function (data, type, full, meta) {
+                        return '<a class="btn btn-info text-white bg-blue-500 px-3 py-1 rounded" href="/tmscase/caseprocess/'+ processText + '</a>';
+                    }
+                },
+                { data: "tranRefno" },
+                { data: "tranDate" },
+                { data: "customerId" },
+                { data: "customerName" },
+                { data: "ruleViolated" },
+                { data: "statusDescription" },
+                { data: "created_on" }
+            ],
+
+            drawCallback: function () {
+                $('#example tbody tr').addClass('border-b border-gray-300');
+            }
+        });
+
+        $('#rowsPerPage').on('change', function () {
+            table.page.len(parseInt(this.value) || 10).draw();
+        });
+
+        $('#customSearch').on('keyup change', function () {
+            table.search(this.value).draw();
+        });
+
+        $.fn.dataTable.ext.errMode = 'throw';
+    });
+</script> *@
+
+@* <script type="text/javascript">
+
+    var table;
+    $(document).ready(function () {
+
+        table = $('#example').DataTable({
+            "serverSide": true, "processing": true,
+            ajax: {
+                url: '/tmscase/casemanagement',
+                type: 'POST',
+                dataSrc: function (json) {
+                    console.log('Server Response:', json);
+                    return json.data;
+                }
+             
+            },
+            columns: [
+                
+                {
+                    "render": function (data, type, full, meta) { return '<a class="btn btn-info" href="/tmscase/caseprocess/' + full.tranRefno + '">@localizer["Process"]</a>'; }
+                },
+                {
+                    data: "tranRefno"
+                },
+                {
+                    data: "tranDate"
+                },
+                {
+                    data: "customerId"
+                },
+                {
+                    data: "customerName"
+                },
+                {
+                    data: "ruleViolated",
+                },
+                 {
+                    data: "statusDescription",
+                },
+                {
+                    data: "created_on"
+                }             
+
+            ]
+
+        });
+        $.fn.dataTable.ext.errMode = 'throw';
+    });
+</script> *@

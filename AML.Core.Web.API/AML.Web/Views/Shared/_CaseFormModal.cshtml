@@ -1,0 +1,1817 @@
+@model AML.ViewModel.ViewModels.CustomerCase.CaseModel
+
+<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.0.min.js" type="text/javascript"></script>
+<script src="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/jquery-ui.min.js" type="text/javascript"></script>
+<link href="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.9.2/themes/blitzer/jquery-ui.css" rel="Stylesheet" type="text/css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+
+<style>
+    .flatpickr-wrapper {
+        width: 100% !important;
+    }
+
+    .flatpickr-alt-input {
+        width: 100% !important;
+        display: block !important;
+    }
+</style>
+
+<body class="bg-[#f8fafc] text-textprimary overflow-hidden" x-data="{
+    sidebarOpen: true,
+    selectedMethod: 'manual',
+    isDuplicateModalOpen: false,
+    isSuccessModalOpen: false,
+    showTreeSheet: false,
+    files: [],
+    isDragging: false,
+    showSuccessModal: false,
+    matchParam: 70,
+    hasSearched: false,
+    activeShareholderTab: 'shareholder',
+    searchQuery: '',
+    manualForm: {
+        screeningOption: '',
+        companyName: '',
+        country: '',
+        residence: '',
+        tradeLicense: '',
+        regDate: '',
+        expiryDate: '',
+        legalStatus: '',
+        businessActivities: '',
+        product: '',
+        deliveryChannel: '',
+        cif: ''
+    }
+}">
+
+<div id="caseModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+
+    <div class="bg-white w-[95%] max-h-[95vh] overflow-y-auto rounded-2xl shadow-xl p-6">
+
+        <!-- Header -->
+        <div class="flex justify-between items-center border-b pb-3">
+            <h2 id="modalTitle" class="text-lg font-bold"></h2>
+                <div class="flex items-center gap-2">
+                    <!-- View Case Version Button -->
+                    <button id="caseVersionButton" style="display: none;" onclick="openModalCaseVersion('caseVersionModal')"
+                            type="button"
+                            class="h-8 w-8 flex items-center justify-center rounded-lg text-primary hover:bg-blue-50 transition-all no-pdf"
+                            title="View Case Version">
+                        <i data-lucide="git-compare" class="h-4 w-4"></i>
+                    </button>
+
+                    <!-- Close Button -->
+                    <button type="button"
+                            onclick="closeModal()"
+                            class="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-all"
+                            title="Close">
+                        ✖
+                    </button>
+                </div>
+        </div>
+
+        <!-- FORM -->
+            <form class="space-y-8" id="myForm" asp-controller="Case" asp-action="UpdateAndReplace" method="post" enctype="multipart/form-data">
+
+                <input type="hidden" id="recordId" asp-for="Id" name="Id" />
+                <input type="hidden" id="mode" asp-for="Mode" name="Mode" />
+                <input type="hidden" id="customerId" asp-for="CustomerId" name="CustomerId" />
+                <input type="hidden" id="actionScreen" asp-for="ActionScreen" name="ActionScreen" />
+                <input type="hidden" id="lastestVersion" asp-for="LastestVersion" name="LastestVersion" />
+                <input type="hidden" id="version" asp-for="Version" name="Version" />
+                <input type="hidden" id="hdnSubmissionReasons" asp-for="SubmissionReasons" name="SubmissionReasons" />
+                <input type="hidden" id="hdnOthersReason" asp-for="OtherReason" name="OtherReason" />
+                <input type="hidden" id="hdnSelectedVersions" asp-for="SelectedVersions" name="SelectedVersions" />
+
+                <input type="hidden" id="hdnCustomerType" asp-for="CustomerType" name="CustomerType" />
+
+                <!-- Version Multi Select Dropdown -->
+                <!-- Version Multi Select Dropdown -->
+                <div id="versionDropdownContainer"
+     class="space-y-2.5 md:col-span-2 edit-only max-w-xs"
+     style="display: none;">
+
+    <!-- Alpine Component Wrapper -->
+    <div x-data="versionDropdownComponent()">
+
+        <!-- Label -->
+        <label class="text-[13px] font-bold text-textlabel">
+            Select Risk Versions
+        </label>
+
+        <!-- Dropdown -->
+        <div class="relative">
+
+            <!-- Trigger Button -->
+            <button type="button"
+                    x-on:click="versionOpen = !versionOpen"
+                    class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium flex items-center justify-between hover:border-slate-300 transition-all outline-none focus:ring-2 focus:ring-blue-500/10">
+
+                <span class="text-textprimary"
+                      x-text="selectedVersionText"></span>
+
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="w-4 h-4 text-textmuted transition-transform duration-200"
+                     x-bind:class="versionOpen ? 'rotate-180' : ''"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor"
+                     stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+
+            <!-- Dropdown Popup -->
+            <div x-show="versionOpen"
+                 x-on:click.outside="versionOpen = false"
+                 x-transition
+                 x-cloak
+                 class="absolute z-50 w-full mt-2 bg-surface border border-bordercolor rounded-xl shadow-xl p-2 max-h-72 overflow-y-auto">
+
+                <!-- Select All -->
+                <label class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-appbg cursor-pointer">
+                    <input type="checkbox"
+                           id="chkAllVersions"
+                           x-on:change="toggleAll($event)"
+                           class="w-4 h-4 text-primary rounded border-slate-300">
+
+                    <span class="text-sm font-semibold text-primary">
+                        All
+                    </span>
+                </label>
+
+                <!-- Dynamic Version Options -->
+                <div id="versionCheckboxList"></div>
+            </div>
+        </div>
+
+        <!-- Hidden Inputs for Form Submission -->
+        <template x-for="version in selectedVersions.filter(v => v !== 'ALL')"
+                  :key="version">
+            <input type="hidden"
+                   name="SelectedVersions"
+                   x-bind:value="version" />
+        </template>
+
+        <!-- Help Text -->
+        <p class="text-[11px] text-textmuted">
+            Select one or more Risk versions using checkboxes.
+        </p>
+    </div>
+</div>
+            <!-- Grid Fields -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6" x-data="{
+                 idOpen: false,
+                 selectedIds: [],
+                 get showPassport() { return this.selectedIds.some(id => id.toLowerCase() === 'passport') },
+                 get showEID() { return this.selectedIds.some(id => id.toLowerCase() === 'emirates id') },
+                 get selectedText() {
+                 return this.selectedIds.length>
+                0 ? this.selectedIds.join(', ') : 'Select';
+                }
+                }" x-effect="selectedIds; $nextTick(() => initAllDatePickers())">
+                <div class="space-y-2.5 md:col-span-2">
+                    <label class="text-[13px] font-bold text-textlabel">
+                        Full Name
+                    </label>
+
+                        <div class="flex gap-2 common-field">
+                            <input type="text"
+                                   placeholder="Enter full name"
+                                   asp-for="FirstName"
+                                   maxlength="100"
+                                   id="fullName"
+                                   class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium
+              focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all
+              fullNameField" />
+
+                       
+                        
+                    </div>
+
+                    
+                </div>
+
+                    <div class="space-y-2.5 md:col-span-1 common-field">
+                    <label class="text-[13px] font-bold text-textlabel" id="labelnationality"></label>
+                    <div class="relative">
+                            <select id="nationality"
+                                    class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium appearance-none outline-none focus:ring-2 focus:ring-blue-500/10"
+                                    name="Nationality"
+                                    asp-for="Nationality"
+                                    disabled>
+                                <option value="">Select</option>
+                            </select>
+
+                            <!-- Hidden field to submit the selected value -->
+                            <input type="hidden"
+                                   id="hdnNationality"
+                                   name="Nationality"
+                                   asp-for="Nationality" />
+                       
+                    </div>
+                </div>
+                    <div class="space-y-2 corporate-all-field">
+                        <label class="text-[13px] font-bold text-textlabel">Trade Licence Number</label>
+                        <input type="text" x-model="manualForm.tradeLicense" placeholder="Enter Trade Licence Number" asp-for="Tradelicense" id="tradelicense"
+                               class="w-full h-10 border border-bordercolor rounded-md px-3 text-sm outline-none">
+                    </div>
+                    <div class="space-y-2 corporate-all-field">
+                        <label class="text-[13px] font-bold text-textlabel">Trade Licence Authority</label>
+                        <select x-model="manualForm.tradeLicenseauthority" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none" asp-for="TradeLicenseAuthority" id="tradelicenseAuthority">
+                            <option value="">Select</option>
+                            <option value="ABC">ABC</option>
+                            <option value="DFC">DFC</option>
+                        </select>
+
+                    </div>
+
+                    <div class="space-y-2.5 common-field">
+                    <label class="text-[13px] font-bold text-textlabel" id="labledob">
+                       
+                    </label>
+                    @* <input type="date" id="DOB"
+                                                       class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10" asp-for="DOB" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"> *@
+                    <input type="text" id="DOB" asp-for="DOB" placeholder="DD/MM/YYYY"
+                           
+                           class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium">
+                </div>
+
+                    <div class="space-y-2 corporate-field">
+                        <label class="text-[13px] font-bold text-textlabel">Legal Status </label>
+                        <div class="relative">
+                            <select x-model="manualForm.legalStatus"  id="LegalStatus" asp-for="EntityTypeTxt" class="w-full h-10 border border-bordercolor rounded-md px-3 text-sm appearance-none outline-none">
+                                <option value="0">Select</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-3 text-textmuted pointer-events-none"></i>
+                            
+                        </div>
+                    </div>
+                    <div class="space-y-2 corporate-field">
+                        <label class="text-[13px] font-bold text-textlabel">Business Activities <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <select x-model="manualForm.businessActivities" class="w-full h-10 border border-bordercolor rounded-md px-3 text-sm appearance-none outline-none"  asp-for="BusinessType" id="businessType">
+                                <option value="0">Select</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-3 text-textmuted pointer-events-none"></i>
+                            
+                        </div>
+                    </div>
+
+                    
+                 <div class="space-y-2.5 md:col-span-1 individual-id-field">
+                    <label class="text-[13px] font-bold text-textlabel">ID Type</label>
+
+                    <!-- Custom Dropdown Trigger -->
+                    <div class="relative">
+                            <button type="button" id="customerIdTypeBtn"
+                                @@click="idOpen = !idOpen"
+                                @@click.outside="idOpen = false"
+                                class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium flex items-center justify-between hover:border-slate-300 transition-all outline-none focus:ring-2 focus:ring-blue-500/10">
+                            <span :class="selectedIds.length > 0 ? 'text-textprimary' : 'text-textmuted'" x-text="selectedText"></span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-textmuted transition-transform duration-200" :class="idOpen ? 'rotate-180' : ''" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+
+                        <!-- Dropdown Popover -->
+                        <div x-show="idOpen"
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             class="absolute z-50 w-full mt-2 bg-surface border border-bordercolor rounded-xl shadow-xl p-2 space-y-1">
+                            <label class="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent hover:bg-appbg cursor-pointer transition-colors group">
+                                    <input type="checkbox" id="passportCheckbox" value="Passport" x-model="selectedIds" class="customer-id-checkbox w-4 h-4 text-primary rounded border-slate-300 focus:ring-blue-500 transition-all"
+                                       @@change="$nextTick(() => setTimeout(() => initAllDatePickers(), 50))">
+                                <span class="text-sm font-medium text-textlabel group-hover:text-primary transition-colors">Passport</span>
+                            </label>
+                            <label class="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent hover:bg-appbg cursor-pointer transition-colors group">
+                                    <input type="checkbox" id="emiratesCheckbox" value="Emirates ID" x-model="selectedIds" class="customer-id-checkbox w-4 h-4 text-primary rounded border-slate-300 focus:ring-blue-500 transition-all"
+                                       @@change="if($event.target.checked) { if(!$('#EID_Number').val()) $('#EID_Number').val('784') }; $nextTick(() => setTimeout(() => initAllDatePickers(), 50));">
+                                <span class="text-sm font-medium text-textlabel group-hover:text-primary transition-colors">Emirates ID</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Hidden input for backward compatibility if needed by server validation -->
+                    <input type="hidden" name="CustomerIdType" :value="selectedIds.join(',')">
+                </div>
+
+                <!-- Passport Fields - Flattened -->
+                <template x-if="showPassport" x-init="$nextTick(() => initAllDatePickers())">
+                            <div class="contents individual-id-field">
+                        <div class="space-y-2.5">
+                            <label class="text-[13px] font-bold text-textlabel">Passport ID</label>
+                            <input type="text" id="passportId" asp-for="PassportId" placeholder="Enter Passport ID" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none transition-all">
+                            <span class="text-[11px] text-red-500 font-medium" data-valmsg-for="PassportId"></span>
+                        </div>
+                        <div class="space-y-2.5">
+                            <label class="text-[13px] font-bold text-textlabel">Passport Issue Date</label>
+                            <input type="text" id="passortIssuedate" asp-for="PassportIssueDate" placeholder="DD/MM/YYYY" class="date-picker-past w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none transition-all">
+                            <span class="text-[11px] text-red-500 font-medium" data-valmsg-for="PassportIssueDate"></span>
+                        </div>
+                        <div class="space-y-2.5">
+                            <label class="text-[13px] font-bold text-textlabel">Passport Expiry Date</label>
+                            <input type="text" id="passportExpirydate" asp-for="PassportExpiryDate" placeholder="DD/MM/YYYY" class="date-picker-future w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/10 outline-none transition-all">
+                            <span class="text-[11px] text-red-500 font-medium" data-valmsg-for="PassportExpiryDate"></span>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Emirates ID Fields - Flattened -->
+                <template x-if="showEID" x-init="$nextTick(() => initAllDatePickers())">
+                            <div class="contents individual-id-field">
+                        <div class="space-y-2.5">
+                            <label class="text-[13px] font-bold text-textlabel">Emirates ID Number</label>
+                            <input type="text" id="EID_Number" asp-for="EmiratesIdNumber" placeholder="Enter EID Number" maxlength="20" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all">
+                            <span class="text-[11px] text-red-500 font-medium" data-valmsg-for="EmiratesIdNumber"></span>
+                        </div>
+                        <div class="space-y-2.5">
+                            <label class="text-[13px] font-bold text-textlabel">Emirates ID Issue Date</label>
+                            <input type="text" id="emirateIssueDate" asp-for="EmiratesIdIssueDate" placeholder="DD/MM/YYYY" class="date-picker-past w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all">
+                            <span class="text-[11px] text-red-500 font-medium" data-valmsg-for="EmiratesIdIssueDate"></span>
+                        </div>
+                        <div class="space-y-2.5">
+                            <label class="text-[13px] font-bold text-textlabel">Emirates ID Expiry Date</label>
+                                <input type="text" id="emirateExpiryDate" asp-for="EmiratesIdExpiryDate" placeholder="DD/MM/YYYY" class="date-picker-future w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all">
+                            <span class="text-[11px] text-red-500 font-medium" data-valmsg-for="EmiratesIdExpiryDate"></span>
+                        </div>
+                    </div>
+                </template>
+                
+
+                    <div class="space-y-2.5 gender-field">
+                    <label class="text-[13px] font-bold text-textlabel">Gender</label>
+                    <div class="relative">
+                        <select class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none" asp-for="Gender" id="gender">
+                            <option value="">Select</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                        @* <i data-lucide="chevron-down"
+                                                       class="w-4 h-4 absolute right-4 top-3.5 text-textmuted pointer-events-none"></i> *@
+                    </div>
+                </div>
+                    <div class="space-y-2.5 placeofbirth-field">
+                        <label class="text-[13px] font-bold text-textlabel">Place Of Birth</label>
+                        <div class="relative">
+                            <select class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none" asp-for="PlaceOfBirth" id="placeofbirth" name="PlaceOfBirth">
+                                <option value="">Select</option>
+                            </select>
+                            <input type="hidden"
+                                   id="hdnplaceofbirth"
+                                   name="PlaceOfBirth"
+                                   asp-for="PlaceOfBirth" />
+                            @* <i data-lucide="chevron-down"
+                                                       class="w-4 h-4 absolute right-4 top-3.5 text-textmuted pointer-events-none"></i> *@
+                         </div>
+                    </div>
+ 
+                <!-- Additional fields matching the source exactly -->
+                @* @if (Model.CustomerRiskCategory)
+                {
+                    @if (Model.ProfessionalList != null && Model.ProfessionalList.Any())
+                    { *@
+                    <div class="space-y-2.5 individual-field">
+                            <label class="text-[13px] font-bold text-textlabel">
+                                Profession 
+                            </label>
+                            <div class="relative">
+                                <select class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none" id="ddlOccupation"  asp-for="OccupatinTypeTxt">
+                                    <option value="">Select</option>
+                                </select>
+                                @* <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-textmuted pointer-events-none"></i> *@  
+                                                                        </div>
+                            
+                        </div>
+                    @* } *@
+
+
+                    <div class="space-y-2.5 individual-field">
+                        <label class="text-[13px] font-bold text-textlabel">
+                            Residence Country
+                        </label>
+                        <div class="relative">
+                            <select class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none" id="ddlResidenceStatus"  asp-for="ResidenceStatus">
+                                <option value="">Select</option>
+                            </select>
+                            @*   <select  class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none" id="ddlResidenceStatus" asp-items="Model.ResidentialStatusList" asp-for="ResidenceStatus">
+                                                        <option value="">Select</option>
+                                                    </select> *@
+                            @* <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-textmuted pointer-events-none"></i> *@
+                        </div>
+                        
+                    </div>
+                @* } *@
+
+                    <div class="space-y-2.5 individual-all-field">
+                    <label class="text-[13px] font-bold text-textlabel">
+                        SOW/SOF Country
+                    </label>
+                    <div class="relative">
+                        <select class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none"  asp-for="SOWSOFCountry" id="SOWSOFCountry">
+                            <option value="">Select</option>
+                        </select>
+
+                    </div>
+                </div>
+                    <div class="space-y-2.5 ind-corp-field">
+                    <label class="text-[13px] font-bold text-textlabel">
+                        Counter Party
+                    </label>
+
+                    <div class="relative">
+                        <select class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none" id="ddlCounterParty" asp-for="CounterParty">
+                            <option value="">Select</option>
+                            <option value="Insurer">Insurer</option>
+                            <option value="Bank">Bank</option>
+                            <option value="Developer">Developer</option>
+                        </select>
+                        @* <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-textmuted pointer-events-none"></i> *@
+                    </div>
+
+                </div>
+                    <div class="space-y-2.5 ind-corp-field">
+                    <label class="text-[13px] font-bold text-textlabel">
+                        Counter Party Name
+                    </label>
+
+                    <div class="relative">
+                        <input type="text" placeholder="Enter Counter Party Name" asp-for="CounterPartyName" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium outline-none" id="counterPartyName" min="3" max="50">
+                        
+                        @* <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-textmuted pointer-events-none"></i> *@
+                    </div>
+
+                </div>
+                @* @if (Model.ProductRiskCategory)
+                {
+                    @if (Model.ProductTypeList != null && Model.ProductTypeList.Any())
+                    { *@
+                    <div class="space-y-2.5 ind-corp-field">
+                            <label class="text-[13px] font-bold text-textlabel">
+                                Product/Service Type<span class="text-red-500">*</span>
+                            </label>
+
+                            <div class="relative">
+                                <select class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none" id="ddlProductType"  asp-for="ProductName">
+                                    <option value="">Select</option>
+                                </select>
+                                @* <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-textmuted pointer-events-none"></i> *@
+                            </div>
+                            
+                        </div>
+                    @* }
+                } *@
+
+
+                    <div class="space-y-2.5 individual-field">
+                    <label class="text-[13px] font-bold text-textlabel">
+                        Product/Service Value
+                    </label>
+                    <div class="relative">
+                        <input type="number" placeholder="Enter Product Value" asp-for="ProductValue" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium outline-none" id="productValue">
+                    </div>
+                </div>
+                @* <div class="space-y-2.5">
+                                                    <label class="text-[13px] font-bold text-textlabel">
+                                                        Product Type
+                                                    </label>
+                                                    <div class="relative">
+                                                        <input type="text" placeholder="Enter Product Type" asp-for="ProductType" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium outline-none" id="productType">
+                                                    </div>
+                                                </div> *@
+                @* @if (Model.DeliveryChannelCategory)
+                {
+                    @if (Model.DeliveryChannelList != null && Model.DeliveryChannelList.Any())
+                    { *@
+                    <div class="space-y-2.5 ind-corp-field">
+                            <label class="text-[13px] font-bold text-textlabel">
+                                Delivery Channel<span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <select class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none" id="ddlDeliveryChannel"  asp-for="DeliveryChannelName">
+                                    <option value="">Select</option>
+                                </select>
+                                @*  <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-textmuted pointer-events-none"></i> *@
+                            </div>
+                           
+                        </div>
+                    @* }
+
+                }
+                @if (Model.ModeOfPaymentCategory)
+                {
+                    @if (Model.ModeofpaymentList != null && Model.ModeofpaymentList.Any())
+                    { *@
+                    <div class="space-y-2.5 ind-corp-field ">
+                            <label class="text-[13px] font-bold text-textlabel">
+                                Mode Of Payment<span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <select class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none" id="ddlModeofpayment"  asp-for="Modeofpayment">
+                                    <option value="">Select</option>
+                                </select>
+                                @*  <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-3.5 text-textmuted pointer-events-none"></i> *@
+                            </div>
+                           
+                        </div>
+                    @* }
+                } *@
+
+
+                    <div class="space-y-2.5 individual-all-field ">
+                    <label class="text-[13px] font-bold text-textlabel">
+                        Employer Name
+                    </label>
+                    <div class="relative">
+                        <input type="text" placeholder="Enter Employer Name" asp-for="Employer" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium outline-none" id="employer">
+                    </div>
+                </div>
+                    <div class="space-y-2.5 individual-all-field">
+                    <label class="text-[13px] font-bold text-textlabel">
+                        Employer Industry
+                    </label>
+                    <div class="relative">
+                        <select class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none" id="employerIndustry" asp-for="EmployerIndustry">
+                            <option value="">Select</option>
+                            <option value="ABC">ABC</option>
+                            <option value="DFC">DFC</option>
+                        </select>
+
+                    </div>
+                </div>
+                    <div class="space-y-2.5 individual-all-field ">
+                    <label class="text-[13px] font-bold text-textlabel">
+                        Employer Sector
+                    </label>
+                    <div class="relative">
+                        <select class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none" id="employerSector" asp-for="EmployerSector">
+                            <option value="">Select</option>
+                            <option value="ABC">ABC</option>
+                            <option value="DFC">DFC</option>
+                        </select>
+
+                    </div>
+                </div>
+                    <div class="space-y-2.5 individual-all-field">
+                    <label class="text-[13px] font-bold text-textlabel">
+                        Golden Visa
+                    </label>
+                    <div class="relative">
+                        <select class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm appearance-none outline-none" id="goldenVisa" asp-for="GoldenVisa">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                </div>
+                    <div class="space-y-2.5 customer-cif-field">
+                    <label class="text-[13px] font-bold text-textlabel">
+                        Customer CIF No
+                    </label>
+                    <div class="relative">
+                        <input type="text" placeholder="Enter CIF Number" asp-for="CIFNumber" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium outline-none" id="cifnumber">
+                    </div>
+                </div>
+                    <div class="space-y-2.5 ind-corp-field">
+                    <label class="text-[13px] font-bold text-textlabel">
+                        Product Ref No
+                    </label>
+                    <div class="relative">
+                        <input type="text" placeholder="Enter Product Ref No" asp-for="ProductRefNo" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium outline-none" id="productrefno">
+                    </div>
+                </div>
+
+                    <div class="space-y-2.5 matchparameter">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-[13px] font-extrabold text-textlabel">
+                            Match Parameter
+                        </span>
+                        <span class="text-sm font-extrabold text-primary"
+                              x-text="matchParam + '%'"></span>
+                    </div>
+                    <div class="relative flex items-center h-11">
+                        @*  <input type="range" x-model="matchParam" min="50" max="100" id="threshold" asp-for="Threshold" class="w-full h-2 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                                               :style="'background: linear-gradient(to right, #2563eb ' + matchParam + '%, #f1f5f9 ' + matchParam + '%)'"> *@
+                        <input type="range"
+                               x-model="matchParam"
+                               min="50"
+                               max="100"
+                               id="threshold"
+                               asp-for="Threshold"
+                               class="w-full h-2 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                               :style="`background: linear-gradient(to right, #2563eb ${((matchParam-50)/(100-50))*100}%, #f1f5f9 ${((matchParam-50)/(100-50))*100}%)`">
+                    </div>
+                </div>
+                <!-- Multi-File Document Upload for Search & Add -->
+                </div>
+
+
+                    <div class="w-full flex justify-center items-center mt-10">
+                        <div class="flex gap-6">
+                        <!-- Keep your existing submit button exactly like this -->
+                        <button type="submit"
+                                id="btnSubmit"
+                                class="h-14 w-14 bg-primary hover:bg-primary-hover text-white flex items-center justify-center rounded-2xl shadow-xl shadow-blue-500/30 transition-all active:scale-[0.98]">
+                            <i data-lucide="check" class="w-6 h-6"></i>
+                        </button>
+
+                           @*  <button type="reset"
+                                    class="h-14 w-14 bg-surface border-2 border-bordercolor text-textlabel flex items-center justify-center rounded-2xl hover:bg-appbg transition-all">
+                                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                            </button> *@
+                        </div>
+                    </div>
+        </form>
+    </div>
+</div>
+
+    <div id="caseVersionModal"
+         class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop"
+         onclick="closeModalOnBackdrop(event, 'caseVersionModal')">
+
+        <div class="bg-surface rounded-lg shadow-xl max-h-[80vh] overflow-y-auto m-4 w-full max-w-4xl"
+             onclick="event.stopPropagation()">
+
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-bordercolor flex justify-between items-center">
+                <h3 class="text-base font-bold text-textprimary">Case Versions</h3>
+
+                <button onclick="closeModalVersion('caseVersionModal')"
+                        class="h-9 px-6 text-white rounded-md bg-red-600">
+                    Close
+                </button>
+            </div>
+
+            <div id="caseVersionContainer" class="p-6 space-y-4">
+                <div class="text-center text-sm text-textmuted">
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <!-- Submit Confirmation Modal -->
+    <div id="submitConfirmationModal"
+         class="fixed inset-0 z-[9999] hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-bold text-slate-800">
+                    Confirm Submission
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">
+                    Please select at least one reason before submitting.
+                </p>
+            </div>
+
+            <!-- Body -->
+            <div class="px-6 py-4">
+
+                <label class="block text-sm font-semibold text-slate-700 mb-3">
+                    Select Reason(s) <span class="text-red-500">*</span>
+                </label>
+
+                <!-- Validation Message -->
+                <div id="reasonValidationMessage"
+                     class="hidden text-red-600 text-sm font-medium mb-3">
+                </div>
+
+                <!-- Checkbox List -->
+                <div id="reasonCheckboxList"
+                     class="space-y-2 border border-slate-300 rounded-xl p-4 max-h-64 overflow-y-auto">
+
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox"
+                               class="reason-checkbox w-4 h-4"
+                               value="Wrong Inputs">
+                        <span class="text-sm text-slate-700">Wrong Inputs</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox"
+                               class="reason-checkbox w-4 h-4"
+                               value="Add Transactions">
+                        <span class="text-sm text-slate-700">Add Transactions</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox"
+                               class="reason-checkbox w-4 h-4"
+                               value="Validate Inputs">
+                        <span class="text-sm text-slate-700">Validate Inputs</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox"
+                               class="reason-checkbox w-4 h-4"
+                               value="Input Missing Info">
+                        <span class="text-sm text-slate-700">Input Missing Info</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox"
+                               id="chkOthers"
+                               class="reason-checkbox w-4 h-4"
+                               value="Others">
+                        <span class="text-sm text-slate-700">Others</span>
+                    </label>
+                </div>
+
+                <!-- Others Textbox -->
+                <div id="othersReasonContainer" class="hidden mt-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">
+                        Specify Other Reason
+                    </label>
+                    <textarea id="othersReason"
+                              rows="3"
+                              maxlength="500"
+                              placeholder="Enter your reason..."
+                              class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500"></textarea>
+                </div>
+
+                <!-- Hidden Fields -->
+                
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+                <button type="button"
+                        id="btnCancelSubmit"
+                        class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 transition-all">
+                    Cancel
+                </button>
+
+                <button type="button"
+                        id="btnConfirmSubmit"
+                        class="px-5 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    
+    
+</body>
+
+                        <script>
+
+           function versionDropdownComponent() {
+        return {
+            versionOpen: false,
+            selectedVersions: [],
+
+            // Display text in dropdown
+            get selectedVersionText() {
+                console.log("selectedVersionText ->", this.selectedVersions);
+
+                if (this.selectedVersions.length === 0) {
+                    return "Select Versions";
+                }
+
+                if (this.selectedVersions.includes("ALL")) {
+                    return "All Versions Selected";
+                }
+
+                const versionCount = this.selectedVersions.filter(v => v !== "ALL").length;
+                return versionCount + " Version(s) Selected";
+            },
+
+            // Update hidden field manually
+            updateHiddenField() {
+                const hiddenField = document.getElementById("hdnSelectedVersions");
+
+                if (!hiddenField) {
+                    console.log("hdnSelectedVersions not found");
+                    return;
+                }
+
+                const values = this.selectedVersions.filter(v => v !== "ALL");
+
+                hiddenField.value = values.join(",");
+
+                console.log("Hidden field updated:", hiddenField.value);
+
+                // Trigger change event so Alpine detects update
+                hiddenField.dispatchEvent(new Event("input"));
+                hiddenField.dispatchEvent(new Event("change"));
+            },
+
+            // Select / Unselect All
+            toggleAll(event) {
+                console.log("toggleAll triggered");
+
+                const checkboxes = document.querySelectorAll(".version-checkbox");
+
+                if (event.target.checked) {
+                    this.selectedVersions = ["ALL"];
+
+                    checkboxes.forEach(cb => {
+                        cb.checked = true;
+
+                        const value = String(cb.value).trim();
+
+                        if (!this.selectedVersions.includes(value)) {
+                            this.selectedVersions.push(value);
+                        }
+                    });
+
+                    console.log("All selected:", this.selectedVersions);
+                }
+                else {
+                    this.selectedVersions = [];
+
+                    checkboxes.forEach(cb => {
+                        cb.checked = false;
+                    });
+
+                    console.log("All unchecked");
+                }
+
+                // Force Alpine refresh
+                this.selectedVersions = [...this.selectedVersions];
+
+                this.updateHiddenField();
+            },
+
+            // Called when individual checkbox changes
+            syncAllCheckbox() {
+                console.log("syncAllCheckbox triggered");
+
+                const checkboxes = document.querySelectorAll(".version-checkbox");
+                const allCheckbox = document.getElementById("chkAllVersions");
+
+                if (!allCheckbox) {
+                    console.log("All checkbox not found");
+                    return;
+                }
+
+                const checkedCheckboxes = Array.from(checkboxes)
+                    .filter(cb => cb.checked);
+
+                console.log(
+                    "Checked checkboxes:",
+                    checkedCheckboxes.map(cb => cb.value)
+                );
+
+                // Get selected values
+                this.selectedVersions = checkedCheckboxes.map(cb =>
+                    String(cb.value).trim()
+                );
+
+                // If all versions selected
+                if (
+                    checkedCheckboxes.length === checkboxes.length &&
+                    checkedCheckboxes.length > 0
+                ) {
+                    allCheckbox.checked = true;
+
+                    if (!this.selectedVersions.includes("ALL")) {
+                        this.selectedVersions.unshift("ALL");
+                    }
+                }
+                else {
+                    allCheckbox.checked = false;
+
+                    this.selectedVersions = this.selectedVersions.filter(
+                        v => v !== "ALL"
+                    );
+                }
+
+                // Force Alpine reactivity
+                this.selectedVersions = [...this.selectedVersions];
+
+                console.log("Updated selectedVersions:", this.selectedVersions);
+
+                this.updateHiddenField();
+            }
+        };
+    }
+
+    function loadVersionDropdown(customerId, currentVersion,type) {
+        $.ajax({
+            url: '/Case/GetRiskCaseVersions',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                customerId: customerId,
+                version: currentVersion,
+                type:type
+            },
+            success: function (response) {
+                console.log("Versions loaded:", response);
+
+                const container = document.getElementById("versionCheckboxList");
+                if (!container) return;
+
+                // Clear previous items
+                container.innerHTML = "";
+
+                // IMPORTANT:
+                // Get Alpine component instance correctly
+                const root = document.querySelector("#versionDropdownContainer [x-data]");
+                const alpineData = root ? Alpine.$data(root) : null;
+
+                console.log("Alpine Data Found:", alpineData);
+
+                if (alpineData) {
+                    alpineData.selectedVersions = [];
+                    alpineData.updateHiddenField();
+                }
+
+                // Reset All checkbox
+                const allCheckbox = document.getElementById("chkAllVersions");
+                if (allCheckbox) {
+                    allCheckbox.checked = false;
+                }
+
+                // No versions available
+                if (!response || response.length === 0) {
+                    container.innerHTML = `
+                        <div class="px-3 py-2 text-sm text-textmuted">
+                            No versions available
+                        </div>`;
+                    return;
+                }
+
+                // Create version checkboxes
+                response.forEach(item => {
+                    const versionValue = String(item.version).trim();
+                        const displayVersion = parseInt(versionValue) - 1;
+
+                        const wrapper = document.createElement("label");
+                        wrapper.className =
+                            "flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-appbg cursor-pointer";
+
+                        wrapper.innerHTML = `
+                            <input type="checkbox"
+                                   value="${versionValue}"
+                                   class="version-checkbox w-4 h-4 text-primary rounded border-slate-300">
+                            <span class="text-sm text-textlabel">
+                                Version ${displayVersion}
+                            </span>
+                        `;
+                                        // const versionValue = String(item.version).trim();
+
+                    // const wrapper = document.createElement("label");
+                    // wrapper.className =
+                    //     "flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-appbg cursor-pointer";
+
+                    // wrapper.innerHTML = `
+                    //     <input type="checkbox"
+                    //            value="${versionValue}"
+                    //            class="version-checkbox w-4 h-4 text-primary rounded border-slate-300">
+                    //     <span class="text-sm text-textlabel">
+                    //         Version ${versionValue}
+                    //     </span>
+                    // `;
+
+                    const checkbox = wrapper.querySelector("input");
+
+                    // IMPORTANT:
+                    // Single checkbox change handler
+                    checkbox.addEventListener("change", function () {
+                        console.log(
+                            "Single checkbox changed:",
+                            this.value,
+                            "Checked:",
+                            this.checked
+                        );
+
+                        if (!alpineData) {
+                            console.log("Alpine data not available");
+                            return;
+                        }
+
+                        // Call sync method directly
+                        alpineData.syncAllCheckbox();
+                    });
+
+                    container.appendChild(wrapper);
+                });
+
+                console.log("Version dropdown rendered successfully");
+            },
+            error: function (xhr) {
+                console.error("Error loading versions:", xhr.responseText);
+
+                const container = document.getElementById("versionCheckboxList");
+                if (container) {
+                    container.innerHTML = `
+                        <div class="px-3 py-2 text-sm text-red-500">
+                            Unable to load versions
+                        </div>`;
+                }
+            }
+        });
+    }
+                     function initDatePicker(selector, defaultDate, options = {}) {
+
+        const elements = document.querySelectorAll(selector);
+
+        elements.forEach(el => {
+
+            // ✅ prevent duplicate initialization
+            if (el._flatpickr) return;
+
+            flatpickr(el, {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                altInputClass: "block w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium",
+                allowInput: true,
+                defaultDate: defaultDate,
+                ...options,
+
+                // ✅ Attach events AFTER input is created
+                onReady: function (selectedDates, dateStr, instance) {
+
+                    const input = instance.altInput;
+
+                    // Restrict keys
+                    input.addEventListener("keydown", function (e) {
+                        const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+
+                        if (
+                            allowedKeys.includes(e.key) ||
+                            (e.key >= "0" && e.key <= "9")
+                        ) return;
+
+                        e.preventDefault();
+                    });
+
+                    // Auto format
+                    input.addEventListener("input", function () {
+                        let value = input.value.replace(/\D/g, '');
+
+                        if (value.length > 8) value = value.substring(0, 8);
+
+                        let formatted = '';
+                        if (value.length > 0) formatted += value.substring(0, 2);
+                        if (value.length >= 3) formatted += '/' + value.substring(2, 4);
+                        if (value.length >= 5) formatted += '/' + value.substring(4, 8);
+
+                        input.value = formatted;
+                    });
+                },
+
+                // ✅ Sync with Alpine (IMPORTANT)
+                onChange: function (selectedDates, dateStr, instance) {
+                    if (el._x_model) {
+                        el._x_model.set(dateStr);
+                    }
+                },
+
+                // ✅ Final validation
+                onClose: function (selectedDates, dateStr, instance) {
+
+                    if (selectedDates.length > 0) return;
+
+                    let val = instance.altInput.value;
+                    if (!val) return;
+
+                    let regex = /^\d{2}\/\d{2}\/\d{4}$/;
+
+                    if (!regex.test(val)) {
+                        instance.clear();
+                        return;
+                    }
+
+                    let parts = val.split('/');
+                    let dd = parseInt(parts[0], 10);
+                    let mm = parseInt(parts[1], 10);
+                    let yyyy = parseInt(parts[2], 10);
+
+                    let date = new Date(yyyy, mm - 1, dd);
+
+                    if (
+                        date.getFullYear() !== yyyy ||
+                        date.getMonth() !== mm - 1 ||
+                        date.getDate() !== dd
+                    ) {
+                        instance.clear();
+                        return;
+                    }
+
+                    instance.setDate(`${yyyy}-${parts[1]}-${parts[0]}`, true);
+                }
+            });
+
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        // DOB → no future dates
+        const dobPicker = initDatePicker("#DOB", null, {
+            maxDate: "today",
+                        static: true
+        });
+
+      const issueDatePicker = initDatePicker("#issueDate", null, {
+                        maxDate: "today",
+                                    static: true
+      });
+
+      // const expiryDatePicker = initDatePicker("#expirydate", null, {
+      //                               minDate: "today",
+      //                                           static: true
+      // });
+
+
+              const formTag = document.querySelector("#myForm"); // or any condition
+
+                let expiryOptions = {
+                    static: true
+                };
+
+                if (formTag && formTag.id === "myForm") {
+                    // ✅ Apply minDate
+                    expiryOptions.minDate = "today";
+                } else {
+                    // ❌ Do NOT set minDate (no restriction)
+                    delete expiryOptions.minDate;
+                }
+
+                const expiryDatePicker = initDatePicker("#expirydate", null, expiryOptions);
+
+
+    });
+
+    function initAllDatePickers() {
+                    const elements = document.querySelectorAll(".date-picker");
+
+        console.log("Date elements found:", elements.length); // 👈 DEBUG
+                                initDatePicker(".date-picker-dob", null, {
+                            maxDate: "today",
+                            static: true
+                        });
+
+                        initDatePicker(".date-picker-past", null, {
+                            maxDate: "today",
+                            static: true
+                        });
+
+                        // ✅ Future dates (Expiry)
+                        initDatePicker(".date-picker-future", null, {
+                            minDate: "today",
+                            static: true
+                        });
+    }
+
+                function openModalCaseVersion(modalId) {
+        const modal = document.getElementById(modalId);
+        const customerId = document.getElementById("customerId")?.value;
+        const versionValue = document.getElementById("version")?.value;
+
+        if (!customerId) {
+            alert("Customer ID not found.");
+            return;
+        }
+
+        // Current version
+        const currentVersion = parseInt(versionValue) || 0;
+
+        $.ajax({
+            url: '/Case/GetCaseVersions',
+            type: 'GET',
+            data: {
+                customerId: customerId,
+                version: currentVersion
+            },
+            success: function (response) {
+
+                // Check if data exists
+                if (!response || !response.length) {
+                    document.getElementById("caseVersionContainer").innerHTML =
+                        '<div class="p-6 text-center text-sm text-textmuted">No other versions available.</div>';
+                } else {
+
+                    let html = '';
+                    const total = response.length;
+                    const visibleStartIndex = Math.max(0, total - 2); // show last 2 initially
+
+                    response.forEach((item, index) => {
+                        const hideInitially = index < visibleStartIndex;
+
+                        let statusText = '-';
+                        switch (item.status) {
+                            case 0: statusText = 'Pending'; break;
+                            case 1: statusText = 'WhiteList'; break;
+                            case 2: statusText = 'Approved'; break;
+                            case 3: statusText = 'Rejected'; break;
+                            case 4: statusText = 'Pending with Senior Management'; break;
+                            case 5: statusText = 'Auto'; break;
+                            case 6: statusText = 'Scheduler Pending'; break;
+                            case 7: statusText = 'OnHold'; break;
+                        }
+
+                        // Format date
+                        let updatedDate = '';
+                        if (item.createdOn) {
+                            updatedDate = new Date(item.createdOn).toLocaleString('en-GB');
+                        }
+
+                        html += `
+                            <div class="case-item ${hideInitially ? 'hidden' : ''} border border-bordercolor rounded-lg p-4 space-y-2">
+
+                                <!-- Version -->
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio"
+                                       name="caseVersion"
+                                       value="${item.id}"
+                                       data-customerid="${item.customerId}"
+                                       data-version="${item.version}"
+                                       class="caseVersionRadio" />
+
+                                    <span class="text-sm font-bold text-textprimary">
+                                        Version ${item.version}
+                                    </span>
+                                </label>
+
+                                <!-- CustomerId -->
+                                <div class="pl-6 text-sm text-textmuted">
+                                    <span class="font-semibold">CustomerId :</span> ${item.customerId}
+                                </div>
+
+                                <!-- Status -->
+                                <div class="pl-6 text-sm text-textmuted">
+                                    <span class="font-semibold">Status :</span> ${statusText}
+                                </div>
+
+                                <!-- Updated -->
+                                <div class="pl-6 text-xs text-textmuted">
+                                    <span class="font-semibold">Updated :</span> ${updatedDate}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    // Footer buttons
+                    html += `
+                        <div class="px-6 pb-6 flex justify-between mt-4">
+                            <button onclick="selectCaseVersion()"
+                                    class="bg-primary text-white font-bold text-xs h-9 px-6 rounded-md">
+                                Select
+                            </button>
+
+                            ${total > 2 ? `
+                                <button id="btnMoreCases"
+                                        onclick="showAllCaseVersions()"
+                                        class="bg-primary text-white font-bold text-xs h-9 px-6 rounded-md">
+                                    More
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+
+                    document.getElementById("caseVersionContainer").innerHTML = html;
+                }
+
+                // Show modal
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                // Re-render icons
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            },
+            error: function (xhr) {
+                console.error("Status:", xhr.status);
+                console.error("Response:", xhr.responseText);
+                alert("Unable to load case versions.");
+            }
+        });
+    }
+
+    function showAllCaseVersions() {
+                    document.querySelectorAll('.case-item').forEach(el => {
+                        el.classList.remove('hidden');
+                    });
+
+                    document.getElementById('btnMoreCases').style.display = 'none';
+                }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function selectCaseVersion() {
+                    let selected = document.querySelector('input[name="caseVersion"]:checked');
+
+                    if (!selected) {
+                        alert("Please select a version");
+                        return;
+                    }
+
+                    let caseId = selected.value;
+                    let version = selected.getAttribute("data-version");
+                    let customerId = selected.getAttribute("data-customerid");
+                    let rowType=1;
+
+                    console.log("Selected Case ID:", caseId);
+                    console.log("Version:", version);
+
+
+                    fetch(`/Case/GetCaseLatestById?id=${caseId}&version=${version}`)
+                    .then(res => {
+                        console.log("Response Status:", res.status);
+                        return res.json();
+                    })
+                    .then(data => {
+
+                        console.log("Full API Response:", data);
+
+
+               
+                // console.log("Nationalities:", data.nationalities);
+                                            // console.log("Product Types:", data.productTypes);
+                                            // console.log("Delivery Channels:", data.deliveryChannels);
+                                            // console.log("Mode Of Payments:", data.modeOfPayments);
+
+
+                                                const type = data.customerType;
+                                                const flagType=data.flagType;
+
+                                                     showFieldsByType(type,flagType);
+
+                       
+
+                                // 🔹 FIRST: Hide all fields
+                                document.querySelectorAll('.individual-field, .corporate-field')
+                                    .forEach(el => el.hidden = true);
+
+                                // 🔹 Handle based on type
+                                    if (type === 'I' && flagType === "Main Entity") {
+
+                                    // ✅ Show Individual
+       
+
+                                    // ✅ Fill only Individual dropdowns
+                                    fillDropdown("ddlResidenceStatus", data.nationalities, data.residenceStatus);
+                                    fillDropdown("ddlOccupation", data.professions, data.occupatinTypeTxt);
+                                    fillDropdown("ddlProductType", data.productTypes,data.productName);
+                                    fillDropdown("ddlDeliveryChannel", data.deliveryChannels,data.deliveryChannelName);
+                                    fillDropdown("ddlModeofpayment", data.modeOfPayments,data.modeofpayment);
+                                    fillDropdown("placeofbirth", data.nationalities, data.placeOfBirth);
+
+                                }
+                                else if (type === 'C' && flagType === "Main Entity" ) {
+
+       
+
+                                    // ✅ Fill only Corporate dropdowns
+                                    fillDropdown("LegalStatus", data.legalStatusList, data.entityTypeTxt);
+                                    fillDropdown("businessType", data.businessTypeList, data.businessType);
+
+            
+                                        fillDropdown("ddlProductType", data.productTypes,data.productName);
+                                    fillDropdown("ddlDeliveryChannel", data.deliveryChannels,data.deliveryChannelName);
+                                     fillDropdown("ddlModeofpayment", data.modeOfPayments,data.modeofpayment);
+
+                                }
+    
+                                    fillDropdown("nationality", data.nationalities, data.nationality);
+
+                                            fillDropdown("SOWSOFCountry", data.nationalities, data.sowsofCountry);
+
+                                            document.getElementById("recordId").value = data.id;
+                                            document.getElementById("version").value = data.version;
+
+    // Since only one version will be passed, convert it to array
+                                            const versions = data.version
+                                                ? [data.version.toString().trim()]
+                                                : [];
+                                                const hiddenField = document.getElementById("hdnSelectedVersions");
+                                            if (hiddenField) {
+                                                hiddenField.value = versions.join(",");
+                                            }
+
+                                        // Bind data
+                                        document.getElementById("fullName").value = data.name || "";
+                                        document.getElementById("nationality").value = data.nationality || "";
+                                        document.getElementById("DOB").value = data.dob || "";
+                                        document.getElementById("gender").value = data.gender || "";
+                                        document.getElementById("placeofbirth").value = data.placeOfBirth || "";
+                                        document.getElementById("productValue").value = data.productValue || "";
+                                        document.getElementById("counterPartyName").value = data.counterPartyName || "";
+
+                                                  const alpineRoot = document.querySelector('#customerIdTypeBtn').closest('[x-data]');
+                          const customerIdType = data.customerIdType || "";
+
+                          let selectedIds = [];
+
+    if (customerIdType.includes("Passport")) {
+        selectedIds.push("Passport");
+    }
+
+    if (customerIdType.includes("Emirates ID")) {
+        selectedIds.push("Emirates ID");
+    }
+
+    if (alpineRoot && alpineRoot._x_dataStack) {
+        alpineRoot._x_dataStack[0].selectedIds = selectedIds;
+    }
+
+    // Assign values
+        setTimeout(() => {
+
+        if (selectedIds.includes("Passport")) {
+            $("#passportId").val(data.passportId || "");
+               setDateIfVisible("passortIssuedate", data.passportIssueDate);
+        setDateIfVisible("passportExpirydate", data.passportExpiryDate);
+        }
+
+        if (selectedIds.includes("Emirates ID")) {
+            $("#EID_Number").val(data.emiratesIdNumber || "");
+                 setDateIfVisible("emirateIssueDate", data.emiratesIdIssueDate);
+        setDateIfVisible("emirateExpiryDate", data.emiratesIdExpiryDate);
+        }
+        if (mode === "edit") {
+        setIdFieldsReadonly(true);
+    }else{
+        setIdFieldsReadonly(false);
+    }
+    }, 300);
+                                            document.getElementById("tradelicense").value = data.tradelicense || "";
+                                                document.getElementById("ddlCounterParty").value = data.counterParty || "";
+                                                document.getElementById("employer").value = data.employer || "";
+                                                document.getElementById("employerIndustry").value = data.employerIndustry || "";
+                                                document.getElementById("employerSector").value = data.employerSector || "";
+                                                document.getElementById("tradelicenseAuthority").value = data.tradeLicenseAuthority || "";
+                                                    document.getElementById("cifnumber").value = data.cifNumber || "";
+                                                        document.getElementById("goldenVisa").value = data.goldenVisa || "";
+                                                        document.getElementById("productrefno").value = data.productRefNo || "";
+
+                
+
+                                        // ✅ Log dropdown data
+            
+
+                                        // Mode Handling
+                                        console.log("Mode:", mode);
+               
+                                         const versionButton = document.getElementById("caseVersionButton");
+                                        if (mode === "replace") {
+
+                                            console.log("Replace mode enabled");
+
+
+
+                       
+                                                if(type ==="I")
+                                                {
+                                                             document.querySelectorAll('.common-field,.gender-field,.matchparameter')
+                                                    .forEach(el => el.style.display = "block");
+
+                                                }else{
+
+                                                             document.querySelectorAll('.common-field,.matchparameter')
+                                                    .forEach(el => el.style.display = "block");
+
+                                                }
+                                                    document.querySelectorAll(
+                                                        '.individual-field, .corporate-field,.ind-corp-field, .corporate-all-field, .individual-all-field,.customer-cif-field'
+                                        ).forEach(el => {
+                                            el.style.display = "none";
+                                        });
+            
+                                            if (versionButton) {
+                                                versionButton.style.display = "none";
+                                            }
+                                                        setReadonly(false);
+
+                                        } else {
+
+                                            console.log("Edit mode enabled");
+
+                
+                                                if (versionButton) {
+                                                    versionButton.style.display = "flex";   // or "inline-flex"
+                                                }
+
+                        
+
+                                            // document.querySelectorAll(".edit-only")
+                                            //     .forEach(el => el.style.display = "block");
+
+                                            setReadonly(true);
+                                        }
+
+                                            if(type === "I")
+                                            {
+                                                    $("#labelnationality").text("Nationality");
+                                                    $("#labledob").text("Date of Birth");
+                                            }else{
+                                                         $("#labelnationality").text("Country of Incorporation");
+                                                         $("#labledob").text("Date of Registration");
+                                            }
+                                            document.getElementById("caseVersionModal").classList.add("hidden");
+
+                                            document.getElementById("caseModal").classList.remove("hidden");
+                                            
+                
+                                    })
+                                    .catch(err => {
+                                        console.error("Error fetching case data:", err);
+                                    });
+
+                    
+                }
+
+                function setReadonly(flag) {
+            const dobInput = document.getElementById("DOB");
+            document.getElementById("fullName").readOnly = flag;
+            document.getElementById("nationality").disabled = flag;
+            document.getElementById("placeofbirth").disabled = flag;
+                const customerIdBtn = document.getElementById("customerIdTypeBtn");
+        if (customerIdBtn) {
+            customerIdBtn.disabled = flag;
+            customerIdBtn.style.pointerEvents = flag ? "none" : "";
+            customerIdBtn.style.opacity = flag ? "0.6" : "";
+        }
+
+        // Customer ID Type checkboxes
+        document.querySelectorAll(".customer-id-checkbox").forEach(cb => {
+            cb.disabled = flag;
+        });
+
+        // Passport fields
+        ["passportId", "passortIssuedate", "passportExpirydate"].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.disabled = flag;
+            }
+        });
+
+        // Emirates ID fields
+        ["EID_Number", "emirateIssueDate", "emirateExpiryDate"].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.disabled = flag;
+            }
+        });
+            // if (dobInput._flatpickr) {
+            //     dobInput._flatpickr.set("clickOpens", false);
+            // }
+            document.getElementById("DOB").readOnly = flag;
+            document.getElementById("gender").disabled = flag;
+    }
+
+        function setIdFieldsReadonly(flag) {
+
+        const customerIdBtn = document.getElementById("customerIdTypeBtn");
+        if (customerIdBtn) {
+            customerIdBtn.disabled = flag;
+            customerIdBtn.style.pointerEvents = flag ? "none" : "";
+            customerIdBtn.style.opacity = flag ? "0.6" : "";
+        }
+
+        document.querySelectorAll(".customer-id-checkbox").forEach(cb => {
+            cb.disabled = flag;
+        });
+
+         [
+        "passportId",
+        "passortIssuedate",
+        "passportExpirydate",
+        "EID_Number",
+        "emirateIssueDate",
+        "emirateExpiryDate"
+    ].forEach(id => {
+
+        const el = document.getElementById(id);
+
+        if (!el) {
+            console.log(id + " not found");
+            return;
+        }
+
+        el.disabled = flag;
+        el.readOnly = flag;
+
+        if (el._flatpickr) {
+            el._flatpickr.set("clickOpens", !flag);
+
+            if (el._flatpickr.altInput) {
+                el._flatpickr.altInput.disabled = flag;
+                el._flatpickr.altInput.readOnly = flag;
+            }
+        }
+    });
+    }
+
+                function closeModalVersion(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function closeModalOnBackdrop(event, modalId) {
+            if (event.target.id === modalId) {
+                closeModal(modalId);
+            }
+        }
+
+            // Intercept submit button click - show confirmation popup ONLY in Edit mode
+
+        // Use this script instead of the previous one.
+    // IMPORTANT:
+    // 1. Remove any other click handlers attached to #btnSubmit.
+    // 2. Place this script AFTER the <form> and modal HTML.
+    // 3. Keep the button type="submit" as it is.
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const form = document.getElementById("myForm");
+        const btnSubmit = document.getElementById("btnSubmit");
+        const modal = document.getElementById("submitConfirmationModal");
+        const btnConfirmSubmit = document.getElementById("btnConfirmSubmit");
+        const btnCancelSubmit = document.getElementById("btnCancelSubmit");
+        const chkOthers = document.getElementById("chkOthers");
+        const othersReasonContainer = document.getElementById("othersReasonContainer");
+        const othersReason = document.getElementById("othersReason");
+        const validationMsg = document.getElementById("reasonValidationMessage");
+
+        let isConfirmed = false;
+
+        if (!form || !btnSubmit || !modal) {
+            console.error("Form, submit button, or modal not found.");
+            return;
+        }
+
+        // ==========================================
+        // INTERCEPT FORM SUBMISSION (BEST APPROACH)
+        // ==========================================
+        form.addEventListener("submit", function (e) {
+
+            // If already confirmed, allow submission
+            if (isConfirmed) {
+                return true;
+            }
+
+            // Check mode
+            const mode = document.getElementById("mode")?.value;
+            console.log(mode);
+
+            // Only show popup in Edit mode
+            if (mode !== "edit") {
+                isConfirmed = true;
+                return true;
+            }
+
+            // Stop form submission
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            // Validate form first (jQuery Validation)
+            if (typeof $ !== "undefined" &&
+                $(form).valid &&
+                !$(form).valid()) {
+                return false;
+            }
+
+            // Reset checkbox selections
+            document.querySelectorAll(".reason-checkbox").forEach(cb => {
+                cb.checked = false;
+            });
+
+            // Reset others textbox
+            if (othersReason) {
+                othersReason.value = "";
+            }
+
+            // Hide others section
+            if (othersReasonContainer) {
+                othersReasonContainer.classList.add("hidden");
+            }
+
+            // Clear hidden fields
+            document.getElementById("hdnSubmissionReasons").value = "";
+            document.getElementById("hdnOthersReason").value = "";
+
+            // Clear validation message
+            if (validationMsg) {
+                validationMsg.classList.add("hidden");
+                validationMsg.textContent = "";
+            }
+
+            // Show modal
+            modal.classList.remove("hidden");
+            modal.style.display = "flex";
+
+            return false;
+        });
+
+        // ==========================================
+        // SHOW/HIDE OTHERS TEXTBOX
+        // ==========================================
+        if (chkOthers) {
+            chkOthers.addEventListener("change", function () {
+                if (this.checked) {
+                    othersReasonContainer.classList.remove("hidden");
+                    if (othersReason) {
+                        othersReason.focus();
+                    }
+                } else {
+                    othersReasonContainer.classList.add("hidden");
+                    if (othersReason) {
+                        othersReason.value = "";
+                    }
+                }
+            });
+        }
+
+        // ==========================================
+        // CANCEL BUTTON
+        // ==========================================
+        if (btnCancelSubmit) {
+            btnCancelSubmit.addEventListener("click", function () {
+                modal.classList.add("hidden");
+                modal.style.display = "none";
+            });
+        }
+
+        // ==========================================
+        // CONFIRM BUTTON
+        // ==========================================
+        if (btnConfirmSubmit) {
+            btnConfirmSubmit.addEventListener("click", function () {
+
+                const selectedReasons = [];
+
+                // Collect selected reasons
+                document.querySelectorAll(".reason-checkbox:checked").forEach(cb => {
+                    selectedReasons.push(cb.value);
+                });
+
+                // Validate at least one reason
+                if (selectedReasons.length === 0) {
+                    if (validationMsg) {
+                        validationMsg.textContent = "Please select at least one reason.";
+                        validationMsg.classList.remove("hidden");
+                    } else {
+                        alert("Please select at least one reason.");
+                    }
+                    return;
+                }
+
+                // Hide validation message
+                if (validationMsg) {
+                    validationMsg.classList.add("hidden");
+                    validationMsg.textContent = "";
+                }
+
+                // Validate Others textbox
+                const isOthersSelected = selectedReasons.includes("Others");
+                const otherText = othersReason ? othersReason.value.trim() : "";
+
+                if (isOthersSelected && otherText === "") {
+                    alert("Please enter the reason for 'Others'.");
+                    if (othersReason) {
+                        othersReason.focus();
+                    }
+                    return;
+                }
+
+                // Save selected values
+                document.getElementById("hdnSubmissionReasons").value =
+                    selectedReasons.join(",");
+
+                document.getElementById("hdnOthersReason").value =
+                    isOthersSelected ? otherText : "";
+
+                // Mark as confirmed
+                isConfirmed = true;
+
+                // Hide modal
+                modal.classList.add("hidden");
+                modal.style.display = "none";
+
+                // Submit form programmatically
+                form.submit();
+            });
+        }
+
+        // ==========================================
+        // CLOSE WHEN CLICKING OUTSIDE
+        // ==========================================
+        modal.addEventListener("click", function (e) {
+            if (e.target === modal) {
+                modal.classList.add("hidden");
+                modal.style.display = "none";
+            }
+        });
+    });
+
+</script>

@@ -1,0 +1,85 @@
+@using AML.ViewModel.ViewModels.ComplianceHub
+@using System.Linq
+@model OnboardingFunnelVM
+@{
+    ViewData["Title"] = "Onboarding Funnel";
+    ViewData["ReportTitle"] = "Customer Onboarding Funnel";
+    ViewData["ReportSubtitle"] = "Monthly intake split by case-decision outcome, plus average decision lag.";
+    ViewData["Theme"] = "Lifecycle";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+    var maxOnboard = Model.Months.Any() ? Model.Months.Max(m => m.Onboarded) : 1;
+    if (maxOnboard == 0) maxOnboard = 1;
+    var width = 70;        // bar width in px (per month column)
+    var height = 220;      // chart body height
+}
+
+<style>
+    .of-stat-row { display:grid; grid-template-columns: repeat(5,1fr); gap:12px; margin-bottom:18px; }
+    .of-stat { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px; }
+    .of-stat .n { font-size:22px; font-weight:800; line-height:1; }
+    .of-stat .l { font-size:11px; text-transform:uppercase; letter-spacing:.04em; font-weight:700; color:#64748b; margin-top:6px; }
+
+    .of-chart-wrap { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; overflow-x:auto; }
+    .of-chart { display:flex; align-items:flex-end; gap:14px; min-height:240px; padding:0 10px; }
+    .of-col { display:flex; flex-direction:column; align-items:center; gap:6px; }
+    .of-bar-stack { display:flex; flex-direction:column-reverse; width:48px; border-radius:6px 6px 0 0; overflow:hidden; box-shadow:0 1px 0 rgba(0,0,0,.04); }
+    .of-bar-stack > div { transition:height .4s ease; cursor:default; }
+    .of-bar-stack > div:hover { filter:brightness(1.1); }
+    .of-month-label { font-size:11px; color:#64748b; font-weight:600; }
+    .of-onboarded { font-size:13px; font-weight:800; color:#0f172a; }
+
+    .of-legend { display:flex; gap:18px; flex-wrap:wrap; margin-top:14px; padding-top:14px; border-top:1px solid #f1f5f9; }
+    .of-legend-item { display:flex; align-items:center; gap:6px; font-size:12px; color:#475569; }
+    .of-legend-dot { width:12px; height:12px; border-radius:3px; }
+</style>
+
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="_ReportShell" />
+
+        <div class="of-stat-row">
+            <div class="of-stat" style="border-left:4px solid #2563eb;"><div class="n" style="color:#2563eb;">@Model.TotalOnboarded</div><div class="l">Onboarded</div></div>
+            <div class="of-stat" style="border-left:4px solid #059669;"><div class="n" style="color:#059669;">@Model.TotalApproved</div><div class="l">Approved</div></div>
+            <div class="of-stat" style="border-left:4px solid #dc2626;"><div class="n" style="color:#dc2626;">@Model.TotalRejected</div><div class="l">Rejected</div></div>
+            <div class="of-stat" style="border-left:4px solid #d97706;"><div class="n" style="color:#d97706;">@Model.TotalPending</div><div class="l">Pending</div></div>
+            <div class="of-stat" style="border-left:4px solid #7c3aed;"><div class="n" style="color:#7c3aed;">@Model.AvgDecisionDays<span style="font-size:14px;font-weight:600;color:#94a3b8;"> days</span></div><div class="l">Avg decision lag</div></div>
+        </div>
+
+        <div class="of-chart-wrap">
+            <div class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">Monthly intake — last @Model.Months.Count months</div>
+            <div class="of-chart" style="height:@(height + 50)px;">
+                @if (!Model.Months.Any())
+                {
+                    <div class="text-slate-500 text-sm py-12 mx-auto">No customers onboarded in window.</div>
+                }
+                else
+                {
+                    foreach (var m in Model.Months)
+                    {
+                        int hApproved = (int)((m.Approved * 1.0 / maxOnboard) * height);
+                        int hRejected = (int)((m.Rejected * 1.0 / maxOnboard) * height);
+                        int hHold     = (int)((m.OnHold * 1.0 / maxOnboard) * height);
+                        int hPending  = (int)((m.Pending * 1.0 / maxOnboard) * height);
+                        <div class="of-col">
+                            <div class="of-onboarded">@m.Onboarded</div>
+                            <div class="of-bar-stack" style="height:@(height)px;">
+                                <div style="height:@(hApproved)px;background:#10b981;" title="Approved: @m.Approved"></div>
+                                <div style="height:@(hRejected)px;background:#ef4444;" title="Rejected: @m.Rejected"></div>
+                                <div style="height:@(hHold)px;background:#f59e0b;" title="On Hold: @m.OnHold"></div>
+                                <div style="height:@(hPending)px;background:#94a3b8;" title="Pending: @m.Pending"></div>
+                            </div>
+                            <div class="of-month-label">@m.Label</div>
+                        </div>
+                    }
+                }
+            </div>
+            <div class="of-legend">
+                <span class="of-legend-item"><span class="of-legend-dot" style="background:#10b981;"></span> Approved</span>
+                <span class="of-legend-item"><span class="of-legend-dot" style="background:#ef4444;"></span> Rejected</span>
+                <span class="of-legend-item"><span class="of-legend-dot" style="background:#f59e0b;"></span> On Hold</span>
+                <span class="of-legend-item"><span class="of-legend-dot" style="background:#94a3b8;"></span> Pending</span>
+            </div>
+        </div>
+    </div>
+</section>

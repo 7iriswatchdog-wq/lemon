@@ -1,0 +1,2148 @@
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@model AML.ViewModel.ViewModels.Report.ReportPageViewModel
+@{
+    ViewData["Title"] = localizer["Customer Case"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Manager - Search</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+    <div id="loadingCaseDetails" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+    </div>
+    <style>
+        .dt-loader {
+            position: relative;
+            width: 80px;
+            height: 20px;
+        }
+            .dt-loader div {
+                position: absolute;
+                top: 8px;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: #2563eb;
+                animation-timing-function: cubic-bezier(0,1,1,0);
+            }
+                .dt-loader div:nth-child(1) {
+                    left: 8px;
+                    animation: dt-anim1 0.6s infinite;
+                }
+                .dt-loader div:nth-child(2) {
+                    left: 8px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+                .dt-loader div:nth-child(3) {
+                    left: 32px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+                .dt-loader div:nth-child(4) {
+                    left: 56px;
+                    animation: dt-anim3 0.6s infinite;
+                }
+        @@keyframes dt-anim1 {
+            0% {
+                transform: scale(0);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        @@keyframes dt-anim2 {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(24px);
+            }
+        }
+        @@keyframes dt-anim3 {
+            0% {
+                transform: scale(1);
+            }
+            100% {
+                transform: scale(0);
+            }
+        }
+        #caseDetailsTbl, #caseDetailsTbl th, #caseDetailsTbl td {
+            border: none !important;
+            border-radius: 0 !important;
+        }
+        th.sortable {
+            cursor: pointer;
+            position: relative;
+            padding-right: 20px;
+        }
+            th.sortable::after {
+                content: "▲\A▼";
+                white-space: pre;
+                font-size: 10px;
+                position: absolute;
+                right: 6px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #bbb;
+                line-height: 1;
+                text-align: center;
+            }
+            th.sortable.active.asc::after {
+                content: "▲";
+                color: #000;
+            }
+            th.sortable.active.desc::after {
+                content: '\A▼';
+                color: #000;
+            }
+    </style>
+</head>
+<body class="bg-appbg min-h-screen text-textprimary">
+    @await Html.PartialAsync("_ExportModal")
+    <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-textprimary tracking-tight">Completed Cases</h1>
+                <p class="text-textmuted text-sm mt-1">review all completed individual and corporate cases.</p>
+            </div>
+           @*  <div class="flex items-center gap-3 w-full md:w-auto">
+                <button onclick="ExportList(false)" ;
+                        class="bg-surface border border-bordercolor shadow-sm hover:bg-appbg text-textlabel font-bold h-10 px-5 rounded-md flex items-center gap-2 transition-colors text-sm">
+                    <i data-lucide="download" class="h-4 w-4"></i>
+                    Export
+                </button>
+            </div> *@
+        </div>
+        <!-- Filters Section -->
+        <div id="filterSection" class="bg-surface rounded-xl border border-bordercolor p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-sm font-bold text-textprimary  tracking-tight">Case Filter</h3>
+                <div class="flex gap-2">
+                    <button type="button"
+                            onclick="clearFilters()" id="resetBtn"
+                            class="bg-primary hover:bg-primary text-white font-bold h-10 px-4 rounded-md text-sm">
+                        Reset
+                    </button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-6 items-end">
+                <!-- Start Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Start Date</label>
+                    @*  <input type="date" id="startDate" asp-for="StartDate" max="@(DateTime.Now.ToString("yyyy/MM/dd"))"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm"> *@
+                    <input type="text" id="startDate" name="StartDate"
+                           placeholder="dd/MM/yyyy"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                    <span id="formattedDate" hidden></span>
+                </div>
+                <!-- End Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">End Date</label>
+                    <input type="text" id="endDate" name="EndDate"
+                           placeholder="dd/MM/yyyy"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                    <span id="formattedEndDate" hidden></span>
+                    @*  <input type="date" id="endDate" asp-for="EndDate" max="@(DateTime.Now.ToString("yyyy/MM/dd"))"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm"> *@
+                </div>
+                @* <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Start Date</label>
+                    <input type="date" id="startDate" asp-for="StartDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                </div>
+                <!-- End Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">End Date</label>
+                    <input type="date" id="endDate" asp-for="EndDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                </div> *@
+                <!-- Customer Type -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Customer Type</label>
+                    <select id="customertype" asp-items="@Model.ReportData.CustomerCategories"
+                            class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                        <option value="0">--SELECT--</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Including Replace</label>
+                    <select id="includingDuplicate"
+                            class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                        <option value="0">--SELECT--</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <!-- Filter Type -->
+                <div id="extraFilters" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-textmuted">Filter Type</label>
+                    <select id="columnFilter"
+                            onchange="Colunmfilterfunction()"
+                            class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                        <option value="">--Select--</option>
+                        @* <option value="CaseStatusChangeReason">Case Status Change Reason</option> *@
+                        <option value="ScreeningScore">Screening Score</option>
+                        <option value="RiskLevel">Risk Score</option>
+                        <option value="User">User</option>
+                        <option value="Status">Status</option>
+                    </select>
+                </div>
+                <!-- Case Status Change -->
+                <div id="CaseStatusChangeReasonField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-textmuted">Case Status Change Reason</label>
+                    <input type="text" id="caseStatusChange"
+                           class="h-10 w-full border border-bordercolor rounded-md px-3 text-sm">
+                </div>
+                <!-- Screening Score -->
+                <div id="ScreeningScoreField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-textmuted">Screening Score</label>
+                    <select id="screeningScore"
+                            class="h-10 w-full border border-bordercolor rounded-md px-3 text-sm">
+                        <option value="">--Select--</option>
+                        <option value="70-80">70-80</option>
+                        <option value="80-90">80-90</option>
+                        <option value="90-100">90-100</option>
+                    </select>
+                </div>
+                <!-- User -->
+                <div id="UserField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-textmuted">User</label>
+                    <select id="user" asp-items="@Model.ReportData.Users"
+                            class="h-10 w-full border border-bordercolor rounded-md px-3 text-sm">
+                        <option value="0">--SELECT--</option>
+                    </select>
+                </div>
+                <!-- Status -->
+                <div id="StatusField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-textmuted">Status</label>
+                    <select id="caseStatus" asp-items="@Model.ReportData.CaseStatusList"
+                            class="h-10 w-full border border-bordercolor rounded-md px-3 text-sm">
+                        <option value="10">--SELECT--</option>
+                    </select>
+                </div>
+                <!-- Risk Level -->
+                <div id="RiskLevelField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-textmuted">Risk Score</label>
+                    <select id="riskScore"
+                            class="h-10 w-full border border-bordercolor rounded-md px-3 text-sm">
+                        <option value="">--Select--</option>
+                        <option value="1">Low</option>
+                        <option value="2">Medium</option>
+                        <option value="3">High</option>
+                        <option value="4">Unclassified</option>
+                    </select>
+                </div>
+                <!-- Buttons -->
+                <div class="flex items-center gap-3 md:col-span-2">
+                    <!-- Filter Toggle -->
+                    <button type="button"
+                            id="filterBtn"
+                            onclick="toggleExtraFilters()"
+                            class="h-10 px-2 flex items-center justify-center rounded-md border border-bordercolor hover:bg-appbg transition">
+                        <i data-lucide="filter" class="h-5 w-5 text-textlabel"></i>
+                    </button>
+                    <!-- Apply Filters -->
+                    <button onclick="applyFilters()" id="applyBtn"
+                            class="whitespace-nowrap bg-primary hover:bg-primary-hover text-white font-semibold h-10 px-5 rounded-md text-sm transition">
+                        Apply
+                    </button>
+                        <button type="button" 
+                                onclick="showExportOptions()"
+                                class="whitespace-nowrap flex items-center gap-2 border border-bordercolor bg-surface hover:bg-appbg text-textlabel font-semibold h-10 px-5 rounded-md text-sm transition focus:outline-none shadow-sm">
+                            <i data-lucide="download" class="h-4 w-4"></i>
+                            Export
+                        </button>
+                </div>
+            </div>
+        </div>
+        <!-- Table Section -->
+        <div class="space-y-4 px-8">
+            <div class="flex flex-col sm:flex-row gap-4 items-center w-full">
+                <!-- Input wrapper for icon -->
+                <div class="relative flex-1 w-full">
+                    <i data-lucide="search"
+                       class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-textmuted"></i>
+                    <input type="text"
+                           id="searchInput"
+                           placeholder="Search by Customer ID, Name"
+                           onkeyup="filterTable()"
+                           class="pl-10 h-11 w-full rounded-md border border-bordercolor bg-surface px-3 py-2 text-sm
+                      ring-offset-white focus-visible:outline-none focus-visible:ring-2
+                      focus-visible:ring-blue-500/20 focus-visible:border-blue-500
+                      shadow-sm transition-all placeholder:text-textmuted">
+                </div>
+                <!-- Search button -->
+                <button onclick="searchCases()" id="searchButton"
+                        class="h-11 px-5 rounded-md bg-primary text-white text-sm font-semibold
+                   hover:bg-primary-hover transition-all shadow-sm">
+                    Search
+                </button>
+                
+               
+            </div>
+            <div class="bg-surface rounded-xl border border-bordercolor shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table id="completedCasesTable" class="w-full text-sm text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-textmuted  bg-surface border-b border-bordercolor">
+                            <tr>
+                                <th class="px-2 py-4 font-small h-12 w-[120px] min-w-[120px]">Customer ID</th>
+                                <th class="px-2 py-4 font-small h-12 w-[120px] min-w-[120px]">Created On</th>
+                                <th class="px-2 py-4 font-small h-12 w-[120px] min-w-[120px]">Updated On</th>
+                                <th class="px-2 py-4 font-small h-12 w-[120px] min-w-[120px]">Customer Type</th>
+                                <th class="px-2 py-4 font-small h-12">Customer Name</th>
+                                <th class="px-2 py-4 font-small h-12 w-[120px] min-w-[120px]">Datasets</th>
+                                <th class="px-2 py-4 font-small h-12 w-[120px] min-w-[120px]">Screening Score</th>
+                                <th class="px-2 py-4 font-small h-12 w-[120px] min-w-[120px]">Risk Rating</th>
+                                <th class="px-2 py-4 font-small h-12 w-[120px] min-w-[120px]">User</th>
+                                <th class="px-2 py-4 font-small h-12 w-[120px] min-w-[120px]">Status</th>
+                                <th class="px-2 py-4 font-small h-12 text-center w-[120px] min-w-[120px]">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="casesTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination -->
+                <div class="flex items-center justify-between px-4 py-4 border-t border-bordercolor">
+                    <!-- Page length dropdown -->
+                    <div class="flex items-center gap-2 text-sm">
+                        <select id="pageSize"
+                                class="h-8 rounded-md border border-bordercolor bg-surface px-2 pr-7 text-sm"
+                                onchange="changePageSize()">
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <label class="text-textlabel font-medium">Entries per page</label>
+                    </div>
+                    <div class="text-sm text-textmuted">
+                        Showing <span id="showingStart" class="font-medium text-textprimary">0</span> to <span id="showingEnd" class="font-medium text-textprimary">0</span> of <span id="totalCases"
+                                                                                                                                                                                   class="font-medium text-textprimary">0</span> cases
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="prevBtn" onclick="previousPage()"
+                                class="h-8 px-3 text-sm font-medium border border-bordercolor bg-surface rounded-md text-textlabel disabled:opacity-50 disabled:cursor-not-allowed hover:bg-appbg">
+                            Previous
+                        </button>
+                        <button id="nextBtn" onclick="nextPage()"
+                                class="h-8 px-3 text-sm font-medium border border-bordercolor bg-surface rounded-md text-textlabel disabled:opacity-50 disabled:cursor-not-allowed hover:bg-appbg">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @* <div id="rollbackModel"
+         class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop"
+         onclick="closeModalOnBackdrop(event, 'rollbackModel')">
+        <div class="bg-surface rounded-lg shadow-xl max-h-[80vh] overflow-y-auto m-4"
+             onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-bordercolor">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-bold text-textprimary">View Version</h3>
+                    <button onclick="closeModal('rollbackModel')"
+                            class="h-9 px-8 text-white rounded-md bg-red-600">
+                        Close
+                    </button>
+                </div>
+            </div>
+            <!-- Versions -->
+            <div class="p-6 space-y-4" id="rollbackContainer">
+                <h3 class="text-lg font-bold text-textprimary">
+                    Confirm Rollback
+                </h3>
+                <p class="text-sm text-textlabel">
+                    Are you sure you want to rollback this case?
+                    This action cannot be undone.
+                </p>
+                
+            </div>
+            <!-- Footer Buttons -->
+            <div class="px-6 pb-6 flex justify-between">
+                <button onclick="saveVersion()"
+                        class="bg-primary hover:bg-primary-hover text-white font-bold text-xs h-9 px-6 rounded-md">
+                    Cancel
+                </button>
+                <button id="confirmRollbackBtn"
+                        onclick="showAllVersions()"
+                        class="bg-primary hover:bg-primary-hover text-white font-bold text-xs h-9 px-6 rounded-md">
+                    Yes, Rollback
+                </button>
+            </div>
+        </div>
+    </div> *@
+    <!-- Rollback Confirmation Modal -->
+    <div id="rollbackModal"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40">
+        <div class="bg-surface rounded-lg shadow-xl w-full max-w-md p-6 space-y-4">
+            <h3 class="text-lg font-bold text-textprimary">
+                Confirm Rollback
+            </h3>
+            <p class="text-sm text-textlabel">
+                Are you sure you want to rollback this case?
+            </p>
+            <!-- Optional: show customer id -->
+            <p class="text-xs text-textmuted">
+                Customer ID: <span id="rollbackCustomerId" class="font-semibold"></span>
+            </p>
+            <div class="flex justify-end gap-3 pt-4">
+                <button onclick="closeRollbackModal()"
+                        class="h-9 px-8 text-white rounded-md bg-red-600">
+                    Cancel
+                </button>
+                <button id="confirmRollbackBtn"
+                        class="bg-primary hover:bg-primary-hover text-white font-bold text-xs h-9 px-6 rounded-md">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+    @Html.Partial("_CaseFormModal", Model.CaseForm);
+    <iframe id="pdfFrame" style="position: fixed; top: 0; left: -9999px; width: 1200px; height: 100vh; border: none; opacity: 0; pointer-events: none;"></iframe>
+</body>
+</html>
+<script>
+                    lucide.createIcons();
+    let filteredCases = [];
+    let originalCases = [];
+    let currentPage = 1;
+    let size = 10;
+    let totalRecords = 0;
+    let draw = 1;
+    let rollbackCustomerId = null;
+    let rollbackType = null;
+
+    /* ---------------------- Column Filters Logic ---------------------- */
+    function applyColumnFilters() {
+        const activeFilters = $('#completedCasesTable').data('excel-filters') || {};
+        
+        filteredCases = originalCases.filter(item => {
+            for (const colIdxKey in activeFilters) {
+                const colIdx = parseInt(colIdxKey);
+                const allowedValues = activeFilters[colIdx];
+                
+                let itemVal = '';
+                switch (colIdx) {
+                    case 0: // Customer ID
+                        itemVal = item.customerId || 'N/A';
+                        break;
+                    case 1: // Created On
+                        const createdObj = formatDateTime(item.createdOn);
+                        itemVal = `${createdObj?.date || ''} ${createdObj?.time || ''}`.trim() || 'N/A';
+                        break;
+                    case 2: // Updated On
+                        const updatedObj = formatDateTime(item.updatedOnDB);
+                        itemVal = updatedObj ? `${updatedObj.date || ''} ${updatedObj.time || ''}`.trim() : 'N/A';
+                        break;
+                    case 3: // Customer Type
+                        itemVal = item.customerType || 'N/A';
+                        break;
+                    case 4: // Customer Name
+                        itemVal = item.customerName || 'N/A';
+                        break;
+                    case 5: // Datasets
+                        itemVal = item.caseChangeStatus || 'N/A';
+                        break;
+                    case 6: // Screening Score
+                        itemVal = item.matchScore?.toString() || 'N/A';
+                        break;
+                    case 7: // Risk Rating
+                        itemVal = item.riskScore
+                            ? (
+                                item.riskScore.toLowerCase().includes("high") &&
+                                item.riskOverride?.toLowerCase() === "override"
+                            )
+                                ? "High(O)"
+                                : item.riskScore.replace(" Risk", "").replace("High (O)", "High(O)")
+                            : "Unclassified";
+                        break;
+                    case 8: // User
+                        itemVal = item.createdUser || 'N/A';
+                        break;
+                    case 9: // Status
+                        itemVal = formatCaseStatus(item.casestatus) || 'N/A';
+                        itemVal = $('<div>').html(itemVal).text().replace(/\s+/g, ' ').trim();
+                        break;
+                }
+                
+                if (allowedValues && !allowedValues.has(itemVal.replace(/\s+/g, ' ').trim())) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        // Update counts dynamically
+        const start = filteredCases.length === 0 ? 0 : 1;
+        const end = filteredCases.length;
+        $('#showingStart').text(start);
+        $('#showingEnd').text(end);
+        $('#totalCases').text(filteredCases.length);
+        $('#prevBtn').prop('disabled', true);
+        $('#nextBtn').prop('disabled', true);
+
+        renderTable();
+    }
+    /* ---------------------- Helpers ---------------------- */
+    function formatDate(dateString) {
+        if (!dateString) return { date: '', time: '' };
+        const date = new Date(dateString);
+        return {
+            date: date.toLocaleDateString('en-GB'),
+            time: date.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            })
+        };
+    }
+        function toggleExtraFilters() {
+            const section = document.getElementById("extraFilters");
+            const icon = document.getElementById("filterIcon");
+            section.classList.toggle("hidden");
+            if (!section.classList.contains("hidden")) {
+                document.getElementById("filterBtn").classList.add("hidden");
+            }
+        // Reset column filter
+        document.getElementById("columnFilter").value = "";
+        // Hide all dynamic fields
+        // const dynamicFields = [
+        //     "CaseStatusChangeReasonField",
+        //     "ScreeningScoreField",
+        //     "UserField",
+        //     "StatusField",
+        //     "RiskLevelField"
+        // ];
+         const dynamicFields = [
+            "ScreeningScoreField",
+            "UserField",
+            "StatusField",
+            "RiskLevelField"
+        ];
+        dynamicFields.forEach(id => {
+            document.getElementById(id).classList.add("hidden");
+        });
+        resetFieldValues();
+    }
+    function resetFilters() {
+    document.getElementById("extraFilters").classList.add("hidden");
+    document.getElementById("filterBtn").classList.remove("hidden");
+    document.getElementById("resetBtn").classList.add("hidden");
+    document.getElementById("columnFilter").value = "";
+    const dynamicFields = [
+        "ScreeningScoreField",
+        "UserField",
+        "StatusField",
+        "RiskLevelField"
+    ];
+    dynamicFields.forEach(id => {
+        document.getElementById(id).classList.add("hidden");
+    });
+    resetFieldValues();
+}
+        function resetFieldValues(){
+        const fields = document.querySelectorAll("input, select");
+        fields.forEach(field => {
+            if (field.id === "user") {
+                field.value = "0";
+            }
+            else if (field.id === "caseStatus") {
+                field.value = "10";
+            }
+            else if (["screeningScore","caseStatusChange","riskScore"].includes(field.id)) {
+                field.value = "";
+            }
+        });
+    }
+    function applyFilters() {
+        alert("Filters Applied");
+        // Your filter logic here
+    }
+        function Colunmfilterfunction() {
+        const selectedValue = document.getElementById("columnFilter").value;
+        // const fields = [
+        //     "CaseStatusChangeReasonField",
+        //     "ScreeningScoreField",
+        //     "UserField",
+        //     "StatusField",
+        //     "RiskLevelField"
+        // ];
+        const fields = [
+            "ScreeningScoreField",
+            "UserField",
+            "StatusField",
+            "RiskLevelField"
+        ];
+        // Hide and clear all fields
+        fields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            field.classList.add("hidden");
+            const inputs = field.querySelectorAll("input, select");
+            inputs.forEach(input => {
+                if (input.id === "user") {
+                    input.value = "0";
+                }
+                else if (input.id === "caseStatus") {
+                    input.value = "10";
+                }
+                else if (["screeningScore","caseStatusChange","riskScore"].includes(input.id)) {
+                    input.value = "";
+                }
+                else {
+                    input.value = "";
+                }
+            });
+        });
+        // Show selected field
+        if (selectedValue) {
+            document.getElementById(selectedValue + "Field").classList.remove("hidden");
+        }
+    }
+    function getStatusBadge(status) {
+        let styles = "";
+        switch ((status || '').toLowerCase()) {
+            case 'approved': styles = "bg-blue-50 text-primary border-blue-100"; break;
+            case 'onhold': styles = "bg-orange-500 text-white border-orange-600"; break;
+            case 'waitlist': styles = "bg-indigo-600 text-white border-indigo-700"; break;
+            case 'white': styles = "bg-indigo-600 text-white border-indigo-700"; break;
+            case 'rejected': styles = "bg-red-50 text-red-600 border-red-100"; break;
+            case 'transferred': styles = "bg-green-50 text-green-600 border-green-100"; break;
+            default: styles = "bg-appbg text-textmuted border-bordercolor";
+        }
+        return `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${styles}">${status || ''}</span>`;
+    }
+         function formatCaseStatus(statusText) {
+            if (!statusText) return '';
+            function getStatusClass(text) {
+                const t = text.toLowerCase().trim();
+                if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
+                if (t.includes('hold')) return 'bg-orange-500 text-white';
+                if (t.includes('approved')) return 'bg-green-700 text-white';
+                if (t.includes('white')) return 'bg-indigo-600 text-white';
+                if (t.includes('wait')) return 'bg-indigo-600 text-white';
+                if (t.includes('auto')) return 'bg-green-100 text-green-800';
+                if (t.includes('transfer')) return 'bg-green-100 text-green-800';
+                if (t.includes('rejected')) return 'bg-red-100 text-red-800';
+                return 'bg-slate-100 text-textprimary';
+            }
+            // ✅ Corporate case
+            if (statusText.includes('| Shareholders:')) {
+                const [corpStatus, shInfo] = statusText.split('|');
+                const total = shInfo.match(/Total\s(\d+)/)?.[1] || 0;
+                const approved = shInfo.match(/Approved\s(\d+)/)?.[1] || 0;
+                const auto = shInfo.match(/Auto\s(\d+)/)?.[1] || 0;
+                const pending = shInfo.match(/Pending\s(\d+)/)?.[1] || 0;
+                const rejected = shInfo.match(/Rejected\s(\d+)/)?.[1] || 0;
+                const onhold = shInfo.match(/OnHold\s(\d+)/)?.[1] || 0;
+                const whitelist = shInfo.match(/Whitelist\s(\d+)/)?.[1] || 0;
+                const statusClass = getStatusClass(corpStatus);
+                // ✅ Build tooltip dynamically (hide 0 values)
+                const tooltipItems = [];
+                if (+auto > 0) {
+                    tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">A:${auto}</span>`);
+                }
+                if (+approved > 0) {
+                    tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white">AP:${approved}</span>`);
+                }
+                if (+pending > 0) {
+                    tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">P:${pending}</span>`);
+                }
+                if (+rejected > 0) {
+                    tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">R:${rejected}</span>`);
+                }
+                if (+onhold > 0) {
+                    tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-orange-500 text-white">OH:${onhold}</span>`);
+                }
+                if (+whitelist > 0) {
+                    tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-indigo-600 text-white">W:${whitelist}</span>`);
+                }
+                const showTooltip = tooltipItems.length > 0;
+                return `
+                    <div class="space-y-1 text-left">
+                        <div class="flex w-full items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+                            ${corpStatus.trim()}
+                            ${showTooltip ? `
+                            <div class="relative group corp-tip-trigger">
+                                <svg class="w-5 h-5 text-gray-800 dark:text-white cursor-pointer"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     fill="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd"
+                                          d="M12 6a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-1.5 8a4 4 0 0 0-4 4 2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-3Zm6.82-3.096a5.51 5.51 0 0 0-2.797-6.293 3.5 3.5 0 1 1 2.796 6.292ZM19.5 18h.5a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-1.1a5.503 5.503 0 0 1-.471.762A5.998 5.998 0 0 1 19.5 18ZM4 7.5a3.5 3.5 0 0 1 5.477-2.889 5.5 5.5 0 0 0-2.796 6.293A3.501 3.501 0 0 1 4 7.5ZM7.1 12H6a4 4 0 0 0-4 4 2 2 0 0 0 2 2h.5a5.998 5.998 0 0 1 3.071-5.238A5.505 5.505 0 0 1 7.1 12Z"
+                                          clip-rule="evenodd"/>
+                                </svg>
+                                <div class="corp-tip-content hidden gap-2 whitespace-nowrap
+                                            bg-surface p-2 rounded-lg shadow-lg border">
+                                    ${tooltipItems.join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            // ✅ Individual case
+            const statusClass = getStatusClass(statusText);
+            return `
+                <span class="flex w-full items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+                    ${statusText}
+                </span>
+            `;
+        }
+        function getRiskScoreClass(riskScore) {
+                 const score = (riskScore || '').toLowerCase().trim();
+            if (score.includes('low')) return 'text-green-500';
+            if (score.includes('medium')) return 'text-yellow-400';
+            if (score.includes('high')) return 'text-red-500';
+            if (!score || score === 'unclassified') return 'text-slate-400';
+                return 'text-black';
+        }
+            function formatDateTime(dateStr) {
+        if (!dateStr) return { date: '-', time: '-' };
+        const d = new Date(dateStr);
+        return {
+            date: d.toLocaleDateString('en-GB'), // 20/02/2026
+            time: d.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',   // ✅ added
+                hour12: true
+            }) // 06:43:15 PM
+        };
+    }
+    // function getRiskScoreClass(score) {
+    //     return score >= 85
+    //         ? "text-red-500"
+    //         : (score >= 50 ? "text-amber-500" : "text-textmuted");
+    // }
+    /* ---------------------- SEARCH TRIGGER ---------------------- */
+    function searchCases() {
+        loadCases(1);
+    }
+    /* ---------------------- Load Data From Backend ---------------------- */
+    function loadCases(page = 1) {
+        $('#loadingCaseDetails').removeClass('hidden');
+        let searchValue = $('#searchInput').val() || '';
+        $.ajax({
+            url: '/case/completedcasescustompagination',
+            type: 'POST',
+            data: {
+                draw: draw,
+                start: (page - 1) * size,
+                length: size,
+                // ⭐ Search Value
+                searchValue: searchValue,
+                search: { value: searchValue },
+                // ⭐ Filters
+                    startDate: formatDate($('#startDate').val()),
+                    endDate: formatDate($('#endDate').val()),
+                cust_type: $('#customertype').val(),
+                createdBy:$('#user').val(),
+                matchScore:$('#screeningScore').val(),
+                caseStatus:$('#caseStatus').val(),
+                caseStatusChange:$('#caseStatusChange').val(),
+                riskLevel:$('#riskScore').val(),
+                includingDuplicate :$('#includingDuplicate').val()
+            },
+            success: function (res) {
+                console.log(res);
+                originalCases = (res.data || []).map(r => ({
+                    id: r.id,
+                    customerId: r.customerId,
+                    customerName: `${r.firstName || ''} ${r.middleName || ''} ${r.lastName || ''}`.trim(),
+                    customerType: r.customerType === 'I'
+                        ? 'Individual'
+                        : r.customerType === 'C'
+                            ? 'Corporate'
+                            : r.customerType === 'S'
+                                ? 'Shareholder'
+                                : '',
+                    cifNo: r.customerId,
+                    caseChangeStatus: r.caseChangeStatus || '',
+                    matchScore:r.matchScore || '',
+                    createdOn: r.createdOn,
+                    updatedOnDB:r.updatedOnDB,
+                    createdUser:r.createdUser,
+                    status: r.caseStatus || '',
+                    riskScore: r.customerType === 'I'
+                        ? r.individual_final_risk_score || ''
+                        : r.corporate_final_risk_score || '',
+                    riskSum: r.customerType === 'I'
+                        ? r.individual_final_risk_sum || ''
+                        : r.corporate_final_risk_sum || '',
+                    riskOverride:r.customerType === 'I'
+                                    ? r.individual_Risk_Override || ''
+                                        : r.corporate_Risk_Override || '',
+                    type:r.type || '',
+                    isDuplicate: r.isDuplicate || 0,
+                    replaceFlag:r.replaceFlag || 0,
+                    version:r.version || 0
+                }));
+                totalRecords = res.recordsFiltered || 0;
+                currentPage = page;
+                applyColumnFilters();
+                draw++;
+            },
+            complete: function () {
+                $('#loadingCaseDetails').addClass('hidden');
+            },
+            error: function () {
+                alert('Error loading data');
+            }
+        });
+    }
+        function formatDate(value) {
+            if (!value) return null;
+            // ✅ Already in yyyy-MM-dd
+            if (value.includes('-') && value.split('-')[0].length === 4) {
+                return value;
+            }
+            // ✅ Convert dd/MM/yyyy → yyyy-MM-dd
+            if (value.includes('/')) {
+                let parts = value.split('/');
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            return null;
+        }
+    /* ---------------------- Render Table ---------------------- */
+        function renderTable() {
+        const tbody = document.getElementById('casesTableBody');
+        if (!filteredCases.length) {
+            tbody.innerHTML = `
+            <tr>
+                <td colspan="10" class="h-24 text-center">
+                    <div class="text-textmuted">No results found.</div>
+                </td>
+            </tr>`;
+            return;
+        }
+        tbody.innerHTML = filteredCases.map(caseItem => {
+            const created = formatDateTime(caseItem.createdOn);
+            const updated = formatDateTime(caseItem.updatedOnDB);
+            // -------------------------------
+            // Parse main and shareholder statuses
+            // -------------------------------
+            let baseStatus = "Pending"; // default
+            let showRevert = false;
+            if (caseItem.status) {
+                const statusLower = caseItem.status.toLowerCase();
+                // Main status check
+                if (statusLower.startsWith("approved")) baseStatus = "Approved";
+                else if (statusLower.startsWith("rejected")) baseStatus = "Rejected";
+                else if (statusLower.startsWith("pending")) baseStatus = "Pending";
+                else if (statusLower.startsWith("auto")) baseStatus = "Auto";
+               else if (statusLower.startsWith("on")) baseStatus = "OnHold";
+               else if (statusLower.startsWith("white")) baseStatus = "WhiteList";
+                // If main is approved/rejected → show Revert
+                    if (baseStatus === "Approved" || baseStatus === "Rejected" || baseStatus === "WhiteList") {
+                    showRevert = true;
+                }
+                // Check shareholders if exist
+                // Matches "Approved 1" or "Rejected 1" in the shareholders part
+                const shareholderMatch = caseItem.status.match(/shareholders:\s*.*$/i);
+                if (shareholderMatch) {
+                    const shText = shareholderMatch[0].toLowerCase();
+                    const approvedMatch = shText.match(/approved\s+(\d+)/i);
+                    const rejectedMatch = shText.match(/rejected\s+(\d+)/i);
+                    const whitelistMatch = shText.match(/whiteList\s+(\d+)/i);
+                    if ((approvedMatch && parseInt(approvedMatch[1]) > 0) ||
+                        (rejectedMatch && parseInt(rejectedMatch[1]) > 0)) {
+                        showRevert = true;
+                    }
+                }
+            }
+            let rowType = baseStatus.includes("Pending") ? 3 : 1;
+            let buttonsHtml = "";
+            const type = (caseItem.type || "").toLowerCase();
+            let viewUrl =
+                (type === "individual" || type === "corporate")
+                    ? `/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&version=${caseItem.version}&type=${rowType}`
+                    : `/report/ViewShareholderCaseDetails?id=${caseItem.customerId}&version=${caseItem.version}&type=${rowType}`
+            let changeButton = "";
+            if (showRevert) {
+                const rollbackType =
+                    caseItem.isWhiteListed === 'YES' ? 4 :
+                    baseStatus === "Approved" ? 0 : 1;
+                changeButton = `
+                    <a onclick="rollbackCase('${caseItem.customerId}', '${rollbackType}'); return false;"
+                       class="text-orange-600 font-bold text-xs hover:underline cursor-pointer">
+                        Revert
+                    </a>`;
+            }
+            // Buttons HTML
+            buttonsHtml = `
+                <div class="flex items-center gap-3">
+                        <a href="${viewUrl}" data-rowtype="CompletedCases" onclick="setRowType(this)"  class="text-primary font-bold text-xs hover:underline">View</a>
+                    ${changeButton}
+                        <button onclick="openModal('${caseItem.id}',${caseItem.version}, '${caseItem.customerType}','${caseItem.customerId}','edit')"
+                                    class="text-primary font-bold text-xs">
+                                Edit
+                            </button>
+
+                            <button onclick="openModal('${caseItem.id}',${caseItem.version}, '${caseItem.customerType}','${caseItem.customerId}','replace')"
+                                    class="text-primary font-bold text-xs">
+                                Replace
+                            </button>
+                </div>
+            `;
+            return `
+            <tr class="bg-surface border-b border-bordercolor hover:bg-appbg">
+                <td class="px-2 py-4 font-medium text-textlabel">${caseItem.customerId}</td>
+                <td class="px-2 py-4">
+                    <div class="text-xs text-textlabel">
+                        <div>${created?.date || '-'}</div>
+                        <div class="ml-2">${created?.time ? created.time.replace(/\s?(AM|PM)/i, '') : ''}</div>
+                    </div>
+                </td>
+                <td class="px-2 py-4">
+                    ${updated ? `
+                        <div class="text-xs text-textlabel">
+                            <div>${updated?.date || '-'}</div>
+                            <div class="ml-2">${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}</div>
+                        </div>` : ''}
+                </td>
+                <td class="px-2 py-4">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="${caseItem.customerType === 'Individual' ? 'user' : 'building-2'}" class="h-4 w-4 text-textmuted"></i>
+                        ${caseItem.customerType}
+                    </div>
+                </td>
+                    <td class="px-2 py-4">
+                            <div class="flex items-center gap-2">
+                                <span>${caseItem.customerName}</span>
+                                ${caseItem.isDuplicate == 1
+                                    ? '<i class="w-4 h-4 text-red-600" data-lucide="copy" title="Duplicate"></i>'
+                                    : ''}
+                                ${caseItem.replaceFlag == 1
+                                    ? '<i class="w-4 h-4 text-blue-600" data-lucide="refresh-cw" title="Replaced"></i>'
+                                    : ''}
+                            </div>
+                        </td>
+                <td class="px-2 py-4">${caseItem.caseChangeStatus}</td>
+                <td class="px-2 py-4 ${
+                    caseItem.matchScore < 70 ? 'text-green-600 font-semibold' :
+                    caseItem.matchScore < 85 ? 'text-orange-500 font-semibold' :
+                    'text-red-600 font-semibold'
+                }">${caseItem.matchScore}</td>
+                            <td class="px-2 py-4">
+                                <span class="font-bold ${
+                                    getRiskScoreClass(caseItem.riskScore)
+                                }">
+                                    ${
+                                    caseItem.riskScore
+                                        ? (
+                                            caseItem.riskScore.toLowerCase().includes("high") &&
+                                            caseItem.riskOverride?.toLowerCase() === "override"
+                                        )
+                                            ? "High(O)"
+                                            : caseItem.riskScore.replace(" Risk", "").replace("High (O)", "High(O)")
+                                        : "Unclassified"
+                                }
+                                </span>
+                           </td>
+                <td class="px-2 py-4">${caseItem.createdUser}</td>
+                <td class="px-2 py-4">${formatCaseStatus(caseItem.status)}</td>
+                <td class="px-2 py-4 text-center">${buttonsHtml}</td>
+            </tr>`;
+        }).join('');
+        lucide.createIcons();
+    }
+        
+    //     function renderTable() {
+    //     const tbody = document.getElementById('casesTableBody');
+    //     if (!filteredCases.length) {
+    //         tbody.innerHTML = `
+    //         <tr>
+    //             <td colspan="8" class="h-24 text-center">
+    //                 <div class="text-textmuted">No results found.</div>
+    //             </td>
+    //         </tr>`;
+    //         return;
+    //     }
+    //     tbody.innerHTML = filteredCases.map(caseItem => {
+    //         console.log(caseItem);
+    //         const { date, time } = formatDate(caseItem.createdOn);
+    //             const created = formatDateTime(caseItem.createdOn);
+    //             const updated = formatDateTime(caseItem.updatedOnDB);
+    //         // const riskClass = getRiskScoreClass(caseItem.riskScore);
+                
+    //                let baseStatus = caseItem.status ? caseItem.status.split("(")[0].trim() : "";
+    //                 // let buttonText = "View";
+    //                 // let buttonLink = "#";
+    //                 // let onClickAction = "";
+    //                 let rowType = 1;
+    // let buttonsHtml = "";
+    // // if (baseStatus) {
+    // //     if (!baseStatus.includes("Auto")) {
+    // //         rowType = baseStatus.includes("Pending") ? 3 : 1;
+    // //         if (baseStatus === "Approved" || baseStatus === "Rejected") {
+    // //             // Show Revert button
+    // //             let rollbackType =
+    // //                 caseItem.isWhiteListed === 'YES' ? 4 :
+    // //                 baseStatus === "Approved" ? 0 : 1;
+    // //             buttonsHtml += `<a onclick="$('#loadingCaseDetails').show(); rollbackCase('${caseItem.customerId}', '${rollbackType}'); return false;"
+    // //                    class="text-primary font-bold text-xs hover:underline" style="cursor:pointer">
+    // //                     Change
+    // //                 </a>`;
+    // //         }
+    // //         // Always show View button
+    // //         buttonsHtml = `<a  href="/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}"
+    // //                    class="text-primary font-bold text-xs hover:underline">
+    // //                     View
+    // //                 </a> `+ buttonsHtml;
+    // //     } else {
+    // //         // Auto status
+    // //         rowType = 2;
+    // //         buttonsHtml = `<a  href="/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}"
+    // //                    class="text-primary font-bold text-xs hover:underline">
+    // //                     View
+    // //                 </a>`;
+    // //     }
+    // // }
+    //     if (baseStatus) {
+    //     if (!baseStatus.includes("Auto")) {
+    //         rowType = baseStatus.includes("Pending") ? 3 : 1;
+    //         let changeButton = "";
+    //         if (baseStatus === "Approved" || baseStatus === "Rejected") {
+    //             let rollbackType =
+    //                 caseItem.isWhiteListed === 'YES' ? 4 :
+    //                 baseStatus === "Approved" ? 0 : 1;
+    //             changeButton = `
+    //                 <a onclick="rollbackCase('${caseItem.customerId}', '${rollbackType}'); return false;"
+    //                    class="text-orange-600 font-bold text-xs hover:underline cursor-pointer">
+    //                     Revert
+    //                 </a>`;
+    //         }
+    //              const type = (caseItem.type || "").toLowerCase();
+    //                 let viewUrl =
+    //         (type === "individual" || type === "corporate")
+    //             ? `/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}`
+    //             : `/report/ViewShareholderCaseDetails?id=${caseItem.customerId}&type=${rowType}`;
+    //             // View + Change with spacing
+    //         buttonsHtml = `
+    //             <div class="flex items-center gap-4">
+    //                     <a href="${viewUrl}"
+    //                    class="text-primary font-bold text-xs hover:underline">
+    //                     View
+    //                 </a>
+    //                 ${changeButton}
+    //             </div>
+    //         `;
+    //     } else {
+                
+    //         // Auto status
+    //         rowType = 2;
+    //             const type = (caseItem.type || "").toLowerCase();
+    //                         let viewUrl =
+    //                 (type === "individual" || type === "corporate")
+    //                     ? `/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}`
+    //                     : `/report/ViewShareholderCaseDetails?id=${caseItem.customerId}&type=${rowType}`;
+    //         buttonsHtml = `
+    //             <div class="flex items-center gap-4">
+    //                     <a href="${viewUrl}"
+    //                    class="text-primary font-bold text-xs hover:underline">
+    //                     View
+    //                 </a>
+    //             </div>
+    //         `;
+    //     }
+    // }
+    
+    //         return `
+    //         <tr class="bg-surface border-b border-bordercolor hover:bg-appbg">
+    //             <td class="px-2 py-4 font-medium text-textlabel">${caseItem.customerId}</td>
+    //              <td class="px-2 py-4">
+    //                         <!-- Created -->
+    //                         <div class="text-xs text-textlabel">
+    //                             <div>${created?.date || '-'}</div>
+    //                             <div class="ml-2">
+    //                                 ${created?.time ? created.time.replace(/\s?(AM|PM)/i, '') : ''}
+    //                             </div>
+    //                         </div>
+    //                     </td>
+    //                     <td class="px-2 py-4">
+    //                         <!-- Updated (only if exists) -->
+    //                         ${updated ? `
+    //                             <div class="text-xs text-textlabel">
+    //                                 <div>${updated?.date || '-'}</div>
+    //                                 <div class="ml-2">
+    //                                     ${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}
+    //                                 </div>
+    //                             </div>
+    //                         ` : ''}
+    //                     </td>
+    //             <td class="px-2 py-4">
+    //                 <div class="flex items-center gap-2">
+    //                     <i data-lucide="${caseItem.customerType === 'Individual' ? 'user' : 'building-2'}" class="h-4 w-4 text-textmuted"></i>
+    //                     ${caseItem.customerType}
+    //                 </div>
+    //             </td>
+    //             <td class="px-2 py-4 ">${caseItem.customerName}</td>
+    //             <td class="px-2 py-4">${caseItem.caseChangeStatus}</td>
+    //             <td class="px-2 py-4 ${
+    //                     caseItem.matchScore < 70 ? 'text-green-600 font-semibold' :
+    //                     caseItem.matchScore < 85 ? 'text-orange-500 font-semibold' :
+    //                     'text-red-600 font-semibold'
+    //                 }">
+    //                     ${caseItem.matchScore}
+    //                 </td>
+    //                       <td class="px-2 py-4">
+    //                         <span class="font-bold ${
+    //                             getRiskScoreClass(caseItem.riskScore || caseItem.riskScore?.trim())
+    //                         }">
+    //                         ${
+    //                             caseItem.riskScore
+    //                                 ? (
+    //                                     caseItem.riskScore.toLowerCase().includes("high") &&
+    //                                         caseItem.riskOverride?.toLowerCase() === "override"
+    //                                   )
+    //                                     ? "High(O)"
+    //                                     : caseItem.riskScore.replace(" Risk", "")
+    //                                 : ""
+    //                         }
+    //                         </span>
+    //                     </td>
+    //             <td class="px-2 py-4">${caseItem.createdUser}</td>
+    //             <td class="px-2 py-4">${formatCaseStatus(caseItem.status)}</td>
+                
+    //             <!-- ✅ SAME DESIGN BUTTON -->
+    //              <td class="px-4 py-3 text-center">
+    //         ${buttonsHtml} <!-- View / Revert buttons injected here -->
+    //     </td>
+    //         </tr>`;
+    //     }).join('');
+    //     lucide.createIcons();
+    // }
+    
+    /* ---------------------- Pagination ---------------------- */
+    function updatePagination() {
+        const start = totalRecords === 0 ? 0 : (currentPage - 1) * size + 1;
+        const end = Math.min(currentPage * size, totalRecords);
+        $('#showingStart').text(start);
+        $('#showingEnd').text(end);
+        $('#totalCases').text(totalRecords);
+        $('#prevBtn').prop('disabled', currentPage === 1);
+        $('#nextBtn').prop('disabled', end >= totalRecords);
+    }
+    function previousPage() {
+        if (currentPage > 1)
+            loadCases(currentPage - 1);
+    }
+    function nextPage() {
+        if (currentPage * size < totalRecords)
+            loadCases(currentPage + 1);
+    }
+    /* ---------------------- Filters ---------------------- */
+    function applyFilters() {
+        loadCases(1);
+    }
+            function clearFilters() {
+            const today = new Date();
+            const lastYear = new Date();
+            lastYear.setFullYear(today.getFullYear() - 1);
+            function formatDate(date) {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                return `${dd}/${mm}/${yyyy}`;
+            }
+            // Reset values with defaults
+                if (document.querySelector("#startDate")._flatpickr) {
+                document.querySelector("#startDate")._flatpickr.setDate(lastYear, true);
+            }
+            if (document.querySelector("#endDate")._flatpickr) {
+                document.querySelector("#endDate")._flatpickr.setDate(today, true);
+            }
+        $('#customertype').val(0);
+        $('#searchInput').val('');
+        $('#user').val(0);
+        $('#screeningScore').val('');
+        $('#columnFilter').val('');
+        $('#riskScore').val('');
+        $('#caseStatusChange').val('');
+        $('.col-filter').val('');
+        // Reset excel column filters
+        $('#completedCasesTable').data('excel-filters', {});
+        $('#completedCasesTable thead .excel-filter-btn').addClass('text-slate-400').removeClass('text-blue-600');
+        // Show filter icon again
+        document.getElementById("filterBtn").classList.remove("hidden");
+        // Hide extra filters section
+        document.getElementById("extraFilters").classList.add("hidden");
+        // Hide all dynamic filter fields
+        $('#CaseStatusChangeReasonField').addClass('hidden');
+        $('#ScreeningScoreField').addClass('hidden');
+        $('#UserField').addClass('hidden');
+        $('#StatusField').addClass('hidden');
+        $('#RiskLevelField').addClass('hidden');
+        checkFilterValues();
+        loadCases(1);
+        // ⭐ Clear table data
+    //     filteredCases = [];
+    //     const tbody = document.getElementById('casesTableBody');
+    //     tbody.innerHTML = `
+    //             <tr>
+    //                 <td colspan="8" class="h-24 text-center">
+    //                     <div class="text-textmuted">No results found.</div>
+    //                 </td>
+    //             </tr>`;
+    //     // ⭐ Reset pagination
+    //     $('#totalCases').text('0');
+    // $('#showingStart').text('0');
+    // $('#showingEnd').text('0');
+    }
+    // function clearFilters() {
+    //     $('#startDate').val('');
+    //     $('#endDate').val('');
+    //     $('#customertype').val(0);
+    //     $('#searchInput').val('');
+    //     loadCases(1);
+    // }
+    /* ---------------------- Export ---------------------- */
+    function exportToExcel() {
+        alert('Export functionality here');
+    }
+    /* ---------------------- Initial Load ---------------------- */
+    $(document).ready(function () {
+        const savedSize = localStorage.getItem('pageSize');
+        if (savedSize) {
+            size = parseInt(savedSize);
+            $('#pageSize').val(savedSize);
+        }
+        loadCases(1);
+
+        // Define setupExcelTableFilters utility
+        function setupExcelTableFilters(tableId, onFilterApplied) {
+            const $table = $('#' + tableId);
+            if (!$table.length) return;
+
+            $table.data('excel-filters', {});
+
+            const headers = $table.find('thead tr').first().find('th');
+            headers.each(function (colIdx) {
+                const $th = $(this);
+                // Skip the Action column
+                if (colIdx === headers.length - 1 || $th.text().trim() === '') return;
+
+                $th.css('position', 'relative');
+                $th.addClass('pr-6');
+
+                const $icon = $(`
+                    <span class="excel-filter-btn cursor-pointer absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors" data-col-idx="${colIdx}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-filter"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    </span>
+                `);
+                $th.append($icon);
+            });
+
+            $table.on('click', '.excel-filter-btn', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const $btn = $(this);
+                const colIdx = parseInt($btn.data('col-idx'));
+
+                $('.excel-filter-popover').remove();
+
+                const uniqueValues = new Set();
+                $table.find('tbody tr').each(function () {
+                    if ($(this).find('td').length <= 1) return;
+                    const val = getExcelCellText($(this), colIdx, tableId);
+                    uniqueValues.add(val);
+                });
+
+                const sortedValues = Array.from(uniqueValues).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+                const activeFilters = $table.data('excel-filters') || {};
+                const colFilters = activeFilters[colIdx];
+
+                const popoverId = `excel-popover-${tableId}-${colIdx}`;
+                const $popover = $(`
+                    <div id="${popoverId}" class="excel-filter-popover absolute z-[99999] bg-white border border-slate-200 rounded-lg shadow-xl p-3 w-[260px] text-textprimary flex flex-col font-sans select-none" style="font-family: 'Inter', sans-serif; text-align: left; line-height: 1.5;">
+                        <div class="relative mb-2">
+                            <input type="text" class="excel-filter-search w-full h-8 px-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs" placeholder="Search..." />
+                        </div>
+                        <div class="flex items-center gap-2 py-1 mb-1 border-b border-slate-100">
+                            <input type="checkbox" class="excel-filter-select-all h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" id="excel-filter-select-all" />
+                            <label for="excel-filter-select-all" class="text-xs font-bold cursor-pointer text-slate-800">(Select All)</label>
+                        </div>
+                        <div class="excel-filter-options flex-1 pr-1 space-y-1.5 custom-scrollbar mb-3" style="max-height: 160px; overflow-y: auto;">
+                        </div>
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                            <button type="button" class="excel-filter-clear text-xs text-blue-600 font-bold hover:underline">Clear filter</button>
+                            <div class="flex gap-2">
+                                <button type="button" class="excel-filter-cancel px-3 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 transition-colors">Cancel</button>
+                                <button type="button" class="excel-filter-ok px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-bold shadow-sm transition-colors">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                `);
+
+                const $optionsContainer = $popover.find('.excel-filter-options');
+                sortedValues.forEach((val, idx) => {
+                    const isChecked = !colFilters || colFilters.has(val);
+                    const optId = `excel-opt-${colIdx}-${idx}`;
+                    const $opt = $(`
+                        <div class="flex items-center gap-2 py-0.5 option-item">
+                            <input type="checkbox" class="excel-filter-option h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" id="${optId}" value="${val}" ${isChecked ? 'checked' : ''} />
+                            <label for="${optId}" class="text-xs text-slate-700 cursor-pointer truncate max-w-[200px]" title="${val}">${val}</label>
+                        </div>
+                    `);
+                    $optionsContainer.append($opt);
+                });
+
+                updateSelectAllState($popover);
+
+                $('body').append($popover);
+                const offset = $btn.offset();
+                const popoverWidth = 260;
+                let leftPos = offset.left;
+                if (leftPos + popoverWidth > $(window).width() - 20) {
+                    leftPos = offset.left + $btn.outerWidth() - popoverWidth;
+                }
+                leftPos = Math.max(80, leftPos);
+                $popover.css({
+                    top: offset.top + $btn.outerHeight() + 5,
+                    left: leftPos
+                });
+
+                $popover.find('.excel-filter-search').on('input', function () {
+                    const searchVal = $(this).val().toLowerCase();
+                    $optionsContainer.find('.option-item').each(function () {
+                        const text = $(this).find('label').text().toLowerCase();
+                        if (text.includes(searchVal)) {
+                            $(this).removeClass('hidden');
+                        } else {
+                            $(this).addClass('hidden');
+                        }
+                    });
+                    updateSelectAllState($popover);
+                });
+
+                $optionsContainer.on('change', '.excel-filter-option', function () {
+                    updateSelectAllState($popover);
+                });
+
+                $popover.find('.excel-filter-select-all').on('change', function () {
+                    const isChecked = $(this).is(':checked');
+                    $optionsContainer.find('.option-item:not(.hidden) .excel-filter-option').prop('checked', isChecked);
+                });
+
+                $popover.find('.excel-filter-ok').on('click', function () {
+                    const checkedValues = new Set();
+                    $optionsContainer.find('.excel-filter-option:checked').each(function () {
+                        checkedValues.add($(this).val());
+                    });
+
+                    if (checkedValues.size < sortedValues.length) {
+                        activeFilters[colIdx] = checkedValues;
+                        $btn.addClass('text-blue-600').removeClass('text-slate-400');
+                    } else {
+                        delete activeFilters[colIdx];
+                        $btn.addClass('text-slate-400').removeClass('text-blue-600');
+                    }
+
+                    $table.data('excel-filters', activeFilters);
+                    applyExcelFiltersToTable($table, tableId, onFilterApplied);
+                    $popover.remove();
+                });
+
+                $popover.find('.excel-filter-cancel').on('click', function () {
+                    $popover.remove();
+                });
+
+                $popover.find('.excel-filter-clear').on('click', function () {
+                    delete activeFilters[colIdx];
+                    $btn.addClass('text-slate-400').removeClass('text-blue-600');
+                    $table.data('excel-filters', activeFilters);
+                    applyExcelFiltersToTable($table, tableId, onFilterApplied);
+                    $popover.remove();
+                });
+            });
+        }
+
+        function updateSelectAllState($popover) {
+            const visibleOpts = $popover.find('.option-item:not(.hidden) .excel-filter-option');
+            const checkedVisibleOpts = $popover.find('.option-item:not(.hidden) .excel-filter-option:checked');
+            $popover.find('.excel-filter-select-all').prop('checked', visibleOpts.length > 0 && visibleOpts.length === checkedVisibleOpts.length);
+        }
+
+        function getExcelCellText($row, colIdx, tableId) {
+            const $td = $row.find('td').eq(colIdx);
+            return $td.text().replace(/\s+/g, ' ').trim() || 'N/A';
+        }
+
+        function applyExcelFiltersToTable($table, tableId, onFilterApplied) {
+            if (typeof onFilterApplied === 'function') {
+                onFilterApplied();
+            }
+        }
+
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('.excel-filter-popover').length && !$(e.target).closest('.excel-filter-btn').length) {
+                $('.excel-filter-popover').remove();
+            }
+        });
+
+        // Initialize Excel Filters on completedCasesTable
+        setupExcelTableFilters('completedCasesTable', applyColumnFilters);
+    });
+    function changePageSize() {
+        size = parseInt($('#pageSize').val());
+        localStorage.setItem('pageSize', size);
+        currentPage = 1;
+        loadCases(1);
+    }
+    function rollbackCase(customerId, type) {
+        rollbackCustomerId = customerId;
+        rollbackType = type;
+        $('#rollbackCustomerId').text(customerId);
+        $('#rollbackModal')
+            .removeClass('hidden')
+            .addClass('flex');
+    }
+        function closeRollbackModal() {
+        rollbackCustomerId = null;
+        rollbackType = null;
+        $('#rollbackModal')
+            .addClass('hidden')
+            .removeClass('flex');
+    }
+        $('#confirmRollbackBtn').on('click', function () {
+        if (!rollbackCustomerId || rollbackType === null) return;
+        $('#loadingCaseDetails').removeClass('hidden');
+        $.ajax({
+            type: "POST",
+            url: "/Report/rollbackCase",
+            data: {
+                id: rollbackCustomerId,
+                type: rollbackType
+            },
+            success: function () {
+                console.log('Case rolled back successfully');
+                closeRollbackModal();
+                loadCases(currentPage); // stay on same page
+            },
+            error: function (err) {
+                console.error('Rollback failed', err);
+                closeRollbackModal();
+            },
+            complete: function () {
+                $('#loadingCaseDetails').addClass('hidden');
+            }
+        });
+    });
+    
+    //  function rollbackCase(id, type) {
+    //     //$(`#Revert-${id}`).prop('disabled', true);
+    //     //$("#loader").show();
+    //     $.ajax({
+    //         type: "POST",
+    //         url: "/Report/rollbackCase",
+    //         data: {
+    //             id: id,
+    //             type: type
+    //         },
+    //         success: function (data) {
+    //             console.log('Case rolled back sucessfully')
+    //             // $(`#Revert-${id}`).prop('disabled', false)
+    //             loadCases(1);
+    //             //$("#loader").hide();
+    //         },
+    //         error: function (result) {
+    //             console.error(`There was an error while roling back case: ${result}`)
+    //             //$("#loader").hide();
+    //             // $(`#Revert-${id}`).prop('disabled', false)
+    //         }
+    //     });
+    // }
+    function showExportOptions() {
+        const columns = [
+            { id: "CustomerId", label: "Customer ID" },
+            { id: "CreatedOn", label: "Created On" },
+            { id: "UpdatedOnDB", label: "Updated On" },
+            { id: "CustomerType", label: "Customer Type" },
+            { id: "CustomerName", label: "Customer Name" },
+            { id: "CaseChangeStatus", label: "Datasets" },
+            { id: "MatchScore", label: "Screening Score" },
+            { id: "riskScore", label: "Risk Rating" },
+            { id: "CreatedUser", label: "User" },
+            { id: "CaseStatus", label: "Status" }
+        ];
+        openExportModal({
+            getColumnsByActiveTab: () => columns,
+            onExport: (format, selectedColumns, orientation) => {
+                ExportList(format === 'pdf', selectedColumns, orientation);
+            }
+        });
+    }
+    function ExportList(isPDF, selectedColumns, orientation) {
+        $("#loadingCaseDetails").show();
+        
+        const params = 'startDate=' + $('#startDate').val() +
+            '&endDate=' + $('#endDate').val() +
+            '&cust_type=' + $('#customertype').val() +
+            '&createdBy=' + $('#user').val() +
+            '&matchScore=' + $('#screeningScore').val() +
+            '&caseStatus=' + $('#caseStatus').val() +
+            '&caseStatusChange=' + $('#caseStatusChange').val() +
+            '&riskLevel=' + $('#riskScore').val() +
+            '&includingDuplicate=' + $('#includingDuplicate').val() +
+            '&searchValue=' + ($('#searchInput').val() || '') +
+            '&selectedColumns=' + (selectedColumns || '') +
+            '&orientation=' + (orientation || 'portrait');
+        if (isPDF) {
+            const url = '/Case/CompletedCases_PDF?' + params;
+            $('#pdfFrame').attr('src', url);
+            setTimeout(() => { $("#loadingCaseDetails").hide(); }, 5000);
+        } else {
+            window.location = '/Case/ExportCompletedCasesExcel?' + params;
+            $("#loadingCaseDetails").hide();
+        }
+    }
+        function checkFilterValues() {
+        const fields = [
+            document.getElementById("startDate"),
+            document.getElementById("endDate"),
+            document.getElementById("customertype"),
+            document.getElementById("columnFilter"),
+            document.getElementById("caseStatusChange"),
+            document.getElementById("screeningScore"),
+            document.getElementById("user"),
+            document.getElementById("caseStatus"),
+            document.getElementById("riskScore")
+        ];
+        const applyBtn = document.getElementById("applyBtn");
+        const exportBtn = document.getElementById("exportBtn");
+            const searchBtn = document.getElementById("searchButton");
+        let hasValue = false;
+        fields.forEach(field => {
+            if (!field) return;
+            if (field.tagName === "SELECT") {
+                if (field.value !== "" && field.value !== "0" && field.value !== "10") {
+                    hasValue = true;
+                }
+            } else {
+                if (field.value.trim() !== "") {
+                    hasValue = true;
+                }
+            }
+        });
+        if (applyBtn) applyBtn.disabled = !hasValue;
+        if (exportBtn) exportBtn.disabled = !hasValue;
+        if (searchBtn) searchBtn.disabled = !hasValue;
+        if (!hasValue) {
+            if (applyBtn) applyBtn.classList.add("opacity-50","cursor-not-allowed");
+            if (exportBtn) exportBtn.classList.add("opacity-50","cursor-not-allowed");
+            if (searchBtn) searchBtn.classList.add("opacity-50","cursor-not-allowed");
+        } else {
+            if (applyBtn) applyBtn.classList.remove("opacity-50","cursor-not-allowed");
+            if (exportBtn) exportBtn.classList.remove("opacity-50","cursor-not-allowed");
+            if (searchBtn) searchBtn.classList.remove("opacity-50","cursor-not-allowed");
+        }
+    }
+    document.querySelectorAll("#filterSection input, #filterSection select").forEach(el => {
+        el.addEventListener("change", checkFilterValues);
+        el.addEventListener("input", checkFilterValues);
+    });
+        document.addEventListener("DOMContentLoaded", function () {
+            function initDatePicker(selector, defaultDate, isEndDate = false) {
+                return flatpickr(selector, {
+                    dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: "d/m/Y",
+                    defaultDate: defaultDate,
+                    allowInput: true,
+                    // ✅ Conditional logic
+                    // ...(isEndDate
+                    //     ? { minDate: "today" }   // End Date → no past dates
+                    //     : { maxDate: "today" }   // Start Date → no future dates
+                    // )
+                });
+            }
+            // ✅ Start Date → 1 year back, max today
+            const startPicker = initDatePicker("#startDate", new Date().fp_incr(-365));
+            // ✅ End Date → today, min today
+            const endPicker = initDatePicker("#endDate", new Date(), true);
+        });
+            function setRowType(element) {
+            const rowType = element.dataset.rowtype;
+            sessionStorage.setItem("rowType", rowType);
+        }
+
+                  window.customerIdTypeData = [];
+                function initCustomerIdType() {
+            return {
+                idOpen: false,
+                selectedIds: window.customerIdTypeData || [],
+
+
+
+                init() {
+                    // 🔥 ensures Alpine reacts properly
+                           console.log("INIT selectedIds:", this.selectedIds); // 🔥 check here
+                               console.log("INIT (empty first):", this.selectedIds);
+                    this.selectedIds = [...this.selectedIds];
+                },
+
+                get selectedText() {
+                           console.log("Getter selectedIds:", this.selectedIds);
+                    return this.selectedIds.length
+                        ? this.selectedIds.join(', ')
+                        : 'Select ID Type';
+                },
+
+                get showPassport() {
+                    return this.selectedIds.some(id => id.toLowerCase() === 'passport');
+                },
+
+                get showEID() {
+                    return this.selectedIds.some(id => id.toLowerCase() === 'emirates id');
+                }
+            };
+        }
+
+
+
+                    function openModal(id, version,customerType,customerId,mode) {
+
+                // alert(mode);
+
+                //         alert(id);
+
+
+
+            document.getElementById("modalTitle").innerText =
+                mode === "edit" ? "Edit Case" : "Replace Case";
+
+            // document.getElementById("recordId").value = id;
+            // document.getElementById("mode").value = mode;
+
+                fetch(`/Case/GetCaseLatestById?id=${id}`)
+            .then(res => {
+                console.log("Response Status:", res.status);
+                return res.json();
+            })
+            .then(data => {
+
+                console.log("Full API Response:", data);
+
+
+
+                    // console.log("Nationalities:", data.nationalities);
+                    // console.log("Product Types:", data.productTypes);
+                    // console.log("Delivery Channels:", data.deliveryChannels);
+                    // console.log("Mode Of Payments:", data.modeOfPayments);
+
+
+                        const type = data.customerType;
+                        const flagType=data.flagType;
+                        const version=data.version;
+
+                             showFieldsByType(type,flagType);
+
+
+
+        // 🔹 FIRST: Hide all fields
+        document.querySelectorAll('.individual-field, .corporate-field')
+            .forEach(el => el.hidden = true);
+
+        // 🔹 Handle based on type
+            if (type === 'I' && (flagType == null || flagType === "Main Entity")) {
+
+            // ✅ Show Individual
+
+
+            // ✅ Fill only Individual dropdowns
+            fillDropdown("ddlResidenceStatus", data.nationalities, data.residenceStatus);
+            fillDropdown("ddlOccupation", data.professions, data.occupatinTypeTxt);
+                 fillDropdown("ddlProductType", data.productTypes,data.productName);
+                                    fillDropdown("ddlDeliveryChannel", data.deliveryChannels,data.deliveryChannelName);
+                                    fillDropdown("ddlModeofpayment", data.modeOfPayments,data.modeofpayment);
+                                        fillDropdown("placeofbirth", data.nationalities, data.placeOfBirth);
+
+        }
+        else if (type === 'C' && (flagType == null || flagType === "Main Entity")) {
+
+
+
+            // ✅ Fill only Corporate dropdowns
+            fillDropdown("LegalStatus", data.legalStatusList, data.entityTypeTxt);
+            fillDropdown("businessType", data.businessTypeList, data.businessType);
+
+
+                fillDropdown("ddlProductType", data.productTypes,data.productName);
+            fillDropdown("ddlDeliveryChannel", data.deliveryChannels,data.deliveryChannelName);
+                                fillDropdown("ddlModeofpayment", data.modeOfPayments,data.modeofpayment);
+
+        }
+
+            fillDropdown("nationality", data.nationalities, data.nationality);
+                    fillDropdown("SOWSOFCountry", data.nationalities, data.sowsofCountry);
+
+
+
+
+
+
+
+                        document.getElementById("recordId").value = id;
+                        document.getElementById("mode").value = mode;
+                        document.getElementById("customerId").value = customerId;
+                        document.getElementById("lastestVersion").value=version;
+                        document.getElementById("actionScreen").value="CompletedCases";
+                // Bind data
+                document.getElementById("fullName").value = data.name || "";
+                // document.getElementById("nationality").value = data.nationality || "";
+                    document.getElementById("hdnNationality").value=data.nationality || null;
+                        document.getElementById("hdnplaceofbirth").value=data.placeOfBirth || "";
+                   setDateIfVisible("DOB", data.dob);
+                document.getElementById("gender").value = data.gender || "";
+                document.getElementById("productValue").value = data.productValue || "";
+                    document.getElementById("counterPartyName").value = data.counterPartyName || "";
+
+                    document.getElementById("hdnplaceofbirth").value=data.placeOfBirth || "";
+                            const alpineRoot = document.querySelector('#customerIdTypeBtn').closest('[x-data]');
+                          const customerIdType = data.customerIdType || "";
+
+                          let selectedIds = [];
+
+    if (customerIdType.includes("Passport")) {
+        selectedIds.push("Passport");
+    }
+
+    if (customerIdType.includes("Emirates ID")) {
+        selectedIds.push("Emirates ID");
+    }
+
+    if (alpineRoot && alpineRoot._x_dataStack) {
+        alpineRoot._x_dataStack[0].selectedIds = selectedIds;
+    }
+
+    // Assign values
+        setTimeout(() => {
+
+        if (selectedIds.includes("Passport")) {
+            $("#passportId").val(data.passportId || "");
+               setDateIfVisible("passortIssuedate", data.passportIssueDate);
+        setDateIfVisible("passportExpirydate", data.passportExpiryDate);
+        }
+
+        if (selectedIds.includes("Emirates ID")) {
+            $("#EID_Number").val(data.emiratesIdNumber || "");
+                 setDateIfVisible("emirateIssueDate", data.emiratesIdIssueDate);
+        setDateIfVisible("emirateExpiryDate", data.emiratesIdExpiryDate);
+        }
+        if (mode === "edit") {
+        setIdFieldsReadonly(true);
+    }else{
+        setIdFieldsReadonly(false);
+    }
+    }, 300);
+                    document.getElementById("tradelicense").value = data.tradelicense || "";
+                        document.getElementById("ddlCounterParty").value = data.counterParty || "";
+                        document.getElementById("employer").value = data.employer || "";
+                        document.getElementById("employerIndustry").value = data.employerIndustry || "";
+                        document.getElementById("employerSector").value = data.employerSector || "";
+                        document.getElementById("tradelicenseAuthority").value = data.tradeLicenseAuthority || "";
+                            document.getElementById("cifnumber").value = data.cifNumber || "";
+                                document.getElementById("goldenVisa").value = data.goldenVisa || "";
+                                document.getElementById("productrefno").value = data.productRefNo || "";
+
+
+
+                // ✅ Log dropdown data
+
+
+                // Mode Handling
+                console.log("Mode:", mode);
+
+                 const versionButton = document.getElementById("caseVersionButton");
+                 const versionDropdownContainer = document.getElementById("versionDropdownContainer");
+                if (mode === "replace") {
+
+                    console.log("Replace mode enabled");
+
+
+
+
+                        if(type ==="I")
+                        {
+                                     document.querySelectorAll('.common-field,.gender-field,.matchparameter,.placeofbirth-field,.individual-id-field')
+                            .forEach(el => el.style.display = "block");
+
+                        }else{
+
+                                     document.querySelectorAll('.common-field,.matchparameter')
+                            .forEach(el => el.style.display = "block");
+
+                        }
+                            document.querySelectorAll(
+                                '.individual-field, .corporate-field,.ind-corp-field, .corporate-all-field, .individual-all-field,.customer-cif-field'
+                ).forEach(el => {
+                    el.style.display = "none";
+                });
+
+                    if (versionButton) {
+                        versionButton.style.display = "none";
+                    }
+                     if (versionDropdownContainer) {
+            versionDropdownContainer.style.display = "none";
+        }
+                                setReadonly(false);
+
+                } else {
+
+                    console.log("Edit mode enabled");
+
+
+                        if (versionButton) {
+                            versionButton.style.display = "flex";   // or "inline-flex"
+                        }
+                        if (versionDropdownContainer) {
+                        versionDropdownContainer.style.display = "block";
+                    }
+                      loadVersionDropdown(customerId, version);
+
+
+                    // document.querySelectorAll(".edit-only")
+                    //     .forEach(el => el.style.display = "block");
+
+                    setReadonly(true);
+                }
+
+                    if(type === "I")
+                    {
+                            $("#labelnationality").text("Nationality");
+                            $("#labledob").text("Date of Birth");
+                    }else{
+                                 $("#labelnationality").text("Country of Incorporation");
+                                 $("#labledob").text("Date of Registration");
+                    }
+
+                    document.getElementById("caseModal").classList.remove("hidden");
+
+            })
+            .catch(err => {
+                console.error("Error fetching case data:", err);
+            });
+        }
+
+       function setReadonly(flag) {
+            const dobInput = document.getElementById("DOB");
+            document.getElementById("fullName").readOnly = flag;
+            document.getElementById("nationality").disabled = flag;
+            document.getElementById("placeofbirth").disabled = flag;
+                const customerIdBtn = document.getElementById("customerIdTypeBtn");
+        if (customerIdBtn) {
+            customerIdBtn.disabled = flag;
+            customerIdBtn.style.pointerEvents = flag ? "none" : "";
+            customerIdBtn.style.opacity = flag ? "0.6" : "";
+        }
+
+        // Customer ID Type checkboxes
+        document.querySelectorAll(".customer-id-checkbox").forEach(cb => {
+            cb.disabled = flag;
+        });
+
+        // Passport fields
+        ["passportId", "passortIssuedate", "passportExpirydate"].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.disabled = flag;
+            }
+        });
+
+        // Emirates ID fields
+        ["EID_Number", "emirateIssueDate", "emirateExpiryDate"].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.disabled = flag;
+            }
+        });
+            // if (dobInput._flatpickr) {
+            //     dobInput._flatpickr.set("clickOpens", false);
+            // }
+            document.getElementById("DOB").readOnly = flag;
+            document.getElementById("gender").disabled = flag;
+    }
+
+        function setIdFieldsReadonly(flag) {
+
+        const customerIdBtn = document.getElementById("customerIdTypeBtn");
+        if (customerIdBtn) {
+            customerIdBtn.disabled = flag;
+            customerIdBtn.style.pointerEvents = flag ? "none" : "";
+            customerIdBtn.style.opacity = flag ? "0.6" : "";
+        }
+
+        document.querySelectorAll(".customer-id-checkbox").forEach(cb => {
+            cb.disabled = flag;
+        });
+
+         [
+        "passportId",
+        "passortIssuedate",
+        "passportExpirydate",
+        "EID_Number",
+        "emirateIssueDate",
+        "emirateExpiryDate",
+        "DOB"
+    ].forEach(id => {
+
+        const el = document.getElementById(id);
+
+        if (!el) {
+            console.log(id + " not found");
+            return;
+        }
+
+        el.disabled = flag;
+        el.readOnly = flag;
+
+        if (el._flatpickr) {
+            el._flatpickr.set("clickOpens", !flag);
+
+            if (el._flatpickr.altInput) {
+                el._flatpickr.altInput.disabled = flag;
+                el._flatpickr.altInput.readOnly = flag;
+            }
+        }
+    });
+    }
+
+        function closeModal() {
+            document.getElementById("caseModal").classList.add("hidden");
+        }
+
+                   function fillDropdown(id, data, selectedValue = null) {
+
+            console.log(`Filling dropdown: ${id}`);
+            console.log("Data:", data);
+            console.log("Selected Value:", selectedValue);
+
+            const dropdown = document.getElementById(id);
+            dropdown.innerHTML = '<option value="">Select</option>';
+
+            if (!data) return;
+
+            data.forEach(item => {
+
+                const option = document.createElement("option");
+
+                // ✅ HANDLE STRING OR OBJECT
+                if (typeof item === "string") {
+                    option.value = item;
+                    option.text = item;
+                } else {
+                    option.value = item.value || item.text;
+                    option.text = item.text;
+                }
+
+                // ✅ SET SELECTED VALUE
+                if (selectedValue && option.value == selectedValue) {
+                    option.selected = true;
+                }
+
+                dropdown.appendChild(option);
+            });
+        }
+
+            function setIfVisible(id, value) {
+            const el = document.getElementById(id);
+
+            if (el && el.offsetParent !== null) { // ✅ visible check
+                el.value = value || "";
+            }
+        }
+
+            function fillIfVisible(id, dataList, selectedValue) {
+            const el = document.getElementById(id);
+
+            if (!el) return;
+
+            // check visibility (important)
+            const isVisible = el.offsetParent !== null;
+
+            if (isVisible) {
+                fillDropdown(id, dataList, selectedValue);
+            }
+        }
+
+        function showFieldsByType(type,flagType) {
+
+                const individualFlags = [
+            "Individual Related Parties",
+            "Authorized Signatory",
+            "Individual Sharholder",
+            "Senior Management"
+        ];
+
+        const corporateFlags = [
+            "Corporate Related Parties",
+            "Corporate Shareholder"
+        ];
+
+            // 🔹 First hide everything
+            hideAllFields();
+
+            // 🔹 Always show common fields
+            document.querySelectorAll('.common-field')
+                .forEach(el => el.style.display = "block");
+
+            // 🔹 Show based on type
+            if (type === 'I' && (flagType == null || flagType === "Main Entity"))
+            {
+                                    document.querySelectorAll('.individual-field,.individual-all-field,.ind-corp-field,.customer-cif-field,.gender-field,.placeofbirth-field')
+                    .forEach(el => el.style.display = "block");
+
+
+
+                } else if (type === 'C' && (flagType == null || flagType === "Main Entity")) {
+                                    document.querySelectorAll('.corporate-field,.corporate-all-field,.ind-corp-field,.customer-cif-field')
+                    .forEach(el => el.style.display = "block");
+
+
+
+                    }else if (type === 'I' && individualFlags.includes(flagType))
+                {
+
+                                    document.querySelectorAll('.individual-all-field,.customer-cif-field,.gender-field,.placeofbirth-field')
+                        .forEach(el => el.style.display = "block");
+
+
+                        }else if(type === 'C' && individualFlags.includes(flagType))
+                    {
+                                         document.querySelectorAll('.corporate-all-field,.customer-cif-field')
+                                            .forEach(el => el.style.display = "block");
+
+                    }
+        }
+
+               function hideAllFields() {
+            document.querySelectorAll(
+                                '.individual-field, .corporate-field, .common-field, .ind-corp-field, .corporate-all-field, .individual-all-field,.customer-cif-field,.gender-field,.matchparameter'
+            ).forEach(el => {
+                el.style.display = "none";
+            });
+        }
+
+    // Portal the corporate-badge breakdown tooltip to <body> so it escapes the
+    // table's overflow-hidden / overflow-x-auto clipping and shows in full.
+    (function () {
+        let activeTip = null;
+        let activeTrig = null;
+        let hideT = null;
+
+        function placeTip(trigger) {
+            // Look up the tooltip — first hover it's still a DOM child; afterwards
+            // it lives on document.body, so we cache the reference on the trigger.
+            let tip = trigger._corpTip || trigger.querySelector(':scope > .corp-tip-content');
+            if (!tip) return;
+            trigger._corpTip = tip;
+
+            if (activeTip && activeTip !== tip) hideTip(true);
+            clearTimeout(hideT);
+
+            if (tip.parentElement !== document.body) {
+                document.body.appendChild(tip);
+                tip.style.position = 'fixed';
+                tip.style.zIndex = '99999';
+            }
+            tip.style.display = 'flex';
+            tip.classList.remove('hidden');
+
+            const rect = trigger.getBoundingClientRect();
+            const tipRect = tip.getBoundingClientRect();
+            const margin = 8;
+            let left = rect.right - tipRect.width;
+            if (left < margin) left = margin;
+            if (left + tipRect.width > window.innerWidth - margin) {
+                left = window.innerWidth - tipRect.width - margin;
+            }
+            let top = rect.bottom + 4;
+            if (top + tipRect.height > window.innerHeight - margin) {
+                top = rect.top - tipRect.height - 4;
+            }
+            tip.style.top = top + 'px';
+            tip.style.left = left + 'px';
+
+            activeTip = tip;
+            activeTrig = trigger;
+        }
+
+        function hideTip(immediate) {
+            const doHide = () => {
+                if (!activeTip) return;
+                activeTip.classList.add('hidden');
+                activeTip.style.display = 'none';
+                activeTip = null;
+                activeTrig = null;
+            };
+            if (immediate) doHide();
+            else hideT = setTimeout(doHide, 120);
+        }
+
+        document.addEventListener('mouseover', function (e) {
+            const trigger = e.target.closest('.corp-tip-trigger');
+            if (trigger) placeTip(trigger);
+        });
+
+        document.addEventListener('mouseout', function (e) {
+            if (!activeTrig) return;
+            const next = e.relatedTarget;
+            if (next && (activeTrig.contains(next) || (activeTip && activeTip.contains(next)))) return;
+            hideTip(false);
+        });
+
+        window.addEventListener('scroll', () => hideTip(true), true);
+        window.addEventListener('resize', () => hideTip(true));
+    })();
+         function setDateIfVisible(id, value) {
+        const el = document.getElementById(id);
+
+        if (!el) return;
+
+        // Handle default/invalid dates
+        if (!value || value === "01/01/0001" || value === "0001-01-01") {
+            if (el._flatpickr) {
+                el._flatpickr.clear();
+            } else {
+                el.value = "";
+            }
+            return;
+        }
+
+        if (el._flatpickr) {
+            el._flatpickr.setDate(value, true);
+        } else {
+            el.value = value;
+        }
+    }
+          </script>

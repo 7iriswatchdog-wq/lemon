@@ -1,0 +1,49 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@using System.Collections.Generic
+@model List<SanctionsFreshnessRow>
+@{
+    ViewData["Title"] = "Sanctions Freshness";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "Sanctions Freshness";
+    ViewData["ReportSubtitle"] = "Per-source hit volume + last-seen + last list update.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1300px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden mt-3">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left">
+                        <th class="px-3 py-2">Source</th>
+                        <th class="px-3 py-2 text-right">Hits (last 30d)</th>
+                        <th class="px-3 py-2">Last Hit</th>
+                        <th class="px-3 py-2 text-right">Days Since</th>
+                        <th class="px-3 py-2">Last List Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="5" class="px-3 py-12 text-center text-slate-500">No sanction-screening logs yet.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var r in Model)
+                        {
+                            var staleCls = (r.DaysSinceLastHit ?? 0) > 30 ? "text-rose-700 font-bold" : "text-slate-700";
+                            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                <td class="px-3 py-2 font-medium">@r.Source</td>
+                                <td class="px-3 py-2 text-right">@r.Hits30d</td>
+                                <td class="px-3 py-2 text-slate-600">@(r.LastHitOn?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                                <td class="px-3 py-2 text-right @staleCls">@(r.DaysSinceLastHit?.ToString() ?? "—")</td>
+                                <td class="px-3 py-2 text-slate-600">@(r.LastListUpdate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

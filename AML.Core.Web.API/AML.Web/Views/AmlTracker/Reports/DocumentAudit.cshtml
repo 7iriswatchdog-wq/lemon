@@ -1,0 +1,73 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model DocumentAuditVM
+@{
+    ViewData["Title"] = "Document Audit";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "Document Audit Trail";
+    ViewData["ReportSubtitle"] = "Documents attached to cases — type, expiry, who uploaded when. Pulls from casedocument; populates as the existing upload flows write rows.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var today = DateTime.UtcNow.Date;
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-3">
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Total Documents</div><div class="text-2xl font-semibold text-slate-800">@Model.Total</div></div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3"><div class="text-[10px] uppercase text-blue-700 font-bold">Last 30 Days</div><div class="text-2xl font-semibold text-blue-700">@Model.Last30d</div></div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3"><div class="text-[10px] uppercase text-amber-700 font-bold">Expiring (30d)</div><div class="text-2xl font-semibold text-amber-700">@Model.ExpiringIn30d</div></div>
+            <div class="bg-rose-50 border border-rose-200 rounded-lg p-3"><div class="text-[10px] uppercase text-rose-700 font-bold">Expired</div><div class="text-2xl font-semibold text-rose-700">@Model.Expired</div></div>
+        </div>
+
+        @if (Model.Total == 0)
+        {
+            <div class="bg-amber-50 border border-amber-300 text-amber-900 rounded p-3 mb-3 text-sm">
+                <strong>No document records yet.</strong> The <code>casedocument</code> table is empty.
+                The existing Corporate / RiskV2 / TransactionScreening upload flows already call <code>ICaseDocumentService.Create</code> —
+                rows will appear as users upload through those flows.
+            </div>
+        }
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left">
+                        <th class="px-3 py-2">Doc</th>
+                        <th class="px-3 py-2">Case</th>
+                        <th class="px-3 py-2">Category / Type</th>
+                        <th class="px-3 py-2">Issued</th>
+                        <th class="px-3 py-2">Expiry</th>
+                        <th class="px-3 py-2">Uploaded By</th>
+                        <th class="px-3 py-2">Uploaded On</th>
+                        <th class="px-3 py-2">Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Rows.Any())
+                    {
+                        <tr><td colspan="8" class="px-3 py-12 text-center text-slate-500">—</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var r in Model.Rows)
+                        {
+                            var expiredCls = r.ExpiryDate.HasValue && r.ExpiryDate.Value.Date < today ? "text-rose-700 font-bold"
+                                : r.ExpiryDate.HasValue && r.ExpiryDate.Value.Date <= today.AddDays(30) ? "text-amber-700"
+                                : "text-slate-600";
+                            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                <td class="px-3 py-2"><div class="font-medium">@r.DocumentName</div><div class="text-xs text-slate-500 font-mono">@r.FileName</div></td>
+                                <td class="px-3 py-2 font-mono text-xs">@(r.CaseId.HasValue ? $"#{r.CaseId}" : "—")</td>
+                                <td class="px-3 py-2 text-slate-600">@(r.CategoryLabel ?? "—") <span class="text-xs text-slate-400">/ @(r.TypeLabel ?? "—")</span></td>
+                                <td class="px-3 py-2 text-slate-600 text-xs">@(r.IssuedDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                <td class="px-3 py-2 text-xs @expiredCls">@(r.ExpiryDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                <td class="px-3 py-2 text-slate-600 text-xs">@r.CreatedBy</td>
+                                <td class="px-3 py-2 text-slate-600 text-xs">@(r.CreatedOn?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                                <td class="px-3 py-2 text-xs text-slate-600">@r.Remarks</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

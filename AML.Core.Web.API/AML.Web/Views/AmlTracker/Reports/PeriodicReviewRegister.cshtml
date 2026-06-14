@@ -1,0 +1,72 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@using System.Collections.Generic
+@model List<PeriodicReviewRow>
+@{
+    ViewData["Title"] = "Periodic Review Register";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "Periodic Review Register";
+    ViewData["ReportSubtitle"] = "Customers due for KYC refresh. Intervals: High = 6mo, Medium/default = 12mo, Low = 24mo.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var overdue = Model.Count(r => r.Status == "Overdue");
+    var dueSoon = Model.Count(r => r.Status == "Due Soon");
+    var onTrack = Model.Count(r => r.Status == "On Track");
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="grid grid-cols-3 gap-3 my-3">
+            <div class="bg-rose-50 border border-rose-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-rose-700 font-bold">Overdue</div>
+                <div class="text-2xl font-semibold text-rose-700">@overdue</div>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-amber-700 font-bold">Due Within 30 Days</div>
+                <div class="text-2xl font-semibold text-amber-700">@dueSoon</div>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-emerald-700 font-bold">On Track</div>
+                <div class="text-2xl font-semibold text-emerald-700">@onTrack</div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left">
+                        <th class="px-3 py-2">Customer</th>
+                        <th class="px-3 py-2">Type</th>
+                        <th class="px-3 py-2">Risk Tier</th>
+                        <th class="px-3 py-2">Last Touched</th>
+                        <th class="px-3 py-2">Next Review Due</th>
+                        <th class="px-3 py-2 text-right">Days</th>
+                        <th class="px-3 py-2">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model)
+                    {
+                        var pillCls = r.Status switch
+                        {
+                            "Overdue" => "bg-rose-100 text-rose-800",
+                            "Due Soon" => "bg-amber-100 text-amber-800",
+                            _ => "bg-emerald-100 text-emerald-800"
+                        };
+                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                            <td class="px-3 py-2">
+                                <a href="@Url.Action("Customer360", "AmlTracker", new { cmid = r.CustomerMasterId })" class="font-medium text-blue-600 hover:underline">@r.FullName</a>
+                                <div class="text-xs text-slate-500 font-mono">@r.CustomerCode</div>
+                            </td>
+                            <td class="px-3 py-2 text-slate-600">@r.CustomerType</td>
+                            <td class="px-3 py-2">@(string.IsNullOrEmpty(r.RiskTier) ? "—" : r.RiskTier)</td>
+                            <td class="px-3 py-2 text-slate-600 text-xs">@(r.LastTouched?.ToString("yyyy-MM-dd") ?? "—")</td>
+                            <td class="px-3 py-2">@(r.NextReviewDue?.ToString("yyyy-MM-dd") ?? "—")</td>
+                            <td class="px-3 py-2 text-right">@r.DaysUntilDue</td>
+                            <td class="px-3 py-2"><span class="px-2 py-0.5 text-xs rounded-full @pillCls">@r.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

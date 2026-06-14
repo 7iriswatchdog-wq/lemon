@@ -1,0 +1,431 @@
+@model AML.ViewModel.ViewModels.ProliferationFinance.ProliferationFinanceModel
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Case Details";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+    var type = Context.Request.Query["type"].ToString().ToLower();
+    
+    string auditDate = DateTime.UtcNow.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss") + " GST";
+    string creationDate = Model.CreatedOn?.AddHours(4).ToString("dd/MM/yyyy HH:mm:ss") ?? "-";
+    string matchName = Model.CompanyName;
+    string matchType = type == "military" ? "Military Goods" : (type == "non-chemical" ? "Non-Chemical" : "Chemical");
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Loader -->
+<div id="loadingdetails" style="display:flex;position:fixed;inset:0;background:rgba(255,255,255,.92);align-items:center;justify-content:center;z-index:9999;">
+    <div class="kld"><div></div><div></div><div></div><div></div></div>
+</div>
+
+<style>
+    html, body { font-family: 'Inter', Arial, sans-serif; background: #f5f5f5; color: #000; }
+    
+    .kld { display: inline-block; position: relative; width: 60px; height: 13px }
+    .kld div { position: absolute; top: 1px; width: 11px; height: 11px; border-radius: 50%; background: #1a56db; animation-timing-function: cubic-bezier(0, 1, 1, 0) }
+    .kld div:nth-child(1) { left: 6px; animation: k1 .6s infinite }
+    .kld div:nth-child(2) { left: 6px; animation: k2 .6s infinite }
+    .kld div:nth-child(3) { left: 26px; animation: k2 .6s infinite }
+    .kld div:nth-child(4) { left: 46px; animation: k3 .6s infinite }
+    @@keyframes k1 { 0% { transform: scale(0) } 100% { transform: scale(1) } }
+    @@keyframes k3 { 0% { transform: scale(1) } 100% { transform: scale(0) } }
+    @@keyframes k2 { 0% { transform: translate(0, 0) } 100% { transform: translate(19px, 0) } }
+
+    .doc { 
+        max-width: 900px; 
+        margin: 0 auto; 
+        padding: 0 40px 60px; 
+        background: #fff; 
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        margin-top: 24px;
+        border-radius: 8px;
+    }
+
+    .topbar { 
+        display: flex; 
+        justify-content: flex-end; 
+        gap: 8px; 
+        padding: 20px 0; 
+        margin-bottom: 10px;
+    }
+
+    .ph { 
+        display: flex; 
+        gap: 25px; 
+        align-items: flex-start; 
+        margin-bottom: 25px;
+    }
+    .ph-photo { 
+        width: 100px; 
+        height: 100px; 
+        background: #fdfdfd; 
+        border: 1px solid #eee;
+        flex-shrink: 0; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #94A3B8;
+        border-radius: 50%;
+    }
+    .ph-info { flex: 1; }
+    .ph-name { 
+        font-size: 24px; 
+        font-weight: 700; 
+        color: #0F172A; 
+        display: flex; 
+        align-items: center; 
+        gap: 12px;
+        margin-bottom: 4px;
+    }
+    .ph-type { font-size: 15px; color: #64748B; font-weight: 500; }
+
+    .pill { 
+        display: inline-block; 
+        padding: 2px 12px; 
+        border-radius: 99px; 
+        font-size: 11px; 
+        font-weight: 700; 
+        background: #3b82f6; 
+        color: #fff;
+        text-transform: uppercase;
+    }
+    .pill-red { background: #ef4444; }
+
+    .sec-hdr { font-size: 16px; font-weight: 700; color: #000; margin: 30px 0 6px; text-transform: uppercase; letter-spacing: 0.025em; }
+    .sec-line { border: 0; border-top: 2px solid #3b82f6; margin: 0 0 15px; opacity: 1; }
+
+    .pd-table { width: 100%; border-collapse: collapse; }
+    .pd-table td { padding: 8px 0; vertical-align: top; font-size: 14px; border-bottom: 1px solid #F1F5F9; }
+    .pd-table tr:last-child td { border-bottom: none; }
+    .pd-group { font-weight: 700; color: #0F172A; width: 180px; }
+    .pd-field { color: #64748B; width: 160px; font-weight: 500; }
+    .pd-val { color: #0F172A; font-weight: 500; }
+
+    .grid-row { display: grid; grid-template-columns: 180px 1fr; gap: 10px; padding: 8px 0; font-size: 14px; border-bottom: 1px solid #F1F5F9; }
+    .grid-row:last-child { border-bottom: none; }
+    .grid-lbl { color: #64748B; font-weight: 500; }
+    .grid-val { color: #0F172A; font-weight: 500; }
+
+    .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .tag-item { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+
+    .comp-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #F8FAFC; border-radius: 8px; overflow: hidden; table-layout: fixed; word-wrap: break-word; }
+    .comp-table th { background: #E2E8F0; padding: 12px; text-align: left; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; }
+    .comp-table td { padding: 12px; font-size: 14px; color: #334155; border-bottom: 1px solid #E2E8F0; }
+    .comp-table tr:last-child td { border-bottom: none; }
+    .comp-val-match { color: #B91C1C; font-weight: 700; }
+</style>
+
+<div class="doc">
+    <div class="topbar">
+        <a href="/ProliferationFinance/Process/@Model.CaseId" class="details-back-btn">
+            <button type="button" class="h-9 px-4 border rounded-md bg-surface hover:bg-gray-50 transition-colors">
+                <i class="fa fa-arrow-left mr-2"></i> Back
+            </button>
+        </a>
+        <a href="@Url.Action("DownloadDetails", "ProliferationFinance", new { id = Model.CaseId, type = Context.Request.Query["type"].ToString() })" class="details-download-btn" style="margin-left: 8px;">
+            <button type="button" class="h-9 px-4 border rounded-md bg-blue-500 hover:bg-primary text-white transition-colors">
+                Download
+            </button>
+        </a>
+    </div>
+
+    <!-- Profile Header -->
+    <div class="ph">
+        <div class="ph-photo">
+            @if(type == "non-chemical") {
+                <i class="fa fa-file-pdf-o fa-4x"></i>
+            } else {
+                <i class="fa fa-flask fa-4x"></i>
+            }
+        </div>
+        <div class="ph-info">
+            <div class="ph-name">
+                @matchName
+                <span class="pill @(type == "non-chemical" ? "pill-red" : "")">@matchType Match</span>
+            </div>
+            <div class="ph-type">Proliferation Finance Match Report</div>
+        </div>
+    </div>
+
+    <!-- Audit Stamp -->
+    <div class="sec-hdr">Audit Stamp</div>
+    <hr class="sec-line"/>
+    <div class="grid-row">
+        <span class="grid-lbl">Extraction Date:</span>
+        <span class="grid-val">@auditDate</span>
+    </div>
+
+    <div class="grid-row">
+        <span class="grid-lbl">Creation Date:</span>
+        <span class="grid-val">@creationDate</span>
+    </div>
+
+    @if (type == "chemical" || string.IsNullOrEmpty(type))
+    {
+        <!-- Match Key Details -->
+        <div class="sec-hdr">Match Key Details</div>
+        <hr class="sec-line"/>
+        <table class="pd-table">
+            <tr>
+                <td class="pd-group">Case Identity</td>
+                <td class="pd-field">Case ID:</td>
+                <td class="pd-val">PF-@Model.CaseId</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="pd-field">Corporate ID:</td>
+                <td class="pd-val">@Model.CorporateId</td>
+            </tr>
+            <tr>
+                <td class="pd-group">Match Status</td>
+                <td class="pd-field">Current Status:</td>
+                <td class="pd-val">@(string.IsNullOrEmpty(Model.Status) ? "-" : Model.Status)</td>
+            </tr>
+        </table>
+
+        <!-- Comparison Section -->
+        <div class="sec-hdr">Chemical Specifications</div>
+        <hr class="sec-line"/>
+        <div style="font-size: 14px; color: #64748B; margin-bottom: 12px;">Review the identified chemical matches and their specifications below.</div>
+        
+        <table class="comp-table">
+            <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                <tr>
+                    <th>Chemical Name</th>
+                    <th>HS Code</th>
+                    <th>CAS Number</th>
+                    <th>ECCN</th>
+                    <th>Synonym</th>
+                </tr>
+            </thead>
+            <tbody id="chemical-tbody" class="divide-y divide-bordercolor">
+                @if (Model.MatchedChemicals != null && Model.MatchedChemicals.Count > 0)
+                {
+                    @foreach (var chem in Model.MatchedChemicals.Take(50))
+                    {
+                        <tr>
+                            <td class="comp-val-match">@(string.IsNullOrEmpty(chem.ChemicalName) ? "-" : chem.ChemicalName)</td>
+                            <td>@(string.IsNullOrEmpty(chem.HsCode) ? "-" : chem.HsCode)</td>
+                            <td>@(string.IsNullOrEmpty(chem.CasNumber) ? "-" : chem.CasNumber)</td>
+                            <td>@(string.IsNullOrEmpty(chem.Eccn) ? "-" : chem.Eccn)</td>
+                            <td>@(string.IsNullOrEmpty(chem.SynonymName) ? "-" : chem.SynonymName)</td>
+                        </tr>
+                    }
+                    @if (Model.MatchedChemicals.Count > 50)
+                    {
+                        <tr id="chemical-sentinel"><td colspan="5" style="height: 1px; padding: 0; border: none;"></td></tr>
+                    }
+                }
+                else if (Model.Score != "0" && (!string.IsNullOrEmpty(Model.MatchedChemicalName) || !string.IsNullOrEmpty(Model.HsCode) || !string.IsNullOrEmpty(Model.CasNumber)))
+                {
+                    <tr>
+                        <td class="comp-val-match">@(string.IsNullOrEmpty(Model.MatchedChemicalName) ? "-" : Model.MatchedChemicalName)</td>
+                        <td>@(string.IsNullOrEmpty(Model.HsCode) ? "-" : Model.HsCode)</td>
+                        <td>@(string.IsNullOrEmpty(Model.CasNumber) ? "-" : Model.CasNumber)</td>
+                        <td>@(string.IsNullOrEmpty(Model.Eccn) ? "-" : Model.Eccn)</td>
+                        <td>@(string.IsNullOrEmpty(Model.SynonymName) ? "-" : Model.SynonymName)</td>
+                    </tr>
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" style="text-align:center; color:#64748b; font-style:italic;">No chemical matches recorded for this case.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (type == "non-chemical" || type == "military" || (string.IsNullOrEmpty(type) && (Model.CustomerType == "Non-Chemical" || Model.CustomerType == "Both" || Model.CustomerType == "Military")))
+    {
+        <div class="sec-hdr">Matched Content Snippets</div>
+        <hr class="sec-line"/>
+        <div style="font-size: 14px; color: #64748B; margin-bottom: 12px;">Source: @(type == "military" || Model.CustomerType == "Military" ? "UAE Military Goods PDF Document" : "UAE Proliferation Finance PDF Document")</div>
+        
+        <div id="snippet-container" style="margin-top:20px;">
+            @{
+                var pdfSrc = Model.SearchHitDetails;
+                var paragraphList = !string.IsNullOrEmpty(pdfSrc)
+                    ? pdfSrc.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries)
+                    : Array.Empty<string>();
+                var totalCount = paragraphList.Length;
+            }
+            @if (totalCount > 0)
+            {
+                @for (int i = 0; i < Math.Min(20, totalCount); i++)
+                {
+                    var para = paragraphList[i];
+                    <div style="font-size:14px; font-weight:700; color:#0F172A; margin-bottom:8px;">Paragraph @(i + 1) of @totalCount</div>
+                    <div class="pdf-snippet" style="background:#F8FAFC; border:1px solid #E2E8F0; padding:12px; border-radius:8px; margin-bottom:20px; font-size:14px; color:#334155;">
+                        "@para"
+                    </div>
+                }
+            }
+            else
+            {
+                <div style="text-align:center; padding:40px 0; color:#64748B; font-style:italic;">
+                    No PDF content matches recorded for this case.
+                </div>
+            }
+        </div>
+        @if (totalCount > 20)
+        {
+            <div id="snippet-sentinel" style="height: 20px; margin-bottom: 20px;"></div>
+        }
+    }
+
+</div>
+
+<script>
+    // Serialize data for client-side infinite scroll
+    const matchedChemicals = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MatchedChemicals)) || [];
+    const allSnippets = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(!string.IsNullOrEmpty(Model.SearchHitDetails) ? Model.SearchHitDetails.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries) : Array.Empty<string>())) || [];
+
+    let chemIndex = 50;
+    const CHEM_CHUNK_SIZE = 50;
+    
+    let snippetIndex = 20;
+    const SNIPPET_CHUNK_SIZE = 20;
+
+    function getSearchTerms() {
+        const terms = [];
+        const t1 = "@Html.Raw(Model.ChemicalName?.Replace("\"", "\\\""))";
+        const t2 = "@Html.Raw(Model.HsCode?.Replace("\"", "\\\""))";
+        const t3 = "@Html.Raw(Model.CasNumber?.Replace("\"", "\\\""))";
+        const t4 = "@Html.Raw(Model.Eccn?.Replace("\"", "\\\""))";
+        const t5 = "@Html.Raw(Model.SynonymName?.Replace("\"", "\\\""))";
+        
+        if (t1) terms.push(t1);
+        if (t2) terms.push(t2);
+        if (t3) terms.push(t3);
+        if (t4) terms.push(t4);
+        if (t5) terms.push(t5);
+        return terms;
+    }
+
+    const searchTerms = getSearchTerms();
+
+    function highlightElements($elements) {
+        if (searchTerms.length === 0) return;
+
+        $elements.each(function() {
+            const $this = $(this);
+            let html = $this.text();
+            
+            searchTerms.forEach(term => {
+                const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(${escapedTerm})`, 'gi');
+                html = html.replace(regex, '<mark class="tag-item" style="padding:0 4px; border-radius:2px; background:#fef08a; color:#713f12;">$1</mark>');
+            });
+            $this.html(html);
+        });
+    }
+
+    function loadMoreChemicals() {
+        if (!matchedChemicals || chemIndex >= matchedChemicals.length) return;
+        
+        const nextBatch = matchedChemicals.slice(chemIndex, chemIndex + CHEM_CHUNK_SIZE);
+        chemIndex += CHEM_CHUNK_SIZE;
+        
+        let html = '';
+        nextBatch.forEach(chem => {
+            const name = chem.chemicalName || chem.ChemicalName || "-";
+            const hs = chem.hsCode || chem.HsCode || "-";
+            const cas = chem.casNumber || chem.CasNumber || "-";
+            const eccn = chem.eccn || chem.Eccn || "-";
+            const syn = chem.synonymName || chem.SynonymName || "-";
+            
+            html += `<tr>
+                <td class="comp-val-match">${name}</td>
+                <td>${hs}</td>
+                <td>${cas}</td>
+                <td>${eccn}</td>
+                <td>${syn}</td>
+            </tr>`;
+        });
+        
+        $('#chemical-sentinel').before(html);
+    }
+
+    function loadMoreSnippets() {
+        if (!allSnippets || snippetIndex >= allSnippets.length) return;
+        
+        const nextBatch = allSnippets.slice(snippetIndex, snippetIndex + SNIPPET_CHUNK_SIZE);
+        const totalCount = allSnippets.length;
+        
+        let html = '';
+        nextBatch.forEach((para, idx) => {
+            const currentParagraphNum = snippetIndex + idx + 1;
+            html += `
+                <div style="font-size:14px; font-weight:700; color:#0F172A; margin-bottom:8px;">Paragraph ${currentParagraphNum} of ${totalCount}</div>
+                <div class="pdf-snippet" style="background:#F8FAFC; border:1px solid #E2E8F0; padding:12px; border-radius:8px; margin-bottom:20px; font-size:14px; color:#334155;">
+                    "${para}"
+                </div>`;
+        });
+        
+        snippetIndex += nextBatch.length;
+        
+        const $newSnippets = $(html);
+        $('#snippet-container').append($newSnippets);
+        highlightElements($newSnippets.filter('.pdf-snippet'));
+    }
+
+    function initInfiniteScroll() {
+        // Observer for chemicals
+        const chemSentinel = document.getElementById('chemical-sentinel');
+        if (chemSentinel && matchedChemicals && matchedChemicals.length > 50) {
+            const chemObserver = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    loadMoreChemicals();
+                    if (chemIndex >= matchedChemicals.length) {
+                        chemObserver.disconnect();
+                        $('#chemical-sentinel').remove();
+                    }
+                }
+            }, { rootMargin: '200px' });
+            chemObserver.observe(chemSentinel);
+        }
+
+        // Observer for snippets
+        const snippetSentinel = document.getElementById('snippet-sentinel');
+        if (snippetSentinel && allSnippets && allSnippets.length > 20) {
+            const snippetObserver = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    loadMoreSnippets();
+                    if (snippetIndex >= allSnippets.length) {
+                        snippetObserver.disconnect();
+                        $('#snippet-sentinel').remove();
+                    }
+                }
+            }, { rootMargin: '200px' });
+            snippetObserver.observe(snippetSentinel);
+        }
+    }
+
+    $(document).ready(function () {
+        $("#loadingdetails").css("display", "flex");
+        highlightElements($('.pdf-snippet'));
+        initInfiniteScroll();
+    });
+
+    $(window).on("load", function () {
+        $("#loadingdetails").fadeOut("slow");
+    });
+
+    $('.details-back-btn').on('click', function () {
+        $('#loadingdetails').css("display", "flex");
+    });
+
+    $('.details-download-btn').on('click', function () {
+        $('#loadingdetails').css("display", "flex");
+        setTimeout(function() {
+            $("#loadingdetails").fadeOut("slow");
+        }, 6000);
+    });
+</script>
+

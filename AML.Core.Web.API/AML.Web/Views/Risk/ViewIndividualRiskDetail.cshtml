@@ -1,0 +1,191 @@
+﻿@{
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@model AML.ViewModel.ViewModels.Risk.RiskModel
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
+
+<style>
+    .pulse-button {
+        animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+    }
+
+    @@keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+        }
+    }
+</style>
+<section class="h-full content">
+    @* <nav class="border-b">
+    <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+        <div>
+            <h2 class="text-2xl font-bold">Individual Risk</h2>
+        </div>
+        <div class="md:block hidden">
+            Client Logo
+        </div>
+    </div>
+</nav> 
+
+<br />*@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-surface">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Individual Risk
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+    <div class="h-full bg-gray-50 items-center ">
+        <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4 mx-auto">
+
+            <div class="flex flex-col md:flex-row md:justify-end gap-4 mb-4">
+                <a asp-controller="Risk" asp-action="GetRiskReport" class="px-4 py-2 bg-primary text-white text-center rounded hover:bg-primary-hover">
+                    Back
+                </a>
+                <button id="printform" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    Print
+                </button>
+            </div>
+
+            <!-- Main Container -->
+            <div id="printSection" class="rounded-card w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+                <!-- Section: Risk Assessment Model -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Customer Code</label>
+                        <input asp-for="CustomerCode" readonly class="w-full border rounded px-3 py-2 bg-gray-50" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Customer Name</label>
+                        <input asp-for="CustomerName" readonly class="w-full border rounded px-3 py-2 bg-gray-50" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Date Of Assessment</label>
+                        <input asp-for="DateofAssessment" type="date" readonly class="w-full border rounded px-3 py-2 bg-gray-50" />
+                    </div>
+                </div>
+
+                <!-- Remarks -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-1">Remarks</label>
+                    <textarea asp-for="Remarks" readonly class="w-full border rounded px-3 py-2 bg-gray-50 resize-none"></textarea>
+                </div>
+
+                <!-- Score Summary -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Risk Assessment Rating</label>
+                        <div class="bg-green-500 text-white text-center rounded px-3 py-2">Low</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Risk Score Before Override</label>
+                        <div class="bg-green-500 text-white text-center rounded px-3 py-2">As Per Risk Score</div>
+                    </div>
+                </div>
+
+                <!-- Risk Table -->
+                <div class="border rounded-xl w-full overflow-x-auto">
+                    <div class="min-w-[640px]">
+                        <table class="w-full table-auto border-collapse">
+                            <thead class="bg-blue-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left">Risk Category</th>
+                                    <th class="px-4 py-2 text-left">Risk Type</th>
+                                    <th class="px-4 py-2 text-left">Risk Items</th>
+                                    <th class="px-4 py-2 text-center">Rating Scale</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-bordercolor">
+                                @{
+                                    int idx = 0;
+                                    foreach (var cat in Model.RiskTypeCategoryDTO)
+                                    {
+                                        foreach (var r in cat.RiskTypes)
+                                        {
+                                            var score = r.ItemScore;
+                                            var css = score switch
+                                            {
+                                                3 when r.OverrideScore == 3 => "bg-red-600 pulse-button",
+                                                3 => "bg-red-600",
+                                                2 => "bg-yellow-500",
+                                                1 => "bg-green-500",
+                                                _ => "bg-gray-400"
+                                            };
+                                            <tr class="border-t">
+                                                <td class="px-4 py-2">@cat.RiskCategory</td>
+                                                <td class="px-4 py-2">@r.RiskType</td>
+                                                <td class="px-4 py-2">
+                                                    <input asp-for="@r.ItemTxt" readonly class="border rounded px-2 py-1 w-full bg-gray-50" />
+                                                </td>
+                                                <td class="px-4 py-2 text-center">
+                                                    <span class="inline-block text-white rounded-full px-3 py-1 @css">@score</span>
+                                                </td>
+                                            </tr>
+                                            idx++;
+                                        }
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Totals -->
+                @* <div class="flex justify-between mt-4">
+                    <div>
+                        <span class="font-medium">Total Selected:</span>
+                        <span class="font-semibold">@Model.RiskScoreCount</span>
+                    </div>
+                    <div>
+                        <span class="font-medium">Total Score:</span>
+                        <span class="font-semibold">@Model.RiskScoreSum</span>
+                    </div>
+                </div> *@
+                <div class="flex justify-between mt-4">
+                    <div class="text-md font-medium">
+                        Total Selected: <span class="inline-block bg-primary text-white px-3 py-1 rounded-full ">@Model.RiskScoreCount</span>
+                    </div>
+                    <div class="text-md font-medium">
+                        Total Score: <span class="inline-block bg-primary text-white px-3 py-1 rounded-full">@Model.RiskScoreSum</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<script>
+    $('#printform').on("click", function () {
+        $('#printSection').printThis({
+            importCSS: true,
+            importStyle: true,
+            loadCSS: ["/css/print.css"],
+            header: `<div style="background: linear-gradient(180deg, #33394e 0%, #2F3961 100%); width:100%; padding:15px 20px;">
+                        <h1 style="color:white; font-size:20px;">@companyName
+                            <img src="@Clientlogo" style="float:right; height:50px;" />
+                        </h1>
+                    </div>`,
+        });
+    });
+</script>

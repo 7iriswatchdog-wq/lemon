@@ -1,0 +1,1107 @@
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = @localizer["KYC Report"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model AML.ViewModel.ViewModels.Report.ReportLogSearchModel
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<style>
+    select {
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.41 0L6 4.59L10.59 0L12 1.42L6 7.42L0 1.42L1.41 0Z' fill='black'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position-x: calc(100% - 20px) !important;
+        background-position-y: 50% !important;
+        background-size: 12px 8px !important;
+        padding-right: 2rem; /* Space for arrow */
+    }
+
+    .selectBox {
+        position: relative;
+    }
+
+    .overSelect {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+    }
+
+    #checkboxes {
+        display: none;
+        border: 1px #dadada solid;
+    }
+
+
+        #checkboxes label {
+            display: block;
+            text-align: left;
+        }
+
+            #checkboxes label:hover {
+            }
+
+    .page {
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .head-section {
+        display: flex;
+        justify-content: space-between; /* Better than flex-start + auto margin */
+        align-items: center;
+        width: 100%;
+        height: 72px;
+        overflow-x: hidden;
+        padding: 0 16px; /* Add horizontal padding if needed */
+        box-sizing: border-box;
+        background-color: white !important;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .heading, .menu-icon, .md.block {
+        min-width: 0; /* allows shrinking */
+        flex-shrink: 1; /* enables shrinking */
+    }
+
+    .heading {
+        font-size: 1.25rem;
+    }
+
+
+    .card1 {
+        max-width: 100%; /* Ensures it never overflows parent */
+        border-radius: 8px;
+        overflow: hidden; /* Contains all child elements */
+        background-color: white !important;
+        margin: 30px 30px;
+        padding: 20px;
+        box-shadow: 0 0 #0000, /* fallback ring-offset-shadow */
+        0 0 #0000, /* fallback ring-shadow */
+        0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
+
+    .flex-box {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 10px 0px;
+    }
+
+        .flex-box > .flex-item {
+            flex: 1 1 250px;
+            text-align: center;
+        }
+
+    .form-group {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .flex-item input {
+        width: 90%; /* full width of the parent */
+        min-width: 40%;
+        box-sizing: border-box; /* includes padding in the width */
+        padding: 8px;
+        border-radius: 4px; /* spacing between inputs */
+    }
+
+    .flex-item select {
+        width: 90%; /* full width of the parent */
+        min-width: 40%;
+        box-sizing: border-box; /* includes padding in the width */
+        padding: 8px;
+        border-radius: 4px; /* spacing between inputs */
+    }
+
+    .multiselect {
+        width: 100%;
+        align-self: flex-start;
+    }
+
+    .selectBox {
+        width: 100%;
+        align-self: flex-start;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start; /* <-- This aligns inner elements to the left */
+    }
+
+    select {
+        width: 80%; /* full width of the parent */
+        min-width: 40%;
+        box-sizing: border-box; /* includes padding in the width */
+        padding: 8px;
+        border-radius: 4px; /* spacing between inputs */
+    }
+    /* Add this to your CSS */
+    .buttons-div {
+        display: flex;
+        justify-content: flex-end;
+        gap: 20px;
+    }
+
+    .go {
+        background-color: rgb(37,99,235);
+        border-radius: 8px;
+        padding: 8px 20px;
+        color: white;
+    }
+
+    .clear {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 8px 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    thead {
+        background-color: rgb(233,239,253);
+    }
+
+    th, td {
+        padding: 10px;
+        text-align: left;
+    }
+
+    thead th:first-child {
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+    }
+
+    thead th:last-child {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+
+    label, h6 {
+        color: rgb(17, 24, 39);
+    }
+
+    input, select {
+        border: 1px solid #dee2e6 !important;
+        font-weight: lighter;
+    }
+
+        input:focus {
+            border: 1px solid rgb(37,99,235) !important;
+        }
+
+        select:focus {
+            border: 1px solid rgb(37,99,235) !important;
+        }
+
+
+    select {
+        font-weight: lighter;
+    }
+
+    option {
+        font-weight: lighter;
+    }
+
+    .flex-box1 {
+        width: 90%;
+        justify-content: flex-end;
+    }
+
+    .export {
+        background-color: none;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 8px 20px;
+    }
+    /* Checkbox fixes */
+    #checkboxes {
+        width: 100%;
+    }
+
+        #checkboxes label {
+            display: flex;
+            align-items: center;
+            padding: 4px 0;
+            text-align: left;
+            white-space: normal;
+        }
+
+        #checkboxes input[type="checkbox"] {
+            width: 16px;
+            min-width: 16px;
+            height: 16px;
+            margin: 4px;
+            flex-shrink: 0;
+        }
+
+            #checkboxes input[type="checkbox"]:focus {
+                border: none !important;
+                outline: none !important;
+                box-shadow: none !important;
+            }
+
+    /* Specific fix for your nomatch checkbox */
+    th {
+        font-weight: 500;
+    }
+
+    th, td {
+        width: calc(100% / 8);
+        word-wrap: break-word;
+        text-align: center;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        align-items: center;
+    }
+
+        .pagination-container select {
+            width: 100px;
+        }
+
+    .loader-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .loader {
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .view, .revert {
+        background-color: rgb(239 246 255);
+        color: rgb(37 99 235);
+        border-radius: 8px;
+        padding: 8px 10px;
+        margin: 10px;
+    }
+
+
+    /* Optional: Add visual scroll hint for mobile */
+    @@media (max-width: 768px) {
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .export {
+            margin: 10px;
+        }
+
+        .page {
+            width: 80vw;
+        }
+
+        .items-center select {
+            width: 115px;
+        }
+    }
+
+    th.sort-asc i.fa-sort {
+        color: #000 !important;
+    }
+
+    th.sort-desc i.fa-sort {
+        color: #000 !important;
+    }
+
+    th.sort-asc i.fa-sort:before {
+        content: "\f0de"; /* arrow up */
+    }
+
+    th.sort-desc i.fa-sort:before {
+        content: "\f0dd"; /* arrow down */
+    }
+
+
+    tr {
+        border: none !important;
+    }
+
+    td {
+        padding: 15px;
+    }
+</style>
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+</style>
+<div class="page bg-gray-50">
+    @await Html.PartialAsync("_ExportModal")
+    @* <div class="page-heading">
+        <div class="sas-card rounded-card br-20 mb-2 bg-blue head-section">
+            <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 heading"><b>KYC Report</b></h4>
+                <div class="menu-icon">
+                    <i class="lni lni-microsoft"></i>
+                </div>
+            </div>
+            <div class="md:block">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+        </div>*@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-surface">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                KYC Report
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+
+    <!-- /.card-header -->
+    <!-- form start -->
+    <!--form role="form" asp-controller="Case" asp-action="SanctionScreening" class="form-horizontal" enctype="multipart/form-data" method="post"-->
+    <div class="cont1 relative">
+        <div id="loader" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        </div>
+
+        <div class="card1">
+            <div class="sas-card rounded-card mb-2 bg-blue">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><b>KYC Report Filter</b></h6>
+                </div>
+                <div class="form-contents">
+                    <div class="row flex-box">
+                        <div class="col-md-4 flex-item">
+                            <div class="form-group">
+                                <label for="dtDOB">@localizer["Start Date"]</label>
+                                <input type="date" asp-for="StartDate" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="dtStartDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder=@localizer["Start Date"]>
+                                @*<input type="date" asp-for="StartDate" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="dtStartDate" max="3000-12-31" placeholder="Start Date">*@
+                                <span asp-validation-for="StartDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 flex-item">
+                            <div class="form-group">
+                                <label for="dtDOB">@localizer["End Date"]</label>
+                                <input type="date" asp-for="EndDate" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="dtEndDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder=@localizer["End Date"]>
+                                @*<input type="date" asp-for="EndDate" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="dtEndDate" max="3000-12-31" placeholder="End Date">*@
+                                <span asp-validation-for="EndDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 flex-item">
+                            <div class="form-group">
+                                <label for="userID">@localizer["Customer Type"]</label>
+                                <select asp-for="CustomerType" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-items="@Model.CustomerCategories" id="customertype">
+                                    <option value="0" selected hidden>@localizer["Customer Type"]</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row flex-box">
+                        <div class="col-md-4 flex-item">
+                            <div class="form-group">
+                                <label for="caseStatusID">@localizer["Case Status"]</label>
+                                <select asp-for="CaseStatus" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-items="@Model.CaseStatusList" id="caseStatusID">
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4 flex-item">
+                            <div class="form-group">
+                                <label for="userID">@localizer["User"]</label>
+                                <select asp-for="userID" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-items="@Model.Users" id="userID">
+                                    <option value="0">@localizer["Select User"]</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4 flex-item">
+                            <div class="form-group">
+                                <label for="IdStatus">Pep Declaration From Client</label>
+                                <select asp-for="IdStatus" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="Pepdeclarationfrmclient">
+                                    <option value="" hidden selected>Pep Declaration From Client</option>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                    <option value="Unsure">Unsure</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row flex-box">
+
+
+
+                        <div class="col-md-4 flex-item">
+                            <div class="form-group">
+                                <label for="IdStatus">KYC Document Validity</label>
+                                <select asp-for="IdStatus" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="IdStatus">
+                                    <option value="0" selected hidden>Select Document</option>
+                                    <option value="1">Expired</option>
+                                    <option value="3">3 Months To Expiry</option>
+                                    <option value="6">6 Months To Expiry</option>
+                                    <option value="7">More than 6 Months To Expiry</option>
+                                </select>
+                            </div>
+                        </div>
+
+
+
+                        <div class="col-md-8 flex-item">
+                            <div class="form-group">
+                                <label for="pep">Case Action</label>
+                                <div class="multiselect">
+                                    <div class="selectBox" onclick="showCheckboxes()">
+                                        <select asp-for="pep" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="pepId">
+                                            <option value="" selected hidden>Select</option>
+                                        </select>
+                                        <div class="overSelect"></div>
+
+                                    </div>
+
+                                    <div id="checkboxes">
+                                        <label for="one">
+                                            <input type="checkbox" id="nomatch" onchange="selectedCheckboxes('nomatch')" />No potential match found against the subject case, hence approved
+                                        </label>
+                                        <label for="two">
+                                            <input type="checkbox" id="TDomestic" onchange="selectedCheckboxes('TDomestic')" />True Match - Domestic PEP
+                                        </label>
+                                        <label for="three">
+                                            <input type="checkbox" id="TForeign" onchange="selectedCheckboxes('TForeign')" />True Match - Foreign PEP
+                                        </label>
+                                        <label for="four">
+                                            <input type="checkbox" id="TAdverse" onchange="selectedCheckboxes('TAdverse')" />True Match - Adverse Media
+                                        </label>
+                                        <label for="five">
+                                            <input type="checkbox" id="PDomestic" onchange="selectedCheckboxes('PDomestic')" />Partial Match - Domestic PEP
+                                        </label>
+                                        <label for="six">
+                                            <input type="checkbox" id="PForeign" onchange="selectedCheckboxes('PForeign')" />Partial Match - Foreign PEP
+                                        </label>
+                                        <label for="seven">
+                                            <input type="checkbox" id="PAdverse" onchange="selectedCheckboxes('PAdverse')" />Partial Match - Adverse Media
+                                        </label>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="flex-item"></div>
+                    </div>
+                    <input type="hidden" id="hdnnomatch" name="NoMatch" value="0" />
+                    <input type="hidden" id="hdntdometicpep" name="TrueDomesticpep" value="0" />
+                    <input type="hidden" id="hdntforeignpep" name="TrueForeignpep" value="0" />
+                    <input type="hidden" id="hdntadversemedia" name="TrueAdverseMedia" value="0" />
+                    <input type="hidden" id="hdnpdometicpep" name="PartialDomesticpep" value="0" />
+                    <input type="hidden" id="hdnpforeignpep" name="PartialForeignpep" value="0" />
+                    <input type="hidden" id="hdnpadversemedia" name="Partialadversemedia" value="0" />
+                </div>
+            </div>
+            @* <div class="row justify-content-end buttons-div">
+                <div class="d-flex justify-content-between align-items-center">
+                <button type="submit" id="btnSearch" class="h-10 px-4 rounded-lg border border-bordercolor bg-surface hover:bg-appbg text-textprimary text-[13px] font-bold transition-colors go" onclick="loadKycReport();">@localizer["Go"]</button>
+                <button type="reset" id="btnReset" class="h-10 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[13px] font-bold transition-colors ml-2 mr-3 clear">Reset</button>
+                </div>
+            </div> *@
+            <div class="flex justify-end mt-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button type="submit"
+                            id="btnSearch"
+                            class="sas-button px-8 py-2 text-white bg-color-2 go"
+                            onclick="loadKycReport();">
+                        Go
+                    </button>
+
+                    <button type="reset"
+                            id="btnReset"
+                            class="sas-button px-8 py-2 bg-color-3 clear">
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+
+        </div>
+
+
+        <!-- /.card-body -->
+        <!--/form-->
+        @*@**<div class="bg-surface rounded-xl border border-bordercolor shadow-none mb-4">
+            <div class="px-6 py-4 border-b border-bordercolor">
+                @*<h3 class="card-title">Results</h3>*@
+        @*</div>**@@*@*@
+        <div class="sas-card rounded-card mb-2 bg-blue card1">
+            <div class="flex-box">
+                <div style="margin : 10px;">
+                    <h1 class="text-xl font-semibold text-gray-900" style="display : inline">Details</h1>
+                </div>
+                <div class="flex gap-4 flex-box flex-box1">
+                    <div class="relative w-96 ">
+                        <input type="text"
+                               placeholder="Search anything..."
+                               class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-600 search">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+
+                        </svg>
+                    </div>
+                    <div>
+                        <button type="button" 
+                                onclick="showExportOptions()"
+                                class="flex items-center gap-2 border border-bordercolor bg-surface hover:bg-appbg text-textlabel font-semibold h-11 px-6 rounded-md text-sm transition focus:outline-none shadow-sm">
+                            <i data-lucide="download" class="h-4 w-4"></i>
+                            Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center ">
+                <div class="table-responsive table-container">
+                    <div class="loader-container" style="display: none;">
+                        <div class="loader"></div>
+                    </div>
+                    <table id="filterTable" class="w-full text-sm text-left" cellspacing="0">
+                        <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                            <tr>
+                                <th onclick="sortTable(0)">@localizer["Customer ID"] <i class="fa fa-sort"></i></th>
+                                <th onclick="sortTable(1)">@localizer["Customer Type"] <i class="fa fa-sort"></i></th>
+                                <th onclick="sortTable(2)">@localizer["Customer Name"] <i class="fa fa-sort"></i></th>
+                                <th onclick="sortTable(3)">@localizer["Case Status"] <i class="fa fa-sort"></i></th>
+                                <th onclick="sortTable(4)">@localizer["Created By"] <i class="fa fa-sort"></i></th>
+                                <th onclick="sortTable(5)">@localizer["Creation Date"] <i class="fa fa-sort"></i></th>
+                                <th id="KYCDetails">@localizer["Details"]</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-surface items-center justify-center">
+                        </tbody>
+                    </table>
+                </div>
+                @* <div class="pagination-container d-flex justify-content-between mt-4 flex-wrap gap-2">
+                    <div class="rows-per-page mr-4 mb-2">
+                        <label for="rowsPerPage" class="mr-2 text-sm">Show rows:</label>
+                        <select id="rowsPerPage" class="rounded border px-2 py-1 text-sm">
+                            <option value="5">5 items</option>
+                            <option value="10" selected>10 items</option>
+                            <option value="25">25 items</option>
+                            <option value="50">50 items</option>
+                        </select>
+                    </div>
+                    <div class="pagination-buttons flex flex-wrap gap-2 mb-2"></div>
+                </div> *@
+                <div class="pagination-container mt-4 flex flex-col sm:flex-row sm:justify-between gap-2">
+
+                    <!-- Rows per page -->
+                    <div class="rows-per-page mb-2 sm:mb-0">
+                        <label for="rowsPerPage" class="mr-2 text-sm">Show rows:</label>
+                        <select id="rowsPerPage" class="rounded border px-2 py-1 text-sm">
+                            <option value="5">5 items</option>
+                            <option value="10" selected>10 items</option>
+                            <option value="25">25 items</option>
+                            <option value="50">50 items</option>
+                        </select>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination-buttons w-full flex flex-col sm:flex-row justify-center gap-2"></div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+        @*$(document).ready(function () {
+
+    LoadTable();
+
+});
+
+function LoadTable() {
+    $('#filterTable').DataTable({
+        "serverSide": true, "processing": true,
+         order: [[0, 'desc']],
+        ajax: {
+            url: '/Report/KycReportCustompagination',
+            type: 'POST',
+            data: function (d) {
+                d.userID = $('#userID').val(),
+                    d.startDate = $('#dtStartDate').val(),
+                    d.endDate = $('#dtEndDate').val(),
+                    console.log("this is endDate", JSON.stringify(d.endDate));
+                if ($('#customertype').val() == 'INDIVIDUAL')
+                    d.cust_type = "I"
+                else
+                    if ($('#customertype').val() == 'CORPORATE')
+                        d.cust_type = "C"
+                    else
+                        if ($('#customertype').val() == 'SHAREHOLDER')
+                            d.cust_type = "S"
+                        else
+                            d.cust_type = ""
+                    d.status = $('#caseStatusID').val(),
+                    d.nomatch = $('#hdnnomatch').val(),
+                    d.tdomesticpep = $('#hdndometicpep').val(),
+                    d.tforeignpep = $('#hdntforeignpep').val(),
+                    d.tadversemedia = $('#hdntadversemedia').val(),
+                    d.pdomesticpep = $('#hdnpdometicpep').val(),
+                    d.pforeignpep = $('#hdnpforeignpep').val(),
+                    d.padversemedia = $('#hdnpadversemedia').val(),
+                    d.pepdeclaration = $('#Pepdeclarationfrmclient').val(),
+                    d.idstatus = $('#IdStatus').val()
+
+
+            }
+        },
+        columns: [
+             {
+                data: "view", "name": "View", "autoWidth": true,
+                "render": function (data, type, row) {
+                    if (row.status != null) {
+                        if (row.customerType == "Individual") {
+                            if (row.status.indexOf("Auto") === -1) {
+                                if (row.status.indexOf("Pending") === -1)
+                                        return '<a class="sas-button bg-color-2 pt-2" href="ViewIndividualKYCReport?id=' + row.customerID + '&type=1">@localizer["View"]</a>';
+                                else
+                                    //return '<a></a>';
+                                        return '<a class="sas-button bg-color-2 pt-2" href="ViewIndividualKYCReport?id=' + row.customerID + '&type=3">@localizer["View"]</a>';
+                            }
+                            else {
+                                //return '<a></a>';
+                                if (row.isMatched == "1") {
+                                        return '<a class="sas-button bg-color-2 pt-2" href="ViewIndividualKYCReport?id=' + row.customerID + '&type=2">@localizer["View"]</a>';
+                                } else {
+                                    //return '<a></a>';
+                                        return '<a class="sas-button bg-color-2 pt-2" href="ViewIndividualKYCReport?id=' + row.customerID + '&type=2">@localizer["View"]</a>';
+                                }
+                            }
+                        } else {
+                            if (row.status.indexOf("Auto") === -1) {
+                                if (row.status.indexOf("Pending") === -1)
+                                        return '<a class="sas-button bg-color-2 pt-2" href="ViewCorporateKYCReport?id=' + row.customerID + '&type=1">@localizer["View"]</a>';
+                                else
+                                    //return '<a></a>';
+                                        return '<a class="sas-button bg-color-2 pt-2" href="ViewCorporateKYCReport?id=' + row.customerID + '&type=3">@localizer["View"]</a>';
+                            }
+                            else {
+                                //return '<a></a>';
+                                if (row.isMatched == "1") {
+                                        return '<a class="sas-button bg-color-2 pt-2" href="ViewCorporateKYCReport?id=' + row.customerID + '&type=2">@localizer["View"]</a>';
+                                } else {
+                                    //return '<a></a>';
+                                        return '<a class="sas-button bg-color-2 pt-2" href="ViewCorporateKYCReport?id=' + row.customerID + '&type=2">@localizer["View"]</a>';
+                                }
+                            }
+                        }
+                    }
+                    else
+                        return null;
+                }
+            },
+            { data: "customerID" },
+            { data: "customerType" },
+            { data: "customerName" },
+            { data: "status" },
+            { data: "createdBy" },
+            { data: "createdOn" }
+
+
+        ],
+        error: function (e, message) {
+            jQuery("#filterTable").dataTable({
+
+            }),
+                alert(message);
+        },
+
+        destroy: true
+
+    });
+    if ($('#dtStartDate').val() == '0001-01-01') {
+        $('#dtStartDate').val('');
+        $('#dtEndDate').val('');
+    }
+}*@
+        // KYC Report Module
+        let pageSize = parseInt($('#rowsPerPage').val()) || 10;
+        let currentPage = 1;
+        let totalPages = 1;
+        let drawCounter = 1;
+        let searchTimeout;
+        let allData;
+            let currentSortColumn = 5; // Default sort by Customer ID
+        let currentSortDirection = 'desc'; // Default sort direction
+            function sortTable(columnIndex) {
+            // Reset all sort icons
+            $('#filterTable th').removeClass('sort-asc sort-desc');
+            $('#filterTable th i.fa-sort').css('color', '#ccc');
+
+            // If clicking the same column, toggle direction
+            if (currentSortColumn === columnIndex) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                // New column, default to ascending
+                currentSortColumn = columnIndex;
+                currentSortDirection = 'asc';
+            }
+
+            // Update the sort icon for the current column
+            const $header = $('#filterTable th').eq(columnIndex);
+            $header.addClass(`sort-${currentSortDirection}`);
+            $header.find('i.fa-sort').css('color', '#2563eb');
+
+            // Reload the data with new sorting
+            loadKycReport(currentPage, $('input[placeholder="Search anything..."]').val());
+        }
+
+        $(document).ready(function () {
+            loadKycReport();
+
+            // Debounced Search
+            $('.search').on('input', function () {
+                const keyword = $(this).val().toLowerCase();
+
+                const filteredData = (allData || []).filter(item =>
+                    (item.customerID + '').toLowerCase().includes(keyword) ||
+                    (item.customerType || '').toLowerCase().includes(keyword) ||
+                    (item.customerName || '').toLowerCase().includes(keyword) ||
+                    (item.status || '').toLowerCase().includes(keyword) ||
+                    (item.createdBy || '').toLowerCase().includes(keyword) ||
+                    (item.createdOn || '').toLowerCase().includes(keyword)
+                );
+
+                currentPage = 1;
+                totalPages = Math.ceil(filteredData.length / pageSize);
+                $('#loader').show();
+
+                setTimeout(() => {
+                    const paginatedData = filteredData.slice(0, pageSize);
+                    renderKycTable(paginatedData);
+                    renderPager(currentPage);
+                    $('#loader').hide();
+                }, 100);
+            });
+
+
+
+            // Page size change
+            $('#rowsPerPage').on('change', function () {
+                pageSize = parseInt($(this).val()) || 10;
+                currentPage = 1;
+                loadKycReport(currentPage, $('input[placeholder="Search anything..."]').val());
+            });
+
+            // Pagination button
+            $('.pagination-container').on('click', '.pagination-buttons button', function () {
+                const pg = parseInt($(this).data('page'));
+                if (!isNaN(pg) && pg >= 1 && pg <= totalPages) {
+                    currentPage = pg;
+                    loadKycReport(currentPage, $('input[placeholder="Search anything..."]').val());
+                }
+            });
+
+            // Search button
+            $('#btnSearch').click(function (e) {
+                e.preventDefault();
+                currentPage = 1;
+                loadKycReport(currentPage);
+            });
+
+            // Reset button
+            $("#btnReset").click(function () {
+                const date = new Date();
+                const today = date.toISOString().split('T')[0];
+                date.setDate(date.getDate() - 7);
+                const stdate = date.toISOString().split('T')[0];
+
+                $('#dtStartDate').val(stdate);
+                $('#dtEndDate').val(today);
+                $('#caseStatusID').val(10);
+                $('#userID').val(0);
+                $('#customertype').val(0);
+                $('input[placeholder="Search anything..."]').val('');
+
+                currentPage = 1;
+                loadKycReport(currentPage);
+            });
+        });
+
+        function loadKycReport(page = 1, searchValue = '') {
+            $('#loader').show();
+
+            const filters = {
+                draw: drawCounter++,
+                start: (page - 1) * pageSize,
+                length: pageSize,
+                order: [{ column: 0, dir: "desc" }],
+                userID: $('#userID').val(),
+                startDate: $('#dtStartDate').val(),
+                endDate: $('#dtEndDate').val(),
+                status: $('#caseStatusID').val(),
+                cust_type: $('#customertype').val() === 'INDIVIDUAL' ? 'I' :
+                    $('#customertype').val() === 'CORPORATE' ? 'C' :
+                        $('#customertype').val() === 'SHAREHOLDER' ? 'S' : '',
+                nomatch: $('#hdnnomatch').val(),
+                tdomesticpep: $('#hdndometicpep').val(),
+                tforeignpep: $('#hdntforeignpep').val(),
+                tadversemedia: $('#hdntadversemedia').val(),
+                pdomesticpep: $('#hdnpdometicpep').val(),
+                pforeignpep: $('#hdnpforeignpep').val(),
+                padversemedia: $('#hdnpadversemedia').val(),
+                pepdeclaration: $('#Pepdeclarationfrmclient').val(),
+                idstatus: $('#IdStatus').val(),
+                value: searchValue,
+                    orderColumn: currentSortColumn, // Add this
+                orderDirection: currentSortDirection
+            };
+
+            $.ajax({
+                url: '/Report/KycReportCustompagination',
+                type: 'POST',
+                data: filters,
+                success: function (resp) {
+                    const rows = resp.data || [];
+                    const totalRecords = resp.recordsFiltered || 0;
+                    allData = resp.allRows;
+                    totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+
+                    renderKycTable(rows);
+                    renderPager(page);
+                },
+                error: function (xhr) {
+                    console.error('Error:', xhr.responseText);
+                    alert('Error loading data');
+                },
+                complete: function () {
+                    $('#loader').hide();
+                }
+            });
+        }
+
+        function renderKycTable(rows) {
+            const $tbody = $('#filterTable tbody').empty();
+
+            if (!rows.length) {
+                $tbody.append('<tr><td colspan="7" class="text-center py-4">No data available</td></tr>');
+                return;
+            }
+
+            rows.forEach(row => {
+                let viewLink = '';
+                const type = row.status?.includes('Auto') ? 2 : row.status?.includes('Pending') ? 3 : 1;
+                const isIndividual = row.customerType === "Individual";
+                const urlBase = isIndividual ? 'ViewIndividualKYCReport' : 'ViewCorporateKYCReport';
+                viewLink = `<a class="sas-button bg-color-2 pt-2 view" href="${urlBase}?id=${row.customerID}&type=${type}" onclick="$('#loader').show();">View</a>`;
+
+                $tbody.append(`
+                <tr>
+                    <td>${row.customerID || ''}</td>
+                    <td>${row.customerType || ''}</td>
+                    <td>${row.customerName || ''}</td>
+                    <td>${row.status || ''}</td>
+                    <td>${row.createdBy || ''}</td>
+                    <td>${row.createdOn || ''}</td>
+                    <td>${viewLink}</td>
+                </tr>
+            `);
+            });
+        }
+
+        function renderPager(page) {
+            const $pagerButtons = $('.pagination-buttons').empty();
+            if (totalPages <= 1) return;
+
+            const btn = (lbl, pg, disabled, active) =>
+                `<button class="px-3 py-1 border rounded
+                ${active ? 'bg-primary text-white' : 'bg-surface text-primary'}
+                ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}"
+                data-page="${pg}" ${disabled ? 'disabled' : ''}>${lbl}</button>`;
+
+            $pagerButtons.append(btn('First', 1, page === 1));
+            $pagerButtons.append(btn('Prev', page - 1, page === 1));
+
+            const maxVisible = 5;
+            let start = Math.max(1, page - Math.floor(maxVisible / 2));
+            let end = Math.min(totalPages, start + maxVisible - 1);
+            if (end - start < maxVisible - 1) {
+                start = Math.max(1, end - maxVisible + 1);
+            }
+
+            for (let i = start; i <= end; i++) {
+                $pagerButtons.append(btn(i, i, false, i === page));
+            }
+
+            $pagerButtons.append(btn('Next', page + 1, page === totalPages));
+            $pagerButtons.append(btn('Last', totalPages, page === totalPages));
+        }
+
+
+
+        function showExportOptions() {
+            const columns = [
+                { id: "customerID", label: "Customer ID" },
+                { id: "customerType", label: "Customer Type" },
+                { id: "customerName", label: "Customer Name" },
+                { id: "status", label: "Case Status" },
+                { id: "createdBy", label: "Created By" },
+                { id: "createdOn", label: "Creation Date" }
+            ];
+
+            openExportModal({
+                getColumnsByActiveTab: () => columns,
+                onExport: (format, selectedColumns, orientation) => {
+                    ExportList(format === 'pdf', selectedColumns, orientation);
+                }
+            });
+        }
+
+        function ExportList(isPDF, selectedColumns, orientation) {
+            $('#loader').show();
+            const params = $.param({
+                userID: $('#userID').val(),
+                startDate: $('#dtStartDate').val(),
+                endDate: $("#dtEndDate").val(),
+                status: $('#caseStatusID').val(),
+                IsPDF: isPDF,
+                selectedColumns: selectedColumns || '',
+                orientation: orientation || 'portrait'
+            });
+
+            window.location = '/Report/ExportkycCaseReport?' + params;
+            $('#loader').hide();
+        }
+
+        function showCheckboxes() {
+            const checkboxes = document.getElementById("checkboxes");
+            checkboxes.style.display = checkboxes.style.display === "none" ? "block" : "none";
+            expanded = !expanded;
+        }
+
+        function selectedCheckboxes() {
+            const map = {
+                "#nomatch": "#hdnnomatch",
+                "#TDomestic": "#hdndometicpep",
+                "#TForeign": "#hdntforeignpep",
+                "#TAdverse": "#hdntadversemedia",
+                "#PDomestic": "#hdnpdometicpep",
+                "#PForeign": "#hdnpforeignpep",
+                "#PAdverse": "#hdnpadversemedia"
+            };
+
+            for (const [chk, hdn] of Object.entries(map)) {
+                $(hdn).val($(chk).is(':checked') ? 1 : 0);
+            }
+        }
+
+
+</script>

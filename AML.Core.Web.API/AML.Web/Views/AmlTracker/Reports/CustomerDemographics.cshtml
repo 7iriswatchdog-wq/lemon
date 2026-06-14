@@ -1,0 +1,77 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model CustomerDemographicsVM
+@{
+    ViewData["Title"] = "Customer Demographics";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "Customer Demographics Distribution";
+    ViewData["ReportSubtitle"] = "Customer base by type, nationality, profession, sector, residence.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@functions {
+    string Bar(int n, int max)
+    {
+        if (max <= 0) max = 1;
+        var pct = Math.Min(100, n * 100 / max);
+        return $"width:{pct}%;";
+    }
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-3">
+            <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-slate-500 font-bold">Total Customers</div>
+                <div class="text-2xl font-semibold text-slate-800">@Model.Total</div>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-blue-700 font-bold">Individuals</div>
+                <div class="text-2xl font-semibold text-blue-700">@Model.IndividualCount</div>
+            </div>
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-purple-700 font-bold">Corporates</div>
+                <div class="text-2xl font-semibold text-purple-700">@Model.CorporateCount</div>
+            </div>
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-slate-500 font-bold">Other Types</div>
+                <div class="text-2xl font-semibold text-slate-700">@(Model.Total - Model.IndividualCount - Model.CorporateCount)</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            @{
+                var sections = new (string Title, List<DemographicBucket> Data)[]
+                {
+                    ("By Customer Type", Model.ByCustomerType),
+                    ("By Nationality", Model.ByNationality),
+                    ("By Profession", Model.ByProfession),
+                    ("By Employer Sector", Model.ByEmployerSector),
+                    ("By Residence Status", Model.ByResidence)
+                };
+            }
+            @foreach (var s in sections)
+            {
+                var max = s.Data.Count == 0 ? 1 : s.Data.Max(b => b.Count);
+                <div class="bg-white border border-slate-200 rounded-lg p-4">
+                    <h3 class="font-semibold text-slate-800 mb-3">@s.Title</h3>
+                    @if (s.Data.Any())
+                    {
+                        <div class="space-y-1.5">
+                            @foreach (var b in s.Data)
+                            {
+                                <div class="flex items-center gap-2 text-sm">
+                                    <div class="w-32 truncate text-slate-700" title="@b.Label">@b.Label</div>
+                                    <div class="flex-1 bg-slate-100 rounded h-4 overflow-hidden">
+                                        <div class="bg-blue-500 h-4" style="@Bar(b.Count, max)"></div>
+                                    </div>
+                                    <div class="w-12 text-right font-mono text-xs text-slate-700">@b.Count</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else { <p class="text-sm text-slate-500 italic">No data.</p> }
+                </div>
+            }
+        </div>
+    </div>
+</section>

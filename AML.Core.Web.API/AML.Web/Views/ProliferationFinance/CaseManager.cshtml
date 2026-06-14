@@ -1,0 +1,908 @@
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Proliferation Finance - Case Manager";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+@await Html.PartialAsync("_ExportModal")
+<div class="p-8 space-y-8 max-w-[1600px] mx-auto min-h-screen text-textprimary" style="font-family: 'Inter', sans-serif;">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-textprimary tracking-tight">Proliferation Finance - Case Manager</h1>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="bg-surface rounded-xl border border-bordercolor p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-sm font-bold text-textprimary tracking-tight">Case Filter</h3>
+            <div class="flex items-center gap-3">
+                <button onclick="resetFilters()" class="bg-primary hover:bg-primary text-white font-bold h-10 px-6 rounded-md text-sm transition-all shadow-sm">
+                    Reset
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+            <!-- Start Date -->
+            <div class="space-y-2">
+                <label class="text-[12px] font-bold text-textmuted tracking-wider">Start Date</label>
+                <input type="text" id="startDate" name="StartDate"
+                       placeholder="dd/MM/yyyy"
+                       class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all">
+                <span id="formattedDate" hidden></span>
+                @* <input type="date" id="startDate" class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all"> *@
+            </div>
+
+            <!-- End Date -->
+            <div class="space-y-2">
+                <label class="text-[12px] font-bold text-textmuted tracking-wider">End Date</label>
+                <input type="text" id="endDate" name="EndDate"
+                       placeholder="dd/MM/yyyy"
+                       class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all">
+                <span id="formattedEndDate" hidden></span>
+                @* <input type="date" id="endDate" class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all"> *@
+            </div>
+
+            <!-- Datasets -->
+            <div class="space-y-2">
+                <label class="text-[12px] font-bold text-textmuted tracking-wider">Datasets</label>
+                <select id="customerTypeFilter" class="h-10 w-full rounded-md border border-bordercolor bg-surface px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all appearance-none">
+                    <option value="0">All</option>
+                    <option value="Chemical">Chemical</option>
+                    <option value="Non-Chemical">Non-Chemical</option>
+                    <option value="Military">Military Goods</option>
+                </select>
+            </div>
+
+            <!-- Status -->
+            <div class="space-y-2">
+                <label class="text-[12px] font-bold text-textmuted tracking-wider">Status</label>
+                <select id="statusFilter" class="h-10 w-full rounded-md border border-bordercolor bg-surface px-3 text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm transition-all appearance-none">
+                    <option value="0">All</option>
+                    <option value="Pending">Pending</option>
+                    <option value="True Match">True Match</option>
+                    <option value="False Match">False Match</option>
+                    <option value="Potential Match">Potential Match</option>
+                    <option value="No Match">No Match</option>
+                    <option value="Submit to Senior Management">Submit to Senior Management</option>
+                    <option value="Hold">Hold</option>
+                </select>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex items-center gap-3">
+                <!-- Apply Filter -->
+                <button onclick="loadCases()" id="applyBtn"
+                        class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white font-semibold h-10 px-5 rounded-md text-sm transition">
+                    Apply
+                </button>
+
+                <!-- Standardized Export Button -->
+                <button type="button" onclick="showExportOptions()" class="flex items-center gap-2 border border-bordercolor bg-surface hover:bg-appbg text-textlabel font-bold h-10 px-5 rounded-md text-sm transition shadow-sm">
+                    <i data-lucide="download" class="h-4 w-4"></i>
+                    Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .dt-loader { display: inline-block; position: relative; width: 80px; height: 20px; }
+        .dt-loader div { position: absolute; top: 8px; width: 13px; height: 13px; border-radius: 50%; background: #2563eb; animation-timing-function: cubic-bezier(0, 1, 1, 0); }
+        .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+        .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+        @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+        @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+    </style>
+
+    <!-- Table Section -->
+    <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row gap-4 items-center w-full">
+            <div class="relative flex-1 w-full">
+                <i data-lucide="search" class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-textmuted"></i>
+                <input type="text" id="searchInput" placeholder="Search by Search Detail" onkeyup="filterTable()"
+                       class="pl-10 h-11 w-full rounded-md border border-bordercolor bg-surface px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 shadow-sm transition-all placeholder:text-textmuted">
+            </div>
+        </div>
+
+        <div class="bg-surface rounded-xl border border-bordercolor shadow-sm overflow-hidden relative min-h-[400px]">
+            <div id="tableLoader" class="fixed inset-0 bg-surface bg-opacity-75 z-[9999] flex-col items-center justify-center gap-4 transition-all duration-300 hidden">
+                <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+            </div>
+            <div class="overflow-x-auto">
+                <table id="proliferationCasesTable" class="w-full text-sm text-left table-fixed border-collapse">
+                    <thead class="text-[10px] text-textmuted bg-surface border-b border-bordercolor">
+                        <tr>
+                            <th class="px-2 py-4 h-12">Corporate Id</th>
+                            <th class="px-2 py-4 h-12">ID</th>
+                            <th class="px-2 py-4 h-12">Created on</th>
+                            <th class="px-2 py-4 h-12">Updated on</th>
+                            <th class="px-2 py-4 h-12">Search Detail</th>
+                            <th class="px-2 py-4 h-12">Datasets</th>
+                            <th class="px-2 py-4 h-12">Status</th>
+                            <th class="px-2 py-4 h-12">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="casesTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
+                        <!-- Rows will be injected here via AJAX -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Consolidated Pagination Footer (Aligned with Due Diligence) -->
+            <div class="flex items-center justify-between px-4 py-4 border-t border-bordercolor bg-surface">
+                <div class="flex items-center gap-4 text-xs font-medium text-textmuted">
+                    <div class="flex items-center gap-2">
+                        <select id="pageSize" onchange="changePageSize()" class="h-8 w-20 rounded-md border border-bordercolor bg-surface pl-3 pr-8 text-xs font-bold text-textlabel focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all cursor-pointer">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span>Entries per page</span>
+                    </div>
+                    <div class="h-4 w-px bg-slate-200"></div>
+                    <div id="paginationInfo">
+                        Showing <span class="font-bold text-textprimary" id="startRange">0</span> to <span class="font-bold text-textprimary" id="endRange">0</span> of <span class="font-bold text-textprimary" id="totalEntries">0</span> cases
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="changePage(-1)" id="prevBtn" title="Previous page" aria-label="Previous page" class="h-8 w-8 flex items-center justify-center rounded-md border border-bordercolor bg-surface text-xs font-bold text-textlabel hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                        <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button onclick="changePage(1)" id="nextBtn" title="Next page" aria-label="Next page" class="h-8 w-8 flex items-center justify-center rounded-md border border-bordercolor bg-surface text-xs font-bold text-textlabel hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<iframe id="pdfFrame" style="position: fixed; top: 0; left: -9999px; width: 1200px; height: 100vh; border: none; opacity: 0; pointer-events: none;"></iframe>
+
+<!-- View Details Modal -->
+<div id="detailsModal" class="fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="bg-surface rounded-xl shadow-lg w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-bordercolor bg-appbg">
+            <div>
+                <h3 class="text-lg font-bold text-textprimary tracking-tight">Case Details</h3>
+                <p id="modalCaseId" class="text-sm text-textmuted mt-0.5">ID: -</p>
+            </div>
+            <button type="button" onclick="closeModal()" class="text-textmuted hover:text-textlabel hover:bg-slate-100 p-2 rounded-full transition-colors">
+                <i data-lucide="x" class="h-5 w-5"></i>
+            </button>
+        </div>
+        <!-- Body -->
+        <div class="p-6 overflow-y-auto" id="modalContent">
+            <!-- Content Injected here -->
+        </div>
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-bordercolor bg-appbg flex justify-end">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 bg-surface border border-bordercolor text-textlabel text-sm font-medium rounded-lg hover:bg-appbg hover:text-textprimary transition-colors shadow-sm">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+
+    function showLoader() {
+        $('#tableLoader').removeClass('hidden').addClass('flex');
+    }
+
+    function hideLoader() {
+        $('#tableLoader').addClass('hidden').removeClass('flex');
+    }
+
+    function formatDateTime(dateStr) {
+        if (!dateStr) return { date: '-', time: '-' };
+        const d = new Date(dateStr);
+        return {
+            date: d.toLocaleDateString('en-GB'),
+            time: d.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            })
+        };
+    }
+
+    let allCases = [];
+    let currentPage = 1;
+    let pageSize = 10;
+    let filteredCases = [];
+
+    /* ---------------------- Column Filters Logic ---------------------- */
+    function applyColumnFilters() {
+        const activeFilters = $('#proliferationCasesTable').data('excel-filters') || {};
+        
+        filteredCases = allCases.filter(item => {
+            for (const colIdxKey in activeFilters) {
+                const colIdx = parseInt(colIdxKey);
+                const allowedValues = activeFilters[colIdx];
+                
+                let itemVal = '';
+                switch (colIdx) {
+                    case 0: // Corporate ID
+                        itemVal = (item.corporateId || item.CorporateId || '-').toString();
+                        break;
+                    case 1: // ID
+                        itemVal = (item.caseRefId || item.CaseRefId || (item.id || item.Id ? 'PF-' + (item.id || item.Id) : '-')).toString();
+                        break;
+                    case 2: // Created On
+                        const createdObj = formatDateTime(item.createdOn || item.CreatedOn);
+                        itemVal = `${createdObj?.date || ''} ${createdObj?.time ? createdObj.time.replace(/\s?(AM|PM)/i, '') : ''}`.trim() || '-';
+                        break;
+                    case 3: // Updated On
+                        const updatedObj = formatDateTime(item.updatedOn || item.UpdatedOn);
+                        itemVal = `${updatedObj?.date || ''} ${updatedObj?.time ? updatedObj.time.replace(/\s?(AM|PM)/i, '') : ''}`.trim() || '-';
+                        break;
+                    case 4: // Search Detail
+                        const chemName = item.chemicalName || item.ChemicalName || '-';
+                        const hsCode = item.hsCode || item.HsCode || '-';
+                        const casNum = item.casNumber || item.CasNumber || '-';
+                        const eccn = item.eccn || item.Eccn || '-';
+                        const synonym = item.synonymName || item.SynonymName || '-';
+                        itemVal = [chemName, hsCode, casNum, eccn, synonym].find(x => x && x !== '-' && x !== 'N/A') || '-';
+                        break;
+                    case 5: // Datasets
+                        {
+                            const custType = item.customerType || item.CustomerType || '';
+                            let datasets = [];
+                            const hasChemical = (item.matchedChemicalName || item.MatchedChemicalName || '').trim() !== '';
+                            const hasNonChemical = (item.searchHitDetails || item.SearchHitDetails || '').trim() !== '';
+                            if (hasChemical) datasets.push('Chemical');
+                            if (custType === 'Military' || custType === 'Both') {
+                                datasets.push('Military Goods');
+                            }
+                            if (custType === 'Non-Chemical' || custType === 'Both' || (custType === 'Goods' && hasNonChemical)) {
+                                datasets.push('Non-Chemical');
+                            }
+                            itemVal = datasets.length > 0 ? datasets.join(', ') : 'Chemical';
+                        }
+                        break;
+                    case 6: // Status
+                        itemVal = (item.status || item.Status || 'Pending').trim();
+                        break;
+                }
+                
+                if (allowedValues && !allowedValues.has(itemVal.replace(/\s+/g, ' ').trim())) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        currentPage = 1;
+        renderTable();
+    }
+
+    $(document).ready(function() {
+        // Compute today and one year ago
+        // const todayLocal = new Date().toLocaleDateString('en-CA'); // yyyy-mm-dd
+        // const oneYearAgo = new Date();
+        // oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        // const oneYearAgoLocal = oneYearAgo.toLocaleDateString('en-CA'); // yyyy-mm-dd
+
+        // // Set default date range to last 1 year
+        // $('#startDate').val(oneYearAgoLocal);
+        // $('#endDate').val(todayLocal);
+
+        // // Restrict End Date to today (local time)
+        // const endDateInput = document.getElementById('endDate');
+        // if (endDateInput) {
+        //     endDateInput.setAttribute('max', todayLocal);
+        // }
+
+        // // Prevent future dates
+        // $('#endDate').on('change', function() {
+        //     if (this.value > todayLocal) {
+        //         this.value = todayLocal;
+        //         toastr.warning('End date cannot be in the future.');
+        //     }
+        lucide.createIcons();
+        loadCases();
+
+        // Define setupExcelTableFilters utility
+        function setupExcelTableFilters(tableId, onFilterApplied) {
+            const $table = $('#' + tableId);
+            if (!$table.length) return;
+
+            $table.data('excel-filters', {});
+
+            const headers = $table.find('thead tr').first().find('th');
+            headers.each(function (colIdx) {
+                const $th = $(this);
+                // Skip the Action column
+                if (colIdx === headers.length - 1 || $th.text().trim() === '') return;
+
+                $th.css('position', 'relative');
+                $th.addClass('pr-6');
+
+                const $icon = $(`
+                    <span class="excel-filter-btn cursor-pointer absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors" data-col-idx="${colIdx}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-filter"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    </span>
+                `);
+                $th.append($icon);
+            });
+
+            $table.on('click', '.excel-filter-btn', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const $btn = $(this);
+                const colIdx = parseInt($btn.data('col-idx'));
+
+                $('.excel-filter-popover').remove();
+
+                const uniqueValues = new Set();
+                $table.find('tbody tr').each(function () {
+                    if ($(this).find('td').length <= 1) return;
+                    const val = getExcelCellText($(this), colIdx, tableId);
+                    uniqueValues.add(val);
+                });
+
+                const sortedValues = Array.from(uniqueValues).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+                const activeFilters = $table.data('excel-filters') || {};
+                const colFilters = activeFilters[colIdx];
+
+                const popoverId = `excel-popover-${tableId}-${colIdx}`;
+                const $popover = $(`
+                    <div id="${popoverId}" class="excel-filter-popover absolute z-[99999] bg-white border border-slate-200 rounded-lg shadow-xl p-3 w-[260px] text-textprimary flex flex-col font-sans select-none" style="font-family: 'Inter', sans-serif; text-align: left; line-height: 1.5;">
+                        <div class="relative mb-2">
+                            <input type="text" class="excel-filter-search w-full h-8 px-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs" placeholder="Search..." />
+                        </div>
+                        <div class="flex items-center gap-2 py-1 mb-1 border-b border-slate-100">
+                            <input type="checkbox" class="excel-filter-select-all h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" id="excel-filter-select-all" />
+                            <label for="excel-filter-select-all" class="text-xs font-bold cursor-pointer text-slate-800">(Select All)</label>
+                        </div>
+                        <div class="excel-filter-options flex-1 pr-1 space-y-1.5 custom-scrollbar mb-3" style="max-height: 160px; overflow-y: auto;">
+                        </div>
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                            <button type="button" class="excel-filter-clear text-xs text-blue-600 font-bold hover:underline">Clear filter</button>
+                            <div class="flex gap-2">
+                                <button type="button" class="excel-filter-cancel px-3 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 transition-colors">Cancel</button>
+                                <button type="button" class="excel-filter-ok px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-bold shadow-sm transition-colors">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                `);
+
+                const $optionsContainer = $popover.find('.excel-filter-options');
+                sortedValues.forEach((val, idx) => {
+                    const isChecked = !colFilters || colFilters.has(val);
+                    const optId = `excel-opt-${colIdx}-${idx}`;
+                    const $opt = $(`
+                        <div class="flex items-center gap-2 py-0.5 option-item">
+                            <input type="checkbox" class="excel-filter-option h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" id="${optId}" value="${val}" ${isChecked ? 'checked' : ''} />
+                            <label for="${optId}" class="text-xs text-slate-700 cursor-pointer truncate max-w-[200px]" title="${val}">${val}</label>
+                        </div>
+                    `);
+                    $optionsContainer.append($opt);
+                });
+
+                updateSelectAllState($popover);
+
+                $('body').append($popover);
+                const offset = $btn.offset();
+                const popoverWidth = 260;
+                let leftPos = offset.left;
+                if (leftPos + popoverWidth > $(window).width() - 20) {
+                    leftPos = offset.left + $btn.outerWidth() - popoverWidth;
+                }
+                leftPos = Math.max(80, leftPos);
+                $popover.css({
+                    top: offset.top + $btn.outerHeight() + 5,
+                    left: leftPos
+                });
+
+                $popover.find('.excel-filter-search').on('input', function () {
+                    const searchVal = $(this).val().toLowerCase();
+                    $optionsContainer.find('.option-item').each(function () {
+                        const text = $(this).find('label').text().toLowerCase();
+                        if (text.includes(searchVal)) {
+                            $(this).removeClass('hidden');
+                        } else {
+                            $(this).addClass('hidden');
+                        }
+                    });
+                    updateSelectAllState($popover);
+                });
+
+                $optionsContainer.on('change', '.excel-filter-option', function () {
+                    updateSelectAllState($popover);
+                });
+
+                $popover.find('.excel-filter-select-all').on('change', function () {
+                    const isChecked = $(this).is(':checked');
+                    $optionsContainer.find('.option-item:not(.hidden) .excel-filter-option').prop('checked', isChecked);
+                });
+
+                $popover.find('.excel-filter-ok').on('click', function () {
+                    const checkedValues = new Set();
+                    $optionsContainer.find('.excel-filter-option:checked').each(function () {
+                        checkedValues.add($(this).val());
+                    });
+
+                    if (checkedValues.size < sortedValues.length) {
+                        activeFilters[colIdx] = checkedValues;
+                        $btn.addClass('text-blue-600').removeClass('text-slate-400');
+                    } else {
+                        delete activeFilters[colIdx];
+                        $btn.addClass('text-slate-400').removeClass('text-blue-600');
+                    }
+
+                    $table.data('excel-filters', activeFilters);
+                    applyExcelFiltersToTable($table, tableId, onFilterApplied);
+                    $popover.remove();
+                });
+
+                $popover.find('.excel-filter-cancel').on('click', function () {
+                    $popover.remove();
+                });
+
+                $popover.find('.excel-filter-clear').on('click', function () {
+                    delete activeFilters[colIdx];
+                    $btn.addClass('text-slate-400').removeClass('text-blue-600');
+                    $table.data('excel-filters', activeFilters);
+                    applyExcelFiltersToTable($table, tableId, onFilterApplied);
+                    $popover.remove();
+                });
+            });
+        }
+
+        function updateSelectAllState($popover) {
+            const visibleOpts = $popover.find('.option-item:not(.hidden) .excel-filter-option');
+            const checkedVisibleOpts = $popover.find('.option-item:not(.hidden) .excel-filter-option:checked');
+            $popover.find('.excel-filter-select-all').prop('checked', visibleOpts.length > 0 && visibleOpts.length === checkedVisibleOpts.length);
+        }
+
+        function getExcelCellText($row, colIdx, tableId) {
+            const $td = $row.find('td').eq(colIdx);
+            if (colIdx === 2 || colIdx === 3) {
+                const dateText = $td.find('div > div').first().text().trim();
+                const timeText = $td.find('div > div').last().text().trim();
+                return `${dateText} ${timeText}`.trim() || 'N/A';
+            }
+            return $td.text().replace(/\s+/g, ' ').trim() || 'N/A';
+        }
+
+        function applyExcelFiltersToTable($table, tableId, onFilterApplied) {
+            if (typeof onFilterApplied === 'function') {
+                onFilterApplied();
+            }
+        }
+
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('.excel-filter-popover').length && !$(e.target).closest('.excel-filter-btn').length) {
+                $('.excel-filter-popover').remove();
+            }
+        });
+
+        // Initialize Excel Filters on proliferationCasesTable
+        setupExcelTableFilters('proliferationCasesTable', applyColumnFilters);
+    });
+
+    // Reload case data when navigating back from Process page (bfcache restore)
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            loadCases();
+        }
+    });
+
+    function resetFilters() {
+        const todayLocal = new Date().toLocaleDateString('en-CA');
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const oneYearAgoLocal = oneYearAgo.toLocaleDateString('en-CA');
+
+        $('#startDate').val(oneYearAgoLocal);
+        $('#endDate').val(todayLocal);
+        $('#customerTypeFilter').val('0');
+        $('#statusFilter').val('0');
+        $('#searchInput').val('');
+        $('.col-filter').val('');
+        loadCases();
+    }
+
+    function changePageSize() {
+        pageSize = parseInt($('#pageSize').val());
+        currentPage = 1;
+        renderTable();
+    }
+
+    function loadCases() {
+
+        
+        const startDate = formatDate($('#startDate').val());
+        const endDate = formatDate($('#endDate').val());
+        const customerType = $('#customerTypeFilter').val();
+        const status = $('#statusFilter').val();
+
+        showLoader();
+        $.ajax({
+            url: '/ProliferationFinance/GetAllCases',
+            type: 'GET',
+            cache: false,
+            data: { 
+                startDate: startDate, 
+                endDate: endDate, 
+                customerType: customerType,
+                status: status
+            },
+            success: function(response) {
+                hideLoader();
+                if(response.success) {
+                    allCases = response.data || [];
+                    applyColumnFilters();
+                } else {
+                    console.error("Failed to load cases: ", response.message);
+                }
+            },
+            error: function(err) {
+                hideLoader();
+                console.error("Error loading cases", err);
+            }
+        });
+    }
+
+    function renderTable() {
+        const data = filteredCases;
+        const totalEntries = data.length;
+        const totalPages = Math.ceil(totalEntries / pageSize) || 1;
+        
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIdx = (currentPage - 1) * pageSize;
+        const endIdx = Math.min(startIdx + pageSize, totalEntries);
+        const pageData = data.slice(startIdx, endIdx);
+
+        let rows = '';
+        if (pageData.length === 0) {
+            rows = `<tr><td colspan="10" class="h-24 text-center"><div class="text-textmuted font-medium">No results found.</div></td></tr>`;
+        } else {
+            pageData.forEach((item, idx) => {
+                const id           = item.id           || item.Id || 0;
+                const corporateId  = item.corporateId  || item.CorporateId || '-';
+                const caseRefId    = item.caseRefId    || item.CaseRefId || (id ? 'PF-' + id : '-');
+                const createdDate  = item.createdOn    || item.CreatedOn;
+                const updatedDate  = item.updatedOn    || item.UpdatedOn;
+                const chemName     = item.chemicalName || item.ChemicalName || '-';
+                const hsCode       = item.hsCode       || item.HsCode       || '-';
+                const casNum       = item.casNumber    || item.CasNumber    || '-';
+                const eccn         = item.eccn         || item.Eccn         || '-';
+                const synonym      = item.synonymName  || item.SynonymName  || '-';
+                const status       = item.status       || item.Status       || 'Pending';
+                const hitDetails   = item.searchHitDetails || item.SearchHitDetails || '';
+
+                let datasets = [];
+                const custType = item.customerType || item.CustomerType || '';
+                const hasChemical = (item.matchedChemicalName || item.MatchedChemicalName || '').trim() !== '';
+                const hasNonChemical = hitDetails && hitDetails.trim() !== '';
+
+                if (hasChemical) datasets.push('Chemical');
+                if (custType === 'Military' || custType === 'Both') {
+                    datasets.push('Military Goods');
+                } 
+                if (custType === 'Non-Chemical' || custType === 'Both' || hasNonChemical) {
+                    if (!datasets.includes('Non-Chemical')) datasets.push('Non-Chemical');
+                }
+                let datasetstr = datasets.length > 0 ? datasets.join(', ') : 'Chemical';
+
+                const created = formatDateTime(createdDate);
+                const updated = formatDateTime(updatedDate);
+
+                let statusClass = 'bg-slate-100 text-textprimary';
+                const s = status.toLowerCase();
+                if (s.includes('pending')) statusClass = 'bg-yellow-100 text-yellow-800';
+                else if (s.includes('approved') || s.includes('true match')) statusClass = 'bg-blue-100 text-blue-800';
+                else if (s.includes('transfer')) statusClass = 'bg-green-100 text-green-800';
+                else if (s.includes('rejected') || s.includes('false match')) statusClass = 'bg-red-100 text-red-800';
+
+                rows += `
+                <tr class="bg-surface border-b border-bordercolor hover:bg-appbg transition-colors">
+                    <td class="px-2 py-4 font-normal text-textlabel">${corporateId}</td>
+                    <td class="px-2 py-4 font-normal text-textlabel">${caseRefId}</td>
+                    <td class="px-2 py-4">
+                        <div class="text-xs text-textlabel">
+                            <div>${created.date}</div>
+                            <div class="ml-2 text-textmuted font-normal">${created.time.replace(/\s?(AM|PM)/i, '')}</div>
+                        </div>
+                    </td>
+                    <td class="px-2 py-4">
+                        <div class="text-xs text-textlabel">
+                            <div>${updated.date !== '-' ? updated.date : '-'}</div>
+                            <div class="ml-2 text-textmuted font-normal">${updated.time !== '-' ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}</div>
+                        </div>
+                    </td>
+                    <td class="px-2 py-4 text-textlabel font-medium" 
+                        title="Product: ${chemName}\nHS Code: ${hsCode}\nCAS: ${casNum}\nECCN: ${eccn}\nSynonym: ${synonym}">
+                        <div class="truncate text-[12px]">
+                            ${[chemName, hsCode, casNum, eccn, synonym].find(x => x && x !== '-' && x !== 'N/A') || '-'}
+                        </div>
+                    </td>
+                    <td class="px-2 py-4">
+                        <span class="text-left py-0.5 rounded text-textlabel text-[12px] font-bold">
+                            ${datasetstr}
+                        </span>
+                    </td>
+                    <td class="px-2 py-4 text-center">
+                        <div class="flex items-center justify-center">
+                            <span class="flex w-full items-center justify-center px-2 py-1 rounded-full text-[12px] font-bold ${statusClass} ring-1 ring-inset ${statusClass.replace('bg-', 'ring-').replace('100', '200')}">
+                                ${status}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-2 py-4">
+                        <a href="/ProliferationFinance/Process/${id}" 
+                           class="text-primary hover:text-primary-hover font-bold flex items-center gap-1 text-xs">
+                            Process
+                        </a>
+                    </td>
+                </tr>`;
+            });
+        }
+        
+        window._displayedCases = pageData;
+        $('#casesTableBody').html(rows);
+        
+        // Update pagination UI
+        $('#totalEntries').text(totalEntries);
+        $('#startRange').text(totalEntries > 0 ? startIdx + 1 : 0);
+        $('#endRange').text(endIdx);
+        
+        $('#prevBtn').prop('disabled', currentPage === 1);
+        $('#nextBtn').prop('disabled', currentPage === totalPages || totalEntries === 0);
+        
+        lucide.createIcons();
+    }
+
+    function changePage(dir) {
+        currentPage += dir;
+        renderTable();
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        renderTable();
+    }
+
+    function filterTable() {
+        const searchTerm = $('#searchInput').val().toLowerCase();
+        if(!searchTerm) {
+            filteredCases = allCases;
+        } else {
+            filteredCases = allCases.filter(item => {
+                const id = (item.caseRefId || item.CaseRefId || 'PF-' + (item.id || item.Id)).toLowerCase();
+                const chem = (item.chemicalName || item.ChemicalName || '').toLowerCase();
+                const hs = (item.hsCode || item.HsCode || '').toLowerCase();
+                const cas = (item.casNumber || item.CasNumber || '').toLowerCase();
+                return id.includes(searchTerm) || chem.includes(searchTerm) || hs.includes(searchTerm) || cas.includes(searchTerm);
+            });
+        }
+        currentPage = 1;
+        renderTable();
+    }
+ 
+
+    function formatDate(value) {
+        if (!value) return null;
+
+        // ? Already in yyyy-MM-dd
+        if (value.includes('-') && value.split('-')[0].length === 4) {
+            return value;
+        }
+
+        // ? Convert dd/MM/yyyy ? yyyy-MM-dd
+        if (value.includes('/')) {
+            let parts = value.split('/');
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+
+        return null;
+    }
+    function highlight(text, keyword) {
+        if (!text || !keyword) return text || '';
+        const esc = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return text.replace(new RegExp(`(${esc})`, 'gi'),
+            '<mark style="background:#fef08a;color:#713f12;border-radius:3px;padding:0 2px;font-weight:700;">$1</mark>');
+    }
+
+    function viewDetails(idx) {
+        const item = (window._displayedCases || allCases)[parseInt(idx)];
+        if (!item) return;
+
+        const id           = item.id           || item.Id           || '-';
+        const customerType = item.customerType || item.CustomerType || '-';
+        const corporateId  = item.corporateId  || item.CorporateId  || '-';
+        const companyName  = item.companyName  || item.CompanyName  || '-';
+        const hsCode       = item.hsCode       || item.HsCode       || '-';
+        const casNumber    = item.casNumber    || item.CasNumber    || '-';
+        const eccn         = item.eccn         || item.Eccn         || '-';
+        const chemicalName = item.chemicalName || item.ChemicalName || '-';
+        const synonymName  = item.synonymName  || item.SynonymName  || '-';
+
+        $('#modalCaseId').text('ID: ' + id);
+
+        let content = '';
+        if (customerType === 'Non-Chemical') {
+            // synonymName = search keyword, chemicalName = matched paragraph from PDF
+            const highlightedParagraph = highlight(chemicalName, synonymName);
+            const paragraphs = highlightedParagraph.split(/\n\n+/).map(p =>
+                `<div class="bg-appbg p-4 rounded-lg border border-bordercolor text-sm text-textlabel leading-relaxed mb-3">${p}</div>`
+            ).join('');
+
+            content = `
+                <div class="space-y-5">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-textmuted text-xs font-semibold uppercase tracking-wide">Customer Type</span>
+                            <p class="mt-1"><span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-700 ring-1 ring-purple-200">Non-Chemical</span></p>
+                        </div>
+                        <div>
+                            <span class="text-textmuted text-xs font-semibold uppercase tracking-wide">Corporate ID</span>
+                            <p class="font-semibold text-textprimary mt-1">${corporateId}</p>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="text-textmuted text-xs font-semibold uppercase tracking-wide">Company Name</span>
+                            <p class="font-bold text-textprimary mt-1">${companyName}</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-bordercolor">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-bold text-textprimary">PDF Search Result</h4>
+                            <span class="text-[11px] font-bold text-primary bg-blue-50 px-2.5 py-1 rounded-full ring-1 ring-blue-100">
+                                Keyword: ${synonymName !== '-' ? synonymName : 'N/A'}
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-textmuted mb-2">Source: Scan Resolution 156 of 2025</p>
+                        ${paragraphs}
+                    </div>
+                </div>`;
+        } else {
+            content = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <span class="text-textmuted text-xs font-semibold uppercase tracking-wide">Customer Type</span>
+                        <p class="mt-1"><span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 ring-1 ring-blue-200">${customerType}</span></p>
+                    </div>
+                    <div>
+                        <span class="text-textmuted text-xs font-semibold uppercase tracking-wide">Corporate ID</span>
+                        <p class="font-semibold text-textprimary mt-1">${corporateId}</p>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-textmuted text-xs font-semibold uppercase tracking-wide">Company Name</span>
+                        <p class="font-bold text-textprimary mt-1">${companyName}</p>
+                    </div>
+
+                    <div class="col-span-2 pt-4 border-t border-bordercolor">
+                        <h4 class="text-sm font-bold text-textprimary mb-3">Searched Chemical Profile</h4>
+                    </div>
+                    <div>
+                        <span class="text-textmuted text-xs font-semibold uppercase tracking-wide">HS Code</span>
+                        <p class="font-medium text-textprimary mt-1">${hsCode}</p>
+                    </div>
+                    <div>
+                        <span class="text-textmuted text-xs font-semibold uppercase tracking-wide">CAS Number</span>
+                        <p class="font-medium text-textprimary mt-1">${casNumber}</p>
+                    </div>
+                    <div>
+                        <span class="text-textmuted text-xs font-semibold uppercase tracking-wide">ECCN</span>
+                        <p class="font-medium text-textprimary mt-1">${eccn}</p>
+                    </div>
+                    <div>
+                        <span class="text-textmuted text-xs font-semibold uppercase tracking-wide">Product Name</span>
+                        <p class="font-medium text-textprimary mt-1">${chemicalName}</p>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-textmuted text-xs font-semibold uppercase tracking-wide">Synonym Name</span>
+                        <p class="font-medium text-textprimary mt-1">${synonymName}</p>
+                    </div>
+                </div>`;
+        }
+
+        $('#modalContent').html(content);
+        $('#detailsModal').removeClass('hidden').addClass('flex');
+    }
+
+    function closeModal() {
+        $('#detailsModal').addClass('hidden').removeClass('flex');
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        function initDatePicker(selector, defaultDate, isEndDate = false) {
+            return flatpickr(selector, {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                defaultDate: defaultDate,
+                allowInput: true,
+
+                // ? Conditional logic
+                // ...(isEndDate
+                //     ? { minDate: "today" }   // End Date ? no past dates
+                //     : { maxDate: "today" }   // Start Date ? no future dates
+                // )
+            });
+        }
+
+        // ? Start Date ? 1 year back, max today
+        const startPicker = initDatePicker("#startDate", new Date().fp_incr(-365));
+
+        // ? End Date ? today, min today
+        const endPicker = initDatePicker("#endDate", new Date(), true);
+
+        lucide.createIcons();
+    });
+
+    function showExportOptions() {
+        const columns = [
+            { id: "corporateId", label: "Corporate ID" },
+            { id: "caseId", label: "Case ID" },
+            { id: "createdOn", label: "Created Date" },
+            { id: "updatedOn", label: "Updated Date" },
+            { id: "searchDetail", label: "Search Detail" },
+            { id: "customerType", label: "Datasets" },
+            { id: "status", label: "Status" }
+        ];
+
+        openExportModal({
+            getColumnsByActiveTab: () => columns,
+            onExport: (format, selectedColumns, orientation) => {
+                ExportList(format === 'pdf', selectedColumns, orientation);
+            }
+        });
+    }
+
+    function ExportList(isPDF, selectedColumns, orientation) {
+        const startDate = $('#startDate').val();
+        const endDate = $('#endDate').val();
+        const customerType = $('#customerTypeFilter').val() || "0";
+        const status = $('#statusFilter').val() || "0";
+        const searchValue = encodeURIComponent($('#searchInput').val() || "");
+        
+        const params = `startDate=${startDate}&endDate=${endDate}&customerType=${customerType}&status=${status}&searchValue=${searchValue}&selectedColumns=${selectedColumns}&orientation=${orientation}`;
+
+        showLoader();
+        if (isPDF) {
+            const url = `/ProliferationFinance/CaseManager_PDF?${params}`;
+            $('#pdfFrame').attr('src', url);
+            setTimeout(function() {
+                hideLoader();
+            }, 5000);
+        } else {
+            const url = `/ProliferationFinance/ExportPFCaseReport?${params}&isPDF=false`;
+            window.location.href = url;
+            setTimeout(function() {
+                hideLoader();
+            }, 2000);
+        }
+    }
+</script>
+
+

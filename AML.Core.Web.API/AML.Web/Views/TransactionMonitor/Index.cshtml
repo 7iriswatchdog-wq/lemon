@@ -1,0 +1,83 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    ViewData["Title"] = @localizer["TMS Case"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+<script src="~/plugins/jquery/jquery.min.js"></script>
+
+@*<div class="se-pre-con1"></div>*@
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="bg-surface rounded-xl border border-bordercolor shadow-none mb-4">
+                    <div class="px-6 py-4 border-b border-bordercolor">
+                    </div>
+                    <div class="p-6">
+                        <div style="width: 100%; padding-left: -10px;">
+                            <div class="table-responsive">
+                                <table id="example" class="w-full text-sm text-left" cellspacing="0">
+                                    <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                                        <tr>
+                                            <th>@localizer["Action"]</th>
+                                            <th>@localizer["Customer Id"]</th>
+                                            <th>@localizer["Customer Name"]</th>
+                                            <th>@localizer["Created On"]</th>
+                                            <th>@localizer["Rule Violated"]</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+
+
+
+<script type="text/javascript">
+
+    var table;
+    $(document).ready(function () {
+
+        table = $('#example').DataTable({
+            "serverSide": true, "processing": true,
+            ajax: {
+                url: '/tms/custompagination',
+                type: 'POST'
+            },
+            columns: [
+                {
+                    "render": function (data, type, full, meta) { return '<a class="btn btn-info" href="/tms/process/' + full.id + '">@localizer["Process"]</a>'; }
+                },
+                { data: "customerId" },
+                {
+                    data: "customerName"
+                },
+                { data: "createdOn" },
+                {
+                  "render" : function(data, type, full, meta) {
+                        var str = "";
+                        for (var i = 0; i < full.ruleViolated.length; i++) {
+                            str += full.ruleViolated[i].ruleName;
+                            if (i != full.ruleViolated.length - 1)
+                                str += ",";
+                        }
+                      
+                        return str;
+                    }
+                }
+                
+            ]
+            
+        });
+        $.fn.dataTable.ext.errMode = 'throw';
+    });
+</script>

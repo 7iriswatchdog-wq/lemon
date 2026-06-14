@@ -1,0 +1,506 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Branch";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@*@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery
+<meta name="csrf-token" content="@antiforgery.GetAndStoreTokens(Context).RequestToken" />*@
+
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<!-- Add this in your layout or before your script block -->
+@*<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>*@
+
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+
+    th.sortable {
+        position: relative;
+        padding-right: 20px;
+        cursor: pointer;
+    }
+
+        /* Show vertical gray arrows by default */
+        th.sortable::after {
+            content: '▲\A▼';
+            white-space: pre; /* respect \A (newline) */
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: #bbb;
+            line-height: 1;
+            text-align: center;
+        }
+
+        /* Only ▲ when sorting ascending */
+        th.sortable.active.asc::after {
+            content: '▲';
+            color: #000;
+        }
+
+        /* Only ▼ when sorting descending */
+        th.sortable.active.desc::after {
+            content: '\A▼';
+            color: #000;
+        }
+</style>
+<section class=" h-full content">
+    @* <nav class="border-b">
+        <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+            <div>
+                <h2 class="text-2xl font-bold">Branch</h2>
+            </div>
+            <div class="md:block hidden">
+                Client Logo
+            </div>
+        </div>
+    </nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Branch
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+    <div class="custom_container bg-gray-50 items-center container">
+        @*<div class="sas-breadcrumbs aml-breadcrumbs pb-3">
+            <ul class="mb-0 pl-0 d-flex">
+                <li><a href="#">Home</a></li>/
+                <li><a href="#">Master</a></li>/
+                <li><a href="#">Branch </a></li>
+            </ul>
+        </div>
+        <div class="page-heading">
+            <div class="sas-card rounded-card br-10 mb-2 bg-blue">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><b>Branch</b></h4>
+                    <div class="menu-icon">
+                        <i class="lni lni-microsoft"></i>
+                    </div>
+                </div>
+            </div>
+        </div>*@
+        <div class="h-full bg-gray-50 items-center container ">
+            <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4 container mx-auto">
+                <div class="sas-card rounded-card w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+
+                    <div class="flex lg:flex-row flex-col items-center justify-between mb-6">
+                        <h6 class="text-xl font-semibold text-gray-900 mb-4">Branch Listing</h6>
+                        <div class="flex flex-col lg:flex-row md:items-center md:justify-between gap-4">
+                            <!-- Rows per page -->
+                            <div class="flex items-center ml-8">
+                                <span class="text-sm text-gray-700">Show</span>
+                                <select id="rowsPerPage" class="h-10 ml-2 rounded-md border-gray-300 py-1 pl-3 pr-8 text-sm text-[#94A3B8]">
+                                    <option value="10" selected>10 items</option>
+                                    <option value="25">25 items</option>
+                                    <option value="50">50 items</option>
+                                    <option value="100">100 items</option>
+                                </select>
+                            </div>
+
+                            <!-- Search + Add Button -->
+                            <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                                <!-- Search -->
+                                <div class="relative w-full xl:w-96">
+                                    <input type="text"
+                                           placeholder="Search anything..."
+                                           class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="2"
+                                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a onclick="showLoader()" class="sas-button p-10-25  color-white top_btn_3 px-6 py-2 text-white border border-gray-300 rounded-lg bg-[#2563EB] whitespace-nowrap" href="@Url.Action("Create", "Branch")" type="submit">Add New</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr />
+
+                    <div class="form-contents">
+                        <div class="row overflow-x-auto">
+                            <div class="relative" style="width: 100%; padding-left: -10px;">
+                                <div class="table-responsive">
+                                    <table id="example" class="table table-striped table-hover dt-responsive display nowrap w-full table-auto rounded-t-lg overflow-x-auto" cellspacing="0">
+                                        <thead class="rounded-t-lg bg-[#E9EFFD] text-center">
+                                            <tr>
+                                                <th data-column="Code" class="sortable cursor-pointer px-6 py-4 text-left text-sm font-semibold text-gray-900">Code</th>
+                                                <th data-column="Name" class="sortable cursor-pointer px-6 py-4 text-left text-sm font-semibold text-gray-900">Name</th>
+                                                <th data-column="Description" class="sortable cursor-pointer px-6 py-4 text-left text-sm font-semibold text-gray-900">Description</th>
+                                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Edit</th>
+                                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Delete</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-bordercolor">
+                                            <!-- Rows will be appended here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div id="loadingRiskCategory2"
+                                     class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-50 hidden">
+                                    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                                </div>
+                            </div>
+                            
+                            @* <div class="pagination-controls mt-4 flex justify-center gap-2"></div> *@
+                        </div>
+                        <div class="pagination-controls mt-4 flex flex-col sm:flex-row justify-center gap-2"></div>
+                    </div>
+                    <div id="loadingRiskCategory"
+                         class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-50 hidden">
+                        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+
+
+
+@*<script type="text/javascript">
+
+    var table;
+    $(document).ready(function () {
+        table = $('#example').DataTable({
+            "serverSide": true, "processing": true,
+            order: [[0, 'desc']],
+            lengthMenu: [10, 25, 50, 100], // match select options
+            ajax: {
+                url: '/branch/custompagination',
+                type: 'POST',
+                headers: {
+                    'RequestVerificationToken': $('meta[name="csrf-token"]').attr('content')
+                }
+            },
+            columns: [
+                { data: "code" },
+                { data: "name" },
+                { data: "description" },
+                {
+                    data: null,
+                    orderable: false,
+                    "render": function (data, type, full, meta) { return '<a class="sas-button bg-color-4 pt-2 action-icons" href="/branch/edit/' + full.id + '" title="Edit"><img src="/img/edit.png" /></a>'; }
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    render: function (data, type, row) {
+                        return "<a href='#' class='sas-button bg-color-3 pt-2 action-icons' title='Delete' onclick=DeleteData('" + row.id + "'); ><img src='/img/bin.png' /></a>";
+                    }
+                },
+            ]
+        });
+    });
+    $('#pageLength').on('change', function () {
+            var val = $(this).val();
+            table.page.len(val).draw();
+        });
+
+        // Bind search box to datatable search
+        $('input[placeholder="Search anything..."]').on('keyup change', function () {
+            table.search(this.value).draw();
+        });
+  
+    function DeleteData(id) {
+        $.ajax({
+            url: '/branch/delete/' + id,
+            type: 'DELETE',
+            headers: {
+                    'RequestVerificationToken': $('meta[name="csrf-token"]').attr('content')
+                },
+            success: function (result) {
+                table.ajax.reload();
+            },
+            error: function (xhr, status, error) {
+                    alert("Error deleting branch: " + error);
+            }
+        });
+    }
+</script>*@
+<script>
+        $(document).ready(function () {
+
+            let pageSize = parseInt($('#rowsPerPage').val()) || 10;
+            let currentPage = 1;
+            let totalPages = 1;
+            let draw = 1;
+            let sortColumn = 'Code';  // default column
+            let sortDirection = 'asc';
+            showLoader2();
+            function getColumnIndex(colName) {
+                const columns = ['Code', 'Name', 'Description'];
+                return columns.indexOf(colName);
+            }
+            $('#example thead').on('click', 'th.sortable', function () {
+                const column = $(this).data('column');
+                if (!column) return;
+
+                // Toggle sort direction or reset to asc
+                if (sortColumn === column) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = column;
+                    sortDirection = 'asc';
+                }
+
+                // Optional: update visual indicator
+                $('#example thead th').removeClass('active asc desc');
+                $(this).addClass(`active ${sortDirection}`);
+
+                currentPage = 1;
+                showLoader2();
+                fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+            });
+
+            function fetchData(searchValue = '', page = 1) {
+                pageSize = parseInt($('#rowsPerPage').val()) || 10;
+                const start = (page - 1) * pageSize;
+
+                $.ajax({
+                    url: '/branch/custompagination',
+                    type: 'POST',
+                    dataType: 'json',
+                    headers: {
+                        'RequestVerificationToken': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: {
+                        draw: draw++,
+                        start: start,
+                        length: pageSize,
+                        search: { value: searchValue },
+                        order: [{ column: getColumnIndex(sortColumn), dir: sortDirection }],
+                        columns: [
+                            { data: "Code" },
+                            { data: "Name" },
+                            { data: "Description" }
+                        ]
+                    },
+                    success: function (resp) {
+                        const rows = resp.data || [];
+                        const totalRecords = resp.recordsFiltered || 0;
+                        totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+
+                        renderTable(rows);
+                        renderPager(page);
+                        hideLoader();
+                        hideLoader2();
+                    },
+                    error: function (xhr) {
+                        console.error('Error fetching data:', xhr.statusText);
+                    }
+                });
+            }
+
+            function renderTable(rows) {
+                const $tbody = $('#example tbody').empty();
+
+                if (!rows.length) {
+                    $tbody.append('<tr><td colspan="5" class="text-center py-4">No data available</td></tr>');
+                    return;
+                }
+
+                rows.forEach(r => {
+                    $tbody.append(`
+                        <tr>
+                            <td class="px-6 py-4 text-sm">${r.code}</td>
+                            <td class="px-6 py-4 text-sm">${r.name}</td>
+                            <td class="px-6 py-4 text-sm">${r.description}</td>
+                            <td class="px-6 py-4 text-sm">
+                                <a class="sas-button bg-color-4 pt-2 action-icons" href="/branch/edit/${r.id}" onclick="showLoader()">
+                                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M4.16536 16.667H15.832C16.053 16.667 16.265 16.7548 16.4213 16.9111C16.5776 17.0673 16.6654 17.2793 16.6654 17.5003C16.6654 17.7213 16.5776 17.9333 16.4213 18.0896C16.265 18.2459 16.053 18.3337 15.832 18.3337H4.16536C3.94435 18.3337 3.73239 18.2459 3.57611 18.0896C3.41983 17.9333 3.33203 17.7213 3.33203 17.5003C3.33203 17.2793 3.41983 17.0673 3.57611 16.9111C3.73239 16.7548 3.94435 16.667 4.16536 16.667ZM3.33203 12.5003L11.6654 4.16699L14.1654 6.66699L5.83203 15.0003H3.33203V12.5003ZM12.4987 3.33366L14.1654 1.66699L16.6654 4.16699L14.9979 5.83449L12.4987 3.33366Z" fill="#64748B"/>
+    </svg>
+                                </a>
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <a href="#" class="sas-button bg-color-3 pt-2 action-icons delete-btn" data-id="${r.id}">
+                                    <svg width="16" height="18" viewBox="0 0 16 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6.33203 3.37533V3.58366H9.66536V3.37533C9.66536 2.9333 9.48977 2.50937 9.17721 2.19681C8.86465 1.88425 8.44073 1.70866 7.9987 1.70866C7.55667 1.70866 7.13275 1.88425 6.82019 2.19681C6.50763 2.50937 6.33203 2.9333 6.33203 3.37533ZM5.29036 3.58366V3.37533C5.29036 2.65703 5.57571 1.96816 6.08362 1.46024C6.59153 0.952334 7.2804 0.666992 7.9987 0.666992C8.71699 0.666992 9.40587 0.952334 9.91378 1.46024C10.4217 1.96816 10.707 2.65703 10.707 3.37533V3.58366H15.3945C15.5327 3.58366 15.6651 3.63853 15.7628 3.73621C15.8605 3.83388 15.9154 3.96636 15.9154 4.10449C15.9154 4.24263 15.8605 4.3751 15.7628 4.47278C15.6651 4.57045 15.5327 4.62533 15.3945 4.62533H14.1791L13.3458 14.5653C13.2825 15.3202 12.9379 16.0237 12.3803 16.5364C11.8227 17.0492 11.0929 17.3337 10.3354 17.3337H5.66203C4.90461 17.3336 4.17485 17.049 3.61737 16.5363C3.05988 16.0235 2.71534 15.3201 2.65203 14.5653L1.8187 4.62533H0.602865C0.464731 4.62533 0.332255 4.57045 0.23458 4.47278C0.136905 4.3751 0.0820312 4.24263 0.0820312 4.10449C0.0820312 3.96636 0.136905 3.83388 0.23458 3.73621C0.332255 3.63853 0.464731 3.58366 0.602865 3.58366H5.29036ZM6.95703 7.43783C6.95703 7.36943 6.94356 7.3017 6.91739 7.23851C6.89121 7.17532 6.85285 7.1179 6.80448 7.06954C6.75612 7.02118 6.6987 6.98281 6.63551 6.95664C6.57232 6.93046 6.50459 6.91699 6.4362 6.91699C6.3678 6.91699 6.30007 6.93046 6.23688 6.95664C6.17369 6.98281 6.11628 7.02118 6.06791 7.06954C6.01955 7.1179 5.98118 7.17532 5.95501 7.23851C5.92884 7.3017 5.91536 7.36943 5.91536 7.43783V13.4795C5.91536 13.5479 5.92884 13.6156 5.95501 13.6788C5.98118 13.742 6.01955 13.7994 6.06791 13.8478C6.11628 13.8961 6.17369 13.9345 6.23688 13.9607C6.30007 13.9869 6.3678 14.0003 6.4362 14.0003C6.50459 14.0003 6.57232 13.9869 6.63551 13.9607C6.6987 13.9345 6.75612 13.8961 6.80448 13.8478C6.85285 13.7994 6.89121 13.742 6.91739 13.6788C6.94356 13.6156 6.95703 13.5479 6.95703 13.4795V7.43783ZM9.5612 6.91699C9.2737 6.91699 9.04036 7.15033 9.04036 7.43783V13.4795C9.04036 13.6176 9.09524 13.7501 9.19291 13.8478C9.29059 13.9455 9.42306 14.0003 9.5612 14.0003C9.69933 14.0003 9.83181 13.9455 9.92948 13.8478C10.0272 13.7501 10.082 13.6176 10.082 13.4795V7.43783C10.082 7.15033 9.8487 6.91699 9.5612 6.91699Z" fill="#64748B"/>
+    </svg>
+                                </a>
+                            </td>
+                        </tr>`);
+                });
+            }
+
+            function renderPager(page) {
+                const $pager = $('.pagination-controls').empty();
+                if (totalPages <= 1) return;
+
+                const btn = (lbl, pg, disabled, active) =>
+                    `<button class="px-3 py-1 border rounded
+                        ${active ? 'bg-primary text-white' : 'bg-surface text-primary'}
+                        ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}"
+                        data-page="${pg}" ${disabled ? 'disabled' : ''}>
+                        ${lbl}
+                    </button>`;
+
+                $pager.append(btn('First', 1, page === 1));
+                $pager.append(btn('Prev', page - 1, page === 1));
+
+                const maxVisible = 5;
+                let start = Math.max(1, page - Math.floor(maxVisible / 2));
+                let end = start + maxVisible - 1;
+
+                if (end > totalPages) {
+                    end = totalPages;
+                    start = Math.max(1, end - maxVisible + 1);
+                }
+
+                for (let i = start; i <= end; i++) {
+                    $pager.append(btn(i, i, false, i === page));
+                }
+
+                $pager.append(btn('Next', page + 1, page === totalPages));
+                $pager.append(btn('Last', totalPages, page === totalPages));
+            }
+
+            $('#rowsPerPage').on('change', () => {
+                currentPage = 1;
+                const id = $(this).data('id');
+                showLoader();
+                fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+            });
+
+            $('input[placeholder="Search anything..."]').on('keyup change', function () {
+                currentPage = 1;
+                showLoader2()
+                fetchData(this.value, currentPage);
+            });
+
+            $('.pagination-controls').on('click', 'button', function () {
+                const pg = parseInt($(this).data('page'));
+                if (!isNaN(pg) && pg >= 1 && pg <= totalPages) {
+                    currentPage = pg;
+                    showLoader2();
+                    fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+                }
+            });
+
+            $('#example').on('click', '.delete-btn', function (e) {
+                e.preventDefault();
+                const id = $(this).data('id');
+                if (!confirm('Delete this branch?')) return;
+                showLoader();
+                $.ajax({
+                    url: `/branch/delete/${id}`,
+                    type: 'DELETE',
+                    headers: {
+                        'RequestVerificationToken': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function () {
+                        fetchData($('input[placeholder="Search anything..."]').val(), currentPage);
+                    },
+                    error: function (xhr) {
+                        alert("Error deleting branch: " + xhr.statusText);
+                    }
+                });
+            });
+
+            fetchData('', 1);
+            hideLoader();
+        });
+        function showLoader() {
+            $('#loadingRiskCategory').removeClass('hidden');
+        }
+
+        function hideLoader() {
+            $('#loadingRiskCategory').addClass('hidden');
+        }
+        function showLoader2() {
+            $('#loadingRiskCategory2').removeClass('hidden');
+        }
+        function hideLoader2() {
+            $('#loadingRiskCategory2').addClass('hidden');
+        }
+</script>
+
+
+

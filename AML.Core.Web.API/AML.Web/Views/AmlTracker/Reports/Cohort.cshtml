@@ -1,0 +1,86 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model CohortComparisonVM
+@{
+    ViewData["Title"] = "Cohort Comparison";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "Cohort Comparison";
+    ViewData["ReportSubtitle"] = "Compare a customer to peers (same type + nationality). Materially-above flags are review prompts, not verdicts.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var picker = ViewBag.Picker as bool? ?? false;
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1300px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="bg-white border border-slate-200 rounded-lg p-4 my-3">
+            <form method="get" action="@Url.Action("Cohort","AmlTracker")" class="flex items-end gap-2">
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Customer Master ID</label>
+                    <input type="number" name="cmid" value="@(Model.Found ? Model.CustomerMasterId : 0)" placeholder="e.g. 1"
+                           class="w-full border border-slate-300 rounded px-3 py-2 text-sm" />
+                    <p class="text-xs text-slate-500 mt-1">Find the ID from the Tracker (Customer 360 link), High-Risk Register, or Periodic Review.</p>
+                </div>
+                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded">Compare</button>
+            </form>
+        </div>
+
+        @if (!Model.Found)
+        {
+            <div class="bg-blue-50 border border-blue-300 text-blue-900 rounded p-4 text-sm">@Model.NotFoundMessage</div>
+        }
+        else
+        {
+            <div class="bg-white border border-slate-200 rounded-lg p-4 mb-3">
+                <h3 class="font-semibold text-slate-800">@Model.CustomerName <span class="text-xs text-slate-400 font-mono">@Model.CustomerCode</span></h3>
+                <p class="text-sm text-slate-600">@Model.CustomerType · @Model.Nationality · @Model.Profession</p>
+                <p class="text-xs text-slate-500 mt-1"><strong>Cohort:</strong> @Model.CohortDescription · @Model.CohortSize peers</p>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr class="text-left">
+                            <th class="px-3 py-2">Metric</th>
+                            <th class="px-3 py-2 text-right">This Customer</th>
+                            <th class="px-3 py-2 text-right">Cohort Avg</th>
+                            <th class="px-3 py-2">Visualization</th>
+                            <th class="px-3 py-2">Verdict</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Model.Metrics)
+                        {
+                            var max = Math.Max(m.Customer, m.CohortAvg);
+                            if (max <= 0) max = 1;
+                            var custPct = Math.Min(100, m.Customer * 100 / max);
+                            var avgPct = Math.Min(100, m.CohortAvg * 100 / max);
+                            var verdictCls = m.Verdict switch
+                            {
+                                "Materially above peers" => "bg-rose-100 text-rose-800",
+                                "Above peers" => "bg-amber-100 text-amber-800",
+                                "On par" => "bg-slate-100 text-slate-700",
+                                "Below peers" => "bg-emerald-50 text-emerald-700",
+                                "Materially below peers" => "bg-emerald-100 text-emerald-800",
+                                _ => "bg-slate-100 text-slate-700"
+                            };
+                            <tr class="border-b border-slate-100">
+                                <td class="px-3 py-2 font-medium">@m.Label</td>
+                                <td class="px-3 py-2 text-right font-semibold text-slate-800">@m.Customer</td>
+                                <td class="px-3 py-2 text-right text-slate-600">@m.CohortAvg</td>
+                                <td class="px-3 py-2 w-1/3">
+                                    <div class="bg-slate-100 rounded h-3 mb-1"><div class="bg-blue-600 h-3 rounded" style="width:@(custPct.ToString("0.0"))%"></div></div>
+                                    <div class="bg-slate-100 rounded h-3"><div class="bg-slate-400 h-3 rounded" style="width:@(avgPct.ToString("0.0"))%"></div></div>
+                                </td>
+                                <td class="px-3 py-2"><span class="px-2 py-0.5 text-xs rounded-full @verdictCls">@m.Verdict</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="text-xs text-slate-500 mt-3">
+                Blue bar = this customer · grey bar = cohort average. Both bars normalized to the larger of the two so relative magnitude is visible.
+            </p>
+        }
+    </div>
+</section>

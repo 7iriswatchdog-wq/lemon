@@ -1,0 +1,1105 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model AmlTrackerIndexVM
+@{
+    ViewData["Title"] = "AML Tracker";
+    ViewData["ActiveTab"] = "Tracker";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+    string SortLink(string column, string label)
+    {
+        var dir = (Model.Filter.SortBy?.Equals(column, StringComparison.OrdinalIgnoreCase) ?? false)
+            ? (Model.Filter.SortDir == "asc" ? "desc" : "asc") : "desc";
+        var arrow = (Model.Filter.SortBy?.Equals(column, StringComparison.OrdinalIgnoreCase) ?? false)
+            ? (Model.Filter.SortDir == "asc" ? " &uarr;" : " &darr;") : "";
+        var url = $"?SortBy={column}&SortDir={dir}&StartDate={Model.Filter.StartDate}&EndDate={Model.Filter.EndDate}&CustomerType={Model.Filter.CustomerType}&CaseStatus={Model.Filter.CaseStatus}&QaStatus={Model.Filter.QaStatus}&Search={Model.Filter.Search}";
+        return $"<a href=\"{url}\" class=\"hover:underline text-slate-700 font-semibold\">{label}{arrow}</a>";
+    }
+
+    string SlaPill(string status)
+    {
+        var cls = status switch
+        {
+            "On Track" => "bg-emerald-100 text-emerald-800",
+            "At Risk" => "bg-amber-100 text-amber-800",
+            "Breach" => "bg-rose-100 text-rose-800",
+            "Closed" => "bg-slate-100 text-slate-700",
+            "Reviewed" => "bg-emerald-100 text-emerald-800",
+            _ => "bg-slate-50 text-slate-500"
+        };
+        return $"<span class=\"px-2 py-0.5 text-xs rounded-full {cls}\">{status}</span>";
+    }
+    string StatusPill(string label, int code)
+    {
+        var cls = code switch
+        {
+            2 or 1 or 5 => "bg-emerald-50 text-emerald-700 border border-emerald-200",
+            3 => "bg-rose-50 text-rose-700 border border-rose-200",
+            4 => "bg-amber-50 text-amber-800 border border-amber-200",
+            7 => "bg-slate-100 text-slate-600 border border-slate-200",
+            0 or 6 => "bg-blue-50 text-blue-700 border border-blue-200",
+            _ => "bg-slate-50 text-slate-600 border border-slate-200"
+        };
+        return $"<span class=\"px-2 py-0.5 text-xs rounded {cls}\">{label}</span>";
+    }
+    string RiskPill(string tier)
+    {
+        var cls = tier switch
+        {
+            "High" => "bg-rose-100 text-rose-800",
+            "Medium" => "bg-amber-100 text-amber-800",
+            "Low" => "bg-emerald-100 text-emerald-800",
+            _ => "bg-slate-100 text-slate-600"
+        };
+        return $"<span class=\"px-2 py-0.5 text-xs rounded-full {cls}\">{tier}</span>";
+    }
+    string QaPill(int code, string label)
+    {
+        var cls = code switch
+        {
+            2 => "bg-emerald-100 text-emerald-800",
+            3 => "bg-rose-100 text-rose-800",
+            1 => "bg-amber-100 text-amber-800",
+            4 => "bg-blue-100 text-blue-800",
+            _ => "bg-slate-100 text-slate-600"
+        };
+        return $"<span class=\"px-2 py-0.5 text-xs rounded-full {cls}\">{label}</span>";
+    }
+    string SarPill(string status)
+    {
+        var cls = status switch
+        {
+            "Filed" => "bg-emerald-100 text-emerald-800",
+            "Drafted" => "bg-amber-100 text-amber-800",
+            "Required" => "bg-rose-100 text-rose-800",
+            "NotFiled" => "bg-slate-100 text-slate-600",
+            _ => "bg-slate-50 text-slate-500"
+        };
+        return $"<span class=\"px-2 py-0.5 text-xs rounded-full {cls}\">{status}</span>";
+    }
+    string TrendArrow(TrendDelta t)
+    {
+        if (t == null) return "";
+        if (t.Delta > 0) return $"<span class=\"text-emerald-600\">▲ {t.Delta} ({t.DeltaPct:0.0}%)</span>";
+        if (t.Delta < 0) return $"<span class=\"text-rose-600\">▼ {Math.Abs(t.Delta)} ({t.DeltaPct:0.0}%)</span>";
+        return "<span class=\"text-slate-400\">―</span>";
+    }
+    var qaBtnDisabled = Model.CurrentUserCanQa ? "" : "opacity-50 cursor-not-allowed";
+    var qaBtnTitle = Model.CurrentUserCanQa ? "" : "Your role isn't allowed to perform QA actions.";
+}
+
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<section class="content py-6 px-4" x-data="{ density: localStorage.getItem('amltracker-density') || 'comfy' }" :class="density === 'compact' ? 'tracker-compact' : ''">
+    <div class="max-w-[1700px] mx-auto">
+
+        <div class="flex items-start justify-between mb-3 gap-4 flex-wrap">
+            <div>
+                <h1 class="text-2xl font-semibold text-slate-800">AML Tracker</h1>
+                <p class="text-sm text-slate-500">Maker–checker QA, SLA tracking, SAR linkage, sampling, audit. Updates automatically every 60s.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" @@click="density = density === 'compact' ? 'comfy' : 'compact'; localStorage.setItem('amltracker-density', density);"
+                        class="px-3 py-2 border border-slate-300 hover:bg-slate-50 text-sm rounded">
+                    <i class="fas fa-text-height"></i> <span x-text="density === 'compact' ? 'Comfy' : 'Compact'"></span>
+                </button>
+
+                <button type="button" onclick="document.getElementById('notifPanel').classList.toggle('hidden')"
+                        class="relative px-3 py-2 border border-slate-300 hover:bg-slate-50 text-sm rounded">
+                    <i class="fas fa-bell"></i>
+                    @if (Model.UnreadNotificationCount > 0)
+                    {
+                        <span id="notifBadge" class="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] rounded-full px-1.5 py-0.5 font-bold">@Model.UnreadNotificationCount</span>
+                    }
+                    else
+                    {
+                        <span id="notifBadge" class="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] rounded-full px-1.5 py-0.5 font-bold hidden">0</span>
+                    }
+                </button>
+
+                <div class="relative inline-block">
+                    <button type="button" id="columnsToggleBtn"
+                            onclick="document.getElementById('columnsPanel').classList.toggle('hidden')"
+                            class="px-3 py-2 border border-slate-300 hover:bg-slate-50 text-sm rounded" title="Show / hide columns">
+                        <i class="fas fa-columns"></i> Columns
+                    </button>
+                    <div id="columnsPanel" class="hidden absolute right-0 mt-1 w-72 max-h-[60vh] overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg z-40 p-3">
+                        <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Optional columns</span>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="setAllOptionalCols(true)" class="text-[11px] text-blue-600 hover:underline">All</button>
+                                <button type="button" onclick="setAllOptionalCols(false)" class="text-[11px] text-slate-500 hover:underline">None</button>
+                            </div>
+                        </div>
+                        <div id="columnsList" class="space-y-1.5 text-sm">
+                            <!-- Populated by JS from data-col-key tags on the table -->
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-100 text-[10px] text-slate-400 leading-tight">
+                            Selection persists per browser. The 16 default columns are always shown.
+                        </div>
+                    </div>
+                </div>
+
+                <a href="@Url.Action("Export", "AmlTracker", new { Model.Filter.StartDate, Model.Filter.EndDate, Model.Filter.CustomerType, Model.Filter.CaseStatus, Model.Filter.QaStatus, Model.Filter.Search, Model.Filter.SortBy, Model.Filter.SortDir })"
+                   class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded">
+                    <i class="fas fa-file-excel"></i> Excel
+                </a>
+                <a href="@Url.Action("ExportCsv", "AmlTracker", new { Model.Filter.StartDate, Model.Filter.EndDate, Model.Filter.CustomerType, Model.Filter.CaseStatus, Model.Filter.QaStatus, Model.Filter.Search, Model.Filter.SortBy, Model.Filter.SortDir })"
+                   class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded border border-slate-300">CSV</a>
+            </div>
+        </div>
+
+        <partial name="_TrackerTabs" />
+
+        @if (!string.IsNullOrEmpty(Model.FlashMessage))
+        {
+            var flashCls = Model.FlashLevel switch
+            {
+                "success" => "bg-emerald-50 border-emerald-300 text-emerald-800",
+                "error" => "bg-rose-50 border-rose-300 text-rose-800",
+                _ => "bg-blue-50 border-blue-300 text-blue-800"
+            };
+            <div class="border @flashCls rounded p-3 mb-4 text-sm">@Model.FlashMessage</div>
+        }
+
+        @if (!Model.CurrentUserCanQa)
+        {
+            <div class="border bg-amber-50 border-amber-300 text-amber-900 rounded p-3 mb-4 text-sm">
+                <strong>Read-only QA:</strong> your role isn't authorized for QA actions. Allowed: Compliance, Senior Management, Quality Assurance, QA Reviewer, Audit.
+            </div>
+        }
+
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-3">
+            <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-slate-500 font-medium tracking-wide">Total</div>
+                <div class="text-xl font-semibold text-slate-800 mt-0.5">@Model.TotalCount</div>
+                <div class="text-[10px] mt-0.5">@Html.Raw(TrendArrow(Model.TotalTrend)) <span class="text-slate-400">vs prev wk</span></div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-slate-500 font-medium tracking-wide">Open</div>
+                <div class="text-xl font-semibold text-blue-700 mt-0.5">@Model.OpenCount</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-slate-500 font-medium tracking-wide">Pending Sr. Mgmt</div>
+                <div class="text-xl font-semibold text-amber-700 mt-0.5">@Model.PendingSrMgmtCount</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-slate-500 font-medium tracking-wide">Completed</div>
+                <div class="text-xl font-semibold text-emerald-700 mt-0.5">@Model.CompletedCount</div>
+                <div class="text-[10px] mt-0.5">@Html.Raw(TrendArrow(Model.CompletedTrend))</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-slate-500 font-medium tracking-wide">SLA Breach</div>
+                <div class="text-xl font-semibold text-rose-700 mt-0.5" id="kpi-sla-breach">@Model.SlaBreachCount</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-slate-500 font-medium tracking-wide">High Risk</div>
+                <div class="text-xl font-semibold text-rose-700 mt-0.5">@Model.HighRiskCount</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-slate-500 font-medium tracking-wide">Today / New</div>
+                <div class="text-xl font-semibold text-slate-800 mt-0.5">@Model.TodayCount<span class="text-xs text-slate-500"> / @Model.NewSinceLastVisitCount</span></div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-slate-500 font-medium tracking-wide">Avg Aging</div>
+                <div class="text-xl font-semibold text-slate-800 mt-0.5">@Model.AvgAgingDays<span class="text-xs text-slate-500 ml-1">d</span></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-3">
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-indigo-700 font-bold tracking-wide">QA Pending</div>
+                <div class="text-xl font-semibold text-indigo-800 mt-0.5">@Model.QaPendingCount</div>
+            </div>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-indigo-700 font-bold tracking-wide">QA Approved</div>
+                <div class="text-xl font-semibold text-emerald-700 mt-0.5">@Model.QaApprovedCount</div>
+                <div class="text-[10px] mt-0.5">@Html.Raw(TrendArrow(Model.QaApprovedTrend))</div>
+            </div>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-indigo-700 font-bold tracking-wide">QA Rejected</div>
+                <div class="text-xl font-semibold text-rose-700 mt-0.5">@Model.QaRejectedCount</div>
+                <div class="text-[10px] mt-0.5">@Html.Raw(TrendArrow(Model.QaRejectedTrend))</div>
+            </div>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-indigo-700 font-bold tracking-wide">Awaiting QA</div>
+                <div class="text-xl font-semibold text-indigo-800 mt-0.5">@Model.QaEligibleNotReviewedCount</div>
+            </div>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-indigo-700 font-bold tracking-wide">QA SLA Breach</div>
+                <div class="text-xl font-semibold text-rose-700 mt-0.5">@Model.QaSlaBreachCount</div>
+            </div>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-indigo-700 font-bold tracking-wide">Stale</div>
+                <div class="text-xl font-semibold text-amber-700 mt-0.5">@Model.StaleCount</div>
+            </div>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-indigo-700 font-bold tracking-wide">SAR Required / Filed</div>
+                <div class="text-sm font-semibold text-indigo-800 mt-0.5">@Model.SarRequiredCount <span class="text-slate-400">/</span> <span class="text-emerald-700">@Model.SarFiledCount</span></div>
+                @if (Model.SarOverdueCount > 0) { <div class="text-[10px] text-rose-700 mt-0.5">@Model.SarOverdueCount overdue</div> }
+            </div>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                <div class="text-[10px] uppercase text-indigo-700 font-bold tracking-wide">QA Cycle (30d)</div>
+                @if (Model.CycleTime?.Points?.Any() == true)
+                {
+                    var pts = Model.CycleTime.Points;
+                    var maxDec = pts.Max(p => p.Decisions);
+                    if (maxDec < 1) { maxDec = 1; }
+                    <svg viewBox="0 0 100 30" preserveAspectRatio="none" class="w-full h-8 mt-0.5">
+                        @{
+                            var width = 100.0 / Math.Max(1, pts.Count);
+                            var x = 0.0;
+                        }
+                        @foreach (var p in pts)
+                        {
+                            var h = (p.Decisions * 28.0) / maxDec;
+                            var y = 30 - h;
+                            <rect x="@(x.ToString("0.0"))" y="@(y.ToString("0.0"))" width="@((width-0.5).ToString("0.0"))" height="@(h.ToString("0.0"))" fill="#4f46e5" />
+                            x += width;
+                        }
+                    </svg>
+                    <div class="text-[10px] text-slate-500">@pts.Sum(p => p.Decisions) decisions</div>
+                }
+                else
+                {
+                    <div class="text-sm text-slate-400 mt-1">no data</div>
+                }
+            </div>
+        </div>
+
+        <form method="get" class="bg-white border border-slate-200 rounded-lg p-4 mb-3">
+            <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Search</label>
+                    <input type="text" name="Search" value="@Model.Filter.Search" placeholder="Customer / code"
+                           class="w-full border border-slate-300 rounded px-3 py-2 text-sm" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">From</label>
+                    <input type="text"
+                           id="startDate"
+                           name="StartDate"
+                           value="@Model.Filter.StartDate"
+                           placeholder="dd/MM/yyyy"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">To</label>
+                    <input type="text"
+                           id="endDate"
+                           name="EndDate"
+                           value="@Model.Filter.EndDate"
+                           placeholder="dd/MM/yyyy"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Customer Type</label>
+                    <select name="CustomerType" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+                        <option value="">All</option>
+                        <option value="I" selected="@(Model.Filter.CustomerType == "I")">Individual</option>
+                        <option value="C" selected="@(Model.Filter.CustomerType == "C")">Corporate</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Status</label>
+                    <select name="CaseStatus" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+                        <option value="10" selected="@(Model.Filter.CaseStatus == 10)">All</option>
+                        <option value="0" selected="@(Model.Filter.CaseStatus == 0)">Pending</option>
+                        <option value="4" selected="@(Model.Filter.CaseStatus == 4)">Pending Sr. Mgmt</option>
+                        <option value="6" selected="@(Model.Filter.CaseStatus == 6)">Daily Batch</option>
+                        <option value="7" selected="@(Model.Filter.CaseStatus == 7)">On Hold</option>
+                        <option value="1" selected="@(Model.Filter.CaseStatus == 1)">Whitelisted</option>
+                        <option value="2" selected="@(Model.Filter.CaseStatus == 2)">Approved</option>
+                        <option value="3" selected="@(Model.Filter.CaseStatus == 3)">Rejected</option>
+                        <option value="5" selected="@(Model.Filter.CaseStatus == 5)">Auto</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">QA Status</label>
+                    <select name="QaStatus" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+                        <option value="-1" selected="@(Model.Filter.QaStatus == -1)">All</option>
+                        <option value="0" selected="@(Model.Filter.QaStatus == 0)">Not Reviewed</option>
+                        <option value="1" selected="@(Model.Filter.QaStatus == 1)">Pending QA</option>
+                        <option value="2" selected="@(Model.Filter.QaStatus == 2)">Approved</option>
+                        <option value="3" selected="@(Model.Filter.QaStatus == 3)">Rejected</option>
+                        <option value="4" selected="@(Model.Filter.QaStatus == 4)">Reopened</option>
+                    </select>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded">Apply</button>
+                    <a href="@Url.Action("Index", "AmlTracker")" class="px-3 py-2 text-sm text-slate-600 hover:text-slate-900">Reset</a>
+                </div>
+            </div>
+        </form>
+
+        <div class="bg-white border border-slate-200 rounded-lg p-3 mb-3 flex flex-wrap items-center gap-2 text-xs">
+            <span class="text-slate-600 font-medium">Saved views:</span>
+            @if (!Model.SavedViews.Any())
+            {
+                <span class="text-slate-400 italic">none yet</span>
+            }
+            else
+            {
+                foreach (var v in Model.SavedViews)
+                {
+                    <button type="button" onclick='applySavedView(@Html.Raw(Json.Serialize(v.FilterJson)))'
+                            class="px-2 py-1 border border-slate-300 hover:bg-slate-50 rounded">@v.Name@(v.IsShared ? " ★" : "")</button>
+                }
+            }
+            <button type="button" onclick="openSavedViewModal()" class="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded">Save current as…</button>
+        </div>
+
+        <form id="batchForm" method="post" action="@Url.Action("BatchAction", "AmlTracker")">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Action" id="batchActionInput" value="" />
+            <input type="hidden" name="Comments" id="batchComments" value="" />
+            <input type="hidden" name="ReasonCode" id="batchReasonCode" value="" />
+            <input type="hidden" name="NewOwnerId" id="batchNewOwnerId" value="" />
+            <input type="hidden" name="SamplePercent" id="batchSamplePercent" value="" />
+            <input type="hidden" name="HighPercent" id="batchHighPct" value="" />
+            <input type="hidden" name="MediumPercent" id="batchMedPct" value="" />
+            <input type="hidden" name="LowPercent" id="batchLowPct" value="" />
+
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-3 flex flex-wrap items-center gap-2">
+                <span class="text-sm text-slate-700"><span id="selectedCount" class="font-semibold">0</span> selected</span>
+                <span class="mx-2 text-slate-300">|</span>
+
+                <button type="button" onclick="submitBatch('MarkForQa')" @(Model.CurrentUserCanQa ? "" : "disabled") title="@qaBtnTitle"
+                        class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded @qaBtnDisabled">Mark for QA</button>
+                <button type="button" onclick="openQaModal('approve')" @(Model.CurrentUserCanQa ? "" : "disabled") title="@qaBtnTitle"
+                        class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded @qaBtnDisabled">QA Approve</button>
+                <button type="button" onclick="openQaModal('reject')" @(Model.CurrentUserCanQa ? "" : "disabled") title="@qaBtnTitle"
+                        class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded @qaBtnDisabled">QA Reject</button>
+
+                <span class="mx-2 text-slate-300">|</span>
+                <select id="reassignSelect" class="border border-slate-300 rounded px-2 py-1 text-xs">
+                    <option value="">Reassign to…</option>
+                    @foreach (var u in Model.OwnerOptions) { <option value="@u.Id">@u.Name</option> }
+                </select>
+                <button type="button" onclick="submitReassign()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white text-xs font-medium rounded">Reassign</button>
+
+                <span class="mx-2 text-slate-300">|</span>
+                <span class="text-xs text-slate-600">Sample</span>
+                <input type="number" id="samplePctInput" min="1" max="100" value="10" class="w-14 border border-slate-300 rounded px-2 py-1 text-xs" />
+                <span class="text-xs text-slate-600">%</span>
+                <button type="button" onclick="submitSample()" @(Model.CurrentUserCanQa ? "" : "disabled") title="@qaBtnTitle"
+                        class="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium rounded @qaBtnDisabled">Sample</button>
+                <button type="button" onclick="openStratifiedModal()" @(Model.CurrentUserCanQa ? "" : "disabled") title="@qaBtnTitle"
+                        class="px-3 py-1.5 bg-violet-700 hover:bg-violet-800 text-white text-xs font-medium rounded @qaBtnDisabled">Stratified</button>
+
+                <span class="ml-auto text-xs text-slate-500">Auto-refresh in <span id="refreshTimer">60</span>s · <button type="button" onclick="refreshSummary()" class="text-blue-600 hover:underline">refresh now</button></span>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr class="text-left">
+                                <th class="px-3 py-2 w-8"><input type="checkbox" id="selectAll" onclick="toggleAll(this)" /></th>
+                                
+                                
+                                @* ── Optional / opt-in compliance columns. Hidden by default, toggled via the Columns panel. ── *@
+                                @* <th class="px-3 py-2 col-opt col-caseId hidden" data-col-key="caseId" data-col-label="Case Id">Case Id</th> *@
+                                <th class="px-3 py-2 col-opt col-customerId hidden" data-col-key="customerId" data-col-label="Customer Id">Customer Id</th>
+                                <th class="px-3 py-2 col-opt col-createdon hidden" data-col-key="createdon" data-col-label="Created On">Created On</th>
+                                <th class="px-3 py-2 col-opt col-updatedon hidden" data-col-key="updatedon" data-col-label="Updated On">Updated On</th>
+                                <th class="px-3 py-2 col-opt col-newOrExisting hidden" data-col-key="newOrExisting" data-col-label="New / Existing">New / Existing</th>
+                                <th class="px-3 py-2 col-opt col-groupId hidden" data-col-key="groupId" data-col-label="Group Id">Group Id</th>
+                                <th class="px-3 py-2 col-opt col-customerName hidden" data-col-key="customerName" data-col-label="Customer Name">Customer Name</th>
+                                <th class="px-3 py-2 col-opt col-customerName hidden" data-col-key="customerName" data-col-label="Customer Name">Customer Type</th>
+                                <th class="px-3 py-2 col-opt col-nationality hidden" data-col-key="nationality" data-col-label="Nationality">Nationality</th>
+                                <th class="px-3 py-2 col-opt col-dob hidden" data-col-key="dob" data-col-label="Date of Birth">Date of Birth</th>
+                                <th class="px-3 py-2 col-opt col-gender hidden" data-col-key="gender" data-col-label="Gender">Gender</th>
+                                <th class="px-3 py-2 col-opt col-datasets hidden" data-col-key="datasets" data-col-label="Datasets">Datasets</th>
+                                <th class="px-3 py-2 col-opt col-screeningscore hidden" data-col-key="screeningscore" data-col-label="Screening Score">Screening Score</th>
+                                <th class="px-3 py-2 col-opt col-riskRating hidden" data-col-key="riskRating" data-col-label="Risk Rating">Risk Rating</th>
+                                <th class="px-3 py-2 col-opt col-status hidden" data-col-key="status" data-col-label="Status">Status</th>
+                                <th class="px-3 py-2 col-opt col-idType hidden" data-col-key="idType" data-col-label="ID Type">ID Type</th>
+                                <th class="px-3 py-2 col-opt col-emiratesIdNumber hidden" data-col-key="emiratesIdNumber" data-col-label="Emirates Id Number">Emirates Id Number</th>
+                                <th class="px-3 py-2 col-opt col-emiratesIssueDate hidden" data-col-key="emiratesIssueDate" data-col-label="Emirates Issue Date">Emirates Issue Date</th>
+                                <th class="px-3 py-2 col-opt col-emiratesExpiryDate hidden" data-col-key="emiratesExpiryDate" data-col-label="Emirates Expiry Date">Emirates Expiry Date</th>
+                                <th class="px-3 py-2 col-opt col-passportIdNumber hidden" data-col-key="passportIdNumber" data-col-label="Passport Id Number">Passport Id Number</th>
+                                <th class="px-3 py-2 col-opt col-passportIssueDate hidden" data-col-key="passportIssueDate" data-col-label="Passort Issue Date">Passort Issue Date</th>
+                                <th class="px-3 py-2 col-opt col-passportExpiryDate hidden" data-col-key="passportExpiryDate" data-col-label="Passport Expiry Date">Passport Expiry Date</th>
+                                <th class="px-3 py-2 col-opt col-profession hidden" data-col-key="profession" data-col-label="Profession">Profession</th>
+                                <th class="px-3 py-2 col-opt col-residenceCountry hidden" data-col-key="residenceCountry" data-col-label="Residence Country">Residence Country</th>
+                                <th class="px-3 py-2 col-opt col-sowsofCountry hidden" data-col-key="sowsofCountry" data-col-label="SOW/SOF Country">SOW/SOF Country</th>
+                                <th class="px-3 py-2 col-opt col-countryParty hidden" data-col-key="countryParty" data-col-label="Counter Party">Counter Party</th>
+                                <th class="px-3 py-2 col-opt col-counterPartyName hidden" data-col-key="counterPartyName" data-col-label="Country Party Name">Counter Party Name</th>
+                                <th class="px-3 py-2 col-opt col-product/ServiceType hidden" data-col-key="product/ServiceType" data-col-label="Product/Service Type">Product/Service Type</th>
+                                <th class="px-3 py-2 col-opt col-product/serviceValue hidden" data-col-key="product/serviceValue" data-col-label="Product/Service Value">Product/Service Value</th>
+                                <th class="px-3 py-2 col-opt col-deliveryChannel hidden" data-col-key="deliveryChannel" data-col-label="Delivery Channel">Delivery Channel</th>
+                                <th class="px-3 py-2 col-opt col-modeofPayment hidden" data-col-key="modeofPayment" data-col-label="Mode of Payment">Mode of Payment</th>
+                                <th class="px-3 py-2 col-opt col-domesticpep hidden" data-col-key="domesticpep" data-col-label="Domestic Pep">Domestic Pep</th>
+                                <th class="px-3 py-2 col-opt col-foreignpep hidden" data-col-key="foreignpep" data-col-label="Foreign Pep">Foreign Pep</th>
+                                <th class="px-3 py-2 col-opt col-redflags hidden" data-col-key="redflags" data-col-label="Red Flags">Red Flags</th>
+                                <th class="px-3 py-2 col-opt col-highnetwork hidden" data-col-key="highnetwork" data-col-label="High Network">High Network</th>
+                                <th class="px-3 py-2 col-opt col-uaeunsanction hidden" data-col-key="uaeunsanction" data-col-label="UAEUN Sanction">UAEUN Sanction</th>
+                                <th class="px-3 py-2 col-opt col-otherSanction hidden" data-col-key="otherSanction" data-col-label="Other Sanction">Other Sanction</th>
+                                <th class="px-3 py-2 col-opt col-legalStatus hidden" data-col-key="legalStatus" data-col-label="Legal Status">Legal Status</th>
+                                <th class="px-3 py-2 col-opt col-businessActivities hidden" data-col-key="businessActivities" data-col-label="Business Activities">Business Activities</th>
+                                
+                                <th class="px-3 py-2 col-opt col-employerName hidden" data-col-key="employerName" data-col-label="Employer Name">Employer Name</th>
+                                <th class="px-3 py-2 col-opt col-employerIndustry hidden" data-col-key="employerIndustry" data-col-label="Employer Industry">Employer Industry</th>
+                                <th class="px-3 py-2 col-opt col-employerSector hidden" data-col-key="employerSector" data-col-label="Employer Sector">Employer Sector</th>
+                                <th class="px-3 py-2 col-opt col-goldernVisa hidden" data-col-key="goldernVisa" data-col-label="Golden Visa">Golden Visa</th>
+                                <th class="px-3 py-2 col-opt col-customerCifNo hidden" data-col-key="customerCifNo" data-col-label="Customer Cif No">Customer Cif No</th>
+                                <th class="px-3 py-2 col-opt col-productRefNo hidden" data-col-key="productRefNo" data-col-label="Product Ref No">Product Ref No</th>
+                                <th class="px-3 py-2 col-opt col-tradelicense hidden" data-col-key="tradelicense" data-col-label="Trade License">Trade License</th>
+                                <th class="px-3 py-2 col-opt col-tradelicenseauthority hidden" data-col-key="tradelicenseauthority" data-col-label="Trade License Authority">Trade License Authority</th>
+                                <th class="px-3 py-2 col-opt col-tradelicensesector hidden" data-col-key="tradelicensesector" data-col-label="Trade License Sector">Trade License Sector</th>
+                                
+                                <th class="px-3 py-2 col-opt col-user hidden" data-col-key="user" data-col-label="User">User</th>
+                                <th class="px-3 py-2 col-opt col-qastatus hidden" data-col-key="qastatus" data-col-label="QA Status">QA Status</th>
+                                <th class="px-3 py-2 col-opt col-qaReason hidden" data-col-key="qaReason" data-col-label="QA Reason">QA Reason</th>
+                                <th class="px-3 py-2 col-opt col-qaComments hidden" data-col-key="qaComments" data-col-label="QA Comments">QA Comments</th>
+                                <th class="px-3 py-2 col-opt col-qaReviewdUser hidden" data-col-key="qaReviewdUser" data-col-label="QA Reviewd User">QA Reviewd User</th>
+                                <th class="px-3 py-2 col-opt col-qaReviewdOn hidden" data-col-key="qaReviewdOn" data-col-label="QA Reviewd On">QA Reviewd On</th>
+                                @* <th class="px-3 py-2 w-20">Actions</th> *@
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Rows.Any())
+                            {
+                                <tr><td colspan="44" class="px-3 py-12 text-center text-slate-500">No cases match the current filter.</td></tr>
+                            }
+                            else
+                            {
+                                foreach (var r in Model.Rows)
+                                {
+                                    <tr class="border-b border-slate-100 hover:bg-slate-50 @(r.IsNewSinceLastVisit ? "bg-blue-50/40" : "") @(r.IsStale ? "ring-1 ring-amber-200" : "")">
+                                        <td class="px-3 py-2"><input type="checkbox" name="CaseIds" value="@r.CaseId" class="row-check" onchange="updateCount()" /></td>
+                                        @* <td class="px-3 py-2 text-slate-600">@r.CaseId</td> *@
+                                        <td class="px-3 py-2 text-slate-600">@r.CustomerCode</td>
+                                        <td class="px-3 py-2">
+                                            <div class="text-xs text-textlabel">
+                                                <div>
+                                                    @(r.CreatedOn?.ToString("dd/MM/yyyy") ?? "NA")
+                                                </div>
+
+                                                <div class="ml-2">
+                                                    @(r.CreatedOn?.ToString("HH:mm:ss") ?? "")
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <div class="text-xs text-textlabel">
+                                                <div>
+                                                    @(r.UpdatedOn?.ToString("dd/MM/yyyy") ?? "NA")
+                                                </div>
+
+                                                <div class="ml-2">
+                                                    @(r.UpdatedOn?.ToString("HH:mm:ss") ?? "")
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-2 text-slate-600">@r.ClientStatus</td>
+                                        <td class="px-3 py-2 text-slate-600">@(string.IsNullOrWhiteSpace(r.GroupId) ? "NA" : r.GroupId)</td>
+                                        <td class="px-3 py-2">
+                                            <a href="@Url.Action("Customer360", "AmlTracker", new { cmid = r.CustomerMasterId })" class="font-medium text-blue-700 hover:underline">@(string.IsNullOrWhiteSpace(r.CustomerName) ? "—" : r.CustomerName)</a>
+                                            @* <div class="text-xs text-slate-500">@r.CustomerCode</div> *@
+                                        </td>
+                                        <td class="px-3 py-2 text-slate-600">@r.CustomerType</td>
+                                        <td class="px-3 py-2    text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.Nationality) ? "NA" : r.Nationality)</td>
+                                        <td class="px-3 py-2 text-xs text-slate-700">
+                                            @{
+                                                string dobText = "NA";
+
+                                                if (!string.IsNullOrWhiteSpace(r.DOB) &&
+                                                DateTime.TryParse(r.DOB, out DateTime dob) &&
+                                                dob != DateTime.MinValue &&
+                                                dob.Year != 1900)
+                                                {
+                                                    dobText = dob.ToString("dd/MM/yyyy");
+                                                }
+                                            }
+
+                                            @dobText
+                                        </td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.Gender) ? "NA" : r.Gender)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.ChangeStatus) ? "NA" : r.ChangeStatus)</td>
+                                        <td class="px-3 py-2 text-xs">
+                                            @{
+                                                bool isNA = r.MatchScore == null || r.MatchScore == 0;
+
+                                                var scoreClass = isNA
+                                                ? ""
+                                                : r.MatchScore < 70
+                                                ? "text-green-600 font-semibold"
+                                                : r.MatchScore < 85
+                                                ? "text-orange-500 font-semibold"
+                                                : "text-red-600 font-semibold";
+                                            }
+
+                                    <span class="@scoreClass">
+                                        @(isNA ? "NA" : r.MatchScore.ToString())
+                                    </span>
+                                </td>
+                                @functions {
+                                    public string GetRiskScoreClass(string riskScore)
+                                    {
+                                        var score = (riskScore ?? "").ToLower().Trim();
+
+                                        if (score.Contains("low"))
+                                            return "text-green-500";
+
+                                        if (score.Contains("medium"))
+                                            return "text-yellow-400";
+
+                                        if (score.Contains("high"))
+                                            return "text-red-500";
+
+                                        if (string.IsNullOrWhiteSpace(score) || score == "unclassified")
+                                            return "text-slate-400";
+
+                                        return "text-black";
+                                    }
+                                }
+                                <td class="px-3 py-2 text-xs">
+                                    @{
+                                        var riskScore = r.CustomerType == "Individual"
+                                        ? r.Individual_final_risk_score
+                                        : r.corporate_final_risk_score;
+                                    }
+
+                                    <span class="font-bold @(GetRiskScoreClass(riskScore))">
+                                        @(string.IsNullOrWhiteSpace(riskScore)
+                                                                                ? "Unclassified"
+                                                                                : riskScore.Replace(" Risk", "").Replace("High (O)", "High(O)"))
+                                    </span>
+                                </td>
+                                        <td class="px-3 py-2 text-xs">
+                                            <span class="px-2 py-1 rounded-full case-status">
+                                                @(string.IsNullOrWhiteSpace(r.StatusName) ? "NA" : r.StatusName)
+                                            </span>
+                                        </td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.IdType) ? "NA" : r.IdType)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.EmiratesIdNumber) ? "NA" : r.EmiratesIdNumber)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.EmiratesIdIssueDate) ? "NA" : r.EmiratesIdIssueDate)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.EmiratesIdExpiryDate) ? "NA" : r.EmiratesIdExpiryDate)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.PassportId) ? "NA" : r.PassportId)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.PassportIssueDate) ? "NA" : r.PassportIssueDate)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.PassportExpiryDate) ? "NA" : r.PassportExpiryDate)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.Profession) ? "NA" : r.Profession)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.ResidentStatus) ? "NA" : r.ResidentStatus)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.SOWSOFCountry) ? "NA" : r.SOWSOFCountry)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.CounterParty) ? "NA" : r.CounterParty)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.CounterPartyName) ? "NA" : r.CounterPartyName)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.ProductType) ? "NA" : r.ProductType)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.ProductValue) ? "NA" : r.ProductValue)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.DeliveryChannel) ? "NA" : r.DeliveryChannel)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.PaymentMode) ? "NA" : r.PaymentMode)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.DomesticPep) ? "NA" : r.DomesticPep)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.ForeginPep) ? "NA" : r.ForeginPep)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.RedFlags) ? "NA" : r.RedFlags)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.HighNetwork) ? "NA" : r.HighNetwork)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.UAEUNSanction) ? "NA" : r.UAEUNSanction)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.OtherSanction) ? "NA" : r.OtherSanction)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.LegalStatus) ? "NA" : r.LegalStatus)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.BusinessType) ? "NA" : r.BusinessType)</td>
+
+                               
+
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.Employer) ? "NA" : r.Employer)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.EmployerIndustry) ? "NA" : r.EmployerIndustry)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.EmployerSector) ? "NA" : r.EmployerSector)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.GoldenVisa) ? "NA" : r.GoldenVisa)</td>
+                                        <td class="px-3 py-2   text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.ClientCifNumber) ? "NA" : r.ClientCifNumber)</td>
+                                        <td class="px-3 py-2  text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.ProductRefNo) ? "NA" : r.ProductRefNo)</td>
+                                        <td class="px-3 py-2  text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.Tradelicense) ? "NA" : r.Tradelicense)</td>
+                                        <td class="px-3 py-2  text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.TradeLicenseAuthority) ? "NA" : r.TradeLicenseAuthority)</td>
+                                        <td class="px-3 py-2  text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.TradeLicenseSector) ? "NA" : r.TradeLicenseSector)</td>
+                                        <td class="px-3 py-2  text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.CreatedUser) ? "NA" : r.CreatedUser)</td>
+                                        <td class="px-3 py-2  text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.QAStatus) ? "NA" : r.QAStatus)</td>
+                                        <td class="px-3 py-2  text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.QAReason) ? "NA" : r.QAReason)</td>
+                                        <td class="px-3 py-2  text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.QAComments) ? "NA" : r.QAComments)</td>
+                                        <td class="px-3 py-2  text-xs text-slate-700">@(string.IsNullOrWhiteSpace(r.QAReviewerName) ? "NA" : r.QAReviewerName)</td>
+                                <td class="px-3 py-2">
+                                    <div class="text-xs text-textlabel">
+                                        <div>
+                                            @(r.QAReviewdOn?.ToString("dd/MM/yyyy") ?? "NA")
+                                        </div>
+
+                                        <div class="ml-2">
+                                            @(r.QAReviewdOn?.ToString("HH:mm:ss") ?? "")
+                                        </div>
+                                    </div>
+                                </td>
+                                        
+
+                                        @*                                         <td class="px-3 py-2 whitespace-nowrap">
+                                            <button type="button" onclick="openQaHistory(@r.CaseId)" class="text-xs text-blue-600 hover:underline mr-1" title="QA history"><i class="fas fa-history"></i></button>
+                                            <button type="button" onclick="openSar(@r.CaseId)" class="text-xs text-blue-600 hover:underline mr-1" title="SAR linkage"><i class="fas fa-flag"></i></button>
+                                            <button type="button" onclick="quickAction(@r.CaseId, 'MarkForQa')" class="text-xs text-indigo-600 hover:underline" title="Mark this for QA">QA</button>
+                                        </td> *@
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </form>
+
+        <p class="text-xs text-slate-500 mt-4">
+            Tracker: 4-eyes enforced · QA Reject reopens case + emails maker · SLA configurable per type/risk · Stale flag at @(Model.SavedViews.FirstOrDefault()?.Id ?? 0) · Cycle-time chart of last 30 days · Audit log captures every action.
+        </p>
+    </div>
+</section>
+
+<div id="notifPanel" class="hidden fixed top-20 right-6 w-96 max-h-[70vh] bg-white shadow-xl border border-slate-200 rounded-lg z-50 overflow-hidden">
+    <div class="p-3 border-b border-slate-200 flex items-center justify-between">
+        <span class="font-semibold text-slate-800">Notifications</span>
+        <div class="flex gap-2">
+            <button type="button" onclick="markAllNotifsRead()" class="text-xs text-blue-600 hover:underline">Mark all read</button>
+            <button type="button" onclick="document.getElementById('notifPanel').classList.add('hidden')" class="text-slate-500 hover:text-slate-800">&times;</button>
+        </div>
+    </div>
+    <div id="notifBody" class="overflow-y-auto max-h-[60vh] p-2 text-sm">
+        <div class="text-slate-500 italic p-2">Loading…</div>
+    </div>
+</div>
+
+<div id="qaModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-5">
+        <h3 id="qaModalTitle" class="text-lg font-semibold text-slate-800 mb-2">QA Decision</h3>
+        <p id="qaModalSubtitle" class="text-sm text-slate-500 mb-3"></p>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Reason</label>
+        <select id="qaModalReason" class="w-full border border-slate-300 rounded px-3 py-2 text-sm mb-3">
+            <option value="">— select reason —</option>
+            <option value="RiskTooLow">Risk score too low</option>
+            <option value="InsufficientDocs">Insufficient documents</option>
+            <option value="WrongCustomerType">Wrong customer type</option>
+            <option value="WeakRationale">Weak rationale</option>
+            <option value="MissingPepCheck">Missing PEP check</option>
+            <option value="MissingAdverseMedia">Missing adverse media check</option>
+            <option value="DataQuality">Data quality issue</option>
+            <option value="Other">Other</option>
+        </select>
+        <textarea id="qaModalComments" rows="4" placeholder="Comments (required for QA Reject)"
+                  class="w-full border border-slate-300 rounded px-3 py-2 text-sm"></textarea>
+        <div class="flex justify-end gap-2 mt-4">
+            <button type="button" onclick="closeQaModal()" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900">Cancel</button>
+            <button type="button" id="qaModalConfirm" class="px-4 py-2 text-white text-sm font-medium rounded"></button>
+        </div>
+    </div>
+</div>
+
+<div id="historyModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl p-5 max-h-[80vh] overflow-y-auto">
+        <div class="flex items-start justify-between mb-3">
+            <h3 class="text-lg font-semibold text-slate-800">QA History — Case #<span id="historyCaseId"></span></h3>
+            <button type="button" onclick="closeHistory()" class="text-slate-500 hover:text-slate-800">&times;</button>
+        </div>
+        <div id="historyBody" class="text-sm"><div class="text-slate-500">Loading…</div></div>
+    </div>
+</div>
+
+<div id="stratifiedModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-5">
+        <h3 class="text-lg font-semibold text-slate-800 mb-2">Stratified QA Sampling</h3>
+        <p class="text-sm text-slate-500 mb-3">Sample by risk tier — typical: 100% of High, 25% of Medium, 5% of Low.</p>
+        <div class="grid grid-cols-3 gap-3 mb-4">
+            <div><label class="block text-xs font-medium mb-1">High Risk %</label><input type="number" id="stratHigh" value="100" min="0" max="100" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" /></div>
+            <div><label class="block text-xs font-medium mb-1">Medium Risk %</label><input type="number" id="stratMed" value="25" min="0" max="100" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" /></div>
+            <div><label class="block text-xs font-medium mb-1">Low Risk %</label><input type="number" id="stratLow" value="5" min="0" max="100" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" /></div>
+        </div>
+        <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeStratified()" class="px-4 py-2 text-sm text-slate-600">Cancel</button>
+            <button type="button" onclick="submitStratified()" class="px-4 py-2 bg-violet-700 hover:bg-violet-800 text-white text-sm font-medium rounded">Sample</button>
+        </div>
+    </div>
+</div>
+
+<div id="sarModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    <form method="post" action="@Url.Action("SaveSar","AmlTracker")" class="bg-white rounded-lg shadow-xl w-full max-w-lg p-5">
+        @Html.AntiForgeryToken()
+        <div class="flex items-start justify-between mb-3">
+            <h3 class="text-lg font-semibold text-slate-800">SAR / STR Linkage — Case #<span id="sarCaseId"></span></h3>
+            <button type="button" onclick="closeSar()" class="text-slate-500 hover:text-slate-800">&times;</button>
+        </div>
+        <input type="hidden" name="CaseId" id="sarCaseIdInput" />
+        <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+                <label class="block text-xs font-medium mb-1">SAR Status</label>
+                <select name="SarStatus" id="sarStatus" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+                    <option value="NotRequired">Not Required</option>
+                    <option value="Required">Required</option>
+                    <option value="Drafted">Drafted</option>
+                    <option value="Filed">Filed</option>
+                    <option value="NotFiled">Not Filed</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1">SAR Reference</label>
+                <input type="text" name="SarReference" id="sarRef" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" />
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1">Filing Deadline</label>
+                <input type="date" name="SarFilingDeadline" id="sarDeadline" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" />
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1">Filed On</label>
+                <input type="date" name="FiledOn" id="sarFiledOn" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" />
+            </div>
+        </div>
+        <label class="block text-xs font-medium mb-1">Notes</label>
+        <textarea name="Notes" id="sarNotes" rows="3" class="w-full border border-slate-300 rounded px-3 py-2 text-sm"></textarea>
+        <div class="flex justify-end gap-2 mt-4">
+            <button type="button" onclick="closeSar()" class="px-4 py-2 text-sm text-slate-600">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded">Save</button>
+        </div>
+    </form>
+</div>
+
+<div id="savedViewModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    <form method="post" action="@Url.Action("SaveView","AmlTracker")" class="bg-white rounded-lg shadow-xl w-full max-w-md p-5">
+        @Html.AntiForgeryToken()
+        <h3 class="text-lg font-semibold text-slate-800 mb-3">Save Current Filter as View</h3>
+        <label class="block text-xs font-medium mb-1">Name</label>
+        <input type="text" name="name" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm mb-3" placeholder="My QA Queue" />
+        <input type="hidden" name="filterJson" id="savedViewJson" />
+        <label class="inline-flex items-center gap-2 mb-3 text-sm">
+            <input type="checkbox" name="isShared" value="true" /> Share with all users in tenant
+        </label>
+        <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeSavedViewModal()" class="px-4 py-2 text-sm text-slate-600">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded">Save</button>
+        </div>
+    </form>
+</div>
+
+<style>
+.tracker-compact table { font-size: 11px; }
+.tracker-compact td, .tracker-compact th { padding-top: 2px !important; padding-bottom: 2px !important; }
+</style>
+
+@section Scripts {
+<script>
+
+                     function initDatePicker(selector, defaultDate, maxToday = false) {
+                return flatpickr(selector, {
+                    dateFormat: "d/m/Y",
+                    defaultDate: defaultDate,
+                    maxDate: maxToday ? "today" : null
+                });
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - 365);
+
+                const startPicker = initDatePicker("#startDate", startDate);
+
+                // End date -> today
+                const endPicker = initDatePicker("#endDate", new Date(), true);
+            });
+
+                    function formatCaseStatus(statusText) {
+                if (!statusText) return '';
+
+                const t = statusText.toLowerCase().trim();
+
+                if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
+                if (t.includes('hold')) return 'bg-orange-500 text-white';
+                if (t.includes('approved')) return 'bg-green-700 text-white';
+                if (t.includes('white')) return 'bg-indigo-600 text-white';
+                if (t.includes('wait')) return 'bg-indigo-600 text-white';
+                if (t.includes('auto')) return 'bg-green-100 text-green-800';
+                if (t.includes('transfer')) return 'bg-green-100 text-green-800';
+                if (t.includes('rejected')) return 'bg-red-100 text-red-800';
+
+                return 'bg-slate-100 text-textprimary';
+            }
+                         document.querySelectorAll('.case-status').forEach(el => {
+                el.classList.add(...formatCaseStatus(el.innerText).split(' '));
+            });
+/* ── Optional-columns toggle (Columns button) ─────────────────────────────
+   Reads metadata from <th class="col-opt" data-col-key data-col-label> tags,
+   builds a checkbox list, persists user selection to localStorage. */
+const COLS_LSKEY = 'amltracker.optionalCols.v1';
+function getOptionalColKeys() {
+    return Array.from(document.querySelectorAll('thead th.col-opt'))
+        .map(th => ({ key: th.dataset.colKey, label: th.dataset.colLabel || th.textContent.trim() }));
+}
+function loadColSelection() {
+    try {
+        const raw = localStorage.getItem(COLS_LSKEY);
+        // First visit (no preference saved yet) → default to all optional columns visible.
+        // Once the user toggles anything, their explicit choice is saved and respected.
+        if (raw === null) return new Set(getOptionalColKeys().map(c => c.key));
+        return new Set(JSON.parse(raw));
+    } catch { return new Set(); }
+}
+function saveColSelection(set) {
+    localStorage.setItem(COLS_LSKEY, JSON.stringify(Array.from(set)));
+}
+function applyColSelection(set) {
+    document.querySelectorAll('.col-opt').forEach(el => {
+        const key = el.dataset.colKey || (el.className.match(/col-([A-Za-z0-9]+)/) || [])[1];
+        if (key && set.has(key)) el.classList.remove('hidden');
+        else if (key) el.classList.add('hidden');
+    });
+}
+function applyColByKey(key, on) {
+    document.querySelectorAll('.col-opt.col-' + key).forEach(el => {
+        if (on) el.classList.remove('hidden'); else el.classList.add('hidden');
+    });
+}
+function setAllOptionalCols(on) {
+    const cols = getOptionalColKeys();
+    const set = on ? new Set(cols.map(c => c.key)) : new Set();
+    saveColSelection(set);
+    cols.forEach(c => {
+        const cb = document.getElementById('colcb-' + c.key);
+        if (cb) cb.checked = on;
+    });
+    applyColSelection(set);
+}
+function buildColumnsPanel() {
+    const list = document.getElementById('columnsList');
+    if (!list) return;
+    const cols = getOptionalColKeys();
+    const sel = loadColSelection();
+    list.innerHTML = cols.map(c =>
+        '<label class="flex items-center gap-2 px-1 py-0.5 hover:bg-slate-50 rounded cursor-pointer">' +
+        '<input type="checkbox" id="colcb-' + c.key + '" data-col-key="' + c.key + '" ' +
+        (sel.has(c.key) ? 'checked' : '') + ' />' +
+        '<span class="text-slate-700">' + c.label + '</span></label>'
+    ).join('');
+    list.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', e => {
+            const k = e.target.dataset.colKey;
+            const cur = loadColSelection();
+            if (e.target.checked) cur.add(k); else cur.delete(k);
+            saveColSelection(cur);
+            applyColByKey(k, e.target.checked);
+        });
+    });
+    applyColSelection(sel);
+}
+document.addEventListener('DOMContentLoaded', buildColumnsPanel);
+// Close popover on outside click
+document.addEventListener('click', e => {
+    const panel = document.getElementById('columnsPanel');
+    const btn = document.getElementById('columnsToggleBtn');
+    if (!panel || panel.classList.contains('hidden')) return;
+    if (!panel.contains(e.target) && !btn.contains(e.target)) panel.classList.add('hidden');
+});
+
+function updateCount() {
+    var n = document.querySelectorAll('input.row-check:checked').length;
+    document.getElementById('selectedCount').innerText = n;
+}
+function toggleAll(cb) {
+    document.querySelectorAll('input.row-check').forEach(c => c.checked = cb.checked);
+    updateCount();
+
+}
+function ensureAtLeastOne() {
+    if (document.querySelectorAll('input.row-check:checked').length === 0) {
+        alert('Select at least one case first.'); return false;
+    } return true;
+}
+function clearHidden() {
+    ['batchComments','batchReasonCode','batchNewOwnerId','batchSamplePercent','batchHighPct','batchMedPct','batchLowPct'].forEach(id => document.getElementById(id).value = '');
+}
+function submitBatch(action) {
+    document.getElementById('batchActionInput').value = action;
+    document.getElementById('batchForm').submit();
+}
+function submitReassign() {
+    var sel = document.getElementById('reassignSelect');
+    if (!sel.value) { alert('Pick an owner first.'); return; }
+    if (!ensureAtLeastOne()) return;
+    if (!confirm('Reassign ' + document.querySelectorAll('input.row-check:checked').length + ' case(s) to ' + sel.options[sel.selectedIndex].text + '?')) return;
+    clearHidden();
+    document.getElementById('batchNewOwnerId').value = sel.value;
+    submitBatch('Reassign');
+}
+function submitSample() {
+    var pct = parseInt(document.getElementById('samplePctInput').value, 10);
+    if (!(pct > 0 && pct <= 100)) { alert('Sample percent must be 1-100.'); return; }
+    if (!confirm('Sample ' + pct + '% of QA-eligible cases?')) return;
+    clearHidden();
+    document.getElementById('batchSamplePercent').value = pct;
+    submitBatch('SampleForQa');
+}
+function quickAction(caseId, action) {
+    if (!confirm('Apply ' + action + ' to case #' + caseId + '?')) return;
+    document.querySelectorAll('input.row-check').forEach(c => c.checked = (c.value == String(caseId)));
+    updateCount();
+    clearHidden();
+    submitBatch(action);
+}
+
+function openStratifiedModal() {
+    document.getElementById('stratifiedModal').classList.remove('hidden');
+    document.getElementById('stratifiedModal').classList.add('flex');
+}
+function closeStratified() {
+    document.getElementById('stratifiedModal').classList.add('hidden');
+    document.getElementById('stratifiedModal').classList.remove('flex');
+}
+function submitStratified() {
+    var hi = parseInt(document.getElementById('stratHigh').value, 10);
+    var md = parseInt(document.getElementById('stratMed').value, 10);
+    var lo = parseInt(document.getElementById('stratLow').value, 10);
+    clearHidden();
+    document.getElementById('batchHighPct').value = hi;
+    document.getElementById('batchMedPct').value = md;
+    document.getElementById('batchLowPct').value = lo;
+    submitBatch('StratifiedSample');
+}
+
+var qaModalAction = null;
+function openQaModal(kind) {
+    if (!ensureAtLeastOne()) return;
+    qaModalAction = kind;
+    var n = document.querySelectorAll('input.row-check:checked').length;
+    var title = kind === 'approve' ? 'Approve QA' : 'Reject QA';
+    var subtitle = kind === 'approve'
+        ? 'Approves QA on ' + n + ' case(s). 4-eyes: cases you made or own will be skipped.'
+        : 'Rejects QA on ' + n + ' case(s). Reopens to maker, emails them. Comment required.';
+    document.getElementById('qaModalTitle').innerText = title;
+    document.getElementById('qaModalSubtitle').innerText = subtitle;
+    var btn = document.getElementById('qaModalConfirm');
+    btn.innerText = kind === 'approve' ? 'Confirm Approve' : 'Confirm Reject';
+    btn.className = 'px-4 py-2 text-white text-sm font-medium rounded ' + (kind === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700');
+    btn.onclick = confirmQa;
+    document.getElementById('qaModalComments').value = '';
+    document.getElementById('qaModalReason').value = '';
+    var m = document.getElementById('qaModal');
+    m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeQaModal() {
+    var m = document.getElementById('qaModal');
+    m.classList.add('hidden'); m.classList.remove('flex');
+}
+function confirmQa() {
+    var comments = document.getElementById('qaModalComments').value.trim();
+    var reason = document.getElementById('qaModalReason').value;
+    if (qaModalAction === 'reject' && comments.length === 0) { alert('A comment is required for QA Reject.'); return; }
+    clearHidden();
+    document.getElementById('batchComments').value = comments;
+    document.getElementById('batchReasonCode').value = reason;
+    submitBatch(qaModalAction === 'approve' ? 'QaApprove' : 'QaReject');
+}
+
+function qaPillClass(code) {
+    switch (code) { case 2: return 'bg-emerald-100 text-emerald-800'; case 3: return 'bg-rose-100 text-rose-800'; case 1: return 'bg-amber-100 text-amber-800'; case 4: return 'bg-blue-100 text-blue-800'; default: return 'bg-slate-100 text-slate-600'; }
+}
+function escapeHtml(s) { return s == null ? '' : String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function openQaHistory(caseId) {
+    document.getElementById('historyCaseId').innerText = caseId;
+    document.getElementById('historyBody').innerHTML = '<div class="text-slate-500">Loading…</div>';
+    document.getElementById('historyModal').classList.remove('hidden');
+    document.getElementById('historyModal').classList.add('flex');
+    fetch('@Url.Action("QaHistory","AmlTracker")/' + caseId, { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(items => {
+            var body = document.getElementById('historyBody');
+            if (!items || items.length === 0) { body.innerHTML = '<div class="text-slate-500 italic">No QA actions recorded yet.</div>'; return; }
+            body.innerHTML = items.map(it => {
+                var when = it.qaReviewedOn ? new Date(it.qaReviewedOn).toLocaleString() : '—';
+                return '<div class="border border-slate-200 rounded p-3 mb-2">' +
+                    '<div class="flex items-center justify-between mb-1">' +
+                    '<span class="px-2 py-0.5 text-xs rounded-full ' + qaPillClass(it.qaStatus) + '">' + escapeHtml(it.qaStatusLabel) + '</span>' +
+                    '<span class="text-xs text-slate-500">' + escapeHtml(when) + '</span></div>' +
+                    '<div class="text-sm text-slate-700"><strong>Reviewer:</strong> ' + escapeHtml(it.qaReviewerName || '—') + '</div>' +
+                    (it.qaComments ? '<div class="text-sm text-slate-600 mt-1 whitespace-pre-wrap">' + escapeHtml(it.qaComments) + '</div>' : '') + '</div>';
+            }).join('');
+        }).catch(e => { document.getElementById('historyBody').innerHTML = '<div class="text-rose-700">Failed to load.</div>'; });
+}
+function closeHistory() {
+    document.getElementById('historyModal').classList.add('hidden');
+    document.getElementById('historyModal').classList.remove('flex');
+}
+
+function openSar(caseId) {
+    document.getElementById('sarCaseId').innerText = caseId;
+    document.getElementById('sarCaseIdInput').value = caseId;
+    fetch('@Url.Action("GetSar","AmlTracker")/' + caseId, { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById('sarStatus').value = d.sarStatus || 'NotRequired';
+            document.getElementById('sarRef').value = d.sarReference || '';
+            document.getElementById('sarDeadline').value = d.sarFilingDeadline || '';
+            document.getElementById('sarFiledOn').value = d.filedOn || '';
+            document.getElementById('sarNotes').value = d.notes || '';
+        });
+    document.getElementById('sarModal').classList.remove('hidden');
+    document.getElementById('sarModal').classList.add('flex');
+}
+function closeSar() {
+    document.getElementById('sarModal').classList.add('hidden');
+    document.getElementById('sarModal').classList.remove('flex');
+}
+
+function openSavedViewModal() {
+    var qs = window.location.search;
+    document.getElementById('savedViewJson').value = qs;
+    document.getElementById('savedViewModal').classList.remove('hidden');
+    document.getElementById('savedViewModal').classList.add('flex');
+}
+function closeSavedViewModal() {
+    document.getElementById('savedViewModal').classList.add('hidden');
+    document.getElementById('savedViewModal').classList.remove('flex');
+}
+function applySavedView(filterJson) {
+    if (!filterJson) return;
+    if (filterJson.startsWith('?')) { window.location.search = filterJson; return; }
+    try { var f = JSON.parse(filterJson); var p = new URLSearchParams(f); window.location.search = '?' + p.toString(); } catch(e) { window.location.search = filterJson; }
+}
+
+// Notifications
+function loadNotifs() {
+    fetch('@Url.Action("Notifications","AmlTracker")?onlyUnread=false&limit=20', { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(items => {
+            var b = document.getElementById('notifBody');
+            if (!items || items.length === 0) { b.innerHTML = '<div class="p-3 text-slate-500 italic">No notifications.</div>'; return; }
+            b.innerHTML = items.map(n => {
+                var when = n.createdOn ? new Date(n.createdOn).toLocaleString() : '';
+                return '<div class="p-2 mb-1 border-l-2 ' + (n.isRead ? 'border-slate-200' : 'border-blue-500 bg-blue-50/40') + '">' +
+                    '<div class="font-medium text-sm">' + escapeHtml(n.title) + '</div>' +
+                    '<div class="text-xs text-slate-600">' + escapeHtml(n.body || '') + '</div>' +
+                    '<div class="text-[10px] text-slate-400 mt-0.5">' + when + (n.link ? ' · <a href="'+ escapeHtml(n.link) +'" class="text-blue-600">open</a>' : '') + '</div></div>';
+            }).join('');
+        });
+}
+function markAllNotifsRead() {
+    var fd = new FormData();
+    fd.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+    fetch('@Url.Action("MarkAllRead","AmlTracker")', { method: 'POST', body: fd, credentials: 'same-origin' })
+        .then(() => { var b = document.getElementById('notifBadge'); if (b) b.classList.add('hidden'); loadNotifs(); });
+}
+loadNotifs();
+
+// S3: polling for real-time KPI updates
+var refreshSec = 60;
+function tickRefresh() {
+    refreshSec--;
+    if (refreshSec <= 0) { refreshSec = 60; refreshSummary(); }
+    var el = document.getElementById('refreshTimer'); if (el) el.innerText = refreshSec;
+}
+function refreshSummary() {
+    fetch('@Url.Action("Summary","AmlTracker")', { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(s => {
+            var el = document.getElementById('kpi-sla-breach'); if (el) el.innerText = s.slaBreach;
+            var b = document.getElementById('notifBadge');
+            if (b) {
+                if (s.unreadNotifications > 0) { b.innerText = s.unreadNotifications; b.classList.remove('hidden'); }
+                else { b.classList.add('hidden'); }
+            }
+        });
+}
+setInterval(tickRefresh, 1000);
+
+
+</script>
+}

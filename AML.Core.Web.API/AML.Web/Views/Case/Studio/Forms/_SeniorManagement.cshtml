@@ -1,0 +1,168 @@
+<div class="space-y-4">
+    <div class="grid grid-cols-3 gap-4">
+        <!-- Name & Designation -->
+        <div class="col-span-2">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Name of Senior Management <span class="text-rose-500">*</span></label>
+            <div class="flex gap-2 mt-1">
+                <input type="text" class="h-11 flex-1 bg-white border border-slate-200 rounded-xl px-4 text-[13px] font-medium outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all" 
+                       :class="{ 'border-rose-500': errors.includes('name') }" 
+                       x-model="formData.name" @@input="updateActiveNodeLabel()" placeholder="Enter name">
+                <button type="button" @@click="checkDuplicates(selectedNode.id)" 
+                        class="w-11 h-11 bg-slate-900 text-white rounded-xl flex items-center justify-center hover:bg-black transition-all active:scale-95 shadow-sm border border-slate-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 28 24" stroke="currentColor" stroke-width="2">
+                        <circle cx="8" cy="10" r="4"></circle>
+                        <line x1="11" y1="13" x2="13.5" y2="15.5" stroke-linecap="round"></line>
+                        <circle cx="18" cy="10" r="4"></circle>
+                        <line x1="21" y1="13" x2="23.5" y2="15.5" stroke-linecap="round"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="col-span-1" x-show="edges.get().filter(e => e.to.toString() === selectedNode?.id?.toString()).length <= 1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Designation</label>
+            <input type="text" class="w-full h-11 mt-1 bg-white border border-slate-200 rounded-xl px-4 text-[13px] font-medium outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all" 
+                   x-model="formData.designation" placeholder="e.g. CEO">
+        </div>
+
+        <!-- Nationality, DOB, ID Type -->
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Nationality</label>
+            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.nationality">
+                <option value="">Select</option>
+                <template x-for="nat in studioLists.Nationalities">
+                    <option :value="nat.Value || nat.value" x-text="nat.Text || nat.text"></option>
+                </template>
+            </select>
+        </div>
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Date Of Birth</label>
+            <input type="text" id="dob-picker-sm" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] cursor-pointer outline-none" 
+                   x-model="formData.dob" placeholder="DD/MM/YYYY" readonly>
+        </div>
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">ID Type</label>
+            <div class="relative" x-data="{ open: false }" @@click.away="open = false">
+                <button type="button" @@click="open = !open" 
+                        class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] font-medium flex items-center justify-between hover:border-slate-300 transition-all outline-none">
+                    <span class="truncate pr-4" :class="formData.selectedIdTypes?.length > 0 ? 'text-slate-900' : 'text-slate-400'"
+                          x-text="formData.selectedIdTypes?.length > 0 ? formData.selectedIdTypes.join(', ') : 'Select'"></span>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+                </button>
+                <div x-show="open" class="absolute z-[100] w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl p-1.5 space-y-0.5">
+                    <template x-for="type in studioLists.IdTypes">
+                        <label class="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-slate-50 cursor-pointer transition-colors group">
+                            <input type="checkbox" :value="type.Text || type.text" x-model="formData.selectedIdTypes" class="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                            <span class="text-[12px] font-medium text-slate-700 group-hover:text-blue-600" x-text="type.Text || type.text"></span>
+                        </label>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Passport Fields -->
+        <template x-if="formData.selectedIdTypes?.some(id => id.toLowerCase() === 'passport')" >
+            <div class="contents"  x-init="$nextTick(() => { flatpickr('#p-issue-picker',{dateFormat:'d/m/Y'}); flatpickr('#p-expiry-picker',{dateFormat:'d/m/Y'}); })">
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-slate-600 ml-1">Passport ID</label>
+                    <input type="text"  x-model="formData.passportId" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" placeholder="Enter passport ID">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-slate-600 ml-1">Passport Issue Date</label>
+                    <input type="text" id="p-issue-picker" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] cursor-pointer outline-none transition-all" 
+                   x-model="formData.passportIssueDate" placeholder="DD/MM/YYYY" readonly>
+                    @* <input type="text" id="p-issue-picker" placeholder="DD/MM/YYYY" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] cursor-pointer outline-none" x-model="formData.passportIssueDate" readonly> *@
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-slate-600 ml-1">Passport Expiry Date</label>
+                    <input type="text" id="p-expiry-picker" placeholder="DD/MM/YYYY" class="date-picker-future w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] cursor-pointer outline-none" x-model="formData.passportExpiryDate" readonly>
+                </div>
+            </div>
+        </template>
+
+        <!-- Emirates ID Fields -->
+        <template x-if="formData.selectedIdTypes?.some(id => id.toLowerCase() === 'emirates id')">
+            <div class="contents" x-init="$nextTick(() => { flatpickr('#e-issue-picker',{dateFormat:'d/m/Y'}); flatpickr('#e-expiry-picker',{dateFormat:'d/m/Y'}); })">
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-slate-600 ml-1">Emirates ID Number</label>
+                    <input type="text" x-model="formData.emiratesIdNumber" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" placeholder="784-XXXX-XXXXXXX-X">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-slate-600 ml-1">Emirates ID Issue Date</label>
+                    <input type="text" id="e-issue-picker" placeholder="DD/MM/YYYY" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] cursor-pointer outline-none" x-model="formData.emiratesIdIssueDate" readonly>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-slate-600 ml-1">Emirates ID Expiry Date</label>
+                    <input type="text" id="e-expiry-picker" placeholder="DD/MM/YYYY" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] cursor-pointer outline-none" x-model="formData.emiratesIdExpiryDate" readonly>
+                </div>
+            </div>
+        </template>
+
+        <!-- Gender, Residence, SOW/SOF -->
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Gender</label>
+            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.gender">
+                <option value="">Select</option>
+                <template x-for="g in studioLists.Gender">
+                    <option :value="g.Value || g.value" x-text="g.Text || g.text"></option>
+                </template>
+            </select>
+        </div>
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Residence Country</label>
+            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.residence">
+                <option value="">Select</option>
+                <template x-for="nat in studioLists.Nationalities">
+                    <option :value="nat.Value || nat.value" x-text="nat.Text || nat.text"></option>
+                </template>
+            </select>
+        </div>
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">SOW/SOF Country</label>
+            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.sowsofcountry">
+                <option value="">Select</option>
+                <template x-for="nat in studioLists.Nationalities">
+                    <option :value="nat.Value || nat.value" x-text="nat.Text || nat.text"></option>
+                </template>
+            </select>
+        </div>
+
+        <!-- Employer, Industry, Sector -->
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Employer Name</label>
+            <input type="text" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.employer" placeholder="Enter employer">
+        </div>
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Employer Industry</label>
+            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.employerIndustry">
+                <option value="">Select</option>
+                <template x-for="ind in studioLists.Industries">
+                    <option :value="ind.Value || ind.value" x-text="ind.Text || ind.text"></option>
+                </template>
+            </select>
+        </div>
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Employer Sector</label>
+            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.employerSector">
+                <option value="">Select</option>
+                <template x-for="sec in studioLists.Sectors">
+                    <option :value="sec.Value || sec.value" x-text="sec.Text || sec.text"></option>
+                </template>
+            </select>
+        </div>
+
+        <!-- Golden Visa, CIF, Documents -->
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Golden Visa</label>
+            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.goldenVisa">
+                <option value="">Select</option>
+                <template x-for="gv in studioLists.GoldenVisa">
+                    <option :value="gv.Value || gv.value" x-text="gv.Text || gv.text"></option>
+                </template>
+            </select>
+        </div>
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Customer CIF No</label>
+            <input type="text" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.cif" placeholder="Enter CIF No">
+        </div>
+    </div>
+</div>

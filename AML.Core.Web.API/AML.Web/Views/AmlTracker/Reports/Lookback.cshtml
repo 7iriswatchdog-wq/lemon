@@ -1,0 +1,70 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@using System.Collections.Generic
+@model List<LookbackRow>
+@{
+    ViewData["Title"] = "Look-back Register";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "Look-back Register";
+    ViewData["ReportSubtitle"] = $"Customers whose risk just escalated to High in the last {ViewBag.Days} days. Past activity needs retroactive review.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="flex gap-2 my-3">
+            <a href="?days=30" class="px-3 py-1.5 text-xs border rounded @(ViewBag.Days == 30 ? "bg-blue-50 border-blue-300" : "border-slate-300")">30d</a>
+            <a href="?days=90" class="px-3 py-1.5 text-xs border rounded @(ViewBag.Days == 90 ? "bg-blue-50 border-blue-300" : "border-slate-300")">90d</a>
+            <a href="?days=180" class="px-3 py-1.5 text-xs border rounded @(ViewBag.Days == 180 ? "bg-blue-50 border-blue-300" : "border-slate-300")">180d</a>
+            <a href="?days=365" class="px-3 py-1.5 text-xs border rounded @(ViewBag.Days == 365 ? "bg-blue-50 border-blue-300" : "border-slate-300")">1y</a>
+            <span class="ml-auto text-sm text-slate-600">@Model.Count escalations</span>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left">
+                        <th class="px-3 py-2">Customer</th>
+                        <th class="px-3 py-2">Was</th>
+                        <th class="px-3 py-2">Now</th>
+                        <th class="px-3 py-2">Escalated On</th>
+                        <th class="px-3 py-2">Days Since</th>
+                        <th class="px-3 py-2 text-right">Recent Cases</th>
+                        <th class="px-3 py-2">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="7" class="px-3 py-12 text-center text-slate-500">No risk escalations to High in this window.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var r in Model)
+                        {
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 @(r.RecentCases > 0 ? "bg-amber-50/40" : "")">
+                                <td class="px-3 py-2">
+                                    <a href="@Url.Action("Customer360", "AmlTracker", new { cmid = r.CustomerMasterId })" class="font-medium text-blue-700 hover:underline">@r.FullName</a>
+                                    <div class="text-xs text-slate-500 font-mono">@r.CustomerCode</div>
+                                </td>
+                                <td class="px-3 py-2"><span class="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-800">@(r.PreviousRisk ?? "—")</span></td>
+                                <td class="px-3 py-2"><span class="px-2 py-0.5 text-xs rounded-full bg-rose-100 text-rose-800">@r.CurrentRisk</span></td>
+                                <td class="px-3 py-2 text-slate-600 text-xs">@(r.AssessmentDate?.ToString("yyyy-MM-dd") ?? "—") <span class="text-slate-400">v@(r.AssessmentVersion?.ToString() ?? "—")</span></td>
+                                <td class="px-3 py-2">@r.DaysSince</td>
+                                <td class="px-3 py-2 text-right font-semibold">@r.RecentCases</td>
+                                <td class="px-3 py-2">
+                                    <a href="@Url.Action("Customer360", "AmlTracker", new { cmid = r.CustomerMasterId })" class="text-xs text-blue-600 hover:underline">Review →</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <p class="text-xs text-slate-500 mt-3">
+            <strong>Why this matters:</strong> when a customer's risk escalates to High, all prior activity should be reviewed for missed flags.
+            Rows highlighted amber have additional cases in the look-back window.
+        </p>
+    </div>
+</section>

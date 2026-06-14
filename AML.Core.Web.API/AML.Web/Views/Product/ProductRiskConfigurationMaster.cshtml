@@ -1,0 +1,1374 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using static AML.Web.Helpers.NavigationIndicatorHelper;
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    //ViewData["Title"] = "Risk Configuration Master";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+
+}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+@model AML.ViewModel.ViewModels.ProductMaster.ProdRiskConfigurationModel
+<style>
+    .heading {
+        font-size: 1.25rem;
+    }
+
+    .page {
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .head-section {
+        display: flex;
+        justify-content: space-between; /* Better than flex-start + auto margin */
+        align-items: center;
+        max-width: 100%;
+        min-width: 0%;
+        height: 72px;
+        overflow-x: hidden;
+        padding: 0 16px; /* Add horizontal padding if needed */
+        box-sizing: border-box;
+        background-color: white !important;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .card1 {
+        /* width: 100%; /* Or set fixed width like 300px */ */ max-width: 100%; /* Ensures it never overflows parent */
+        border-radius: 8px;
+        overflow: hidden; /* Contains all child elements */
+        background-color: white !important;
+        margin: 30px 30px;
+        padding: 20px;
+        box-shadow: 0 0 #0000, /* fallback ring-offset-shadow */
+        0 0 #0000, /* fallback ring-shadow */
+        0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
+
+    .flex-box {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 30px;
+    }
+
+    tr {
+        border: none !important;
+    }
+
+    td {
+        padding: 15px;
+    }
+
+    .flex-box .btn {
+        background-color: rgb(37,99,235);
+        border-radius: 8px;
+        padding: 8px 20px;
+        color: white;
+    }
+
+    #divCategoryType .btn, #divRiskItemddl .btn {
+        background-color: rgb(37,99,235);
+        border-radius: 8px;
+        padding: 8px 20px;
+        color: white;
+        margin: 20px 0px;
+    }
+
+    #RiskTypeCategoryList input[type="text"] {
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+    }
+
+    #RiskTypeCategoryList input[type="button"] {
+        background-color: rgb(37,99,235);
+        border-radius: 8px;
+        padding: 8px 20px;
+        color: white;
+    }
+
+    .dataTables_length {
+        width: 40%;
+        margin: 20px 0px;
+    }
+
+        .dataTables_length select {
+            width: 25%;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+    /* .table-striped{
+            margin : 10px 0px;
+
+        } */
+    .table-striped thead {
+        background-color: rgb(233,239,253);
+    }
+
+        .table-striped thead th:first-child {
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+
+        .table-striped thead th:last-child {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+    .dataTables_paginate .paginate_button {
+        border: 1px solid #dee2e6 !important;
+        border-radius: 8px !important;
+        padding: 8px 20px !important;
+    }
+
+    .risk-category > * {
+        display: block;
+    }
+
+    .risk-category {
+        margin: 10px 0px;
+    }
+
+        .risk-category select {
+            border-radius: 8px;
+            border: 1px solid #dee2e6 !important;
+        }
+
+    #dvRiskItemList input[type="text"] {
+        border: 1px solid lightgray;
+        border-radius: 4px;
+        width: 100%
+    }
+
+    #dvRiskItemList .form-control {
+        width: 100%;
+        border-radius: 4px;
+    }
+
+    #dvRiskItemList input[type="button"] {
+        background-color: rgb(37,99,235);
+        border-radius: 8px;
+        padding: 8px 20px;
+        color: white;
+    }
+
+    #btnitemSubmit {
+        background-color: rgb(37,99,235);
+        border-radius: 8px;
+        padding: 8px 20px;
+        color: white;
+        margin: 20px 0px;
+    }
+
+    .table-responsive {
+        /* width: 70vw; */
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    th {
+        font-weight: 500;
+    }
+
+    .table-striped {
+        margin-left: 0px !important;
+        padding-left: 0px !important;
+        /* width: 75vw !important;
+            min-width: 600px; /* Only if you need a minimum width */ */
+    }
+    /* .table-striped thead, tbody {
+                width: 75vw !important;
+            } */
+
+    #availableRiskItems {
+        min-width: 1200px;
+        width: auto;
+    }
+
+    .table-striped thead,
+    .table-striped tbody {
+        width: auto !important;
+    }
+
+    input:focus {
+        border: 2px solid rgb(37,99,235) !important;
+    }
+
+    select:focus {
+        border: 2px solid rgb(37,99,235) !important;
+    }
+
+    .dataTables_paginate {
+        margin-left: -20px !important;
+    }
+
+
+
+    @@media (max-width: 992px) {
+        .page {
+            width: 80vw;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        .head-section {
+            width: 100% !important;
+        }
+
+        .card1 {
+            width: 75vw;
+            margin: 10px 10px;
+            padding: 10px;
+        }
+
+        .flex-box {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        #RiskTypeCategoryList input[type="text"] {
+            width: 80%
+        }
+
+        #RiskTypeCategoryList input[type="button"] {
+            width: 100%
+        }
+
+        .dataTables_length {
+            width: 100%;
+        }
+
+        .table-striped {
+            display: block;
+            width: auto;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+            /* .table-striped thead,
+                .table-striped tbody {
+                    width: 75vw !important;
+                }
+                .table-striped tr{
+                    width : 90% !important;
+                }
+                #availableRiskItems tr {
+                    width: 90% !important;
+                } */
+            /* #availableRiskItems {
+                min-width: 1200px;
+                width: auto;
+            } */
+
+            .table-striped thead,
+            .table-striped tbody {
+                width: auto !important;
+            }
+    }
+
+    /* Mobile-specific fixes (up to 768px) */
+    @@media (max-width: 768px) {
+        /* Table transformation */
+        .head-section {
+            width: 100% !important;
+        }
+
+        .card1 {
+            width: 75vw;
+            margin: 10px 10px;
+            padding: 10px;
+        }
+
+        .flex-box {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        #RiskTypeCategoryList input[type="text"] {
+            width: 80%
+        }
+
+        #RiskTypeCategoryList input[type="button"] {
+            width: 100%
+        }
+
+        .dataTables_length {
+            width: 100%;
+        }
+
+        .dataTables_length {
+            width: 100%;
+        }
+
+        .table-striped {
+            display: block;
+            width: auto;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+            .table-striped thead,
+            .table-striped tbody {
+                width: 75vw !important;
+            }
+
+            .table-striped tr {
+                width: 100% !important;
+            }
+
+        #availableRiskItems tr {
+            width: 90% !important;
+        }
+    }
+
+    /* Very small devices (up to 480px) */
+    @@media (max-width: 480px) {
+        .head-section {
+            width: 100% !important;
+        }
+
+        .card1 {
+            width: 75vw;
+            margin: 10px 10px;
+            padding: 10px;
+        }
+
+        .flex-box {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        #RiskTypeCategoryList input[type="text"] {
+            width: 80%
+        }
+
+        #RiskTypeCategoryList input[type="button"] {
+            width: 100%
+        }
+
+        .dataTables_length {
+            width: 100%;
+        }
+
+        .dataTables_length {
+            width: 100%;
+        }
+
+        .table-striped {
+            display: block;
+            width: auto;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+            .table-striped thead,
+            .table-striped tbody {
+                width: 75vw !important;
+            }
+
+            .table-striped tr {
+                width: 90% !important;
+            }
+
+        #availableRiskItems tr {
+            width: 90% !important;
+        }
+    }
+
+    /* Remove all shading */
+    table.dataTable tbody tr,
+    table.dataTable tbody td,
+    table.dataTable thead th,
+    .dataTables_processing {
+        background: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Remove odd/even striping */
+    table.dataTable.stripe tbody tr.odd,
+    table.dataTable.stripe tbody tr.even {
+        background: none !important;
+    }
+
+    /* Remove hover shading */
+    table.dataTable.hover tbody tr:hover {
+        background: none !important;
+    }
+
+
+
+    /* Remove borders between rows */
+    table.dataTable tbody tr,
+    table.dataTable tbody td,
+    table.dataTable tbody th {
+        border: none !important;
+    }
+
+
+
+    /* Remove header row bottom border */
+    table.dataTable thead th,
+    table.dataTable thead td {
+        border-bottom: none !important;
+    }
+
+    /* Remove top border on first row */
+    table.dataTable tbody tr:first-child td {
+        border-top: none !important;
+    }
+
+
+    /* Container layout */
+    .dataTables_wrapper .dataTables_paginate {
+        display: flex !important;
+        justify-content: center;
+        margin-top: 12px;
+    }
+
+        /* Pagination buttons like your Tailwind layout */
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 6px 14px !important;
+            margin: 0 4px !important; /* spacing between buttons */
+            border: 1px solid #cbd5e1 !important; /* Tailwind border-slate-300 */
+            border-radius: 6px !important;
+            background: white !important;
+            color: #2563eb !important; /* Tailwind blue-600 */
+            font-size: 14px;
+            cursor: pointer !important;
+            transition: background 0.2s;
+        }
+
+            /* hover */
+            .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+                background: #f1f5f9 !important; /* Tailwind slate-100 */
+            }
+
+            /* current page */
+            .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+                background: #2563eb !important; /* blue-600 */
+                color: white !important;
+            }
+
+            /* disabled buttons like your example */
+            .dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+            .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+                background: white !important;
+                color: #2563eb !important;
+                opacity: 0.45 !important;
+                border-color: #cbd5e1 !important;
+                cursor: not-allowed !important;
+            }
+
+
+    /* .dataTables_wrapper .dataTables_info {
+            margin-top: 12px !important;
+        } */
+
+
+
+
+    .dynamic-select {
+        min-width: 160px !important;
+        max-width: 200px;
+        width: auto !important;
+        border: 1px solid lightgray;
+    }
+
+    .dynamic-select1 {
+        min-width: 120px;
+        max-width: 160px;
+        width: auto !important;
+        padding-right: 28px;
+        border: 1px solid lightgray;
+    }
+
+</style>
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+</style>
+<div class="card card-primary bg-gray-50">
+    <div id="loader" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+    </div>
+    <div class="page">
+        @* <div class="head-section">
+            <div class="card card-header br-20 bg-blue heading">
+                <h4 class="mb-0"><b>@localizer["Product Risk Configuration Master"]</b></h4>
+            </div>
+            <div class="md:block">
+                Client Logo
+            </div>
+        </div> *@
+        <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-surface">
+            <div class="flex items-center justify-between w-full">
+                <!-- Title -->
+                <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                    @localizer["Product Risk Configuration Master"]
+                </h2>
+
+                <!-- Right-side content -->
+                <div class="text-sm md:text-base text-right">
+                    @* <img src="@Clientlogo" alt="Client Logo" width="50px" /> *@
+                    <img src="@Clientlogo" alt="Client Logo" width="50px" />
+                </div>
+            </div>
+        </nav>
+        <div class="card br-20 bg-blue card1">
+            <form id="myform">
+                <div class="row">
+                    <div class="flex-box">
+                        <div class="col-4">
+                            <input type="hidden" id="rowIndex1" value="0" />
+                            <button type="button" id="addCategory" onclick="DisplayCategory()" class="btn btn-primary">@localizer["Add Product Risk Category"]</button>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-group">
+                                <input type="hidden" id="rowIndex2" value="0" />
+                                <button type="button" id="addRow" onclick="selectRiskCategories()" class="btn btn-primary">@localizer["Add Product Risk Item"]</button>
+
+                            </div>
+
+                        </div>
+                    </div>
+                    <div id="divCategoryType" style="display:none;">
+                        <div class="form-group">
+                            <input type="hidden" id="rowIndex" value="0" />
+                            <button type="button" id="addMoreCategory" onclick="addCategoryRow()" class="btn btn-primary">@localizer["Add More Risk Category Type"]</button>
+                            <div id="dvRiskCategoryList" style="display:none;" class="overflow-x-auto"></div>
+
+                        </div>
+
+
+
+                        <div id="divRiskTypeCategory" class="p-6" style="border-style: groove;display:none;">
+                            <div style="width: 100%; padding-left: -10px;">
+                                <div class="table-responsive">
+                                    <table id="availableRiskTypeCategory" class="w-full text-sm text-left" cellspacing="0">
+                                        <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                                            <tr>
+                                                <th>@localizer["Product Risk Category"]</th>
+                                                <th>@localizer["Active Y/N"]</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="btnTypeCategorySubmit" type="submit" value="Submit" class="btn btn-primary" style="display:none;">@localizer["Submit"]</button>
+                    </div>
+                    <div id="divRiskitemsFull" style="display:none;">
+                        <div class="row" id="divRiskitems" style="display:block;">
+
+                            <div class="col-12 risk-category space-y-2">
+                                <p>@localizer["Please Select the Risk type category  and subcategory to add risk items"]</p>
+
+                                <label for="txtRiskTypeCategoryName">@localizer["Risk Type Category"]</label>
+                                <select asp-for="ProdRiskCategoryID" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="ddlProdRiskTypeCategory2">
+                                    <option value="0">--@localizer["Select"]--</option>
+                                </select>
+                                <input type="hidden" asp-for="ProdRiskCategory" id="txtProdRiskTypeCategoryName2">
+                            </div>
+
+                        </div>
+                        <div id="divRiskItemddl" style="display:none;">
+                            <div class="form-group">
+                                <input type="hidden" id="rowIndex" value="0" />
+                                <button type="button" id="addMoreRiskItems" onclick="addListRow()" class="btn btn-primary" style="display:none;margin-top:30px;">@localizer["Add More Risk Items"]</button>
+                                <div id="dvRiskItemList" style="display:none;" class="overflow-x-auto"></div>
+
+                            </div>
+
+                            <div id="divRiskTtemtable" class="row" style="display:block;">
+                                <div class="p-6" style="border-style: groove; margin-top:15px;">
+                                    <div style=" padding-left: -10px;">
+                                        <div class="table-responsive">
+                                            <table id="availableRiskItems" class="w-full text-sm text-left" cellspacing="0">
+                                                <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                                                    <tr>
+                                                        <th>@localizer["Risk Item"]</th>
+                                                        <th>@localizer["Risk Score"]</th>
+                                                        @*<th>@localizer["Override Score"]</th>*@
+                                                        <th>@localizer["Active Y/N"]</th>
+                                                    </tr>
+                                                </thead>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button id="btnitemSubmit" type="submit" value="Submit" class="btn btn-primary" style="display:block;">@localizer["Submit"]</button>
+
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+            var arrHead = new Array();
+
+
+        arrHead1 = ['@localizer["Product Risk Type Category"]', '@localizer["Action"]', ''];
+        contarr1 = []
+        // first create TABLE structure with the headers.
+        function createRiskTypeCategoryTable() {
+            var empTable = document.createElement('table');
+            empTable.setAttribute('id', 'RiskTypeCategoryList'); // table id.
+
+            var tr = empTable.insertRow(-1);
+            for (var h = 0; h < arrHead1.length; h++) {
+                var th = document.createElement('th');// create table headers
+                th.innerHTML = arrHead1[h];
+                tr.appendChild(th);
+            }
+
+            var div = document.getElementById('dvRiskCategoryList');
+            div.appendChild(empTable);  // add the TABLE to the container.
+        }
+
+        arrHead = ['@localizer["Risk Item"]', '@localizer["Risk Score"]','' , '@localizer["Action"]'];
+        contarr = []
+        // first create TABLE structure with the headers.
+        function createRiskItemTable() {
+            var empTable = document.createElement('table');
+            empTable.setAttribute('id', 'RiskItemList'); // table id.
+
+            var tr = empTable.insertRow(-1);
+            for (var h = 0; h < arrHead.length; h++) {
+                var th = document.createElement('th');// create table headers
+                th.innerHTML = arrHead[h];
+                tr.appendChild(th);
+            }
+
+            var div = document.getElementById('dvRiskItemList');
+            div.appendChild(empTable);  // add the TABLE to the container.
+        }
+
+        function DisplayCategory() {
+            // $('#loader').show();
+
+            //alert("hai");
+
+            var x = document.getElementById('divRiskitemsFull');
+            x.style.display = "none";
+
+                 var b = document.getElementById('divCategoryType');
+            b.style.display = "block";
+            var x = document.getElementById('dvRiskCategoryList');
+            x.style.display = "block";
+            var y = document.getElementById('divRiskTypeCategory');
+            y.style.display = "block";
+            var z = document.getElementById('btnTypeCategorySubmit');
+            z.style.display = "block";
+            z = document.getElementById('addMoreCategory');
+            z.style.display = "block";
+            $("#RiskItemList").find("tr").find("input[type=text]").val('');
+            $("#RiskTypeCategoryList").find("tr").find("input[type=text]").val('');
+            $("#RiskTypeCategoryList").find("tr:gt(1)").remove();
+            LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+
+
+        }
+
+        function selectRiskCategories() {
+
+            //alert("hai");
+            $('#loader').show();
+
+            var x = document.getElementById('divRiskitemsFull');
+            x.style.display = "block";
+            //var y = document.getElementById('divRiskTypeFull');
+            //y.style.display = "none";
+            var z = document.getElementById('divCategoryType');
+            z.style.display = "none";
+
+
+
+            $('#txtRiskCategory').val($('#ddlRiskCategory :selected').text());
+            getRiskTypeCategory2($('#ddlRiskCategory').val());
+
+
+        }
+
+        $('#ddlProdRiskTypeCategory2').change(function () {
+
+            //alert("Hai");
+
+
+            $('#txtProdRiskTypeCategoryName2').val($('#ddlProdRiskTypeCategory2 :selected').text());
+            //addListRow();
+            var x = document.getElementById('dvRiskItemList');
+            x.style.display = "block";
+            x = document.getElementById('divRiskItemddl');
+            x.style.display = "block";
+            x = document.getElementById('addMoreRiskItems');
+            x.style.display = "block";
+            LoadTable($('#ddlProdRiskTypeCategory2').val());
+            //  $("RiskItemList").find("tr:gt(0)").remove();
+            $("#RiskItemList").find("tr").find("input[type=text]").val('');
+            $("#RiskItemList").find("tr").find("select").val('0');
+            //document.getElementById("AddedProdRiskItems[0].OverrideScore").setAttribute('disabled', 'true');
+            $("#RiskItemList").find("tr:gt(1)").remove();
+            $('#addMoreRiskItems').show();
+            $('#divRiskTtemtable').show();
+                if ($('#ddlProdRiskTypeCategory2').val() == 0) {
+                $('#divRiskItemddl').hide();
+            }
+        });
+
+        function addRow(ele, elementName, value) {
+            var rowIndex = $('#rowIndex2').val();
+            if (elementName == 'ProdRiskScore') {
+                ele.setAttribute('max', 3);
+                ele.setAttribute('min', 0);
+
+                ele.setAttribute('type', 'number');
+                ele.setAttribute('name', 'AddedProdRiskItems[' + rowIndex + '].' + elementName);
+                ele.setAttribute('id', 'AddedProdRiskItems[' + rowIndex + '].' + elementName);
+                if (elementName == 'ProdRiskScore') {
+                    ele.setAttribute('onchange', 'riskScoreOnChange(' + rowIndex + ')');
+                }
+                // else if (elementName == 'OverrideScore') {
+                //    ele.setAttribute('disabled', 'true');
+                //}
+            }
+            else {
+                ele.setAttribute('type', 'text');
+                ele.setAttribute('class', 'form-control');
+                ele.setAttribute('value', value);
+                ele.setAttribute('name', 'AddedProdRiskItems[' + rowIndex + '].' + elementName);
+                ele.setAttribute('id', 'AddedProdRiskItems[' + rowIndex + '].' + elementName);
+                ele.setAttribute('maxlength', 500);
+                ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+            }
+            return ele;
+        }
+
+        function getRiskTypeCategory2() {
+        $.ajax({
+
+                url: '/product/GetProdRiskCategoryTypes',
+            type: 'GET',
+            dataType: 'json',
+            beforeSend: function () {
+                // Show image container
+                $(".se-pre-con").show();
+                $(".card-header").fadeOut()
+            },
+
+
+            success: function (data) {
+                console.log(data);
+                var item = '';
+                    $('#ddlProdRiskTypeCategory2').empty();
+                item += "<option value='0'>--@localizer["Select"]--</option>";
+                $.each(data, function (i, riskCategoryTypes) {
+                    item += "<option value='" + riskCategoryTypes.value + "'>" + riskCategoryTypes.text + "</option>";
+                });
+                    $('#ddlProdRiskTypeCategory2').html(item);
+            },
+            error: function (request, error) {
+                alert("Request: " + JSON.stringify(request));
+            },
+            complete: function (data) {
+                $('#loader').hide();
+                $(".se-pre-con").fadeOut();
+                $(".card-header").show()
+            }
+
+        });
+    }
+
+        function LoadRiskTypeCategoryTable() {
+                        $('#loader').show();
+            var table = $('#availableRiskTypeCategory').DataTable({
+                "serverSide": true,
+                // "processing": true,
+                "filter": false,
+                "iDisplayLength": 10,
+                "destroy": true,
+                ajax: {
+                    url: '/product/CustomPaginationProductRiskTypeCategory',
+                    type: 'POST',
+                    dataSrc: function (json) {
+                        $('#loader').hide(); // Hide when data is received
+                        return json.data;
+                    },
+                    error: function (xhr, error, thrown) {
+                        $('#loader').hide(); // Hide on error too
+                        console.error('Error loading data:', error);
+                    }
+
+                },
+                columns: [
+                    {
+                        "render": function (data, type, full, meta) {
+                            var colHtml = '<input type="text" value="' + full.prodCategoryType + '" name="AvailableProdRiskTypeCategory[' + meta.row + '].ProdRiskTypeCategory" maxlength="500" onkeypress="alphaNumericCheck(event)" />';
+                            colHtml += '<input type="hidden" value="' + full.prodTypeCategoryId + '" name="AvailableProdRiskTypeCategory[' + meta.row + '].Id" />';
+
+                            return colHtml;
+                        }
+                    },
+
+                    {
+                        "render": function (data, type, full, meta) {
+                            var colHtml = '';
+                            if (full.isActive == true) {
+                                colHtml = '<input type="checkbox" onchange="ChangeRiskTypeCategoryStatus(' + meta.row + ',this);" checked />';
+                                colHtml += '<input type="hidden" value="true" name="AvailableProdRiskTypeCategory[' + meta.row + '].isActive" />';
+                            }
+                            else {
+                                colHtml = '<input type="checkbox" onchange="ChangeRiskTypeCategoryStatus(' + meta.row + ', this);" />';
+                                colHtml += '<input type="hidden" value="false" name="AvailableProdRiskTypeCategory[' + meta.row + '].isActive" />';
+                            }
+
+                            return colHtml;
+                        }
+                    }
+                ],
+                 initComplete: function () {
+                    // Additional hide for cases where dataSrc might not trigger
+                    $('#loader').hide();
+                }
+            });
+        }
+
+        function LoadTable(riskTypeID) {
+                $('#loader').show();
+            var table = $('#availableRiskItems').DataTable({
+                "serverSide": true,
+                // "processing": true,
+                "filter": false,
+                "iDisplayLength": 10,
+                "destroy": true,
+                ajax: {
+                    url: '/product/custompaginationProdRiskItems',
+                    type: 'POST',
+                    data: {
+                        'riskTypeID': riskTypeID
+                    },
+                     dataSrc: function (json) {
+                            $('#loader').hide(); // Hide when data is received
+                            return json.data;
+                        },
+                        error: function (xhr, error, thrown) {
+                            $('#loader').hide(); // Hide on error too
+                            console.error('Error loading data:', error);
+                        }
+                    //success: function (data) {
+
+                    //    console.log(data);
+                    //}
+
+                },
+                columns: [
+                    {
+                        "render": function (data, type, full, meta) {
+                            var colHtml = '<input type="text" value="' + full.prodRiskItem + '" name="AvailableProdRiskItems[' + meta.row + '].ProdRiskItem" maxlength="500" onkeypress="alphaNumericCheck(event)" />';
+                            colHtml += '<input type="hidden" value="' + full.id + '" name="AvailableProdRiskItems[' + meta.row + '].Id" />';
+                            $('#loader').hide();
+                            return colHtml;
+                        }
+                    }, {
+                        "render": function (data, type, full, meta) {
+                            //var colHtml = '<input type="text" value="' + full.lovRiskScore + '" name="AvailableItems[' + meta.row + '].RiskScore" />';
+                            //vidya
+                            var selectEle = '<select value="' + full.prodRiskScore + '" id="AvailableProdRiskItems[' + meta.row + '].ProdRiskScore" onchange="tableRiskScoreOnChange(' + meta.row + ')" name="AvailableProdRiskItems[' + meta.row + '].ProdRiskScore" style="width:50%">';
+                            var option = '';
+                            for (var i = 0; i <= 3; i++) {
+                                var selected = false;
+                                if (i == full.lovRiskScore) {
+                                    option += '<option value="' + i + '" selected>' + i + '</option>';
+                                } else {
+                                    option += '<option value="' + i + '" >' + i + '</option>';
+                                }
+                            }
+                            colHtml = selectEle + option + '</select>';
+                            $('#loader').hide();
+
+                            return colHtml;
+                            //vidya
+                        }
+                    },
+                    //  {
+                    //    "render": function (data, type, full, meta) {
+                    //        //var colHtml = '<input type="text" value="' + full.overrideScore + '" name="AvailableItems[' + meta.row + '].OverrideScore" />';
+                    //        //vidya
+                    //        if (full.lovRiskScore == '3') {
+                    //            var selectEle = '<select value="' + full.overrideScore + '" id="AvailableProdRiskItems[' + meta.row + '].OverrideScore" name="AvailableProdRiskItems[' + meta.row + '].OverrideScore" style="width:40%" enabled>';
+                    //        } else {
+                    //            var selectEle = '<select value="' + full.overrideScore + '" id="AvailableProdRiskItems[' + meta.row + '].OverrideScore" name="AvailableProdRiskItems[' + meta.row + '].OverrideScore" style="width:40%" disabled>';
+                    //        }
+                    //        var option = '';
+                    //        if (full.overrideScore == '0') {
+                    //            option += '<option value="0" selected>0</option>';
+                    //        } else {
+                    //            option += '<option value="0">0</option>';
+                    //        }
+                    //        if (full.overrideScore == '3') {
+                    //            option += '<option value="3" selected>3</option>';
+                    //        } else {
+                    //            option += '<option value="3">3</option>';
+                    //        }
+                    //        colHtml = selectEle + option + '</select>';
+                    //        //vidya
+                    //        return colHtml;
+                    //    }
+                    //},
+                     {
+                        "render": function (data, type, full, meta) {
+                            var colHtml = '';
+                            if (full.isActive == true) {
+                                colHtml = '<input type="checkbox" onchange="ChangeStatus(' + meta.row + ',this);" checked />';
+                                colHtml += '<input type="hidden" value="true" name="AvailableProdRiskItems[' + meta.row + '].isActive" />';
+                            }
+                            else {
+                                colHtml = '<input type="checkbox" onchange="ChangeStatus(' + meta.row + ', this);" />';
+                                colHtml += '<input type="hidden" value="false" name="AvailableProdRiskItems[' + meta.row + '].isActive" />';
+                            }
+                             $('#loader').hide();
+                            return colHtml;
+                        }
+                    }
+                ]
+            });
+
+        }
+
+        function addCategoryRow() {
+
+            //alert("hai");
+
+            var empTab = document.getElementById('RiskTypeCategoryList');
+            var rowIndexVal = $('#rowIndex1').val();
+            var rowCnt = empTab.rows.length;   // table row count.
+            var tr = empTab.insertRow(rowCnt); // the table row.
+            tr = empTab.insertRow(rowCnt);
+
+            for (var c = 0; c < arrHead1.length; c++) {
+                var td = document.createElement('td'); // table definition.
+                td = tr.insertCell(c);
+
+                if (c == 1) {      // the first column.
+                    // add a button in every new row in the last column.
+                    var button = document.createElement('input');
+
+                    // set input attributes.
+                    button.setAttribute('type', 'button');
+                    button.setAttribute('value', '@localizer["Remove"]');
+
+                    // add button's 'onclick' event.
+                    button.setAttribute('onclick', 'removeRow(this)');
+
+                    td.appendChild(button);
+                }
+                else {
+                    // 1nd, 2rd,Url3rd and 4th column, will have textbox.
+                    var ele = document.createElement('input');
+                    if (c == 0) {
+                        var hiddenIndex = document.createElement('input');
+                        hiddenIndex.setAttribute('type', 'hidden');
+                        hiddenIndex.setAttribute('class', 'form-control');
+                        hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                        hiddenIndex.setAttribute('id', 'Index')
+                        td.appendChild(hiddenIndex);
+                        ele = addCategoryTypeRow(ele, 'ProdRiskTypeCategory', '');
+                        if (!ele.classList || !ele.classList.contains('dynamic-select')) {
+                            ele.classList = ele.classList || [];
+                            ele.classList.add('dynamic-select', 'form-control');
+                            // fallback if classList not present (very unlikely)
+                            if (!ele.classList) ele.setAttribute('class', 'form-control dynamic-select');
+                        }
+                        td.appendChild(ele);
+                    } else {
+                        ele.setAttribute('type', 'hidden');
+                        ele.setAttribute('class', 'form-control');
+                        ele.setAttribute('value', false);
+                        ele.setAttribute('name', 'AddedProdRiskTypeCategory[' + $('#rowIndex1').val() + '].isDeletedInUI');
+                        ele.setAttribute('id', 'AddedProdRiskTypeCategory[' + $('#rowIndex1').val() + '].isDeletedInUI');
+                        ele.setAttribute('maxlength', 500);
+                        ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                        td.appendChild(ele);
+                    }
+
+                }
+            }
+
+            $('#rowIndex1').val(parseInt(rowIndexVal) + 1);
+        }
+
+        function addListRow () {
+        // array for header.
+
+        var empTab = document.getElementById('RiskItemList');
+        var rowIndexVal = $('#rowIndex2').val();
+
+        var rowCnt = empTab.rows.length;   // table row count.
+        var tr = empTab.insertRow(rowCnt); // the table row.
+        tr = empTab.insertRow(rowCnt);
+
+        for (var c = 0; c < arrHead.length; c++) {
+            var td = document.createElement('td'); // table definition.
+            td = tr.insertCell(c);
+
+            if (c == 3) {      // the first column.
+                // add a button in every new row in the last column.
+                var button = document.createElement('input');
+
+                // set input attributes.
+                button.setAttribute('type', 'button');
+                button.setAttribute('value', '@localizer["Remove"]');
+
+                // add button's 'onclick' event.
+                button.setAttribute('onclick', 'removeRow(this)');
+
+                td.appendChild(button);
+            }
+            else {
+                // 1nd, 2rd, 3rd and 4th column, will have textbox.
+                var ele = document.createElement('input');
+                if (c == 0) {
+                    var hiddenIndex = document.createElement('input');
+                    hiddenIndex.setAttribute('type', 'hidden');
+                    // hiddenIndex.setAttribute('class', 'form-control');
+                    //     hiddenIndex.setAttribute('class', 'dynamic-select');
+                         hiddenIndex.classList.add("form-control", "dynamic-select");
+                    hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                    hiddenIndex.setAttribute('id', 'Index')
+                    td.appendChild(hiddenIndex);
+
+                        ele = addRow(ele, 'ProdRiskItem', '');
+
+
+                             // reapply class in case addRow replaced/wrapped it
+                        if (!ele.classList || !ele.classList.contains('dynamic-select')) {
+                            ele.classList = ele.classList || [];
+                            ele.classList.add('dynamic-select', 'form-control');
+                            // fallback if classList not present (very unlikely)
+                            if (!ele.classList) ele.setAttribute('class', 'form-control dynamic-select');
+                        }
+
+
+                    td.appendChild(ele);
+                } else if (c == 1) {
+                    //var nam = 'AddedItems[' + $('#rowIndex').val() + '].RiskScore';
+                    //var sel = $('<select name="' + nam + '" />');
+                    //for (var j = 0; j <= 3; j++) {
+                    //    $("<option />", { value: j, text: j }).append(sel);
+                    //}
+                    //td.appendChild(sel);
+
+                    //vidya
+                    //ele = addRow(ele, 'RiskScore', '');
+                    //td.appendChild(ele);
+                    var selectEle = document.createElement("SELECT");
+                    // selectEle.setAttribute('class', 'form-control');
+                        selectEle.classList.add("form-control", "dynamic-select1");
+                    var option = '';
+                    for (var i = 0; i <= 3; i++) {
+                        option = document.createElement("OPTION");
+                        option.text = i;
+                        selectEle.add(option);
+                    }
+                        selectEle = addRow(selectEle, 'ProdRiskScore', '');
+                    td.appendChild(selectEle);
+                    //vidya
+                }
+                //else if (c == 2) {
+                //    //vidya
+                //    //ele = addRow(ele, 'OverrideScore', '');
+                //    //td.appendChild(ele);
+                //    var selectEle = document.createElement("SELECT");
+                //    selectEle.setAttribute('class', 'form-control');
+                //    var option1 = document.createElement("OPTION");
+                //    option1.text = 0;
+                //    selectEle.add(option1);
+                //    var option2 = document.createElement("OPTION");
+                //    option2.text = 3;
+                //    selectEle.add(option2);
+                //    selectEle = addRow(selectEle, 'OverrideScore', '');
+                //    td.appendChild(selectEle);
+                //    //vidya
+                //}
+                else {
+                    ele.setAttribute('type', 'hidden');
+                    ele.setAttribute('class', 'form-control');
+                    ele.setAttribute('value', false);
+                    ele.setAttribute('name', 'AddedProdRiskItems[' + $('#rowIndex2').val() + '].isDeletedInUI');
+                    ele.setAttribute('id', 'AddedProdRiskItems[' + $('#rowIndex2').val() + '].isDeletedInUI');
+                    ele.setAttribute('maxlength', 500);
+                    ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                    td.appendChild(ele);
+                }
+
+            }
+        }
+
+        $('#rowIndex2').val(parseInt(rowIndexVal) + 1);
+    }
+
+        function addCategoryTypeRow(ele, elementName, value) {
+            var rowIndex = $('#rowIndex1').val();
+            ele.setAttribute('type', 'text');
+            ele.setAttribute('class', 'form-control');
+            ele.setAttribute('value', value);
+            ele.setAttribute('name', 'AddedProdRiskTypeCategory[' + rowIndex + '].' + elementName);
+            ele.setAttribute('id', 'AddedProdRiskTypeCategory[' + rowIndex + '].' + elementName);
+            ele.setAttribute('maxlength', 500);
+            ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+
+            return ele;
+        }
+
+        $(document).ready(function () {
+            $("#btnTypeCategorySubmit").click(function () {
+                //var count = $('#rowIndex1').val();
+                //for (var i = 0; i < count; i++) {
+                //    if (document.getElementById("AddedRiskTypeCategory["+i+"].RiskTypeCategory").value == "") {
+                //        if (document.getElementById("AddedRiskTypeCategory["+i+"].isDeletedInUI").value == "false") {
+                //            alert("Enter all data to submit");
+                //            return false;
+                //        }
+                //    }
+                //}
+                $('#loader').show();
+                $.ajax({
+                    type: 'POST',
+                    url: '/product/SaveProductCategoryType',     //your action
+                    data: $('#myform').serialize(),   //your form name.it takes all the values of model
+                    dataType: 'json',
+                    beforeSend: function () {
+                        // Show image container
+                        $(".se-pre-con").show();
+                        $(".card-header").fadeOut()
+                    },
+                    success: function (data) {
+                        console.log(data);
+                        $('input[type="text"],textarea').val(' ');
+                        //LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+                        $('select').val('0');
+                        //ReloadAfterSubmit();
+                    },
+                    error: function (request, data) {
+                        console.log(data);
+                        $('input[type="text"],textarea').val(' ');
+                        LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+                    },
+                    complete: function (data) {
+                        $(".se-pre-con").fadeOut();
+                        $(".card-header").show();
+                        $('#loader').hide();
+                        ReloadAfterSubmit();
+                    }
+                });
+
+                return false;
+            });
+        });
+
+
+    $(document).ready(function () {
+        $("#btnitemSubmit").click(function () {
+            //var count = $('#rowIndex3').val();
+            //for (var i = 0; i < count; i++) {
+            //    if (document.getElementById("AddedItems["+i+"].RiskItem").value == "") {
+            //        if (document.getElementById("AddedItems["+i+"].isDeletedInUI").value == "false") {
+            //            alert("Enter all data to submit");
+            //            return false;
+            //        }
+            //    }
+            //}
+            $('#loader').show();
+            $.ajax({
+                type: 'POST',
+                url: '/product/SaveProdRiskItems',     //your action
+                data: $('#myform').serialize(),   //your form name.it takes all the values of model
+                dataType: 'json',
+                beforeSend: function () {
+                    // Show image container
+                    $(".se-pre-con").show();
+                    $(".card-header").fadeOut()
+                },
+
+
+                success: function (result) {
+                    console.log(result);
+                    $('input[type="text"],textarea').val(' ');
+                    $('select').val('0');
+                    //LoadTable($('#ddlRiskType').val());
+                    //ReloadAfterSubmit();
+                },
+                error: function (request, data) {
+                    $('input[type="text"],textarea').val(' ');
+                    $('select').val('0');
+                    LoadTable($('#ddlRiskType').val());
+                },
+
+
+                complete: function (data) {
+                    $(".se-pre-con").fadeOut();
+                    $(".card-header").show();
+                    $('#loader').hide();
+                    ReloadAfterSubmit();
+                }
+            });
+            return false;
+        });
+    });
+
+        function ChangeRiskTypeCategoryStatus(index, that) {
+            var status = false;
+            if ($(that).prop("checked")) {
+                status = true;
+            }
+            $('input[name="AvailableProdRiskTypeCategory[' + index + '].isActive"]').val(status)
+        }
+
+        function ChangeStatus(index, that) {
+            var status = false;
+            if ($(that).prop("checked")) {
+                status = true;
+            }
+            $('input[name="AvailableProdRiskItems[' + index + '].isActive"]').val(status)
+        }
+
+        function riskScoreOnChange (rowIndex) {
+            var riskScore = document.getElementById('AddedProdRiskItems[' + rowIndex + '].ProdRiskScore').value;
+        if (riskScore == 3) {
+                document.getElementById('AddedProdRiskItems[' + rowIndex + '].OverrideScore').removeAttribute('disabled');
+            document.getElementById('AddedProdRiskItems[' + rowIndex + '].OverrideScore').setAttribute('enabled', 'true');
+        } else {
+            document.getElementById('AddedProdRiskItems[' + rowIndex + '].OverrideScore').removeAttribute('enabled');
+            document.getElementById('AddedProdRiskItems[' + rowIndex + '].OverrideScore').value = 0;
+            document.getElementById('AddedProdRiskItems[' + rowIndex + '].OverrideScore').setAttribute('disabled', 'true');
+        }
+    }
+
+        function tableRiskScoreOnChange(rowIndex) {
+            var riskScore = document.getElementById('AvailableProdRiskItems[' + rowIndex + '].ProdRiskScore').value;
+            if (riskScore == 3) {
+                document.getElementById('AvailableProdRiskItems[' + rowIndex + '].OverrideScore').removeAttribute('disabled');
+                document.getElementById('AvailableProdRiskItems[' + rowIndex + '].OverrideScore').setAttribute('enabled', 'true');
+            } else {
+                document.getElementById('AvailableProdRiskItems[' + rowIndex + '].OverrideScore').removeAttribute('enabled');
+                document.getElementById('AvailableProdRiskItems[' + rowIndex + '].OverrideScore').value = 0;
+                document.getElementById('AvailableProdRiskItems[' + rowIndex + '].OverrideScore').setAttribute('disabled', 'true');
+            }
+        }
+
+        function removeRow(e) {
+
+            e.closest('tr').style.display = 'none';//hide the div
+            e.closest('tr').querySelectorAll('input[type=hidden]')[1].value = true;
+
+
+        }
+
+        function ReloadAfterSubmit () {
+        $('#ddlRiskCategory').val('0');
+        $('#divCategoryType').hide();
+        $('#divRiskitemsFull').hide();
+        //$("#addCategory").prop("disabled", true);
+        //$("#addRow").prop("disabled", true);
+        $('#rowIndex1').val('1');
+        $('#rowIndex2').val('1');
+
+    }
+
+
+</script>
+
+<script>
+
+    $(document).ready(function () {
+        //$(".se-pre-con").fadeOut("slow");
+        createRiskTypeCategoryTable();
+        //createRiskTypeTable();
+        createRiskItemTable();
+        addCategoryRow();
+        //addSubcategoryRow();
+        addListRow();
+    });
+
+</script>

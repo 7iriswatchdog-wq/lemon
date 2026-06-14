@@ -1,0 +1,215 @@
+@model AML.ViewModel.ViewModels.SectoralTMS.StmReportFilterModel
+@{
+    ViewData["Title"] = "STM - Reports";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    ViewBag.StmActive = "reports";
+}
+
+@await Html.PartialAsync("_StmLayout")
+
+<div class="px-6 pb-12">
+    <div class="stm-card mb-4">
+        <div class="stm-page-title">Reports</div>
+        <div class="stm-page-sub">Pick a customer to view all their monitored transactions, hits and cases.</div>
+
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mt-4">
+            <div class="md:col-span-2">
+                <label class="stm-label">Customer</label>
+                <div class="relative">
+                    <input id="custSearch" class="stm-input" placeholder="Search by ID, name, mobile..." autocomplete="off" />
+                    <input type="hidden" id="customerId" />
+                    <div id="custResults" class="absolute z-10 bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-80 overflow-y-auto w-full hidden"></div>
+                </div>
+            </div>
+            <div>
+                <label class="stm-label">Sector</label>
+                <select id="sector" class="stm-select">
+                    <option value="">All sectors</option>
+                    <option value="INS">Insurance</option>
+                    <option value="RE">Real Estate</option>
+                </select>
+            </div>
+            <div>
+                <label class="stm-label">From Date</label>
+                <input id="fromDate" type="date" class="stm-input" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div>
+                <label class="stm-label">To Date</label>
+                <input id="toDate" type="date" class="stm-input" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="md:col-span-5 flex justify-end">
+                <button type="button" class="stm-btn stm-btn-primary" onclick="runReport()"><i data-lucide="search" class="w-4 h-4"></i> Run Report</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI summary -->
+    <div id="kpiRow" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 hidden">
+        <div class="stm-card"><div class="text-xs uppercase tracking-wider text-slate-500">Transactions</div><div class="text-3xl font-bold text-slate-900 mt-2" id="kpiTotalTxns">0</div></div>
+        <div class="stm-card"><div class="text-xs uppercase tracking-wider text-slate-500">Rule Hits</div><div class="text-3xl font-bold text-red-700 mt-2" id="kpiHits">0</div></div>
+        <div class="stm-card"><div class="text-xs uppercase tracking-wider text-slate-500">Open Cases</div><div class="text-3xl font-bold text-blue-700 mt-2" id="kpiOpen">0</div></div>
+        <div class="stm-card"><div class="text-xs uppercase tracking-wider text-slate-500">Reviewed Cases</div><div class="text-3xl font-bold text-emerald-700 mt-2" id="kpiReviewed">0</div></div>
+    </div>
+
+    <!-- Transactions list -->
+    <div id="resultsCard" class="stm-card hidden mb-4">
+        <div class="flex items-center justify-between mb-3">
+            <div class="stm-section-title mb-0">Customer Transactions</div>
+            <div id="totalCount" class="text-xs text-slate-500"></div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="stm-table" id="resultTable">
+                <thead>
+                    <tr><th>Ref</th><th>Date</th><th>Sector</th><th>Type</th><th>Mode</th><th>Amount</th><th>Status</th><th></th></tr>
+                </thead>
+                <tbody id="resultBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Cases list -->
+    <div id="casesCard" class="stm-card hidden">
+        <div class="flex items-center justify-between mb-3">
+            <div class="stm-section-title mb-0">Cases (rule hits)</div>
+            <div id="caseCount" class="text-xs text-slate-500"></div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="stm-table">
+                <thead>
+                    <tr><th>Case Ref</th><th>Created</th><th>Sector</th><th>Transaction</th><th>Rules</th><th>Score</th><th>Risk</th><th>Status</th><th>Decision</th><th></th></tr>
+                </thead>
+                <tbody id="caseBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const custSearch = document.getElementById('custSearch');
+    const custResults = document.getElementById('custResults');
+    let timer;
+    custSearch.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(searchCustomers, 250); });
+    document.addEventListener('click', (e) => {
+        if (!custSearch.contains(e.target) && !custResults.contains(e.target)) custResults.classList.add('hidden');
+    });
+
+    async function searchCustomers() {
+        const q = custSearch.value.trim();
+        if (q.length < 2) { custResults.classList.add('hidden'); return; }
+        const r = await fetch('/stm/customers/search?q=' + encodeURIComponent(q));
+        const j = await r.json();
+        if (!j.success || !j.data || !j.data.length) {
+            custResults.innerHTML = '<div class="p-3 text-sm text-slate-500">No matches</div>';
+        } else {
+            custResults.innerHTML = j.data.map(c => `
+                <div class="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100" onclick='pickCustomer(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
+                    <div class="text-sm font-semibold">${c.CustomerName || ''} <span class="text-xs text-slate-500">${c.CustomerId || ''}</span></div>
+                    <div class="text-xs text-slate-500">${c.Nationality || ''}</div>
+                </div>`).join('');
+        }
+        custResults.classList.remove('hidden');
+    }
+
+    function pickCustomer(c) {
+        custSearch.value = c.CustomerName + ' (' + c.CustomerId + ')';
+        document.getElementById('customerId').value = c.CustomerId;
+        custResults.classList.add('hidden');
+    }
+
+    async function runReport() {
+        const customerId = document.getElementById('customerId').value;
+        if (!customerId) { alert('Please pick a customer'); return; }
+        const fd = new FormData();
+        fd.append('customerId', customerId);
+        fd.append('sector', document.getElementById('sector').value);
+        fd.append('fromDate', document.getElementById('fromDate').value);
+        fd.append('toDate', document.getElementById('toDate').value);
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        const r = await fetch('/stm/reports/customer-transactions', {
+            method: 'POST', body: fd, headers: token ? { 'RequestVerificationToken': token } : {}
+        });
+        const j = await r.json();
+        const card = document.getElementById('resultsCard');
+        const body = document.getElementById('resultBody');
+        const casesCard = document.getElementById('casesCard');
+        const caseBody = document.getElementById('caseBody');
+        const kpiRow = document.getElementById('kpiRow');
+
+        if (!j.success) {
+            body.innerHTML = `<tr><td colspan="8" class="text-center text-slate-500 py-8">${j.message || 'No data'}</td></tr>`;
+            card.classList.remove('hidden');
+            kpiRow.classList.add('hidden');
+            casesCard.classList.add('hidden');
+            return;
+        }
+
+        const txns = j.data || [];
+        const cases = j.cases || [];
+
+        // ----- KPIs -----
+        const hits = txns.filter(t => t.ruleHitStatus === 'HIT').length;
+        const openCases = cases.filter(c => c.status === 'OPEN' || c.status === 'IN_REVIEW').length;
+        const reviewedCases = cases.length - openCases;
+        document.getElementById('kpiTotalTxns').textContent = txns.length;
+        document.getElementById('kpiHits').textContent = hits;
+        document.getElementById('kpiOpen').textContent = openCases;
+        document.getElementById('kpiReviewed').textContent = reviewedCases;
+        kpiRow.classList.remove('hidden');
+
+        // ----- Transactions table -----
+        document.getElementById('totalCount').textContent = txns.length + ' transactions';
+        if (!txns.length) {
+            body.innerHTML = '<tr><td colspan="8" class="text-center text-slate-500 py-8">No transactions found</td></tr>';
+        } else {
+            body.innerHTML = txns.map(t => {
+                const statusClass = t.ruleHitStatus === 'HIT' ? 'high' : t.ruleHitStatus === 'NO_HIT' ? 'low' : 'review';
+                return `<tr>
+                    <td class="font-mono text-xs">${t.tranRefNo || ''}</td>
+                    <td>${(t.tranDate || '').substring(0,16).replace('T',' ')}</td>
+                    <td>${t.sectorName || ''}</td>
+                    <td>${t.tranType || ''}</td>
+                    <td>${t.tranMode || ''}</td>
+                    <td class="text-right">${(t.amount || 0).toLocaleString()} ${t.currency || ''}</td>
+                    <td><span class="stm-badge ${statusClass}">${t.ruleHitStatus || ''}</span></td>
+                    <td><a href="/stm/transactions/view/${t.id}" class="text-blue-600 hover:underline text-xs">View</a></td>
+                </tr>`;
+            }).join('');
+        }
+        card.classList.remove('hidden');
+
+        // ----- Cases table -----
+        document.getElementById('caseCount').textContent = cases.length + ' cases';
+        if (!cases.length) {
+            caseBody.innerHTML = '<tr><td colspan="10" class="text-center text-slate-500 py-8">No cases for this customer</td></tr>';
+        } else {
+            caseBody.innerHTML = cases.map(c => {
+                const statusMap = { OPEN:'open', IN_REVIEW:'review', APPROVED:'approved', REJECTED:'rejected', ESCALATED:'high', CLOSED:'closed' };
+                const sc = statusMap[c.status] || 'closed';
+                return `<tr>
+                    <td class="font-mono text-xs">${c.caseRefNo || ''}</td>
+                    <td>${(c.createdOn || '').substring(0,10)}</td>
+                    <td>${c.sectorName || ''}</td>
+                    <td class="font-mono text-xs">${c.tranRefNo || ''}</td>
+                    <td class="text-xs max-w-xs">${c.ruleNames || ''}</td>
+                    <td>${c.totalRiskScore || 0}</td>
+                    <td><span class="stm-badge ${(c.riskRating || 'low').toLowerCase()}">${c.riskRating || ''}</span></td>
+                    <td><span class="stm-badge ${sc}">${c.status || ''}</span></td>
+                    <td class="text-xs">${c.reviewDecision || '-'}</td>
+                    <td><a href="/stm/cases/view/${c.id}" class="text-blue-600 hover:underline text-xs">Open</a></td>
+                </tr>`;
+            }).join('');
+        }
+        casesCard.classList.remove('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) lucide.createIcons();
+        const qid = new URLSearchParams(window.location.search).get('customerId');
+        if (qid) {
+            document.getElementById('customerId').value = qid;
+            custSearch.value = qid;
+            runReport();
+        }
+    });
+</script>
+@Html.AntiForgeryToken()

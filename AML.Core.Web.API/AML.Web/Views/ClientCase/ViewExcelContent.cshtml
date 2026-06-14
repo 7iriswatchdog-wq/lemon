@@ -1,0 +1,60 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using AML.ViewModel.ViewModels.CustomerCase;
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "View Excel";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model List<CustomerExcelData>
+
+
+    <nav class="border-b mb-6">
+    <div class="flex justify-between p-5">
+        <h2 class="text-2xl font-bold">Client Report</h2>
+        <div class="hidden md:block"><img src="@Clientlogo" alt="Client Logo" width="50px" /></div>
+    </div>
+</nav>
+
+<div class="container mx-auto px-4">
+    <!-- Filter -->
+   
+
+    <!-- Table -->
+    <div class="bg-surface border border-blue-100 shadow-sm p-6 overflow-x-auto">
+       
+
+                    <table id="clientReportTbl" class="min-w-full text-left text-sm text-gray-800">
+                                    <thead class="bg-[#E9EFFD] font-semibold">
+                                        <tr>
+                                        <th class="sortable px-4 py-3 text-left text-sm font-semibold text-gray-900">@localizer["Customer ID"]</th>
+                                        <th class="sortable px-4 py-3 text-left text-sm font-semibold text-gray-900">@localizer["Full Name of Customer"]</th>
+                                        <th class="sortable px-4 py-3 text-left text-sm font-semibold text-gray-900">@localizer["Country"]</th>
+                                        <th class="sortable px-4 py-3 text-left text-sm font-semibold text-gray-900">@localizer["DOB"]</th>
+                                           
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-bordercolor">
+                                    @foreach (CustomerExcelData row in Model)
+                                    {
+                                        <tr class="@((row.Status ==1 && row.Id!=0)?"bg-success":"bg-danger")">
+                                        <td class="px-4 py-3">@row.CustomerID</td>
+                                        <td class="px-4 py-3">@row.LastName</td>
+                                        <td class="px-4 py-3">@row.Nationality</td>
+                                        <td class="px-4 py-3">@row.DOB</td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                
+            
+                        </table>
+
+        
+    </div>
+</div>
+
+
+

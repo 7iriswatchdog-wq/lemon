@@ -1,0 +1,234 @@
+@model AML.DTO.DTO.SectoralTMS.StmTxnRiskFactorDTO
+@{
+    ViewData["Title"] = Model.Id > 0 ? "Edit Risk Factor" : "Add Risk Factor";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    ViewBag.StmActive = "risk";
+    var sectorList = ViewBag.SectorList as Microsoft.AspNetCore.Mvc.Rendering.SelectList;
+}
+
+@await Html.PartialAsync("_StmLayout")
+
+<div class="px-6 pb-12">
+    <form id="factorForm" method="post" action="/stm/risk/factors/save">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+
+        <div class="stm-card mb-4">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <div class="stm-page-title">@(Model.Id > 0 ? "Edit Risk Factor" : "Add Risk Factor")</div>
+                    <div class="stm-page-sub">Define how a transaction field is scored. Bands map values → scores → ratings.</div>
+                </div>
+                <a href="/stm/risk/factors?sector=@(Model.SectorCode ?? "INS")" class="stm-btn stm-btn-secondary">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                <div>
+                    <label class="stm-label">Factor Code *</label>
+                    <input class="stm-input" name="FactorCode" value="@Model.FactorCode" placeholder="e.g. INS-F09 / RE-F11" required />
+                </div>
+                <div>
+                    <label class="stm-label">Sector *</label>
+                    <select class="stm-select" name="SectorId" asp-items="sectorList" required>
+                        <option value="">-- choose --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="stm-label">Sequence</label>
+                    <input class="stm-input" type="number" name="SequenceNo" value="@Model.SequenceNo" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="stm-label">Factor Name *</label>
+                <input class="stm-input" name="FactorName" value="@Model.FactorName" placeholder="e.g. Premium Amount" required />
+            </div>
+
+            <div class="mb-3">
+                <label class="stm-label">Description</label>
+                <textarea class="stm-input" name="Description" rows="2" placeholder="Why does this factor matter? (shown on the factor list)">@Model.Description</textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="stm-label">Field Name *</label>
+                    <select class="stm-select" name="FieldName" required>
+                        <option value="">-- choose --</option>
+                        <optgroup label="Numeric">
+                            <option value="Amount"             selected="@(Model.FieldName == "Amount")">Amount</option>
+                            <option value="PropertyValue"      selected="@(Model.FieldName == "PropertyValue")">PropertyValue</option>
+                            <option value="HoldingDays"        selected="@(Model.FieldName == "HoldingDays")">HoldingDays (synthetic)</option>
+                            <option value="PriceDeviationPct"  selected="@(Model.FieldName == "PriceDeviationPct")">PriceDeviationPct (synthetic)</option>
+                        </optgroup>
+                        <optgroup label="Enum / Text">
+                            <option value="TranType"           selected="@(Model.FieldName == "TranType")">TranType</option>
+                            <option value="TranMode"           selected="@(Model.FieldName == "TranMode")">TranMode (payment mode)</option>
+                            <option value="DeliveryChannel"    selected="@(Model.FieldName == "DeliveryChannel")">DeliveryChannel</option>
+                            <option value="Product"            selected="@(Model.FieldName == "Product")">Product</option>
+                            <option value="Currency"           selected="@(Model.FieldName == "Currency")">Currency</option>
+                            <option value="CustomerType"       selected="@(Model.FieldName == "CustomerType")">CustomerType</option>
+                        </optgroup>
+                        <optgroup label="Counter-party">
+                            <option value="BeneficiaryCountry" selected="@(Model.FieldName == "BeneficiaryCountry")">BeneficiaryCountry</option>
+                            <option value="RemitterCountry"    selected="@(Model.FieldName == "RemitterCountry")">RemitterCountry</option>
+                            <option value="BeneficiaryName"    selected="@(Model.FieldName == "BeneficiaryName")">BeneficiaryName</option>
+                            <option value="RemitterId"         selected="@(Model.FieldName == "RemitterId")">RemitterId</option>
+                        </optgroup>
+                        <optgroup label="Flags">
+                            <option value="IsHighRiskCountry"   selected="@(Model.FieldName == "IsHighRiskCountry")">IsHighRiskCountry</option>
+                            <option value="IsHighRiskCustomer"  selected="@(Model.FieldName == "IsHighRiskCustomer")">IsHighRiskCustomer</option>
+                            <option value="IsMultiParty"        selected="@(Model.FieldName == "IsMultiParty")">IsMultiParty</option>
+                            <option value="PayerIsThirdParty"   selected="@(Model.FieldName == "PayerIsThirdParty")">PayerIsThirdParty (synthetic)</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div>
+                    <label class="stm-label">Factor Type *</label>
+                    <select class="stm-select" name="FactorType" id="factorType" onchange="updateBandPlaceholders()">
+                        <option value="NUMERIC" selected="@(Model.FactorType == "NUMERIC")">NUMERIC (range bands)</option>
+                        <option value="ENUM"    selected="@(Model.FactorType == "ENUM")">ENUM (exact match)</option>
+                        <option value="FLAG"    selected="@(Model.FactorType == "FLAG")">FLAG (true/false)</option>
+                        <option value="LIST"    selected="@(Model.FactorType == "LIST")">LIST (in list)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="stm-label">Weight (1-5)</label>
+                    <input class="stm-input" type="number" name="Weight" value="@Model.Weight" min="1" max="5" />
+                </div>
+                <div>
+                    <label class="stm-label">Active</label>
+                    <select class="stm-select" name="IsActive">
+                        <option value="1" selected="@(Model.IsActive == 1)">Yes</option>
+                        <option value="0" selected="@(Model.IsActive == 0)">No</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- BANDS -->
+        <div class="stm-card mb-4">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <div class="stm-section-title mb-0">Bands</div>
+                    <div class="text-xs text-slate-500 mt-1">Bands are evaluated in order. First match wins. Use 1=Low, 2=Medium, 3=High as a baseline.</div>
+                </div>
+                <button type="button" class="stm-btn stm-btn-secondary" onclick="addBand()">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Add Band
+                </button>
+            </div>
+            <div id="bandsList" class="space-y-3"></div>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <a href="/stm/risk/factors?sector=@(Model.SectorCode ?? "INS")" class="stm-btn stm-btn-secondary">Cancel</a>
+            <button type="submit" class="stm-btn stm-btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Save Factor</button>
+        </div>
+    </form>
+</div>
+
+<template id="bandTemplate">
+    <div class="band-row bg-slate-50 rounded-lg p-4 border border-slate-200">
+        <div class="grid grid-cols-12 gap-3">
+            <div class="col-span-12 md:col-span-3">
+                <label class="stm-label">Label</label>
+                <input class="stm-input b-label" placeholder='e.g. "&gt;= 100,000" or "Cash"' />
+            </div>
+            <div class="col-span-6 md:col-span-2 b-numeric-only">
+                <label class="stm-label">Min</label>
+                <input class="stm-input b-min" type="number" step="0.01" placeholder="-∞" />
+            </div>
+            <div class="col-span-6 md:col-span-2 b-numeric-only">
+                <label class="stm-label">Max (exclusive)</label>
+                <input class="stm-input b-max" type="number" step="0.01" placeholder="+∞" />
+            </div>
+            <div class="col-span-12 md:col-span-2 b-match-only">
+                <label class="stm-label">Match value</label>
+                <input class="stm-input b-match" placeholder="exact value" />
+            </div>
+            <div class="col-span-12 md:col-span-3 b-list-only">
+                <label class="stm-label">Match in list</label>
+                <input class="stm-input b-list" placeholder="A,B,C  or *ELSE*" />
+            </div>
+            <div class="col-span-4 md:col-span-1">
+                <label class="stm-label">Score</label>
+                <input class="stm-input b-score" type="number" min="0" max="10" value="1" />
+            </div>
+            <div class="col-span-4 md:col-span-1">
+                <label class="stm-label">Rating</label>
+                <select class="stm-select b-rating">
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                </select>
+            </div>
+            <div class="col-span-4 md:col-span-1 flex items-end justify-end">
+                <button type="button" class="stm-btn stm-btn-danger" onclick="this.closest('.band-row').remove(); refreshBandNames();" title="Remove">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    const initialBands = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Bands ?? new List<AML.DTO.DTO.SectoralTMS.StmTxnRiskBandDTO>()));
+
+    function addBand(b) {
+        const tpl = document.getElementById('bandTemplate');
+        const node = tpl.content.cloneNode(true);
+        if (b) {
+            node.querySelector('.b-label').value  = b.bandLabel || b.BandLabel || '';
+            node.querySelector('.b-min').value    = b.numericMin || b.NumericMin || '';
+            node.querySelector('.b-max').value    = b.numericMax || b.NumericMax || '';
+            node.querySelector('.b-match').value  = b.matchValue || b.MatchValue || '';
+            node.querySelector('.b-list').value   = b.matchInList || b.MatchInList || '';
+            node.querySelector('.b-score').value  = b.score ?? b.Score ?? 1;
+            node.querySelector('.b-rating').value = b.rating || b.Rating || 'Low';
+        }
+        document.getElementById('bandsList').appendChild(node);
+        refreshBandNames();
+        updateBandPlaceholders();
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function refreshBandNames() {
+        const rows = document.querySelectorAll('#bandsList .band-row');
+        rows.forEach((row, i) => {
+            row.querySelector('.b-label').name  = `Bands[${i}].BandLabel`;
+            row.querySelector('.b-min').name    = `Bands[${i}].NumericMin`;
+            row.querySelector('.b-max').name    = `Bands[${i}].NumericMax`;
+            row.querySelector('.b-match').name  = `Bands[${i}].MatchValue`;
+            row.querySelector('.b-list').name   = `Bands[${i}].MatchInList`;
+            row.querySelector('.b-score').name  = `Bands[${i}].Score`;
+            row.querySelector('.b-rating').name = `Bands[${i}].Rating`;
+            let seq = row.querySelector('input[type=hidden].b-seq');
+            if (!seq) {
+                seq = document.createElement('input');
+                seq.type = 'hidden';
+                seq.className = 'b-seq';
+                row.appendChild(seq);
+            }
+            seq.name  = `Bands[${i}].SequenceNo`;
+            seq.value = i + 1;
+        });
+    }
+
+    // Show only the columns relevant to the chosen factor type
+    function updateBandPlaceholders() {
+        const t = document.getElementById('factorType').value;
+        document.querySelectorAll('.b-numeric-only').forEach(el => el.style.display = (t === 'NUMERIC') ? '' : 'none');
+        document.querySelectorAll('.b-match-only').forEach(el =>   el.style.display = (t === 'ENUM' || t === 'FLAG') ? '' : 'none');
+        document.querySelectorAll('.b-list-only').forEach(el =>    el.style.display = (t === 'LIST') ? '' : 'none');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) lucide.createIcons();
+        if (initialBands && initialBands.length) {
+            initialBands.forEach(b => addBand(b));
+        } else {
+            addBand();
+        }
+    });
+</script>

@@ -1,0 +1,1030 @@
+﻿@{
+    ViewData["Title"] = "Case Details";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+    var clientId = HttpContextAccessor.HttpContext.Session.GetString("SessClientId");
+    var logo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model AML.ViewModel.ViewModels.CaseProcess.CaseProcessModel
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<script src="~/plugins/datatables/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.4/css/jquery.dataTables.css">
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<script src="~/plugins/datatables/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.4/css/jquery.dataTables.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.min.js"></script>
+
+@*@if (@Model.Case != null)
+    {*@
+<style>
+    .navbar {
+        display: flex;
+        justify-content: left;
+        /* background-color: #333;*/
+    }
+
+        .navbar a {
+            color: white;
+            padding: 14px 20px;
+            text-decoration: none;
+            transition: color 0.3s, border-bottom 0.3s;
+        }
+
+            .navbar a:hover {
+                color: #fff;
+            }
+
+            .navbar a.active {
+                border-bottom: 2px solid #fff;
+            }
+    /*            .title {
+            margin-right: 13px;
+            width: 40px;
+            overflow-wrap: break-word;
+            font-family: 'Inter';
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: 1px;
+            line-height: 1.6;
+            color: #0F172A;
+        }*/
+
+    .container-17 {
+        border-radius: 12px;
+        background: #F8FAFC;
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 16px 0 9px 30.3px;
+        width: 507px;
+        box-sizing: border-box;
+    }
+
+    heading {
+        font-size: 1.25rem;
+    }
+
+    .page {
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .head-section {
+        display: flex;
+        justify-content: space-between; /* Better than flex-start + auto margin */
+        align-items: center;
+        width: 100%;
+        height: 72px;
+        overflow-x: hidden;
+        padding: 0 16px; /* Add horizontal padding if needed */
+        box-sizing: border-box;
+        background-color: white !important;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .card1 {
+        max-width: 95%; /* Ensures it never overflows parent */
+        border-radius: 8px;
+        overflow: hidden; /* Contains all child elements */
+        background-color: white !important;
+        margin: 30px 30px;
+        padding: 20px;
+        box-shadow: 0 0 #0000, /* fallback ring-offset-shadow */
+        0 0 #0000, /* fallback ring-shadow */
+        0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* typical shadow-md */
+    }
+
+    .flex-box1 {
+        display: flex;
+        justify-content: flex-end;
+        width: 90%;
+        margin: 20px;
+    }
+
+        .flex-box1 button {
+            margin: 5px;
+        }
+
+    .clear {
+        border: 2px solid #dee2e6 !important;
+        border-radius: 8px;
+        padding: 8px 20px;
+    }
+
+    .go {
+        background-color: rgb(37,99,235);
+        border-radius: 8px;
+        padding: 8px 20px;
+        color: white;
+    }
+
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-group {
+        flex: 0 0 calc(50% - 1rem); /* 2 items per row with gap */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        word-wrap: break-word;
+    }
+
+
+
+    .form_label {
+        font-weight: 500;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .subheadings label {
+        display: block;
+        word-break: break-word;
+    }
+
+    .action {
+        width: 100%;
+    }
+
+    h3 {
+        font-weight: bold;
+    }
+
+    table {
+        margin-top: 10px;
+    }
+
+    th {
+        font-weight: 500;
+    }
+
+    tr {
+        border: none !important;
+    }
+
+    td {
+        padding: 15px;
+    }
+
+    thead th:first-child {
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+    }
+
+    thead th:last-child {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+
+    th, td {
+        width: calc(100% / 11);
+        word-wrap: break-word;
+        text-align: center;
+    }
+
+    @@media (max-width: 768px) {
+        .page {
+            width: 80vw;
+        }
+    }
+</style>
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+</style>
+<div class="custom-container page bg-gray-50">
+    <div id="loader" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+    </div>
+
+    @* <div class="page-heading">
+        <div class="sas-card rounded-card br-20 mb-2 bg-blue head-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 heading"><b>Case View</b></h4>
+                <div class="menu-icon">
+                    <i class="lni lni-microsoft"></i>
+                </div>
+            </div>
+            <div class="md:block">
+                <img src="@logo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+
+    </div> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full bg-surface">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Case View
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+
+    <div class="sas-card rounded-card mb-2 bg-blue card1">
+        <div class="mt-6 flex flex-col sm:flex-row sm:justify-end gap-3">
+
+            <!-- Back Button -->
+            <a asp-controller="Report" asp-action="CaseReport" class="w-full sm:w-auto">
+                <button type="button"
+                        id="btnBack"
+                        onclick="$('#loader').show();"
+                        class="w-full sm:w-auto px-6 py-2.5 border border-gray-300 rounded-md text-gray-700 text-sm font-medium
+                    hover:bg-gray-100 transition duration-200">
+                    Back
+                </button>
+            </a>
+
+            <!-- Print Button -->
+            <button type="button"
+                    id="printform"
+                    onclick="$('#loader').show(); setTimeout(function(){ $('#loader').hide(); }, 2000);"
+                    class="w-full sm:w-auto px-6 py-2.5 rounded-md
+               bg-blue-500 text-white text-sm font-medium
+               hover:bg-primary transition duration-200">
+                Print
+            </button>
+
+        </div>
+
+        <div id="printthisform">
+            <div class="sas-card rounded-card mb-2 bg-blue">
+                <input id="hdnCaseId" type="hidden" name="CaseId" value="@Model.Case.Id" />
+                <div class="col-12 Container-17 mt-lg-5">
+                    <h3 class="title"><b>Case Details</b></h3>
+
+                </div>
+
+                <div class="col-12 form-row mb-2">
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="CustomerId">Customer Id : </label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="CustomerId">@(Model.Case.CustomerId)</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="Source">Source :</label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="SourceId">@(Model.Case.Source)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 form-row mb-2">
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="CustomerName">Customer Name : </label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="CustomerName">@($"{Model.Case.FirstName} {Model.Case.MiddleName} {Model.Case.LastName}")</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="Status">Status : </label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="Status">
+                                @(Convert.ToString((AML.Core.DataContract.Enum.CaseStatus)Model.Case.Status))
+                                @if (Model.Case.IsWhiteListed == "YES")
+                                {
+                                    <text>(Whitelisted)</text>
+                                }
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 form-row mb-2">
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="DateOfBirth">Date Of Birth : </label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="DateOfBirth">
+                                @(Model.Case.DOB == "1/1/0001 12:00:00 AM" ? "N/A" : Model.Case.DOB)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="SourceId">Source Id : </label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="SourceId">@(Model.Case.SourceUniqueId)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 form-row mb-2">
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="Nationality">Nationality : </label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="Nationality">@(Model.Case.Nationality)</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="MatchScore">Match Score : </label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="Matchscore">
+                                @(Model.Case.MatchScore == 0 ? "N/A" : $"{Model.Case.MatchScore}%")
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 form-row mb-2">
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="Gender">Gender</label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="Gender">@(Model.Case.Gender)</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="IdType">Id Type</label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="IdType">@(Model.Case.CustomerIdType)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 form-row mb-2">
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="IdNumber">Id Number</label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="IdNumber">@(Model.Case.CustomerIdNumber)</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="Address">Address</label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="Address">@(Model.Case.Address)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 form-row mb-2">
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="EstablishmentDate">Establishment Date</label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="EstablishmentDate">@(Model.Case.EstablishmentDate)</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-3 heading">
+                            <label class="form_label" for="RiskScore">Risk Score</label>
+                        </div>
+                        <div class="col-3 subheadings">
+                            <label name="RiskScore">
+                                @(Model.Case.MatchCategory == "INDIVIDUAL"
+                                                                ? Model.Case.Individual_final_risk_score
+                                                                : Model.Case.corporate_final_risk_score)
+                            </label>
+                        </div>
+                    </div>
+
+
+                    <div class="action">
+                        <div class="col-12 Container-17">
+                            <h3 class="title">Case Action</h3>
+                        </div>
+                        @{
+                            if (Model.Case.NoMatch == 0 && Model.Case.PartialDomesticpep == 0 && Model.Case.TrueDomesticpep == 0 && Model.Case.TrueDomesticpep == 0 && Model.Case.TrueUAEUNSanction == 0 && Model.Case.PartialForeignpep == 0 && Model.Case.TrueDomesticpep == 0 && Model.Case.TrueOtherSanction == 0 && Model.Case.Partialadversemedia == 0 && Model.Case.TrueAdverseMedia == 0)
+                            {
+                                <div class="row mb-3 subheadings ">
+                                    <div class="form-group col-md-6">
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            No Action Taken yet
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        @{
+
+
+                            if (Model.Case.NoMatch == 1)
+                            {
+                                <div class="row mb-3 subheadings ">
+                                    <div class="form-group col-md-6">
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            No potential match found against the subject case, hence approved
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+                        }
+
+                        <div class="row mb-3 subheadings">
+                            @{
+                                if (Model.Case.PartialDomesticpep == 1)
+                                {
+                                    <div class="form-group col-md-6">
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            Partial Match - Domestic PEP found
+                                        </label>
+                                    </div>
+
+                                }
+                                if (Model.Case.TrueDomesticpep == 1)
+                                {
+                                    <div class="form-group col-md-6">
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            True Match - Domestic PEP found
+                                        </label>
+                                    </div>
+                                }
+                                if (Model.Case.TrueUAEUNSanction == 1)
+                                {
+                                    <div class="form-group col-md-6">
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            True Match - UAE/UN Sanction
+                                        </label>
+                                    </div>
+                                }
+
+                            }
+                        </div>
+                        <div class="row mb-3 subheadings">
+                            @{
+                                if (Model.Case.PartialForeignpep == 1)
+                                {
+                                    <div class="form-group col-md-6">
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            Partial Match - Foreign PEP found
+                                        </label>
+                                    </div>
+
+                                }
+                                if (Model.Case.TrueForeignpep == 1)
+                                {
+                                    <div class="form-group col-md-6">
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            True Match - Foreign PEP found
+                                        </label>
+                                    </div>
+                                }
+                                if (Model.Case.TrueOtherSanction == 1)
+                                {
+                                    <div class="form-group col-md-6">
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            True Match -  Other Sanction
+                                        </label>
+                                    </div>
+                                }
+                            }
+
+
+                        </div>
+
+                        <div class="row mb-3 subheadings">
+                            @{
+                                if (Model.Case.Partialadversemedia == 1)
+                                {
+                                    <div class="form-group col-md-6">
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            Partial Match - Adverse Media found
+                                        </label>
+                                    </div>
+
+                                }
+                                if (Model.Case.TrueAdverseMedia == 1)
+                                {
+                                    <div class="form-group col-md-6">
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            True Match - Adverse Media  found
+                                        </label>
+                                    </div>
+                                }
+
+                            }
+                        </div>
+                    </div>
+
+
+
+                    @* <div class="action">
+                        <form role="form" id="frmCmment" class="form-horizontal" enctype="multipart/form-data" method="post">
+
+                            <div id="caseCmmnt" style="overflow: scroll;overflow-x:hidden; height:auto; max-height: 400px; ">
+                                <div class="col-12 Container-17 ">
+                                    <h3>Case Comments</h3>
+                                </div>
+
+                                <hr />
+                                <div class="col-md-12 container-25">
+                                    @*//  The time line* @
+
+                                    <div id="Comments">
+                                        @*   //    Timeline time label* @
+                                        <div class="time-label">
+                                            @* //   <span class="bg-red">10 Feb. 2014</span>* @
+                                        </div>
+                                        @*//  Timeline-label* @
+                                        <div class="comment-section timeline">
+                                        </div>
+                                    </div>
+                                    <div id="nocomment"><label>No comments yet</label></div>
+                                </div>
+                            </div>
+                            <br />
+
+                        </form>
+                    </div> *@
+
+                    <div class="w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+                        <h1 class="md:text-lg text-md font-semibold text-gray-900 md:mt-1.5 mb-6">Case Comments</h1>
+                        <form role="form" id="frmCmment" class="space-y-4" enctype="multipart/form-data" method="post">
+                            <input type="hidden" name="CaseId" value="@Model.Case.Id" />
+                            <div class="overflow-y-auto max-h-[400px]">
+                                <div class="w-full" id="Comments">
+                                    <div class="time-label"></div>
+                                    <div class="comment-section timeline bg-gray-50 rounded-md p-4 text-sm text-gray-800 border border-gray-100">
+                                        <!-- Timeline comments will be dynamically loaded here -->
+                                    </div>
+                                </div>
+                                <div id="nocomment" class="mt-4 text-sm italic text-gray-500">
+                                    <label>No comments yet</label>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center pt-4">
+                                <div class="lg:col-span-10">
+                                    <textarea id="txtCaseComment" name="Comment" class="w-full p-3 rounded-md border border-gray-300 text-gray-900 placeholder:text-gray-400 resize-none" rows="2" placeholder="Enter your comments"></textarea>
+                                </div>
+                                <div class="lg:col-span-2 flex justify-end">
+                                    <button type="submit" class="w-full md:w-auto px-6 py-2 bg-primary text-white font-medium rounded-md hover:bg-primary-hover flex items-center justify-center">
+                                        Send <i class="fa fa-paper-plane ml-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="action">
+
+                        <div class="col-12 mb-6">
+                            <h3 class="title">Search Result</h3>
+                        </div>
+
+                        <div>
+
+                            @if (@Model.DataList != null)
+                            {
+                                <div class="w-full overflow-x-auto ">
+                                    @*table *@
+                                    <table id="APITable" class="w-full table-auto text-sm" cellspacing="0">
+                                        <thead class="bg-[#E9EFFD]">
+                                            <tr class="text-97">
+                                                <th class=" px-4 py-3">Id</th>
+                                                <th class=" px-4 py-3">Type</th>
+                                                <th class=" px-4 py-3">Category</th>
+                                                <th class=" px-4 py-3">Name</th>
+                                                <th class=" px-4 py-3">Score</th>
+                                                <th class=" px-4 py-3">Nationality</th>
+                                                <th class=" px-4 py-3">Id No</th>
+                                                <th class=" px-4 py-3">DOB</th>
+                                                <th class=" px-4 py-3">Datasets</th>
+                                                <th class=" px-4 py-3">Details</th>
+                                                <th class=" px-4 py-3">Download</th>
+                                                @*<th style=" @(@Model.Case.Source != "KYC6" ? "display:none" : "height:auto")">Details</th>
+                                                <th style=" @(@Model.Case.Source != "KYC6" ? "display:none" : "height:auto")">Download</th>*@
+                                                <th class=" px-4 py-3">Remarks</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-bordercolor">
+
+                                            @foreach (var item in @Model.DataList)
+                                            {
+                                                <tr>
+                                                    <td class="text-47">@item.matchuid</td>
+                                                    <td class="text-47">@item.matchtype</td>
+                                                    <td class="text-47">@item.matchcategory</td>
+                                                    <td class="text-47">@item.matchname</td>
+                                                    <td class="text-47">@item.matchscore</td>
+                                                    @if (@item.matchnationality != "0")
+                                                    {
+                                                        <td class="text-47">@item.matchnationality</td>
+                                                    }
+                                                    else
+                                                    {
+
+                                                        <td class="text-47"></td>
+                                                    }
+
+                                                    <td class="text-47">@item.matchidno</td>
+                                                    <td>@item.matchdob</td>
+                                                    <td>@item.matchdatasets</td>
+                                                    @if (item.matchtype == "KYC6")
+                                                    {
+                                                        <td class="text-47" style="height:auto">
+                                                            <input type="button" class=" px-4 py-1 bg-primary text-white rounded hover:bg-primary-hover" value="Details" onclick="location.href='@Url.Action("GetDetailsApi", "Case", new { Id = item.matchuid, Category = item.matchcategory, CaseId = Model.Case.Id })'" style="padding: 5px 10px !important;" />
+                                                        </td>
+                                                        @if (item.matchresourcesid != "")
+                                                        {
+                                                            <td style="height:auto">
+                                                                <input type="button" class="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700" value="Download" id="download" onclick="location.href='@Url.Action("CallApi", "Case", new { Id = item.matchresourcesid, Category = item.matchcategory })'" />
+                                                            </td>
+                                                        }
+                                                        else
+                                                        {
+                                                            <td style="height:auto">
+                                                                <input type="button" class=" px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700" value="Download" id="download" onclick="location.href='@Url.Action("CallApiMatchuid", "Case", new { Id = item.matchuid, Category = item.matchcategory })'" />
+                                                            </td>
+
+
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <td class="text-47" style="height:auto">
+                                                            <input type="button" class=" px-4 py-1 bg-primary text-white rounded hover:bg-primary-hover" value="Details" onclick="location.href='@Url.Action("GetDetails", "Case", new { caseId = Model.Case.Id, index = 0 })'" />
+                                                        </td>
+                                                        <td class="text-47" style="height:auto;">
+                                                            <input type="button" class="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700" value="Download" id="download" onclick="location.href='@Url.Action("DownloadPdf", "Case", new { caseId = Model.Case.Id, index = 0 })'" style="display:none" />
+                                                        </td>
+                                                    }
+                                                    @* <td style=" @(@Model.Case.Source != "KYC6" ? "display:none" : "height:auto")">
+                                                <input type="button" value="Details" onclick="location.href='@Url.Action("GetDetailsApi", "Case", new { Id = @item.matchuid, Category = @item.matchcategory })'" />
+                                                </td>
+                                                <td style=" @(@Model.Case.Source != "KYC6" ? "display:none" : "height:auto")">
+                                                <input type="button" value="Download" onclick="location.href='@Url.Action("CallApi", "Case", new { Id = @item.matchuid, Category = @item.matchcategory })'" />
+                                                </td>*@
+                                                    <td class="text-47 ">
+                                                        <textarea rows="2" class="h-nonerol resize-none rounded" id="apiResultRemarks" name="Comment" placeholder=Remarks readonly>@item.remarks</textarea>
+                                                    </td>
+                                                </tr>
+                                            }
+
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+
+                            else
+                            {
+                                <div style="width:100%;" id="footdiv">
+                                    <h4>No Potential Hits noted above the Set Threshold.</h4>
+                                </div>
+                            }
+                        </div>
+
+                    </div>
+
+
+                    <!-- Modal -->
+                </div>
+                <div class="modal fade" id="docModal" tabindex="-1" role="dialog" aria-labelledby="docModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        @*<div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="docModalLabel">Documents</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <ul>
+                                            @foreach (var item in Model.CaseDocuments)
+                            {
+                                            <li><a href='/Case/DownloadCaseDocument?filePath=@item.DocumentFullPath&fileName=@item.DocumentFileName' download='@item.DocumentFileName'>@item.DocumentFileName</a></li>
+                            }
+                                        </ul>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                    </div>
+                                </div>*@
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@* <script>
+    $('#printform').on("click", function () {
+
+        $(this).hide();
+        $('#btnBack').hide();
+        //$('#APITable').removeClass('table');
+        $('#printthisform').printThis({
+            importCSS: false,
+            importStyle: true,
+            loadCSS: ["/css/CaseReportsPrint.css"],
+                header: '<div  style="background: linear-gradient(180deg, #33394e, #2F3961);width:100%;height:80px;padding-top:30px;padding:20px"><h1 style="color: white;">@companyName <img src="@logo" style="width:15%;float: right;" /></h1></div>',
+            afterPrint: function () {
+                $('#printform').show();
+                $('#btnBack').show();
+                $('#APITable').addClass('table');
+            }
+        });
+
+    });
+
+    </script> *@
+<script>
+    $('#printform').on("click", function () {
+
+        $(this).hide();
+        $('#btnBack').hide();
+        //$('#APITable').removeClass('table');
+        $('#printthisform').printThis({
+            importCSS: false,
+            importStyle: true,
+            loadCSS: ["/css/print.css"],
+                header: '<div  style="background: linear-gradient(180deg, #33394e, #2F3961);width:100%;height:80px;padding-top:30px;padding:20px"><h1 style="color: white;">@companyName <img src="@logo" style="width:15%;float: right;" /></h1></div>',
+            afterPrint: function () {
+                $('#printform').show();
+                $('#btnBack').show();
+                $('#APITable').addClass('table');
+            }
+        });
+
+    });
+
+</script>
+
+
+<script type="text/javascript">
+    var comments = [];
+    $('#Comments').hide();
+    $('#nocomment').show();
+
+    $(document).ready(function () {
+
+
+        $("#CaseDetailsActive").show();
+        $("#CaseCommentsActive").hide();
+        $("#CaseActionActive").hide();
+        $("#SearchResultsActive").hide();
+
+        if ($('#hdnStatus').val() == '2' || $('#hdnStatus').val() == '3') {
+            $('#txtCaseActionRemarks').attr('disabled', 'disabled');
+            $("input[type=submit]").attr('disabled', 'disabled');
+            $('#ddlUsers').attr('disabled', 'disabled');
+            $("#btnTransfer").attr('disabled', 'disabled');
+        }
+
+        $.ajax({
+            url: '/case/comment/' + $('#hdnCaseId').val(),
+            type: 'get',
+            success: function (response) {
+                comments = response;
+                buildComments();
+            }
+        });
+    });
+    $('#frmCmment').submit(function (e) {
+        e.preventDefault();
+        $.ajax({
+            url: '/case/comment',
+            type: 'post',
+            data: $('#frmCmment').serialize(),
+            success: function (response) {
+                comments = response;
+                $('.commment-list').remove();
+                buildComments();
+            }
+        });
+    });
+    $('#frmCloseCase').submit(function (e) {
+        e.preventDefault();
+        var val = $("input[type=submit][clicked=true]").val();
+        if (val == 'Approve Case') {
+            $('#hdnAction').val(2);
+        } else {
+            $('#hdnAction').val(3);
+        }
+        $.ajax({
+            url: '/case/close',
+            type: 'post',
+            data: $('#frmCloseCase').serialize(),
+            success: function (response) {
+                $('#txtCaseActionRemarks').val('');
+                $('#txtCaseActionRemarks').attr('disabled', 'disabled');
+                $("input[type=submit]").attr('disabled', 'disabled');
+                $('#ddlUsers').attr('disabled', 'disabled');
+                $("#btnTransfer").attr('disabled', 'disabled');
+
+                toastr.success(response);
+                setTimeout(function () { location.href = '/case'; }, 3000);
+                location.href = '/case';
+
+            }
+        });
+    });
+
+    $("#frmCloseCase input[type=submit]").click(function () {
+        $("input[type=submit]", $(this).parents("form")).removeAttr("clicked");
+        $(this).attr("clicked", "true");
+    });
+
+
+
+
+
+
+    $('#frmTransferCase').submit(function (e) {
+        e.preventDefault();
+        $.ajax({
+            url: '/case/assign',
+            type: 'post',
+            data: $('#frmTransferCase').serialize(),
+            success: function () {
+                $('#ddlUsers').val(0);
+                toastr.success('Case Transferred');
+            }
+        });
+    });
+
+
+    function buildComments() {
+        if (comments.length) {
+            $('#Comments').show();
+            $('#nocomment').hide();
+            var template = '<div class="commment-list"><i class="fa fa-user bg-green"></i><div class="timeline-item"><span class="time" ><i class="fa fa-clock"></i> <label class="time-ago"></label></span >' +
+                '<h3 class="timeline-header no-border"><div class="row"><a class="a-user heading" href="#"></a></div>&nbsp;&nbsp;<div class="row"><label class="case-comment"></label></div></h3></div></div>';
+            $("#Comments").find('div.comment-section').prepend(template);
+            $.each(comments, function (i, v) {
+                //if (i == 0) {
+                //    setDataOnRow($("#Comments").find('div.timeline-item'), v, i);
+                //} else {
+                //var clonnedRow = $($("#Comments").find('div.timeline-item').first()).clone();
+                setDataOnRow($(template), v, i);
+                //if (i == 0) {
+                //
+                //}
+            });
+            $('#txtCaseComment').val('');
+            //$($("#Comments").find('div.commment-list').last()).remove();
+            //$($("#Comments").find('div.commment-list').parent()).append('<div><i class= "fas fa-clock bg-gray" ></i></div>')
+            $($("#Comments").find('div.commment-list').last()).remove();
+            $($("#Comments").find('i').last()).remove();
+            $($("#Comments").find('div.commment-list').parent()).append('<div><i class= "fa fa-clock bg-gray" ></i></div>');
+        }
+    }
+
+
+    function setDataOnRow(rowObject, v, i) {
+        $(rowObject).find(".a-user").html(v.createdUser);
+        $(rowObject).find(".time-ago").html(v.duration);
+        $(rowObject).find(".case-comment").html(v.comment);
+        $("#Comments").find('div.comment-section').prepend(rowObject);
+    }
+    function clearDocuemnt() {
+        $('#frmDocument').find("input[type=text], textarea").val("");
+        $('#frmDocument').find("input[type=file]").val(null);
+        $('#frmDocument').find("select").val(0);
+    }
+
+    function activateLink(link, action) {
+
+        //alert(link);
+        //alert(action);
+        // Remove the 'active' class from all links
+        var links = document.querySelectorAll('.navbar a');
+        links.forEach(function (link) {
+            link.classList.remove('active');
+        });
+
+        // Add the 'active' class to the clicked link
+        link.classList.add('active');
+
+        if (action == "caseDetails") {
+
+
+            $("#CaseDetailsActive").show();
+            $("#CaseCommentsActive").hide();
+            $("#CaseActionActive").hide();
+            $("#SearchResultsActive").hide();
+
+        }
+        if (action == "caseComments") {
+            $("#CaseDetailsActive").hide();
+            $("#CaseCommentsActive").show();
+            $("#CaseActionActive").hide();
+            $("#SearchResultsActive").hide();
+        }
+        if (action == "caseAction") {
+            $("#CaseDetailsActive").hide();
+            $("#CaseCommentsActive").hide();
+            $("#CaseActionActive").show();
+            $("#SearchResultsActive").hide();
+        }
+        if (action == "searchResults") {
+            $("#CaseDetailsActive").hide();
+            $("#CaseCommentsActive").hide();
+            $("#CaseActionActive").hide();
+            $("#SearchResultsActive").show();
+        }
+    }
+
+</script>

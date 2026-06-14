@@ -1,0 +1,468 @@
+@{
+    ViewData["Title"] = "Blocklist - Case Creation";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@using static AML.Web.Helpers.NavigationIndicatorHelper;
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@model AML.ViewModel.ViewModels.InternalWathcList.WatchListModel
+
+@{
+    var clientname = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+    var userName = HttpContextAccessor.HttpContext.Session.GetString("SessUsername");
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    @* Redundant Alpine import removed to prevent layout conflicts *@
+    @* <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script> *@
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('blocklistData', () => ({
+                selectedMethod: 'manual',
+                isLoading: false,
+                isDragging: false,
+                selectedFile: null,
+                isSuccessModalOpen: false,
+                modalTitle: '',
+                modalMessage: '',
+                refId: '',
+                isOpen: false, // Fallback for global scope issues
+
+                manualData: {
+                    Type: 'CORPORATE',
+                    FullName: '',
+                    Nationality: '0',
+                    DOB: '',
+                    Source: 'INTERNAL',
+                    IdNumber: '',
+                    Remarks: ''
+                },
+
+                init() {
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    if (window.location.search.includes('preview=true')) {
+                        this.selectedMethod = 'bulk';
+                    }
+                },
+
+                resetManualForm() {
+                    this.manualData = {
+                        Type: 'CORPORATE',
+                        FullName: '',
+                        Nationality: '0',
+                        DOB: '',
+                        Source: 'INTERNAL',
+                        IdNumber: '',
+                        Remarks: ''
+                    };
+                },
+
+                handleFileSelect(file) {
+                    if (!file) return;
+                    this.selectedFile = file;
+                    this.$nextTick(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); });
+                },
+
+                async submitManualForm() {
+                    this.isLoading = true;
+                    try {
+                        const formData = new FormData();
+                        for (let key in this.manualData) {
+                            formData.append(key, this.manualData[key]);
+                        }
+
+                        const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+                        if (tokenElement) {
+                            formData.append('__RequestVerificationToken', tokenElement.value);
+                        }
+
+                        const response = await fetch('/InternalWatchList/Create', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            this.modalTitle = 'Record Added!';
+                            this.modalMessage = 'The record has been successfully added to the blocklist.';
+                            this.isSuccessModalOpen = true;
+                            this.resetManualForm();
+                        } else {
+                            alert(result.message || 'Error occurred during submission.');
+                        }
+                    } catch (error) {
+                        console.error('Submission error:', error);
+                        alert('A server error occurred. Please try again.');
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                async submitBulkUpload() {
+                    if (!this.selectedFile) return;
+                    this.isLoading = true;
+                    try {
+                        const formData = new FormData();
+                        formData.append('Document.fileUpload', this.selectedFile);
+
+                        const response = await fetch('/InternalWatchList/Upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            this.modalTitle = 'Upload Complete!';
+                            this.modalMessage = `Processed ${result.total} records successfully into the system.`;
+                            this.isSuccessModalOpen = true;
+                            this.selectedFile = null;
+                        } else {
+                            alert(result.message || 'Error occurred during upload.');
+                        }
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                        alert('A server error occurred during the upload process.');
+                    } finally {
+                        this.isLoading = false;
+                        if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+                    }
+                },
+
+                // copyRefId() {
+                //     navigator.clipboard.writeText(this.refId);
+                // },
+                
+                downloadTemplate(url) {
+                    window.location.href = url;
+                }
+            }));
+        });
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        [x-cloak] { display: none !important; }
+        .scrollbar-thin::-webkit-scrollbar { width: 5px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        .dt-loader { display: inline-block; position: relative; width: 80px; height: 20px; }
+        .dt-loader div { position: absolute; top: 8px; width: 13px; height: 13px; border-radius: 50%; background: #2563eb; animation-timing-function: cubic-bezier(0, 1, 1, 0); }
+        .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+        .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+        @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+        @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+
+        .success-pulse {
+             animation: success-pulse-anim 2s infinite;
+        }
+        @@keyframes success-pulse-anim {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+    </style>
+</head>
+
+<body class="bg-[#f8fafc] text-textprimary overflow-hidden">
+    <div class="flex h-screen overflow-hidden" x-data="blocklistData">
+        <div id="loadingeffect" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-50" x-show="isLoading" x-cloak>
+            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        </div>
+
+        <div class="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
+            <!-- Header -->
+            <header class="h-16 bg-surface border-b border-bordercolor flex items-center justify-between px-8 sticky top-0 z-40 shrink-0">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-xl font-bold text-textprimary tracking-tight">Blocklist Management</h2>
+                </div>
+                <div x-show="'@Clientlogo' != ''">
+                    <img src="@Clientlogo" alt="Client Logo" class="h-10 w-auto object-contain" />
+                </div>
+            </header>
+
+            <!-- Page Body -->
+            <main class="flex-1 overflow-hidden p-8">
+                <div class="flex h-full gap-8 max-w-[1600px] mx-auto">
+
+                    <!-- Left: Method Selection -->
+                    <div class="w-full lg:w-1/4 flex flex-col h-full bg-surface rounded-[32px] border border-bordercolor shadow-sm overflow-hidden min-w-[340px]">
+                        <div class="p-8 space-y-8 flex-1 overflow-y-auto scrollbar-thin">
+                            <div class="space-y-1">
+                                <h1 class="text-2xl font-extrabold text-textprimary tracking-tight">Entry Method</h1>
+                                <p class="text-textmuted text-sm font-medium leading-relaxed">Select how you want to add records.</p>
+                            </div>
+
+                            <div class="grid gap-3">
+                                <!-- Manual Entry Card -->
+                                <div x-on:click="selectedMethod = 'manual'"
+                                     class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-4 group"
+                                     x-bind:class="selectedMethod === 'manual' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-bordercolor bg-surface hover:border-blue-200 hover:bg-appbg'">
+                                    <div class="p-2 rounded-lg shrink-0 transition-colors"
+                                         x-bind:class="selectedMethod === 'manual' ? 'bg-blue-100 text-primary' : 'bg-slate-100 text-textmuted group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                        <i data-lucide="user-plus" class="w-5 h-5"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-bold text-sm tracking-tight" x-bind:class="selectedMethod === 'manual' ? 'text-blue-900' : 'text-textprimary'">Manual Entry</h3>
+                                        <p class="text-[11px] font-medium text-textmuted mt-0.5 leading-relaxed">Add a single blocklist record manually</p>
+                                    </div>
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-primary absolute top-4 right-4" x-show="selectedMethod === 'manual'"></i>
+                                </div>
+
+                                <!-- Bulk Upload Card -->
+                                <div x-on:click="selectedMethod = 'bulk'"
+                                     class="relative p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-4 group"
+                                     x-bind:class="selectedMethod === 'bulk' ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600 shadow-sm' : 'border-bordercolor bg-surface hover:border-blue-200 hover:bg-appbg'">
+                                    <div class="p-2 rounded-lg shrink-0 transition-colors"
+                                         x-bind:class="selectedMethod === 'bulk' ? 'bg-blue-100 text-primary' : 'bg-slate-100 text-textmuted group-hover:bg-blue-50 group-hover:text-blue-500'">
+                                        <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-bold text-sm tracking-tight" x-bind:class="selectedMethod === 'bulk' ? 'text-blue-900' : 'text-textprimary'">Bulk Upload</h3>
+                                        <p class="text-[11px] font-medium text-textmuted mt-0.5 leading-relaxed">Upload multiple records via Excel</p>
+                                    </div>
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-primary absolute top-4 right-4" x-show="selectedMethod === 'bulk'"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Dynamic Content Area -->
+                    <div class="flex-1 bg-surface rounded-[32px] border border-bordercolor shadow-sm overflow-hidden flex flex-col">
+                        <div class="flex-1 overflow-y-auto p-8 scrollbar-thin">
+                            
+                            <!-- MANUAL ENTRY FORM -->
+                            <div x-show="selectedMethod === 'manual'" x-transition:enter="transition duration-300" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-8">
+                                <div class="pb-6 border-b">
+                                    <h2 class="text-2xl font-extrabold text-textprimary tracking-tight">Manual Entry</h2>
+                                    <p class="text-sm text-textmuted font-medium mt-1">Fill in the details below to add a record to the blocklist.</p>
+                                </div>
+
+                                <form id="manualForm" x-on:submit.prevent="submitManualForm" class="space-y-8">
+                                    @Html.AntiForgeryToken()
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+                                        <!-- Type -->
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Type <span class="text-red-500">*</span></label>
+                                            <select name="Type" x-model="manualData.Type" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" required>
+                                                <option value="CORPORATE">Corporate</option>
+                                                <option value="INDIVIDUAL">Individual</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Full Name -->
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Full Name <span class="text-red-500">*</span></label>
+                                            <input type="text" name="FullName" x-model="manualData.FullName" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter Full Name" required>
+                                        </div>
+
+                                        <!-- Nationality -->
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Nationality/Country of Incorporation</label>
+                                            <select name="Nationality" x-model="manualData.Nationality" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all">
+                                                <option value="0">--EMPTY--</option>
+                                                @foreach (var item in Model.Nationalities)
+                                                {
+                                                    <option value="@item.Value">@item.Text</option>
+                                                }
+                                            </select>
+                                        </div>
+
+                                        <!-- DOB -->
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Date of Birth/Incorporation</label>
+                                            <input type="date" name="DOB" x-model="manualData.DOB" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all">
+                                        </div>
+
+                                        <!-- Data Source -->
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Data Source <span class="text-red-500">*</span></label>
+                                            <select name="Source" x-model="manualData.Source" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" required>
+                                                <option value="CBWL">Central Bank Watch List</option>
+                                                <option value="INTERNAL">Block List</option>
+                                                @if (clientname == "National")
+                                                {
+                                                    <option value="UAE IEC LIST">UAE IEC</option>
+                                                }
+                                            </select>
+                                        </div>
+
+                                        <!-- ID Number -->
+                                        <div class="space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">ID Number</label>
+                                            <input type="text" name="IdNumber" x-model="manualData.IdNumber" class="w-full h-11 bg-surface border border-bordercolor rounded-xl px-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="Enter ID Number">
+                                        </div>
+
+                                        <!-- Remarks -->
+                                        <div class="md:col-span-2 space-y-2">
+                                            <label class="text-[13px] font-bold text-textlabel">Remarks</label>
+                                            <textarea name="Remarks" x-model="manualData.Remarks" class="w-full h-24 bg-surface border border-bordercolor rounded-xl p-4 text-sm font-medium text-textprimary focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all resize-none" placeholder="Enter any additional remarks..."></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex gap-4 pt-8 border-t border-bordercolor">
+                                        <button type="submit" class="flex-1 h-14 bg-primary hover:bg-primary-hover text-white font-extrabold rounded-2xl shadow-xl shadow-blue-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3">
+                                            Submit Record
+                                        </button>
+                                        <button type="reset" x-on:click="resetManualForm" class="px-8 h-14 border-2 border-bordercolor text-textlabel font-extrabold rounded-2xl hover:bg-appbg transition-all">
+                                            Reset Form
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- BULK UPLOAD FORM -->
+                            <div x-show="selectedMethod === 'bulk'" x-transition:enter="transition duration-300" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-8" x-cloak>
+                                <div class="pb-6 border-b">
+                                    <h2 class="text-2xl font-extrabold text-textprimary tracking-tight">Bulk Upload</h2>
+                                    <p class="text-sm text-textmuted font-medium mt-1">Upload an Excel file to add multiple records at once.</p>
+                                </div>
+
+                                <!-- Template Info -->
+                                <div class="bg-blue-50/80 border border-blue-200 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between shadow-sm gap-4">
+                                    <div class="flex items-center gap-5 text-center md:text-left">
+                                        <div class="w-12 h-12 bg-surface rounded-xl shadow-sm flex items-center justify-center text-primary mx-auto md:mx-0">
+                                            <i data-lucide="info" class="w-6 h-6"></i>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <h3 class="text-[15px] font-extrabold text-blue-900 leading-none">Need a template?</h3>
+                                            <p class="text-xs text-blue-700 font-bold opacity-80">Download our formatted Excel template to ensure data integrity.</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2 justify-center">
+                                        <button x-on:click="downloadTemplate('/InternalWatchList/DownloadUAEIECLISTInternalWatchList')" title="Download template" aria-label="Download template" class="h-11 w-11 bg-primary text-white font-extrabold rounded-xl shadow-lg shadow-blue-500/20 hover:bg-primary-hover transition-all text-sm flex items-center justify-center">
+                                            <i data-lucide="download" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <form x-on:submit.prevent="submitBulkUpload" class="space-y-6">
+                                    <!-- Drag & Drop Area -->
+                                    <div x-on:dragover.prevent="isDragging = true"
+                                         x-on:dragleave.prevent="isDragging = false"
+                                         x-on:drop.prevent="isDragging = false; handleFileSelect($event.dataTransfer.files[0])"
+                                         x-on:click="$refs.fileInput.click()"
+                                         class="border-2 border-dashed rounded-[32px] p-20 text-center transition-all cursor-pointer group"
+                                         x-bind:class="isDragging ? 'border-blue-500 bg-blue-50/50 scale-[0.99]' : 'border-bordercolor hover:border-primary hover:bg-appbg'">
+                                        
+                                        <input type="file" x-ref="fileInput" class="hidden" accept=".xlsx, .csv" x-on:change="handleFileSelect($event.target.files[0])">
+                                        
+                                        <div class="w-20 h-20 bg-slate-100 rounded-[24px] flex items-center justify-center mx-auto mb-8 transition-transform group-hover:scale-110 duration-500">
+                                            <i data-lucide="file-spreadsheet" class="w-10 h-10 text-textmuted group-hover:text-blue-500 transition-colors"></i>
+                                        </div>
+                                        
+                                        <h3 class="text-xl font-extrabold text-textprimary tracking-tight">Drag and drop your file here</h3>
+                                        <p class="text-sm font-bold text-textmuted mt-2 mb-8 uppercase tracking-widest">or</p>
+                                        
+                                        <button type="button" class="bg-primary text-white font-extrabold px-12 h-14 rounded-2xl shadow-xl shadow-blue-500/20 hover:scale-105 transition-transform">
+                                            Browse Files
+                                        </button>
+                                        
+                                        <p class="text-[11px] font-extrabold text-textmuted mt-8 uppercase tracking-widest opacity-60">Supported formats: XLSX, CSV</p>
+                                    </div>
+
+                                    <!-- Selected File Status -->
+                                    <div x-show="selectedFile" x-cloak class="animate-in fade-in slide-in-from-bottom-4">
+                                        <div class="bg-surface border-2 border-blue-50 relative overflow-hidden rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div>
+                                            <div class="flex items-center gap-4">
+                                                <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                                                    <i data-lucide="file-text" class="w-6 h-6 text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="font-extrabold text-textprimary text-[15px]" x-text="selectedFile ? selectedFile.name : ''"></p>
+                                                    <p class="text-xs font-bold text-textmuted" x-text="selectedFile ? (selectedFile.size / 1024).toFixed(2) + ' KB' : ''"></p>
+                                                </div>
+                                            </div>
+                                            <button type="button" x-on:click="selectedFile = null; $refs.fileInput.value = ''" class="p-2 text-textmuted hover:text-red-500 transition-colors">
+                                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="pt-8 border-t border-bordercolor flex gap-4">
+                                        <button type="submit" x-bind:disabled="!selectedFile || isLoading" class="flex-1 h-14 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white font-extrabold rounded-2xl shadow-xl shadow-blue-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3">
+                                            <span x-text="isLoading ? 'Processing...' : 'Upload & Process'"></span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL: SUCCESS -->
+    <div x-show="isSuccessModalOpen" x-cloak
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-all duration-300"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        <div x-on:click.away="isSuccessModalOpen = false"
+             class="bg-surface rounded-[40px] shadow-2xl w-full max-w-md p-10 text-center relative overflow-hidden border border-bordercolor">
+            <button x-on:click="isSuccessModalOpen = false"
+                    class="absolute top-6 right-6 text-slate-300 hover:text-textlabel transition-colors p-2 hover:bg-appbg rounded-xl">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="absolute top-0 left-0 right-0 h-2 bg-emerald-500"></div>
+            
+            <div class="flex flex-col items-center gap-8 pt-4">
+                <div class="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center ring-[12px] ring-emerald-50/50 relative">
+                    <i data-lucide="check-circle" class="w-12 h-12 text-emerald-500"></i>
+                    <div class="absolute -right-2 -bottom-2 w-10 h-10 bg-surface rounded-full flex items-center justify-center shadow-lg success-pulse">
+                         <i data-lucide="shield-check" class="w-6 h-6 text-emerald-600"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h2 class="text-3xl font-black text-textprimary tracking-tight" x-text="modalTitle"></h2>
+                    <p class="text-[15px] font-medium text-textmuted leading-relaxed px-2" x-text="modalMessage"></p>
+                    
+                    <!-- <div class="bg-appbg rounded-2xl p-4 flex items-center justify-between mt-4" x-show="refId">
+                        <div class="text-left">
+                            <p class="text-[10px] font-bold text-textmuted uppercase tracking-widest leading-none mb-1">REFERENCE UID</p>
+                            <p class="text-sm font-black text-textprimary" x-text="refId"></p>
+                        </div>
+                        <button x-on:click="copyRefId" class="p-2 text-primary hover:bg-blue-50 rounded-lg transition-colors" title="Copy UID">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                    </div> -->
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 w-full pt-4">
+                    <a href="/Report/GetBlocklistUpdateLogs"
+                       class="h-14 bg-slate-900 text-white font-extrabold rounded-2xl flex items-center justify-center w-full transition-all hover:bg-slate-800 shadow-xl shadow-slate-900/10 gap-2">
+                        <!-- <i data-lucide="list" class="w-5 h-5"></i> -->
+                        View Update Logs
+                    </a>
+                    <button x-on:click="isSuccessModalOpen = false"
+                            class="h-14 bg-surface border-2 border-bordercolor text-textlabel font-extrabold rounded-2xl transition-all hover:bg-appbg flex items-center justify-center gap-2">
+                         Add Another Record
+                    </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script>
+        // blocklistData has been moved to <head> to ensure early availability
+    </script>
+</body>
+</html>

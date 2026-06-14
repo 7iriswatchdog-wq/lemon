@@ -1,0 +1,474 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Newtonsoft.Json;
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var userModules = HttpContextAccessor.HttpContext.Session.GetString("SessModules");
+    var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+	var allowedModules = new List<int>();
+	 if (!string.IsNullOrEmpty(userModules))
+    {
+        var modules = JsonConvert.DeserializeObject<List<dynamic>>(userModules);
+        allowedModules = modules.Select(m => (int)m.Menu_Id).ToList();
+    }
+}
+@model AML.ViewModel.ViewModels.Common.DocumentUploadModel;
+<!--Plugin CSS file with desired skin-->
+<link rel="stylesheet" href="/plugins/ion-rangeslider/css/ion.rangeSlider.css" />
+
+<!--jQuery-->
+<script src="/plugins/ion-rangeslider/js/ion.rangeSlider.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!--Plugin JavaScript file-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ion-rangeslider/2.3.0/js/ion.rangeSlider.min.js"></script>
+<style type="text/css">
+    .se-pre-con1 {
+        position: fixed;
+        left: 0px;
+        top: 0px;
+        width: 100%;
+        height: 100%;
+        z-index: 9999;
+        background: url(/img/loader1.gif) center no-repeat #fff;
+        opacity: 0.8
+    }
+     
+</style>
+
+@* for the loading effect like data tables ... *@
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }</style>
+@*<div class="se-pre-con1 d-none"></div>*@
+<body>
+<div class="max-w-screen h-full items-center ">
+    <div id="loadingeffect" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+    </div>
+    <!-- RIGHT SIDE NAV -->
+    @* <nav class="border-b">
+        <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+            <div>
+                <h2 class="text-2xl font-bold">Individual</h2>
+            </div>
+            <div class="md:block hidden">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav> *@
+        <nav class="flex items-center px-4 h-[72.8px] border-b">
+            <div class="flex items-center justify-between w-full">
+                <!-- Title -->
+                <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                    @localizer["Individual"]
+                </h2>
+
+                <!-- Right-side content -->
+                <div class="text-sm md:text-base text-right">
+                    <img src="@Clientlogo" alt="Client Logo" width="50px" />
+                </div>
+            </div>
+        </nav>
+        
+    <div class="h-auto bg-gray-50 items-center  ">
+        <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4  mx-auto">
+          <form id="uploadForm" class="space-y-6" role="form" asp-controller="ClientCase" asp-action="UploadExcel"  enctype="multipart/form-data" method="post">
+            <!-- NAME SCREENING -->
+            <div class="w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+                <div class=" overflow-x-auto">
+                     <nav class="border-b mb-6 w-fit flex space-x-2 sm:space-x-2 sm:flex-wrap sm:gap-4">
+                          @if (allowedModules.Contains(1)) // Check if menu ID is allowed
+								{
+									<a asp-controller="case" asp-action="create" class="text-[#64748B] font-extralight rounded-t-lg pb-4" onclick="showLoadingAndRedirect(event, this)">Name Screening</a>
+								}
+								@if (allowedModules.Contains(11)) // Check if menu ID is allowed
+								{
+								  <a asp-controller="Kyc" asp-action="CreateIndividualKyc" class="text-[#64748B] font-extralight rounded-t-lg pb-4" onclick="showLoadingAndRedirect(event, this)">KYC Profile Screening</a>
+								}
+								@if (allowedModules.Contains(1)) // Check if menu ID is allowed
+								{
+									<a asp-controller="ClientCase" asp-route-type="I" asp-action="UploadExcel" class="border-b-2 rounded-t-lg border-blue-600 pb-4 font-normal text-md" onclick="showLoadingAndRedirect(event, this)">Bulk Upload Screening</a>
+								}
+                    </nav>
+                </div>
+
+                <!-- ---------- -->
+                <div class="flex lg:flex-row flex-col justify-between bg-[#F4F7FF] rounded-xl md:p-12 p-6">
+
+                    <div class="md:max-w-xl md:mb-0 mb-4">
+                        <h1 class="text-xl tracking-wide font-semibold">Upload Excel File</h1>
+                        <p class="text-justify text-xs mt-2 text-wrap text-[#64748B]">
+                            Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum is simply
+                            dummy text of the printing and typesetting industry.
+                        </p>
+                    </div>
+
+                    <div class="md:px-12 md:mt-2">
+                            <button type="submit" class="md:px-6 md:py-4 px-4 py-2 bg-[#2563EB] md:text-normal text-sm text-white rounded-lg hover:bg-primary-hover inline-flex gap-2 items-center" onclick="DownloadSample();">
+                                   <img src="~/img/upload-cloudup.svg" />
+                            <span class="px-2">Sample Download</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- ---------- -->
+                <!-- MAIN PART -->
+                <div class="flex md:flex-row flex-col mt-4 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Match Parameter</label>
+                            <input type="number" placeholder="Enter Match Parameter" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" id="match_para" asp-for="Threshold" value="70" min="50" max="100" placeholder=@localizer["70"]>
+                    </div>
+                     <input type="hidden" asp-for="branchId" />
+                        <input type="hidden" asp-for="itemId" />
+                        <input type="hidden" asp-for="typeId" />
+
+                        <input type="hidden" asp-for="typeId" id="typeid" />
+                    <div class="md:mt-4">
+						<button class="w-full bg-[#F0F4FF] px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-gray-600 flex lg:flex-row flex-col lg:items-center lg:justify-center lg:gap-2 font-extralight">
+							 <img class="hidden md:hidden lg:inline-block " src="~/img/upload-cloud 1.svg" alt="upload-cloud 1" />
+							 <input class="file-upload d-none" type="file" (change)="incomingfile($event)" accept=".xlsx" asp-for="fileUpload" id="fileUpload" class="drop-zoon__file-input" />
+							Upload Document
+						</button>
+					</div>
+                </div>
+
+                   
+
+                <!-- MAIN PART -->
+
+                <div class="mt-20 flex flex-col md:flex-row md:justify-end  gap-4">
+                    <a asp-controller="ClientCase" asp-route-type="I" asp-action="UploadExcel" onclick="showLoadingAndRedirect(event, this)"
+                               class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 text-center transition duration-200">
+                                Cancel
+                    </a>
+                    <button type="submit" id="btnSubmit" class="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-hover">
+                        Submit
+                    </button>
+                </div>
+            </div>
+          </form>
+        </div>
+    </div>
+    
+</div>
+
+@*<div class="sas-breadcrumbs aml-breadcrumbs pb-3">
+    <ul class="mb-0 pl-0 d-flex">
+        <li><a href="#">Home</a></li>/
+        <li><a href="#">Screening</a></li>/
+        <li><a href="#">Individual Bulk Upload</a></li>
+    </ul>
+</div>
+<div class="page-heading">
+    <div class="sas-card rounded-card br-10 mb-2 bg-blue">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Upload Excel </h4>
+            <div class="menu-icon">
+                <i class="lni lni-microsoft"></i>
+            </div>
+        </div>
+    </div>
+    </div>*@
+
+
+
+
+@*<form role="form" asp-controller="ClientCase" asp-action="UploadExcel" class="form-horizontal" enctype="multipart/form-data" method="post">*@
+
+
+    @*<div class="sas-card rounded-card br-10 mb-2 bg-blue">
+        <div class="d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #ffffff30;padding: 0 0 25px 0;">
+            <h4 class="mb-0">
+                Upload Excel File
+            </h4>
+                <div class="heading_button d-flex justify-content-between align-items-center mb-2">
+
+                    <a class="sas-button p-10-25 color-white top_btn_3 mr-2 orange-btn" onclick="DownloadSample();" title="@localizer["Sample Download"]" aria-label="@localizer["Sample Download"]"><i class="fas fa-download"></i></a>
+                </div>
+            
+        </div>
+        <hr />
+
+
+        <div class="row justify-content-end">
+
+            <div class="form-group">*@
+                @*<input type="button" onclick='selects()' value="Select All" class="sas-button p-10-25 color-white top_btn_3 mr-2 yellow-btn" />*@
+             @*   <input type="button" onclick='deSelect()' value="Clear All" class="sas-button p-10-25 color-white top_btn_4 pink-btn" />
+
+            </div>
+        </div>*@
+
+          
+        
+         @*<div class="row">
+            <div class="col-4">
+                <div class="form-group">
+                    <label class="form_label" for="match_para">@localizer["Match Parameter"]</label>
+                    <input type="number" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="match_para" asp-for="Threshold" value="70" min="50" max="100" placeholder=@localizer["70"] />
+                </div>
+            </div>
+        </div>*@
+        
+        @*<div class="row">
+            <div class="col-4">
+                <div class="image_upload d-flex justify-content-left">
+                    <div id="uploadArea" class="upload-area">
+                        <!-- Header -->
+                        <div class="upload-area__header">
+                            <h1 class="upload-area__title">Upload your file</h1>
+                            <p class="upload-area__paragraph">
+                                File should be an image
+                                <strong class="upload-area__tooltip">
+                                    Like
+                                    <span class="upload-area__tooltip-data"></span> <!-- Data Will be Comes From Js -->
+                                </strong>
+                            </p>
+                        </div>
+                        <!-- End Header -->
+                        <!-- Drop Zoon -->
+                        <div id="dropZoon" class="upload-area__drop-zoon drop-zoon">
+                            <span class="drop-zoon__icon">
+                                <img class="img_uploadsrc" src="~/img/img_upload.jpg" />
+                                <input class="file-upload d-none" type="file" (change)="incomingfile($event)" accept=".xlsx" asp-for="fileUpload" id="fileUpload" class="drop-zoon__file-input" />
+                            </span>
+                            <p class="drop-zoon__paragraph">Drop your file here or Click to browse</p>
+                            <p id="fileName"></p>
+                            <span id="loadingText" class="drop-zoon__loading-text">Please Wait</span>
+                            <img src="" alt="Preview Image" id="previewImage" class="drop-zoon__preview-image" draggable="false">
+                            <input type="file" (change)="incomingfile($event)" accept=".xlsx,.csv" asp-for="fileUpload" id="fileUpload" class="drop-zoon__file-input" />
+                        </div>
+                        <!-- End Drop Zoon -->
+                        <!-- File Details -->
+                        <div id="fileDetails" class="upload-area__file-details file-details">
+                            <h3 class="file-details__title">Uploaded File</h3>
+
+                            <div id="uploadedFile" class="uploaded-file">
+                                <div class="uploaded-file__icon-container">
+                                    <i class='bx bxs-file-blank uploaded-file__icon'></i>
+                                    <span class="uploaded-file__icon-text"></span> <!-- Data Will be Comes From Js -->
+                                </div>
+
+                                <div id="uploadedFileInfo" class="uploaded-file__info">
+                                    <span class="uploaded-file__name">Proejct 1</span>
+                                    <span class="uploaded-file__counter">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- End File Details -->
+                    </div>
+                </div>
+            </div>
+           
+        </div>*@
+       
+        
+    
+
+
+
+   
+   @* <input id="fileUpload" type="file" (change)="incomingfile($event)" accept=".xlsx" asp-for="fileUpload" />*@
+   @*     <div class="row">
+    <input type="hidden" asp-for="branchId" />
+    <input type="hidden" asp-for="itemId" />
+    <input type="hidden" asp-for="typeId" />
+
+    <input type="hidden" asp-for="typeId" id="typeid" />
+    </div>
+
+        <div class="row justify-content-center">
+            <input type="submit" title="Upload" class="sas-button p-10-25 color-white bg-color-1 submit_btn yellow-btn" />
+            <button type="button" class="sas-button p-10-25 bg-color-3 color-white submit_btn pink-btn" onclick="location.href='@Url.Action("UploadExcel", "ClientCase")'">@localizer["Cancel"]</button>
+
+        </div>
+
+
+</div>
+</form>*@
+</body>
+<script>
+    $(".img_uploadsrc").on('click', function () {
+        $(".file-upload").click();
+       
+        //var fileName = $(".file-upload").get(0); //getting files
+        //console.log("filename");
+        //console.log(fileName);
+        //var get_filename = fileName.files;// getting detailed file names 
+        //console.log("get_filename");
+        //console.log(get_filename);
+        //var getaccName = get_filename[0].name;// getting accurate name
+        //console.log("getaccName");
+        //console.log(getaccName);
+        //$("#fileName").text(getaccName);
+    });
+    $(".file-upload").change(function () { 
+        
+         var fileName = $(".file-upload").get(0); //getting files
+        console.log("filename");
+        console.log(fileName);
+        var get_filename = fileName.files;// getting detailed file names 
+        console.log("get_filename");
+        console.log(get_filename);
+        var getaccName = get_filename[0].name;// getting accurate name
+        console.log("getaccName");
+        console.log(getaccName);
+        $("#fileName").text(getaccName);
+        });
+</script>
+
+<script>
+        $('#btnSubmit').click(function () {
+            $('#loadingeffect').show();
+        });
+</script>
+
+@* <script>
+    $(document).ready(function () {
+        $('#uploadForm').on('submit', function (e) {
+            e.preventDefault(); // ✅ Prevent default form submission
+
+            $('#loadingeffect').show(); // Show loader
+
+            // Submit manually after showing loader
+            setTimeout(() => {
+                e.target.submit(); // ✅ Submit the form programmatically
+            }, 100);
+        });
+    });
+</script> *@
+
+@* <script>
+    $("form").submit(function () {
+        $("#loadingeffect").show();
+        // $(".se-pre-con1").removeClass("d-none");
+    });
+</script> *@
+
+<script type="text/javascript">
+    document.getElementById('textInput').value = 85;
+
+    function selects() {
+        var ele = document.getElementsByClassName('modelcb');
+        for (var i = 0; i < ele.length; i++) {
+            if (ele[i].type == 'checkbox')
+                ele[i].checked = true;
+        }
+    }
+    function deSelect() {
+        var ele = document.getElementsByClassName('modelcb');
+        for (var i = 0; i < ele.length; i++) {
+            if (ele[i].type == 'checkbox')
+                ele[i].checked = false;
+
+        }
+    }
+
+    function updateTextInput(val) {
+        document.getElementById('textInput').value = val;
+    }
+
+    function DownloadSample() {
+        var type = $('#typeid').val();
+        $.ajax({
+            type: "GET",
+            url: "/ClientCase/DownloadCustomerUploadSample",
+            data: { type: $('#typeid').val() },
+            success: function (data) {
+                window.location = '/ClientCase/DownloadCustomerUploadSample?type=' + type;
+            },
+            error: function (result) {
+                alert('error');
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        var ele = document.getElementsByClassName('modelcb');
+        for (var i = 0; i < ele.length; i++) {
+            if (ele[i].type == 'checkbox')
+                ele[i].checked = true;
+        }
+    })
+</script>
+
+
+@* for the cancel  *@
+<script>
+    function showLoadingAndRedirect(event, element) {
+        event.preventDefault(); // Prevent default anchor action
+        document.getElementById("loadingeffect").style.display = "flex"; // Show loader
+
+        // Optional: wait a bit before redirecting (for loader visibility)
+        setTimeout(() => {
+            window.location.href = element.getAttribute("href");
+        }, 300); // 300ms delay for smooth transition
+    }
+</script>

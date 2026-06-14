@@ -1,0 +1,1183 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    ViewData["Title"] = "AML Transaction Monitoring Rules";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+@model AML.ViewModel.ViewModels.TransactionMonitor.TMSRIskConfigurationMasterModel
+
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<script src="~/plugins/datatables/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.4/css/jquery.dataTables.css">
+<style>
+    thead {
+        text-align: center;
+    }
+
+    td {
+        text-align: center;
+    }
+
+    .no-js #loader {
+        display: none;
+    }
+
+    .js #loader {
+        display: block;
+        position: absolute;
+        left: 100px;
+        top: 0;
+    }
+
+    .se-pre-con {
+        position: fixed;
+        left: 0px;
+        top: 0px;
+        width: 100%;
+        height: 100%;
+        z-index: 9999;
+        background: url(/img/loader1.gif) center no-repeat #fff;
+        opacity: 0.8
+    }
+
+    table.dataTable.nowrap th, table.dataTable.nowrap td {
+        background: none;
+    }
+</style>
+<div class="se-pre-con"></div>
+@if (Model.userAuthorised == true)
+{
+    <div class="card card-primary">
+
+
+        <div class="px-6 py-4 border-b border-bordercolor">
+            @localizer["AML Transaction Monitoring Rules"]
+        </div>
+        <!-- /.card-header -->
+        <!-- form start -->
+        <div>
+            <form id="myform">
+                <input type="hidden" />
+                <div class="p-6">
+
+                    <div class="row">
+                        <div class="col-sm">
+                            <div class="form-group">
+
+                                <label for="txtRiskCategory">@localizer["Transaction Category"]</label>
+                                <select id="ddlRiskCategory" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-for="RiskCategoryID" asp-items="Model.RiskCategories" onchange="ValidateRiskSelection()">
+                                    <option value="0">--@localizer["Select"]--</option>
+                                </select>
+                                <input type="hidden" asp-for="RiskCategory" id="txtRiskCategory">
+                                <label id="validateddl" class="text-danger">@localizer["Please Select a Transaction Category"]</label>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4">
+                            <input type="hidden" id="rowIndex1" value="0" />
+                            <button type="button" id="addCategory" onclick="DisplayCategory()" class="btn btn-primary" disabled title="@localizer["Add Scenario Type"]" aria-label="@localizer["Add Scenario Type"]"><i class="fas fa-plus"></i></button>
+                        </div>
+                        <div class="col-4">
+
+                            <input type="hidden" id="rowIndex2" value="0" />
+                            <button type="button" id="addSubcategory" onclick="DisplayCategoryType()" class="btn btn-primary" disabled title="@localizer["Add Scenario"]" aria-label="@localizer["Add Scenario"]"><i class="fas fa-plus"></i></button>
+
+                        </div>
+                        <div class="col-4">
+                            <div class="form-group">
+                                <input type="hidden" id="rowIndex3" value="0" />
+                                <button type="button" id="addRow" onclick="selectRiskCategories()" class="btn btn-primary" disabled title="@localizer["Add Item"]" aria-label="@localizer["Add Item"]"><i class="fas fa-plus"></i></button>
+
+                            </div>
+                            @*<button type="button" id="addRow" onclick="" class="btn btn-primary">Add Risk Item</button>*@
+                        </div>
+                    </div>
+
+                    <div id="divCategoryType" style="display:none;">
+                        <div class="form-group">
+                            <input type="hidden" id="rowIndex" value="0" />
+                            <button type="button" id="addMoreCategory" onclick="addCategoryRow()" class="btn btn-primary" sstyle="margin-top:10px;" title="@localizer["Add More Scenario Type"]" aria-label="@localizer["Add More Scenario Type"]"><i class="fas fa-plus"></i></button>
+                            <div id="dvRiskCategoryList" style="display:none;"></div>
+
+                        </div>
+
+
+
+                        <div id="divRiskTypeCategory" class="p-6" style="border-style: groove;display:none;">
+                            <div style="width: 100%; padding-left: -10px;">
+                                <div class="table-responsive">
+                                    <table id="availableRiskTypeCategory" class="w-full text-sm text-left" cellspacing="0">
+                                        <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                                            <tr>
+                                                <th>@localizer["Scenario Type"]</th>
+                                                <th>@localizer["Active Y/N"]</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="btnTypeCategorySubmit" type="submit" value="Submit" class="btn btn-primary" style="display:none;">@localizer["Submit"]</button>
+                    </div>
+
+                    <div id="divRiskTypeFull" style="display:none;">
+                        <div class="row">
+                            <div class="col-sm-7" id="divRiskTypeCategoryddl" style="display:none;">
+                                @localizer["Please Select the Scenario Type you want to add the scenario to"]
+                                <select asp-for="RiskTypeCategoryID" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-items="Model.RiskTypeCategory" id="ddlRiskTypeCategory">
+                                    <option value="0">--@localizer["Select"]--</option>
+                                </select>
+                                <input type="hidden" asp-for="RiskTypeCategoryName" id="txtRiskTypeCategoryName">
+                            </div>
+                            <div class="col-5">
+
+                            </div>
+                        </div>
+                        <div id="divRiskTypeonddl" style="display:none;">
+                            <div class="form-group">
+                                <input type="hidden" id="rowIndex" value="0" />
+                                <button type="button" id="addMoreSubCategory" onclick="addSubcategoryRow()" class="btn btn-primary" style="display: none; margin-top: 10px;" title="@localizer["Add More Scenario"]" aria-label="@localizer["Add More Scenario"]">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <div id="dvRiskSubcategoryList" style="display:none;"></div>
+
+                            </div>
+
+                            <div id="divRiskType" class="p-6" style="border-style: groove;display:none;">
+                                <div style="width: 100%; padding-left: -10px;">
+                                    <div class="table-responsive">
+                                        <table id="availableRiskType" class="w-full text-sm text-left" cellspacing="0">
+                                            <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                                                <tr>
+                                                    <th>@localizer["Scenario"]</th>
+                                                    <th>@localizer["Active Y/N"]</th>
+                                                </tr>
+                                            </thead>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="btnTypeSubmit" type="submit" value="Submit" class="btn btn-primary" style="display:none;margin-top:10px;">@localizer["Submit"]</button>
+                        </div>
+                    </div>
+
+                    <div id="divRiskitemsFull" style="display:none;">
+                        <div class="row" id="divRiskitems" style="display:block;">
+
+                            <div class="col-6">
+                                @localizer["Please Select the Scenario type and Scenario to add risk items"]
+                                <br />
+                                <label for="txtRiskTypeCategoryName">@localizer["Risk Scenario Type"]</label>
+                                <select asp-for="RiskTypeCategoryID" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-items="Model.RiskTypeCategory" id="ddlRiskTypeCategory2">
+                                    <option value="0">--@localizer["Select"]--</option>
+                                </select>
+                                <input type="hidden" asp-for="RiskTypeCategoryName" id="txtRiskTypeCategoryName2">
+                            </div>
+                            <div id="divddlRiskType" class="col-6" style="display:none;">
+                                <label for="txtRiskTypeName">@localizer["Scenario"]</label>
+                                <select asp-for="RiskTypeID" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-items="Model.RiskTypes" id="ddlRiskType">
+                                    <option value="0">--@localizer["Select"]--</option>
+                                </select>
+                                <input type="hidden" asp-for="RiskTypeName" id="txtRiskTypeName">
+                            </div>
+                        </div>
+                        <div id="divRiskItemddl" style="display:none;">
+                            <div class="form-group">
+                                <input type="hidden" id="rowIndex" value="0" />
+                                <button type="button" id="addMoreRiskItems" onclick="addListRow()" class="btn btn-primary" style="display:none;margin-top:10px;" title="@localizer["Add More Items"]" aria-label="@localizer["Add More Items"]"><i class="fas fa-plus"></i></button>
+                                <div id="dvRiskItemList" style="display:none;"></div>
+
+                            </div>
+
+                            <div id="divRiskTtemtable" class="row" style="display:block;">
+                                <div class="p-6" style="border-style: groove; margin-top:15px;">
+                                    <div style="width: 100%; padding-left: -10px;">
+                                        <div class="table-responsive">
+                                            <table id="availableRiskItems" class="w-full text-sm text-left" cellspacing="0">
+                                                <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                                                    <tr>
+                                                        <th>@localizer["Volume/Amount"]</th>
+                                                        <th>@localizer["Value/Count"]</th>
+                                                        <th>@localizer["Frequency"]</th>
+                                                        <th>@localizer["Active Y/N"]</th>
+                                                    </tr>
+                                                </thead>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button id="btnitemSubmit" type="submit" value="Submit" class="btn btn-primary" style="display:block;">@localizer["Submit"]</button>
+
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row" style="text-align:center;">
+        <h3>@localizer["Your subscription is completed, please contact admin"].</h3>
+    </div>
+}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+
+
+<script type="text/javascript">
+
+    function ValidateRiskSelection() {
+
+        var ddl = $("#ddlRiskCategory");
+        if (ddl.val() == "0") {
+            //If the "Select" option is selected display error.
+            document.getElementById('addCategory').disabled = true;
+            document.getElementById('addSubcategory').disabled = true;
+            document.getElementById('addRow').disabled = true;
+            document.getElementById('validateddl').style.display = "block";
+        }
+        else {
+            document.getElementById('addCategory').disabled = false;
+            document.getElementById('addSubcategory').disabled = false;
+            document.getElementById('addRow').disabled = false;
+            document.getElementById('validateddl').style.display = "none";
+
+            var x = document.getElementById('divRiskitemsFull');
+            x.style.display = "none";
+            var a = document.getElementById('divRiskTypeFull');
+            a.style.display = "none";
+            var b = document.getElementById('divCategoryType');
+            b.style.display = "none";
+        }
+
+    }
+
+
+    var arrHead = new Array();
+
+    $(document).ready(function () {
+        $('#ddlRiskCategory').val("0");
+    });
+
+
+    $('#ddlRiskCategory').change(function () {
+        var table = $('#availableRiskTypeCategory').DataTable();
+        table.destroy();
+        $("#availableRiskTypeCategory tbody").remove();
+
+        var table = $('#availableRiskType').DataTable();
+        table.destroy();
+        $("#availableRiskType tbody").remove();
+
+        var table = $('#availableRiskItems').DataTable();
+        table.destroy();
+        $("#availableRiskItems tbody").remove();
+
+
+        LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+
+    });
+    $('#ddlRiskTypeCategory').change(function () {
+        var table = $('#availableRiskType').DataTable();
+        table.destroy();
+        $("#availableRiskType tbody").remove();
+
+        $('#txtRiskTypeCategoryName').val($('#ddlRiskTypeCategory :selected').text());
+        var x = document.getElementById('addMoreSubCategory');
+        x.style.display = "block";
+        x = document.getElementById('divRiskTypeonddl');
+        x.style.display = "block";
+        $("#RiskTypeSubcategoryList").find("tr").find("input[type=text]").val('');
+        //addSubcategoryRow();
+        $("#RiskTypeSubcategoryList").find("tr:gt(1)").remove();
+
+        LoadRiskTypeTable($('#ddlRiskTypeCategory').val());
+        if ($('#ddlRiskTypeCategory').val() == 0) {
+            $('#divRiskTypeonddl').hide();
+        }
+    });
+    $('#ddlRiskTypeCategory2').change(function () {
+        var x = document.getElementById('divddlRiskType');
+        x.style.display = "block";
+
+        $('#txtRiskTypeCategoryName2').val($('#ddlRiskTypeCategory2 :selected').text());
+        getRiskTypes($('#ddlRiskTypeCategory2').val());
+        $('#dvRiskItemList').hide();
+        $("#RiskItemList").find("tr").find("input[type=text]").val('');
+        $("#RiskItemList").find("tr").find("select").val('0');
+        $("#RiskItemList").find("tr:gt(1)").remove();
+        $('#addMoreRiskItems').hide();
+        $('#divRiskTtemtable').hide();
+        if ($('#ddlRiskTypeCategory2').val() == 0) {
+            $('#divddlRiskType').hide();
+        }
+    });
+
+    $('#ddlRiskType').change(function () {
+        $('#txtRiskTypeName').val($('#ddlRiskType :selected').text());
+        //addListRow();
+        var x = document.getElementById('dvRiskItemList');
+        x.style.display = "block";
+        x = document.getElementById('divRiskItemddl');
+        x.style.display = "block";
+        x = document.getElementById('addMoreRiskItems');
+        x.style.display = "block";
+        LoadTable($('#ddlRiskType').val());
+        //  $("RiskItemList").find("tr:gt(0)").remove();
+        $("#RiskItemList").find("tr").find("input[type=text]").val('');
+        $("#RiskItemList").find("tr").find("select").val('0');
+     
+        $("#RiskItemList").find("tr:gt(1)").remove();
+        $('#addMoreRiskItems').show();
+        $('#divRiskTtemtable').show();
+        if ($('#ddlRiskType').val() == 0) {
+            $('#divRiskItemddl').hide();
+        }
+    });
+
+    arrHead = ['@localizer["Volume/Amount"]', '@localizer["Value/Count"]', '@localizer["Frequency"]', '@localizer["Action"]', ''];
+    contarr = []
+    // first create TABLE structure with the headers.
+    function createTable() {
+        var empTable = document.createElement('table');
+        empTable.setAttribute('id', 'RiskItemList'); // table id.
+
+        var tr = empTable.insertRow(-1);
+        for (var h = 0; h < arrHead.length; h++) {
+            var th = document.createElement('th');// create table headers
+            th.innerHTML = arrHead[h];
+            tr.appendChild(th);
+        }
+
+        var div = document.getElementById('dvRiskItemList');
+        div.appendChild(empTable);  // add the TABLE to the container.
+    }
+
+    arrHead1 = ['@localizer["Scenario Type"]', '@localizer["Action"]', ''];
+    contarr1 = []
+    // first create TABLE structure with the headers.
+    function createRiskTypeCategoryTable() {
+        var empTable = document.createElement('table');
+        empTable.setAttribute('id', 'RiskTypeCategoryList'); // table id.
+
+        var tr = empTable.insertRow(-1);
+        for (var h = 0; h < arrHead1.length; h++) {
+            var th = document.createElement('th');// create table headers
+            th.innerHTML = arrHead1[h];
+            tr.appendChild(th);
+        }
+
+        var div = document.getElementById('dvRiskCategoryList');
+        div.appendChild(empTable);  // add the TABLE to the container.
+    }
+
+    arrHead2 = ['@localizer["Scenario"]', '@localizer["Action"]', ''];
+    contarr2 = []
+    // first create TABLE structure with the headers.
+    function createRiskTypeTable() {
+        var empTable = document.createElement('table');
+        empTable.setAttribute('id', 'RiskTypeSubcategoryList'); // table id.
+
+        var tr = empTable.insertRow(-1);
+        for (var h = 0; h < arrHead2.length; h++) {
+            var th = document.createElement('th');// create table headers
+            th.innerHTML = arrHead2[h];
+            tr.appendChild(th);
+        }
+
+        var div = document.getElementById('dvRiskSubcategoryList');
+        div.appendChild(empTable);  // add the TABLE to the container.
+    }
+
+    function addCategoryRow() {
+        // array for header.
+        //var x = document.getElementById('divRiskitemsFull');
+        //x.style.display = "none";
+        //var a = document.getElementById('divRiskTypeFull');
+        //a.style.display = "none";
+        //var b = document.getElementById('divCategoryType');
+        //b.style.display = "block";
+        //var x = document.getElementById('dvRiskCategoryList');
+        //x.style.display = "block";
+        //var y = document.getElementById('divRiskTypeCategory');
+        //y.style.display = "block";
+        //var z = document.getElementById('btnTypeCategorySubmit');
+        //z.style.display = "block";
+        //z = document.getElementById('addMoreCategory');
+        //z.style.display = "block";
+
+        var empTab = document.getElementById('RiskTypeCategoryList');
+        var rowIndexVal = $('#rowIndex1').val();
+        var rowCnt = empTab.rows.length;   // table row count.
+        var tr = empTab.insertRow(rowCnt); // the table row.
+        tr = empTab.insertRow(rowCnt);
+
+        for (var c = 0; c < arrHead1.length; c++) {
+            var td = document.createElement('td'); // table definition.
+            td = tr.insertCell(c);
+
+            if (c == 1) {      // the first column.
+                // add a button in every new row in the last column.
+                var button = document.createElement('input');
+
+                // set input attributes.
+                button.setAttribute('type', 'button');
+                button.setAttribute('value', '@localizer["Remove"]');
+
+                // add button's 'onclick' event.
+                button.setAttribute('onclick', 'removeRow(this)');
+
+                td.appendChild(button);
+            }
+            else {
+                // 1nd, 2rd,Url3rd and 4th column, will have textbox.
+                var ele = document.createElement('input');
+                if (c == 0) {
+                    var hiddenIndex = document.createElement('input');
+                    hiddenIndex.setAttribute('type', 'hidden');
+                    hiddenIndex.setAttribute('class', 'form-control');
+                    hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                    hiddenIndex.setAttribute('id', 'Index')
+                    td.appendChild(hiddenIndex);
+                    ele = addCategoryTypeRow(ele, 'RiskTypeCategory', '');
+                    td.appendChild(ele);
+                } else {
+                    ele.setAttribute('type', 'hidden');
+                    ele.setAttribute('class', 'form-control');
+                    ele.setAttribute('value', false);
+                    ele.setAttribute('name', 'AddedRiskTypeCategory[' + $('#rowIndex1').val() + '].isDeletedInUI');
+                    ele.setAttribute('id', 'AddedRiskTypeCategory[' + $('#rowIndex1').val() + '].isDeletedInUI');
+                    ele.setAttribute('maxlength', 500);
+                    ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                    td.appendChild(ele);
+                }
+
+            }
+        }
+
+        $('#rowIndex1').val(parseInt(rowIndexVal) + 1);
+    }
+
+    function DisplayCategory() {
+        var x = document.getElementById('divRiskitemsFull');
+        x.style.display = "none";
+        var a = document.getElementById('divRiskTypeFull');
+        a.style.display = "none";
+        var b = document.getElementById('divCategoryType');
+        b.style.display = "block";
+        var x = document.getElementById('dvRiskCategoryList');
+        x.style.display = "block";
+        var y = document.getElementById('divRiskTypeCategory');
+        y.style.display = "block";
+        var z = document.getElementById('btnTypeCategorySubmit');
+        z.style.display = "block";
+        z = document.getElementById('addMoreCategory');
+        z.style.display = "block";
+        $("#RiskItemList").find("tr").find("input[type=text]").val('');
+        $("#RiskTypeCategoryList").find("tr").find("input[type=text]").val('');
+        $("#RiskTypeCategoryList").find("tr:gt(1)").remove();
+        LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+
+
+    }
+
+    function DisplayCategoryType() {
+        var x = document.getElementById('dvRiskCategoryList');
+        x.style.display = "none";
+        var y = document.getElementById('divRiskTypeCategory');
+        y.style.display = "none";
+        var z = document.getElementById('btnTypeCategorySubmit');
+        z.style.display = "none";
+        var a = document.getElementById('divRiskitemsFull');
+        a.style.display = "none";
+        a = document.getElementById('divCategoryType');
+        a.style.display = "none";
+        var x = document.getElementById('divRiskTypeonddl');
+        x.style.display = "none";
+        var b = document.getElementById('divRiskTypeFull');
+        b.style.display = "block";
+        b = document.getElementById('addMoreSubCategory');
+        b.style.display = "block;"
+        var table = $('#availableRiskTypeCategory').DataTable();
+        table.destroy();
+        $("#availableRiskTypeCategory tbody").remove();
+        $('#txtRiskCategory').val($('#ddlRiskCategory :selected').text());
+
+        getRiskTypeCategory($('#ddlRiskCategory').val());
+        var x = document.getElementById('divRiskTypeCategoryddl');
+        x.style.display = "block";
+
+    }
+    $(document).ready(function () {
+        $("#btnTypeCategorySubmit").click(function () {
+            //var count = $('#rowIndex1').val();
+            //for (var i = 0; i < count; i++) {
+            //    if (document.getElementById("AddedRiskTypeCategory["+i+"].RiskTypeCategory").value == "") {
+            //        if (document.getElementById("AddedRiskTypeCategory["+i+"].isDeletedInUI").value == "false") {
+            //            alert("Enter all data to submit");
+            //            return false;
+            //        }
+            //    }
+            //}
+            $.ajax({
+                type: 'POST',
+                url: '/TransactionMonitor/SaveCategoryType',     //your action
+                data: $('#myform').serialize(),   //your form name.it takes all the values of model
+                dataType: 'json',
+                beforeSend: function () {
+                    // Show image container
+                    $(".se-pre-con").show();
+                    $(".card-header").fadeOut()
+                },
+                success: function (data) {
+                    console.log(data);
+                    $('input[type="text"],textarea').val(' ');
+                    //LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+                    $('select').val('0');
+                    //ReloadAfterSubmit();
+                },
+                error: function (request, data) {
+                    console.log(data);
+                    $('input[type="text"],textarea').val(' ');
+                    LoadRiskTypeCategoryTable($('#ddlRiskCategory').val());
+                },
+                complete: function (data) {
+                    $(".se-pre-con").fadeOut();
+                    $(".card-header").show();
+                    ReloadAfterSubmit();
+                }
+            });
+
+            return false;
+        });
+    });
+
+    $(document).ready(function () {
+        $("#btnTypeSubmit").click(function () {
+            //var count = $('#rowIndex2').val();
+            //for (var i = 0; i < count; i++) {
+            //    if (document.getElementById("AddedRiskType["+i+"].RiskType").value == "") {
+            //        if (document.getElementById("AddedRiskType["+i+"].isDeletedInUI").value == "false") {
+            //            alert("Enter all data to submit");
+            //            return false;
+            //        }
+            //    }
+            //}
+            $.ajax({
+                type: 'POST',
+                url: '/TransactionMonitor/SaveType',     //your action
+                data: $('#myform').serialize(),   //your form name.it takes all the values of model
+                dataType: 'json',
+                beforeSend: function () {
+                    // Show image container
+                    $(".se-pre-con").show();
+                    $(".card-header").fadeOut()
+                },
+
+
+                success: function (data) {
+                    console.log(data);
+                    $('input[type="text"],textarea').val(' ');
+                    //LoadRiskTypeTable($('#ddlRiskTypeCategory').val());
+                    $('select').val('0');
+                    //ReloadAfterSubmit();
+                },
+
+                error: function (request, data) {
+                    $('input[type="text"],textarea').val(' ');
+                    LoadRiskTypeTable($('#ddlRiskTypeCategory').val());
+
+                },
+                complete: function (data) {
+                    $(".se-pre-con").fadeOut();
+                    $(".card-header").show();
+                    ReloadAfterSubmit();
+                }
+            });
+            return false;
+        });
+    });
+
+
+    $(document).ready(function () {
+        $("#btnitemSubmit").click(function () {
+            //var count = $('#rowIndex3').val();
+            //for (var i = 0; i < count; i++) {
+            //    if (document.getElementById("AddedItems["+i+"].RiskItem").value == "") {
+            //        if (document.getElementById("AddedItems["+i+"].isDeletedInUI").value == "false") {
+            //            alert("Enter all data to submit");
+            //            return false;
+            //        }
+            //    }
+            //}
+            $.ajax({
+                type: 'POST',
+                url: '/TransactionMonitor/SaveRiskItems',     //your action
+                data: $('#myform').serialize(),   //your form name.it takes all the values of model
+                dataType: 'json',
+                beforeSend: function () {
+                    // Show image container
+                    $(".se-pre-con").show();
+                    $(".card-header").fadeOut()
+                },
+
+
+                success: function (result) {
+                    console.log(result);
+                    $('input[type="text"],textarea').val(' ');
+                    $('select').val('0');
+                    //LoadTable($('#ddlRiskType').val());
+                    //ReloadAfterSubmit();
+                },
+                error: function (request, data) {
+                    $('input[type="text"],textarea').val(' ');
+                    $('select').val('0');
+                    LoadTable($('#ddlRiskType').val());
+                },
+
+
+                complete: function (data) {
+                    $(".se-pre-con").fadeOut();
+                    $(".card-header").show();
+                    ReloadAfterSubmit();
+                }
+            });
+            return false;
+        });
+    });
+
+
+    function addSubcategoryRow() {
+        // array for header.
+        var x = document.getElementById('dvRiskSubcategoryList');
+        x.style.display = "block";
+        var z = document.getElementById('btnTypeSubmit');
+        z.style.display = "block";
+        var y = document.getElementById('divRiskType');
+        y.style.display = "block";
+        var empTab = document.getElementById('RiskTypeSubcategoryList');
+        var rowIndexVal = $('#rowIndex2').val();
+
+        var rowCnt = empTab.rows.length;   // table row count.
+        var tr = empTab.insertRow(rowCnt); // the table row.
+        tr = empTab.insertRow(rowCnt);
+
+        for (var c = 0; c < arrHead2.length; c++) {
+            var td = document.createElement('td'); // table definition.
+            td = tr.insertCell(c);
+
+            if (c == 1) {      // the first column.
+                // add a button in every new row in the last column.
+                var button = document.createElement('input');
+
+                // set input attributes.
+                button.setAttribute('type', 'button');
+                button.setAttribute('value', '@localizer["Remove"]');
+
+                // add button's 'onclick' event.
+                button.setAttribute('onclick', 'removeRow(this)');
+
+                td.appendChild(button);
+            }
+            else {
+                // 1st column will have textbox.
+                var ele = document.createElement('input');
+                if (c == 0) {
+                    var hiddenIndex = document.createElement('input');
+                    hiddenIndex.setAttribute('type', 'hidden');
+                    hiddenIndex.setAttribute('class', 'form-control');
+                    hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                    hiddenIndex.setAttribute('id', 'Index')
+                    td.appendChild(hiddenIndex);
+
+                    ele = addTypeRow(ele, 'RiskType', '');
+                    td.appendChild(ele);
+                } else {
+                    ele.setAttribute('type', 'hidden');
+                    ele.setAttribute('class', 'form-control');
+                    ele.setAttribute('value', false);
+                    ele.setAttribute('name', 'AddedRiskType[' + $('#rowIndex2').val() + '].isDeletedInUI');
+                    ele.setAttribute('id', 'AddedRiskType[' + $('#rowIndex2').val() + '].isDeletedInUI');
+                    ele.setAttribute('maxlength', 500);
+                    ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                    td.appendChild(ele);
+                }
+
+            }
+        }
+
+        $('#rowIndex2').val(parseInt(rowIndexVal) + 1);
+    }
+
+
+    // now, add a new to the TABLE.
+    function addListRow() {
+        // array for header.
+
+        var empTab = document.getElementById('RiskItemList');
+        var rowIndexVal = $('#rowIndex3').val();
+
+        var rowCnt = empTab.rows.length;   // table row count.
+        var tr = empTab.insertRow(rowCnt); // the table row.
+        tr = empTab.insertRow(rowCnt);
+
+        for (var c = 0; c < arrHead.length; c++) {
+            var td = document.createElement('td'); // table definition.
+            td = tr.insertCell(c);
+
+            if (c == 3) {      // the first column.addListRow
+                // add a button in every new row in the last column.
+                var button = document.createElement('input');
+
+                // set input attributes.
+                button.setAttribute('type', 'button');
+                button.setAttribute('value', '@localizer["Remove"]');
+
+                // add button's 'onclick' event.
+                button.setAttribute('onclick', 'removeRow(this)');
+
+                td.appendChild(button);
+            }
+            else {
+                // 1nd, 2rd, 3rd and 4th column, will have textbox.
+                var ele = document.createElement('input');
+                if (c == 0) {
+                    var hiddenIndex = document.createElement('input');
+                    hiddenIndex.setAttribute('type', 'hidden');
+                    hiddenIndex.setAttribute('class', 'form-control');
+                    hiddenIndex.setAttribute('value', parseInt(rowIndexVal));
+                    hiddenIndex.setAttribute('id', 'Index')
+                    td.appendChild(hiddenIndex);
+
+                    ele = addRow(ele, 'RiskItem', '');
+                    td.appendChild(ele);
+                } else if (c == 1) {
+                   
+                    var ele = document.createElement('input');
+                    ele = addRow(ele, 'RiskScore', '');
+                    td.appendChild(ele);
+               
+                } else if (c == 2) {
+                    var ele = document.createElement('input');
+                    ele = addRow(ele, 'OverrideScore', '');
+                    td.appendChild(ele);
+                } else {
+                    ele.setAttribute('type', 'hidden');
+                    ele.setAttribute('class', 'form-control');
+                    ele.setAttribute('value', false);
+                    ele.setAttribute('name', 'AddedItems[' + $('#rowIndex3').val() + '].isDeletedInUI');
+                    ele.setAttribute('id', 'AddedItems[' + $('#rowIndex3').val() + '].isDeletedInUI');
+                    ele.setAttribute('maxlength', 500);
+                    ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+                    td.appendChild(ele);
+                }
+
+            }
+        }
+
+        $('#rowIndex3').val(parseInt(rowIndexVal) + 1);
+    }
+    function addRow(ele, elementName, value) {
+        var rowIndex = $('#rowIndex3').val();
+       
+            ele.setAttribute('type', 'text');
+            ele.setAttribute('class', 'form-control');
+            ele.setAttribute('value', value);
+            ele.setAttribute('name', 'AddedItems[' + rowIndex + '].' + elementName);
+            ele.setAttribute('id', 'AddedItems[' + rowIndex + '].' + elementName);
+            ele.setAttribute('maxlength', 500);
+            ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+       
+        return ele;
+    }
+
+    function addCategoryTypeRow(ele, elementName, value) {
+        var rowIndex = $('#rowIndex1').val();
+        ele.setAttribute('type', 'text');
+        ele.setAttribute('class', 'form-control');
+        ele.setAttribute('value', value);
+        ele.setAttribute('name', 'AddedRiskTypeCategory[' + rowIndex + '].' + elementName);
+        ele.setAttribute('id', 'AddedRiskTypeCategory[' + rowIndex + '].' + elementName);
+        ele.setAttribute('maxlength', 500);
+        ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+
+        return ele;
+    }
+
+    function addTypeRow(ele, elementName, value) {
+        var rowIndex = $('#rowIndex2').val();
+        ele.setAttribute('type', 'text');
+        ele.setAttribute('class', 'form-control');
+        ele.setAttribute('value', value);
+        ele.setAttribute('name', 'AddedRiskType[' + rowIndex + '].' + elementName);
+        ele.setAttribute('id', 'AddedRiskType[' + rowIndex + '].' + elementName);
+        ele.setAttribute('maxlength', 500);
+        ele.setAttribute('onkeypress', "alphaNumericCheck(event)");
+
+        return ele;
+    }
+    function isEmpty(obj) {
+        return Object.keys(obj).length === 0;
+    }
+    // delete TABLE row function.
+    function removeRow(e) {
+
+        e.closest('tr').style.display = 'none';//hide the div
+        e.closest('tr').querySelectorAll('input[type=hidden]')[1].value = true;
+
+
+    }
+
+    function getRiskTypeCategory(riskCategoryID) {
+        $.ajax({
+
+            url: '/TransactionMonitor/GetRiskCategoryTypes',
+            type: 'GET',
+            data: {
+                'riskCategoryID': riskCategoryID
+            },
+            dataType: 'json',
+            beforeSend: function () {
+                // Show image container
+                $(".se-pre-con").show();
+                $(".card-header").fadeOut()
+            },
+
+
+            success: function (data) {
+                var item = '';
+                $('#ddlRiskTypeCategory').empty();
+                item += "<option value='0'>--@localizer["Select"]--</option>";
+                $.each(data, function (i, riskCategoryTypes) {
+                    item += "<option value='" + riskCategoryTypes.value + "'>" + riskCategoryTypes.text + "</option>";
+                });
+                $('#ddlRiskTypeCategory').html(item);
+            },
+            error: function (request, error) {
+                alert("Request: " + JSON.stringify(request));
+            },
+
+
+            complete: function (data) {
+                $(".se-pre-con").fadeOut();
+                $(".card-header").show()
+            }
+        });
+    }
+    function getRiskTypeCategory2(riskCategoryID) {
+        $.ajax({
+
+            url: '/TransactionMonitor/GetRiskCategoryTypes',
+            type: 'GET',
+            data: {
+                'riskCategoryID': riskCategoryID
+            },
+            dataType: 'json',
+            beforeSend: function () {
+                // Show image container
+                $(".se-pre-con").show();
+                $(".card-header").fadeOut()
+            },
+
+
+            success: function (data) {
+                var item = '';
+                $('#ddlRiskTypeCategory2').empty();
+                item += "<option value='0'>--@localizer["Select"]--</option>";
+                $.each(data, function (i, riskCategoryTypes) {
+                    item += "<option value='" + riskCategoryTypes.value + "'>" + riskCategoryTypes.text + "</option>";
+                });
+                $('#ddlRiskTypeCategory2').html(item);
+            },
+            error: function (request, error) {
+                alert("Request: " + JSON.stringify(request));
+            },
+            complete: function (data) {
+                $(".se-pre-con").fadeOut();
+                $(".card-header").show()
+            }
+
+        });
+    }
+    function getRiskTypes(riskTypeCategoryID) {
+        $.ajax({
+
+            url: '/TransactionMonitor/GetRiskTypes',
+            type: 'GET',
+            data: {
+                'riskTypeCategoryID': riskTypeCategoryID
+            },
+            dataType: 'json',
+            beforeSend: function () {
+                // Show image container
+                $(".se-pre-con").show();
+                $(".card-header").fadeOut()
+            },
+
+
+            success: function (data) {
+                var item = '';
+                $('#ddlRiskType').empty();
+                item += "<option value='0'>--@localizer["Select"]--</option>";
+                $.each(data, function (i, riskTypes) {
+                    item += "<option value='" + riskTypes.value + "'>" + riskTypes.text + "</option>";
+                });
+                $('#ddlRiskType').html(item);
+            },
+            error: function (request, error) {
+                alert("Request: " + JSON.stringify(request));
+            },
+
+            complete: function (data) {
+                $(".se-pre-con").fadeOut();
+                $(".card-header").show()
+            }
+        });
+    }
+
+
+    function LoadTable(riskTypeID) {
+        var table = $('#availableRiskItems').DataTable({
+            "serverSide": true,
+            "processing": true,
+            "filter": false,
+            "iDisplayLength": 10,
+            "destroy": true,
+            ajax: {
+                url: '/TransactionMonitor/custompaginationRiskItems',
+                type: 'POST',
+                data: {
+                    'riskTypeID': riskTypeID
+                }
+            },
+            columns: [
+                {
+                    "render": function (data, type, full, meta) {
+                        var colHtml = '<input type="text" value="' + full.lovRiskData + '" name="AvailableItems[' + meta.row + '].RiskItem" maxlength="500" onkeypress="alphaNumericCheck(event)" />';
+                        colHtml += '<input type="hidden" value="' + full.id + '" name="AvailableItems[' + meta.row + '].Id" />';
+                        return colHtml;
+                    }
+                }, {
+                    "render": function (data, type, full, meta) {
+                        //var colHtml = '<input type="text" value="' + full.lovRiskScore + '" name="AvailableItems[' + meta.row + '].RiskScore" />';
+                        
+                        var colHtml = '<input type="text" value="' + full.lovRiskScore + '" name="AvailableItems[' + meta.row + '].RiskScore" />';
+                        return colHtml;
+                        
+                    }
+                }, {
+                    "render": function (data, type, full, meta) {
+                        var colHtml = '<input type="text" value="' + full.overrideScore + '" name="AvailableItems[' + meta.row + '].OverrideScore" />';
+                        return colHtml;
+                    }
+                }, {
+                    "render": function (data, type, full, meta) {
+                        var colHtml = '';
+                        if (full.isActive == 'True') {
+                            colHtml = '<input type="checkbox" onchange="ChangeStatus(' + meta.row + ',this);" checked />';
+                            colHtml += '<input type="hidden" value="true" name="AvailableItems[' + meta.row + '].isActive" />';
+                        }
+                        else {
+                            colHtml = '<input type="checkbox" onchange="ChangeStatus(' + meta.row + ', this);" />';
+                            colHtml += '<input type="hidden" value="false" name="AvailableItems[' + meta.row + '].isActive" />';
+                        }
+
+                        return colHtml;
+                    }
+                }
+            ]
+        });
+    }
+    function LoadRiskTypeCategoryTable(riskCategoryID) {
+        var table = $('#availableRiskTypeCategory').DataTable({
+            "serverSide": true,
+            "processing": true,
+            "filter": false,
+            "iDisplayLength": 10,
+            "destroy": true,
+            ajax: {
+                url: '/TransactionMonitor/CustomPaginationRiskTypeCategory',
+                type: 'POST',
+                data: {
+                    'riskCategoryID': riskCategoryID
+                }
+            },
+            columns: [
+                {
+                    "render": function (data, type, full, meta) {
+                        var colHtml = '<input type="text" value="' + full.lovCategoryType + '" name="AvailableRiskTypeCategory[' + meta.row + '].RiskTypeCategory" maxlength="500" onkeypress="alphaNumericCheck(event)" />';
+                        colHtml += '<input type="hidden" value="' + full.lovTypeCategoryId + '" name="AvailableRiskTypeCategory[' + meta.row + '].Id" />';
+                        return colHtml;
+                    }
+                },
+
+                {
+                    "render": function (data, type, full, meta) {
+                        var colHtml = '';
+                        if (full.isActive == true) {
+                            colHtml = '<input type="checkbox" onchange="ChangeRiskTypeCategoryStatus(' + meta.row + ',this);" checked />';
+                            colHtml += '<input type="hidden" value="true" name="AvailableRiskTypeCategory[' + meta.row + '].isActive" />';
+                        }
+                        else {
+                            colHtml = '<input type="checkbox" onchange="ChangeRiskTypeCategoryStatus(' + meta.row + ', this);" />';
+                            colHtml += '<input type="hidden" value="false" name="AvailableRiskTypeCategory[' + meta.row + '].isActive" />';
+                        }
+
+                        return colHtml;
+                    }
+                }
+            ]
+        });
+    }
+
+
+    function LoadRiskTypeTable(RiskTypeCategoryID) {
+        var table = $('#availableRiskType').DataTable({
+            "serverSide": true,
+            "processing": true,
+            "filter": false,
+            "iDisplayLength": 10,
+            "destroy": true,
+            ajax: {
+                url: '/TransactionMonitor/CustomPaginationRiskType',
+                type: 'POST',
+                data: {
+                    'RiskTypeCategoryID': RiskTypeCategoryID
+                }
+            },
+            columns: [
+                {
+                    "render": function (data, type, full, meta) {
+                        var colHtml = '<input type="text" value="' + full.lovTypeName + '" name="AvailableRiskType[' + meta.row + '].RiskType" maxlength="500" onkeypress="alphaNumericCheck(event)" />';
+                        colHtml += '<input type="hidden" value="' + full.lovTypeId + '" name="AvailableRiskType[' + meta.row + '].Id" />';
+                        return colHtml;
+                    }
+                },
+
+                {
+                    "render": function (data, type, full, meta) {
+                        var colHtml = '';
+                        if (full.isActive == 'True') {
+                            colHtml = '<input type="checkbox" onchange="ChangeTypeStatus(' + meta.row + ',this);" checked />';
+                            colHtml += '<input type="hidden" value="true" name="AvailableRiskType[' + meta.row + '].isActive" />';
+                        }
+                        else {
+                            colHtml = '<input type="checkbox" onchange="ChangeTypeStatus(' + meta.row + ', this);" />';
+                            colHtml += '<input type="hidden" value="false" name="AvailableRiskType[' + meta.row + '].isActive" />';
+                        }
+
+                        return colHtml;
+                    }
+                }
+            ]
+        });
+    }
+
+    function ChangeStatus(index, that) {
+        var status = false;
+        if ($(that).prop("checked")) {
+            status = true;
+        }
+        $('input[name="AvailableItems[' + index + '].isActive"]').val(status)
+    }
+
+
+    function ChangeRiskTypeCategoryStatus(index, that) {
+        var status = false;
+        if ($(that).prop("checked")) {
+            status = true;
+        }
+        $('input[name="AvailableRiskTypeCategory[' + index + '].isActive"]').val(status)
+    }
+
+    function ChangeTypeStatus(index, that) {
+        var status = false;
+        if ($(that).prop("checked")) {
+            status = true;
+        }
+        $('input[name="AvailableRiskType[' + index + '].isActive"]').val(status)
+    }
+    function selectRiskCategories() {
+        x = document.getElementById('divRiskItemddl');
+        x.style.display = "none";
+        x = document.getElementById('divddlRiskType');
+        x.style.display = "none";
+        var x = document.getElementById('divRiskitemsFull');
+        x.style.display = "block";
+        var y = document.getElementById('divRiskTypeFull');
+        y.style.display = "none";
+        var z = document.getElementById('divCategoryType');
+        z.style.display = "none";
+
+
+
+        $('#txtRiskCategory').val($('#ddlRiskCategory :selected').text());
+        getRiskTypeCategory2($('#ddlRiskCategory').val());
+
+    }
+    function riskScoreOnChange(rowIndex) {
+        var riskScore = document.getElementById('AddedItems[' + rowIndex + '].RiskScore').value;
+        if (riskScore == 3) {
+            document.getElementById('AddedItems[' + rowIndex + '].OverrideScore').removeAttribute('disabled');
+            document.getElementById('AddedItems[' + rowIndex + '].OverrideScore').setAttribute('enabled', 'true');
+        } else {
+            document.getElementById('AddedItems[' + rowIndex + '].OverrideScore').removeAttribute('enabled');
+            document.getElementById('AddedItems[' + rowIndex + '].OverrideScore').value = 0;
+            document.getElementById('AddedItems[' + rowIndex + '].OverrideScore').setAttribute('disabled', 'true');
+        }
+    }
+    function tableRiskScoreOnChange(rowIndex) {
+        var riskScore = document.getElementById('AvailableItems[' + rowIndex + '].RiskScore').value;
+        if (riskScore == 3) {
+            document.getElementById('AvailableItems[' + rowIndex + '].OverrideScore').removeAttribute('disabled');
+            document.getElementById('AvailableItems[' + rowIndex + '].OverrideScore').setAttribute('enabled', 'true');
+        } else {
+            document.getElementById('AvailableItems[' + rowIndex + '].OverrideScore').removeAttribute('enabled');
+            document.getElementById('AvailableItems[' + rowIndex + '].OverrideScore').value = 0;
+            document.getElementById('AvailableItems[' + rowIndex + '].OverrideScore').setAttribute('disabled', 'true');
+        }
+    }
+    function alphaNumericCheck(e) {
+        var key = e.keyCode;
+        if (!(key > 43 && key < 60) && !(key > 62 && key < 91) && !(key > 94 && key < 123) && !(key > 37 && key < 43)) {
+            if (key == 34 || key == 32) {
+
+            } else {
+                e.preventDefault();
+            }
+        }
+
+    }
+    function ReloadAfterSubmit() {
+        $('#ddlRiskCategory').val('0');
+        $('#divCategoryType').hide();
+        $('#divRiskTypeFull').hide();
+        $('#divRiskitemsFull').hide();
+        $("#addCategory").prop("disabled", true);
+        $("#addSubcategory").prop("disabled", true);
+        $("#addRow").prop("disabled", true);
+        $('#rowIndex1').val('1');
+        $('#rowIndex2').val('1');
+        $('#rowIndex3').val('1');
+    }
+</script>
+<script>
+
+    $(document).ready(function () {
+        //$(".se-pre-con").fadeOut("slow");
+        createRiskTypeCategoryTable();
+        createRiskTypeTable();
+        createTable();
+        addCategoryRow();
+        addSubcategoryRow();
+        addListRow();
+    });
+
+</script>

@@ -1,0 +1,471 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+}
+@model AML.ViewModel.ViewModels.EWRA.EWRAModel
+<style>
+    #table-scroll {
+        overflow: scroll;
+        margin-top: 20px;
+    }
+
+    .table {
+        width: 150%;
+    }
+
+    #FraudTable {
+        width: 120%;
+        margin-left: 1.8px;
+        overflow: scroll;
+    }
+
+    .table td, .table th {
+        padding: .65rem;
+    }
+
+    table, th {
+        text-align: center;
+    }
+
+    td {
+        vertical-align: bottom;
+        text-align: left !important;
+    }
+
+    .form-control {
+        width: 100%;
+    }
+</style>
+@*<div style="width:100% !important;height:70px !important;">
+
+    </div>*@
+<div id="printDetails" style="width:100%">
+    <br />
+    <div style="width:100%;display:none" id="logodiv">
+        <div style="width:98%;text-align:center;">
+            <h2>@companyName</h2>
+            <img src="~/img/brand-logo.svg" style="width:8%;float:right;" />
+        </div>
+        <br />
+    </div>
+    <br />
+    <div class="card-primary" id="reportViewDetails" style="width:100%;padding-left:1%;">
+        <div class="row" style="width:100%;padding-left:1%;">
+            <h3 style="width:90%">EWRA Report Of @companyName</h3>
+            <input name="b_print" id="b_print" type="button" onClick="printdiv('printDetails');" value=" Print " style="float:right;margin:20px;width:50px;"><br />
+        </div>
+        <div class="card card-body">
+            <div>
+                <table class="table" id="ScoreTable" style="width:100%">
+                    <tr class="row" style="flex-wrap:nowrap">
+                        <td width="40%" style="border-top:0px;">
+                            <h4>Quantitative Risk Assessment</h4>
+                        </td>
+                        <td width="30%" style="border-top:0px;">
+                            <button id="btnTotalRiskScore" disabled class="dt-button-info form-control risk-button" type="button">@Model.QuantitativeOverallScore</button>
+                        </td>
+                        <td width="30%" style="border-top:0px;">
+                            @if (Model.QuantitativeOverallRisk == "Low")
+                            {
+                                <button id="btnTotalRiskLevel" disabled class="dt-button-info form-control risk-button btn btn-success" type="button">@Model.QuantitativeOverallRisk</button>
+                            }
+                            else if (Model.QuantitativeOverallRisk == "Medium")
+                            {
+                                <button id="btnTotalRiskLevel" disabled class="dt-button-info form-control risk-button btn btn-warning" type="button">@Model.QuantitativeOverallRisk</button>
+                            }
+                            else if (Model.QuantitativeOverallRisk == "High")
+                            {
+                                <button id="btnTotalRiskLevel" disabled class="dt-button-info form-control risk-button btn btn-danger" type="button">@Model.QuantitativeOverallRisk</button>
+                            }
+                            else
+                            {
+                                <button id="btnTotalRiskLevel" disabled class="dt-button-info form-control risk-button" type="button">@Model.QuantitativeOverallRisk</button>
+                            }
+                        </td>
+                    </tr>
+                    <tr class="row" style="flex-wrap:nowrap">
+                        <td width="40%" style="border-top:0px;">
+                            <h4>Qualitative Risk Assessment</h4>
+                        </td>
+                        <td width="30%" style="border-top:0px;">
+                            <button id="btnTotalRiskScore" disabled class="dt-button-info form-control risk-button" type="button">@Model.QualitativeOverallScore</button>
+                        </td>
+                        <td width="30%" style="border-top:0px;">
+                            @if (Model.QualitativeOverallRating == "Low")
+                            {
+                                <button id="btnTotalRiskLevel" disabled class="dt-button-info form-control risk-button btn btn-success" type="button">@Model.QualitativeOverallRating</button>
+                            }
+                            else if (Model.QualitativeOverallRating == "Medium")
+                            {
+                                <button id="btnTotalRiskLevel" disabled class="dt-button-info form-control risk-button btn btn-warning" type="button">@Model.QualitativeOverallRating</button>
+                            }
+                            else if (Model.QualitativeOverallRating == "High")
+                            {
+                                <button id="btnTotalRiskLevel" disabled class="dt-button-info form-control risk-button btn btn-danger" type="button">@Model.QualitativeOverallRating</button>
+                            }
+                            else
+                            {
+                                <button id="btnTotalRiskLevel" disabled class="dt-button-info form-control risk-button" type="button">@Model.QualitativeOverallRating</button>
+                            }
+                        </td>
+                    </tr>
+                    <tr class="row" style="flex-wrap:nowrap">
+                        <td width="40%" style="border-top:0px;">
+                            <h4>Overall Risk Assessment</h4>
+                        </td>
+                        <td width="30%" style="border-top:0px;">
+                            <button id="btnTotalRiskScore" disabled class="dt-button-info form-control risk-button" type="button">@Model.OverallScore</button>
+                        </td>
+                        <td width="30%" style="border-top:0px;">
+                            @if (Model.OverallRisk == "Low")
+                            {
+                                <button id="btnTotalRiskLevel" disabled class="dt-button-info form-control risk-button btn btn-success" type="button">@Model.OverallRisk</button>
+                            }
+                            else if (Model.OverallRisk == "Medium")
+                            {
+                                <button id="btnTotalRiskLevel" disabled class="dt-button-info form-control risk-button btn btn-warning" type="button">@Model.OverallRisk</button>
+                            }
+                            else if (Model.OverallRisk == "High")
+                            {
+                                <button id="btnTotalRiskLevel" disabled class="dt-button-info form-control risk-button btn btn-danger" type="button">@Model.OverallRisk</button>
+                            }
+                            else
+                            {
+                                <button id="btnTotalRiskLevel" disabled class="dt-button-info form-control risk-button" type="button">@Model.OverallRisk</button>
+                            }
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="card card-body">
+            <div class="row" style="width:98%;">
+                <div class="col-sm-4">
+                    <h4>Quantitative Assessment</h4>
+                </div>
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label for="dtCreatedBy">Created By</label>
+                        <input type="text" asp-for="@Model.CreatedBy" class="form-control mandatory" id="dtCreatedBy" placeholder="" maxlength="200" readonly>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label for="dtCreatedOn">Created On</label>
+                        <input type="text" asp-for="@Model.CreatedOn" class="form-control mandatory" id="dtCreatedOn" placeholder="" maxlength="200" readonly>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <table class="table" id="FraudTable" style="width:100%">
+                    <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                        <tr class="row">
+                            <th width="10%" style="width:10%;text-align:left;">
+                                @localizer["Sl.No"]
+                            </th>
+                            <th width="30%" style="width:30%;text-align:left;">
+                                @localizer["Risk Type"]
+                            </th>
+                            <th width="15%" style="width:15%;text-align:left;">
+                                @localizer["Weightage"]
+                            </th>
+                            <th width="15%" style="width:15%;text-align:left;">
+                                @localizer["Residual Risk Rating"]
+                            </th>
+                            <th width="15%" style="width:15%;text-align:left;">
+                                @localizer["Residual Risk Score"]
+                            </th>
+                            <th width="15%" style="width:15%;text-align:left;">
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-bordercolor">
+                        <tr class="row">
+                            <td width="10%" style="width:10%;">
+                                1
+                            </td>
+                            <td width="30%" style="width:30%;">
+                                @localizer["Customer Risk"]
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                30%
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                @Model.CustOverallRisk
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                @Model.CustOverallScore
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                <a class="btn btn-info btn-print" href="ViewEWRACustomerProfileReport?id=@Model.Id">View</a>
+                            </td>
+                        </tr>
+                        <tr class="row">
+                            <td width="10%" style="width:10%;">
+                                2
+                            </td>
+                            <td width="30%" style="width:30%;">
+                                @localizer["Counterparty Risk"]
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                30%
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                @Model.CounterOverallRisk
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                @Model.CounterOverallScore
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                <a class="btn btn-info btn-print" href="ViewEWRACounterPartyReport?id=@Model.Id">View</a>
+                            </td>
+                        </tr>
+                        <tr class="row">
+                            <td width="10%" style="width:10%;">
+                                3
+                            </td>
+                            <td width="30%" style="width:30%;">
+                                @localizer["Products And Services Risk"]
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                20%
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                @Model.ProductOverallRisk
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                @Model.ProductOverallScore
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                <a class="btn btn-info btn-print" href="ViewEWRAProductsReport?id=@Model.Id">View</a>
+                            </td>
+                        </tr>
+                        <tr class="row">
+                            <td width="10%" style="width:10%;">
+                                4
+                            </td>
+                            <td width="30%" style="width:30%;">
+                                @localizer["Jurisdictional Risk"]
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                15%
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                @Model.JurisdictionOverallRisk
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                @Model.JurisdictionOverallScore
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                <a class="btn btn-info btn-print" href="ViewEWRAJurisdictionReport?id=@Model.Id">View</a>
+                            </td>
+                        </tr>
+                        <tr class="row">
+                            <td width="10%" style="width:10%;">
+                                5
+                            </td>
+                            <td width="30%" style="width:30%;">
+                                @localizer["Delivery Channel Risk"]
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                5%
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                @Model.DeliveryOverallRisk
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                @Model.DeliveryOverallScore
+                            </td>
+                            <td width="15%" style="width:15%;">
+                                <a class="btn btn-info btn-print" href="ViewEWRADeliveryReport?id=@Model.Id">View</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card card-body">
+            <div class="row" style="width:98%;">
+                <div class="col-sm-4">
+                    <h4>Qualitative Assessment</h4>
+                </div>
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label for="dtCreatedBy">Created By</label>
+                        <input type="text" asp-for="@Model.QCreatedBy" class="form-control mandatory" id="dtCreatedBy" placeholder="" maxlength="200" readonly>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label for="dtCreatedOn">Created On</label>
+                        <input type="text" asp-for="@Model.QCreatedOn" class="form-control mandatory" id="dtCreatedOn" placeholder="" maxlength="200" readonly>
+                    </div>
+                </div>
+            </div>
+            @if (@Model.QualitativeOverallScore == "" || @Model.QualitativeOverallScore == null)
+            {
+                <h4>@localizer["Qualitative Assessment has not performed yet."]</h4>
+            }
+            else
+            {
+                <div>
+                    <table class="table" id="FraudTable" style="width:100%">
+                        <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                            <tr class="row">
+                                <th width="10%" style="width:10%;text-align:left;">
+                                    @localizer["Sl.No"]
+                                </th>
+                                <th width="30%" style="width:30%;text-align:left;">
+                                    @localizer["Risk Type"]
+                                </th>
+                                <th width="15%" style="width:15%;text-align:left;">
+                                    @localizer["Weightage"]
+                                </th>
+                                <th width="15%" style="width:15%;text-align:left;">
+                                    @localizer["Residual Risk Rating"]
+                                </th>
+                                <th width="15%" style="width:15%;text-align:left;">
+                                    @localizer["Residual Risk Score"]
+                                </th>
+                                <th width="15%" style="width:15%;text-align:left;">
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-bordercolor">
+                            <tr class="row">
+                                <td width="10%" style="width:10%;">
+                                    1
+                                </td>
+                                <td width="30%" style="width:30%;">
+                                    @localizer["Customer Risk"]
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    30%
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    @Model.QCustOverallRisk
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    @Model.QCustOverallScore
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    <a class="btn btn-info btn-print" href="ViewEWRAQualitativeCustomerProfileReport?id=@Model.QId">View</a>
+                                </td>
+                            </tr>
+                            <tr class="row">
+                                <td width="10%" style="width:10%;">
+                                    2
+                                </td>
+                                <td width="30%" style="width:30%;">
+                                    @localizer["Counterparty Risk"]
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    30%
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    @Model.QCounterOverallRisk
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    @Model.QCounterOverallScore
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    <a class="btn btn-info btn-print" href="ViewEWRAQualitativeCounterPartyReport?id=@Model.QId">View</a>
+                                </td>
+                            </tr>
+                            <tr class="row">
+                                <td width="10%" style="width:10%;">
+                                    3
+                                </td>
+                                <td width="30%" style="width:30%;">
+                                    @localizer["Products And Services Risk"]
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    20%
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    @Model.QProductOverallRisk
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    @Model.QProductOverallScore
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    <a class="btn btn-info btn-print" href="ViewEWRAQualitativeProductsReport?id=@Model.QId">View</a>
+                                </td>
+                            </tr>
+                            <tr class="row">
+                                <td width="10%" style="width:10%;">
+                                    4
+                                </td>
+                                <td width="30%" style="width:30%;">
+                                    @localizer["Jurisdictional Risk"]
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    15%
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    @Model.QJurisdictionOverallRisk
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    @Model.QJurisdictionOverallScore
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    <a class="btn btn-info btn-print" href="ViewEWRAQualitativeJurisdictionReport?id=@Model.QId">View</a>
+                                </td>
+                            </tr>
+                            <tr class="row">
+                                <td width="10%" style="width:10%;">
+                                    5
+                                </td>
+                                <td width="30%" style="width:30%;">
+                                    @localizer["Delivery Channel Risk"]
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    5%
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    @Model.QDeliveryOverallRisk
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    @Model.QDeliveryOverallScore
+                                </td>
+                                <td width="15%" style="width:15%;">
+                                    <a class="btn btn-info btn-print" href="ViewEWRAQualitativeDeliveryReport?id=@Model.QId">View</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+    <br />
+    <div style="width:90%;display:none;padding-left:2%;" id="footdiv">
+        <p>Computer generated report; hence no signature is required.</p>
+    </div>
+</div>
+<script type="text/javascript">
+    function printdiv(printpage) {
+        $('.btn-print').hide();
+        var headstr1 = "<html><head>";
+        var headstr2 = "<title></title></head><body class='printDiv'>";
+        var footstr = "</body>";
+        var newstr = document.all.item(printpage).innerHTML;
+        var oldstr = document.body.innerHTML;
+        document.body.innerHTML = headstr1 + headstr2 + newstr + footstr;
+        document.getElementById("logodiv").style.display = "";
+        document.getElementById("footdiv").style.display = "";
+        document.getElementById("b_print").style.display = "none";
+        window.print();
+        document.body.innerHTML = oldstr;
+        $('.btn-print').show();
+        return false;
+    }
+</script>

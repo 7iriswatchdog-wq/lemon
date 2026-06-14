@@ -1,0 +1,381 @@
+﻿@using AML.Web.Helpers;
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+
+@{
+    ViewData["Title"] = @localizer["Corporate  Bulk Upload"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+@model AML.ViewModel.ViewModels.Common.DocumentUploadModel;
+<style>
+    .risk-header {
+        text-align: center;
+    }
+
+    .risk-assessment-div {
+        margin-top: 20px;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .subcategory tr td {
+        border-top: none !important;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .row {
+        display: -ms-flexbox;
+        display: flex;
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+        margin-right: 7.5px;
+        margin-left: -7.5px;
+    }
+
+    .subcategory tr td {
+        border-top: none !important;
+        /* border-bottom: 1px solid #ddd; */
+    }
+
+    .subcategory tr td {
+        /* border-top: none !important; */
+        border-bottom: none !important;
+    }
+
+    .grid-select {
+        width: 300px !important;
+    }
+
+    .pulse-button {
+        position: relative;
+        width: 34px;
+        height: 34px;
+        border: none;
+        box-shadow: 0 0 0 0 rgba(232, 76, 61, 0.7);
+        border-radius: 50%;
+        background-color: #e84c3d;
+        background-size: cover;
+        background-repeat: no-repeat;
+        cursor: pointer;
+        -webkit-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+        -moz-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+        -ms-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+        animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+    }
+
+        .pulse-button:hover {
+            -webkit-animation: none;
+            -moz-animation: none;
+            -ms-animation: none;
+            animation: none;
+        }
+
+
+    @@-webkit-keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    @@-moz-keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    @@-ms-keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    @@keyframes pulse {
+        to {
+            box-shadow: 0 0 0 45px rgba(232, 76, 61, 0);
+        }
+    }
+
+    #container {
+        display: block;
+        position: relative
+    }
+
+    .ui-autocomplete {
+        position: absolute;
+    }
+
+    @@media print {
+        @@page {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+    }
+</style>
+<div class="sas-breadcrumbs aml-breadcrumbs pb-3">
+    <ul class="mb-0 pl-0 d-flex">
+        <li><a href="#">Home</a></li>/
+        <li><a href="#">Risk Assessment</a></li>/
+        <li><a href="#">Corporate Bulk Upload</a></li>
+    </ul>
+</div>
+<div class="page-heading">
+    <div class="sas-card rounded-card br-10 mb-2 bg-blue">
+        <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Risk Corporate Bulk Upload </h5>
+            <div class="menu-icon">
+                <i class="lni lni-microsoft"></i>
+            </div>
+    </div>
+</div>
+</div>
+<div class="sas-card rounded-card mb-2 bg-blue">
+    <form role="form" asp-controller="Risk" asp-action="RiskCorporateBulkUpload" class="form-horizontal" enctype="multipart/form-data" method="post">
+        <div class="custom_container d-flex justify-content-end align-items-center" style="gap: 10px;">
+             <div class="heading_button d-flex justify-content-end align-items-center mb-2">
+            
+               
+                    @{ if (CultureHelper.IsRighToLeft())
+                        {
+                            <a class="sas-button p-10-25 color-white top_btn_3 mr-2" onclick="location.href='@Url.Action("DownloadCustomerUploadSample", "Risk")'" title="@localizer["Sample Download"]" aria-label="@localizer["Sample Download"]"><i class="fas fa-download"></i></a>
+                        }
+                        else
+                        {<a class="sas-button p-10-25 color-white top_btn_3 mr-2" onclick="location.href='@Url.Action("DownloadCustomerUploadSample", "Risk")'" title="@localizer["Sample Download"]" aria-label="@localizer["Sample Download"]"><i class="fas fa-download"></i></a>
+                    }
+                    }
+               
+        </div>
+            <div class="row justify-content-end mb-2">
+                    <a class="sas-button p-10-25 color-white top_btn_3" onClick="printdiv('printDetails');" title="Print configured risk" aria-label="Print configured risk"><i class="fas fa-print"></i></a>
+
+                </div>
+          
+
+          
+            @*<a class=@(CultureHelper.IsRighToLeft()?"btn btn-info btn-sm float-right":"btn btn-info btn-sm float-left") onclick="DownloadSample();">@localizer["Sample Download"]</a>*@
+        </div>
+ 
+
+            <div class="row justify-content-center">
+                @*<input id="fileUpload" type="file" (change)="incomingfile($event)" accept=".xlsx" asp-for="fileUpload" />*@
+                  <div class="image_upload">
+        <div id="uploadArea" class="upload-area">
+            <!-- Header -->
+            <div class="upload-area__header">
+                <h1 class="upload-area__title">Upload your file</h1>
+                <p class="upload-area__paragraph">
+                    File should be an image
+                    <strong class="upload-area__tooltip">
+                        Like
+                        <span class="upload-area__tooltip-data"></span> <!-- Data Will be Comes From Js -->
+                    </strong>
+                </p>
+            </div>
+            <!-- End Header -->
+            <!-- Drop Zoon -->
+            <div id="dropZoon" class="upload-area__drop-zoon drop-zoon">
+                <span class="drop-zoon__icon">
+                    <img class="img_uploadsrc" src="~/img/img_upload.jpg" />
+                      <input class="file-upload d-none" type="file" (change)="incomingfile($event)" accept=".xlsx" asp-for="fileUpload" id="fileUpload" class="drop-zoon__file-input" />
+
+                </span>
+                <p class="drop-zoon__paragraph">Drop your file here or Click to browse</p>
+                
+                <span id="loadingText" class="drop-zoon__loading-text">Please Wait</span>
+                 <p id="fileName"></p>
+                <img src="" alt="Preview Image" id="previewImage" class="drop-zoon__preview-image" draggable="false">
+                @*<input type="file" id="fileInput" class="drop-zoon__file-input" accept="image/*">*@
+                <input id="fileUpload" type="file" class="drop-zoon__file-input" (change)="incomingfile($event)" accept=".xlsx" asp-for="fileUpload" />
+
+            </div>
+            <!-- End Drop Zoon -->
+            <!-- File Details -->
+            <div id="fileDetails" class="upload-area__file-details file-details">
+                <h3 class="file-details__title">Uploaded File</h3>
+
+                <div id="uploadedFile" class="uploaded-file">
+                    <div class="uploaded-file__icon-container">
+                        <i class='bx bxs-file-blank uploaded-file__icon'></i>
+                        <span class="uploaded-file__icon-text"></span> <!-- Data Will be Comes From Js -->
+                    </div>
+
+                    <div id="uploadedFileInfo" class="uploaded-file__info">
+                        <span class="uploaded-file__name">Proejct 1</span>
+                        <span class="uploaded-file__counter">0%</span>
+                    </div>
+                </div>
+            </div>
+            <!-- End File Details -->
+        </div>
+    </div>
+                <input type="hidden" asp-for="branchId" />
+                <input type="hidden" asp-for="itemId" />
+                <input type="hidden" asp-for="typeId" />
+
+                <input type="hidden" asp-for="typeId" id="typeid" />
+            </div>
+
+        <div class="row justify-content-center">
+            <input type="submit" value=@localizer["Upload"] class="sas-button p-10-25 color-white top_btn_3 bg-color-1 br-10" />
+            <button type="button" class="sas-button p-10-25 color-white top_btn_3 bg-color-3 br-10" onclick="location.href='@Url.Action("RiskCorporateBulkUpload", "Risk")'">@localizer["Cancel"]</button>
+        </div>
+
+    </form>
+</div>
+
+<div id="printDetails" style="display:none;">
+    <div class="card-primary">
+        <!-- form start -->
+        <form role="form" class="form-horizontal" enctype="multipart/form-data" method="post">
+            <div class="card card-body riskBody" id="riskBody">
+                <div>
+                    <table class="table" id="riskTable">
+
+                        <tr class="row" style="width:80%;">
+                            <td>
+                                <strong>   @localizer["Risk Type Category"] </strong>
+                            </td>
+                            <td>
+                                <strong>  @localizer["Risk Type"] </strong>
+                            </td>
+                            <td style="width:20%;">
+                                <strong>   @localizer["Risk Items"]</strong>
+                            </td>
+                        </tr>
+                      
+
+                        <tbody class="divide-y divide-bordercolor">
+                            @{
+                                int a = 0;
+                            }
+                            @for (int i = 0; i < Model.RiskTypeCategoryDTO.Count; i++)
+                            {
+                             <tr class="row">
+
+                                 <td style="width:25%;">
+                                     <br />
+                                     <br />
+                                  
+                                     @Model.RiskTypeCategoryDTO[i].RiskCategory
+                                 </td>
+                               
+                                <td style="width:75%;" class="row">
+                                    <table class=" subcategory" id="RiskSubTable" style="width:100%;">
+                                        <tbody class="divide-y divide-bordercolor">
+                                            @for (var j = 0; j < Model.RiskTypeCategoryDTO[i].RiskTypes.Count; j++)
+                                            {
+                                                <tr>
+                                                    <td style="width: 46.6%;">
+                                                        @Model.RiskTypeCategoryDTO[i].RiskTypes[j].RiskType
+
+                                                    </td>
+                                                    <td style="width: 40%;">
+
+                                                        @foreach (var item in Model.RiskTypeCategoryDTO[i].RiskTypes[j].RiskItems)
+                                                        {
+                                                            <ul>
+                                                                <li>@item.RiskItem</li>
+                                                            </ul>
+                                                        }
+                                                        <hr />
+                                                    </td>
+
+                                                </tr>
+
+                                                a = a + 1;
+
+                                            }
+
+                                        </tbody>
+                                        <hr />
+                                       
+                                    </table>
+                                </td>
+                              </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+            <!-- /.card-body -->
+
+
+        </form>
+    </div>
+</div>
+
+<script>
+    $(".img_uploadsrc").on('click', function () {
+        $(".file-upload").click();
+    });
+
+        $(".file-upload").change(function () { 
+        
+         var fileName = $(".file-upload").get(0); //getting files
+        console.log("filename");
+        console.log(fileName);
+        var get_filename = fileName.files;// getting detailed file names 
+        console.log("get_filename");
+        console.log(get_filename);
+        var getaccName = get_filename[0].name;// getting accurate name
+        console.log("getaccName");
+        console.log(getaccName);
+        $("#fileName").text(getaccName);
+        });
+
+</script>
+    <script type="text/javascript">
+        document.getElementById('textInput').value = 85;
+
+        function updateTextInput(val) {
+            document.getElementById('textInput').value = val;
+        }
+          $(".img_uploadsrc").on('click', function () {
+        $(".file-upload").click();
+    });
+        function DownloadIndividualexcel() {
+            var type = $('#typeid').val();
+            $.ajax({
+                type: "GET",
+                url: "/Risk/DownloadCustomerUploadSample",
+                data: { filename: filename },
+                success: function (data) {
+                    window.location = '/Risk/DownloadCustomerUploadSample';
+                },
+                error: function (result) {
+                    alert('error');
+                }
+            });
+        }
+       @* //function printdiv(printpage) {
+        //    var headstr1 = "<html><head>";
+        //    var headstr2 = "<title></title></head><body class='printDiv'>";
+        //    var footstr = "</body>";
+        //    var newstr = document.all.item(printpage).innerHTML;
+        //    var oldstr = document.body.innerHTML;
+        //    document.body.innerHTML = headstr1 + headstr2 + newstr + footstr;
+
+        //    window.print();
+        //    document.body.innerHTML = oldstr;
+
+        //    return false;
+        //}*@
+
+
+        function printdiv(printpage) {
+            var newstr = document.all.item(printpage).innerHTML;
+            const mywindow = window.open();
+
+            mywindow.document.write(newstr);
+            
+            mywindow.print();
+            mywindow.close();
+
+
+
+        }
+
+    </script>
+
+
+

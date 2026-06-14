@@ -1,0 +1,554 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "User Group";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+<script src="~/plugins/jquery/jquery.min.js"></script>
+@*<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>*@
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+
+    th.sortable {
+        position: relative;
+        padding-right: 20px;
+        cursor: pointer;
+    }
+
+        /* Show vertical gray arrows by default */
+        th.sortable::after {
+            content: '▲\A▼';
+            white-space: pre; /* respect \A (newline) */
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: #bbb;
+            line-height: 1;
+            text-align: center;
+        }
+
+        /* Only ▲ when sorting ascending */
+        th.sortable.active.asc::after {
+            content: '▲';
+            color: #000;
+        }
+
+        /* Only ▼ when sorting descending */
+        th.sortable.active.desc::after {
+            content: '\A▼';
+            color: #000;
+        }
+</style>
+<section class=" h-full content">
+    @*<div class="sas-breadcrumbs aml-breadcrumbs pb-3">
+        <ul class="mb-0 pl-0 d-flex">
+            <li><a href="#">Home</a></li>/
+            <li><a href="#">User Management</a></li>/
+            <li><a href="#">User Group</a></li>
+        </ul>
+    </div>
+    <div class="page-heading">
+        <div class="sas-card rounded-card br-10 mb-2 bg-blue">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><b>User Group</b></h4>
+                <div class="menu-icon">
+                    <i class="lni lni-microsoft"></i>
+                </div>
+            </div>
+        </div>
+    </div>*@
+    @* <nav class="border-b">
+        <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+            <div>
+                <h2 class="text-2xl font-bold">User Group</h2>
+            </div>
+            <div class="md:block hidden">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                User Group
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+    <div class="h-full bg-gray-50 items-center container">
+        <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4 container mx-auto">
+            <div class="sas-card rounded-card w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+                <input type="hidden" id="clientId" value="@ViewBag.ClientId" />
+                <div class="flex lg:flex-row flex-col items-center justify-between mb-6">
+                    <h6 class="text-xl font-semibold text-gray-900 mb-4">List</h6>
+                    @* <a href="@Url.Action("Create", "UserGroup")"
+                       onclick="showUserGroupLoader()"
+                       class="sas-button p-10-25 color-white top_btn_3 px-6 py-2 text-white border border-gray-300 rounded-lg bg-[#2563EB]">
+                        Add New
+                    </a> *@
+                    <div class="flex flex-col lg:flex-row md:items-center md:justify-between gap-4">
+                        <!-- Rows per page -->
+                        
+
+                        <!-- Search + Add Button -->
+                        <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                            <!-- Search -->
+                            <div class="relative w-full xl:w-96">
+                                <input id="userGroupSearchBox" type="text"
+                                       placeholder="Search"
+                                       class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <div class="flex gap-2">
+                                <a onclick="showLoader()" class="sas-button px-6 py-2 bg-surface text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center transition" href="/AdminManagement/Details/@ViewBag.ClientId">
+                                    <i class="fas fa-arrow-left mr-2"></i> Back 
+                                </a>
+                                <a onclick="showLoader()" class="sas-button px-6 py-2 text-white border border-gray-300 rounded-lg bg-[#2563EB] whitespace-nowrap flex items-center" href="/usergroup/create?clientId=@ViewBag.ClientId" type="submit">
+                                    <i class="fas fa-plus mr-2"></i> Add New
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                @* <div class="flex justify-center items-center">
+                    <div class="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-[100px] w-full max-w-6xl">
+                        <div class="flex items-center ml-8">
+                            <span class="text-sm text-gray-700">Show</span>
+                            <select id="userGroupRowsPerPage" class="h-10 ml-2 rounded-md border-gray-300 my-2 py-1 pl-3 pr-8 text-sm text-[#94A3B8]">
+                                <option value="10" selected>10 items</option>
+                                <option value="25">25 items</option>
+                                <option value="50">50 items</option>
+                                <option value="100">100 items</option>
+                            </select>
+                        </div>
+                    <div id="customerMasterTable_filter" class="dataTables_filter relative w-full sm:w-96">
+                        <input type="search" id="userGroupSearchBox" class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search anything..." aria-controls="customerMasterTable">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                </div>
+                </div> *@
+                <form>
+                    <div class="form_contents">
+
+                        <!-- Table Scroll Wrapper -->
+                        <div class="w-full overflow-x-auto rounded-lg border border-bordercolor">
+
+                            <table id="example"
+                                   class="min-w-[900px] w-full table-auto text-sm">
+
+                                <thead class="bg-[#E9EFFD] text-gray-900">
+                                    <tr>
+                                        <th class="px-6 py-4 text-left font-semibold">Code</th>
+                                        <th class="px-6 py-4 text-left font-semibold">Name</th>
+                                        <th class="px-6 py-4 text-left font-semibold">Description</th>
+                                        <th class="px-6 py-4 text-left font-semibold">Edit</th>
+                                        <th class="px-6 py-4 text-left font-semibold">User Right</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody class="divide-y divide-bordercolor"></tbody>
+
+                            </table>
+
+                        </div>
+
+
+                        <!-- Bottom Controls -->
+                        <div class="flex flex-col md:flex-row items-center justify-between gap-3 pt-4">
+
+                            <!-- Rows per page -->
+                            <div class="flex items-center gap-2 text-xs">
+                                <select id="userRowsPerPage"
+                                        class="h-9 w-16 rounded-md border border-bordercolor bg-surface px-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+
+                                <label class="text-textmuted font-medium">per page</label>
+                            </div>
+
+                            <!-- Showing text -->
+                            <div class="text-[11px] text-textmuted">
+                                Showing <span id="userTotalVisible" class="font-bold text-textprimary">0</span> users
+                            </div>
+
+                            <!-- Pagination -->
+                            <div id="userPagination" class="flex gap-1"></div>
+
+                        </div>
+
+
+                        <!-- Loader -->
+                        <div id="loadingRiskCategory2"
+                             class="fixed inset-0 bg-surface bg-opacity-75 z-50 items-center justify-center hidden">
+                            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                        </div>
+
+                    </div>
+                </form>
+                @* <form>
+                    <div class="form_contents">
+                        <div class="row overflow-x-auto">
+                            <div class="relative" style="width: 100%; padding-left: -10px;">
+                                <div class="table-responsive">
+                                    <table id="example" class="table table-striped table-hover dt-responsive display nowrap w-full table-auto rounded-t-lg overflow-x-auto" cellspacing="0">
+                                        <thead class="rounded-t-lg bg-[#E9EFFD] text-center">
+                                            <tr>
+                                                <th data-column="Code" class="sortable cursor-pointer px-6 py-4 text-left text-sm font-semibold text-gray-900">Code</th>
+                                                <th data-column="Name" class="sortable cursor-pointer px-6 py-4 text-left text-sm font-semibold text-gray-900">Name</th>
+                                                <th data-column="Description" class="sortable cursor-pointer px-6 py-4 text-left text-sm font-semibold text-gray-900">Description</th>
+                                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Edit</th> *@
+                                                @*<th>Delete</th>*@
+                                               @*  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">User Right</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-bordercolor"></tbody>
+                                    </table>
+                                </div>
+                                <div class="flex items-center justify-between pt-2 bg-appbg -mx-6 -mb-6 px-6 py-4 border-t border-bordercolor rounded-b-xl mt-4">
+                                    <div class="text-[11px] text-textmuted">
+                                        Showing <span id="userTotalVisible" class="font-bold text-textprimary">0</span> users
+                                    </div>
+                                    <div id="userPagination" class="flex gap-1"></div>
+                                </div>
+
+                                <div class="flex items-center gap-2 text-xs pt-4 justify-start">
+                                    <select id="userRowsPerPage"
+                                            class="h-8 w-16 rounded-md border border-bordercolor bg-surface px-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+
+                                    <label class="text-textmuted font-medium">per page</label>
+                                </div>
+                                 <div id="loadingRiskCategory2"
+                                      class="fixed inset-0 bg-surface bg-opacity-75 z-50 items-center justify-center hidden">
+                                    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="userGroup-pagination-controls mt-4 flex flex-col sm:flex-row justify-center gap-2"></div>
+                    </div>
+                    
+                </form> *@
+            </div>
+        </div>
+    </div>
+</section>
+@*<script type="text/javascript">
+    var table;
+    $(document).ready(function () {
+        table = $('#example').DataTable({
+            "serverSide": true,
+            "processing": true,
+              order: [[0, 'desc']],
+            ajax: {
+                url: '/usergroup/custompagination',
+                type: 'POST'
+            },
+            columns: [
+                { data: "code" },
+                { data: "name" },
+                { data: "description" },
+                {
+                    "render": function (data, type, full, meta) { return '<a class="sas-button bg-color-4 pt-2 action-icons"" href="/usergroup/edit/' + full.id + '" title="Edit"><img src="/img/edit.png" /></a>'; }
+                },
+                //{
+                //    data: null,
+                //    render: function (data, type, row) {
+                //        return "<a href='#' class='btn btn-danger' onclick=DeleteData('" + row.id + "'); >Delete</a>";
+                //    }
+                //},
+                {
+                    "render": function (data, type, full, meta) { return '<a class="sas-button bg-color-2 pt-2 action-icons" href="/UserGroup/GroupRight/' + full.id + '" title="Group Rights"><img src="/img/bin.png" /></a>'; }
+                },
+            ]
+
+        });
+    });
+    function DeleteData(id) {
+        $.ajax({
+            url: '/usergroup/delete/' + id,
+            type: 'DELETE',
+            success: function (result) {
+                table.ajax.reload();
+            }
+        });
+    }
+</script>*@
+<script>
+        let groupCurrentPage = 1;
+        let groupTotalPages = 1;
+        let groupPageSize = 10;
+        let sortColumnGroup = 'Code';
+        let sortDirectionGroup = 'asc';
+        $(document).ready(function () {
+            showUserGroupLoader2();
+            fetchGroupData();
+        });
+
+        $('#userGroupRowsPerPage').on('change', function () {
+            groupPageSize = parseInt($(this).val()) || 10;
+            groupCurrentPage = 1;
+            showUserGroupLoader(); // SHOW loader
+            fetchGroupData();
+        });
+
+        $('#userGroupSearchBox').on('input', function () {
+            groupCurrentPage = 1;
+            showUserGroupLoader2(); // SHOW loader
+            fetchGroupData();
+        });
+
+        $('.userGroup-pagination-controls').on('click', 'button', function () {
+            const pg = parseInt($(this).data('page'));
+            if (!isNaN(pg) && pg >= 1 && pg <= groupTotalPages) {
+                groupCurrentPage = pg;
+                showUserGroupLoader2(); // SHOW loader
+                fetchGroupData();
+            }
+        });
+        $('#example thead').on('click', 'th', function () {
+            const index = $(this).index();
+            if (index > 2) return; // Sort only first 3 columns
+
+            const columnNames = ['Code', 'Name', 'Description'];
+            const selectedColumn = columnNames[index];
+
+            if (sortColumnGroup === selectedColumn) {
+                sortDirectionGroup = sortDirectionGroup === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumnGroup = selectedColumn;
+                sortDirectionGroup = 'asc';
+            }
+
+            // Update visual indicators
+            $('#example thead th').removeClass('active asc desc');
+            $(this).addClass(`active ${sortDirectionGroup}`);
+
+            groupCurrentPage = 1;
+            showUserGroupLoader2();
+            fetchGroupData();
+        });
+        const columnIndexMap = {
+            'Code': 0,
+            'Name': 1,
+            'Description': 2
+        };
+        function fetchGroupData() {
+            const searchValue = $('#userGroupSearchBox').val() || '';
+            const start = (groupCurrentPage - 1) * groupPageSize;
+            const clientId = $('#clientId').val() || 0;
+
+            const formData = {
+                draw: 1,
+                start: start,
+                length: groupPageSize,
+                'search.value': searchValue,
+                'order[0].column': columnIndexMap[sortColumnGroup],
+                'order[0].dir': sortDirectionGroup.toLowerCase(),
+                'columns[0].data': 'Code',
+                'columns[1].data': 'Name',
+                'columns[2].data': 'Description',
+                Id: clientId
+            };
+
+            $.ajax({
+                url: '/usergroup/custompagination',
+                type: 'POST',
+                dataType: 'json',
+                data: formData,
+                success: function (resp) {
+                    const rows = resp.data || [];
+                    const totalRecords = resp.recordsFiltered || 0;
+                    groupTotalPages = Math.max(1, Math.ceil(totalRecords / groupPageSize));
+                    renderGroupTable(rows);
+                    renderGroupPager();
+                    hideUserGroupLoader();
+                    hideUserGroupLoader2();
+                },
+                error: function (xhr) {
+                    console.error('UserGroup table error:', xhr.statusText);
+                }
+            });
+        }
+
+        function renderGroupTable(rows) {
+            const $tbody = $('#example tbody');
+            $tbody.empty();
+
+            if (!rows.length) {
+                $tbody.append(`<tr><td colspan="5" class="text-center">No records found</td></tr>`);
+                return;
+            }
+
+            rows.forEach(row => {
+                const html = `
+                    <tr>
+                        <td class="px-6 py-4 text-left text-sm text-gray-900">${row.code}</td>
+                        <td class="px-6 py-4 text-left text-sm text-gray-900">${row.name}</td>
+                        <td class="px-6 py-4 text-left text-sm text-gray-900">${row.description}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">
+                            <a class="sas-button bg-color-4 pt-2 action-icons" href="/usergroup/edit/${row.id}" onclick="showUserGroupLoader()">
+                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M4.16536 16.667H15.832C16.053 16.667 16.265 16.7548 16.4213 16.9111C16.5776 17.0673 16.6654 17.2793 16.6654 17.5003C16.6654 17.7213 16.5776 17.9333 16.4213 18.0896C16.265 18.2459 16.053 18.3337 15.832 18.3337H4.16536C3.94435 18.3337 3.73239 18.2459 3.57611 18.0896C3.41983 17.9333 3.33203 17.7213 3.33203 17.5003C3.33203 17.2793 3.41983 17.0673 3.57611 16.9111C3.73239 16.7548 3.94435 16.667 4.16536 16.667ZM3.33203 12.5003L11.6654 4.16699L14.1654 6.66699L5.83203 15.0003H3.33203V12.5003ZM12.4987 3.33366L14.1654 1.66699L16.6654 4.16699L14.9979 5.83449L12.4987 3.33366Z" fill="#64748B"/>
+    </svg>
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">
+                            <a class="sas-button bg-color-4 pt-2 action-icons" href="/UserGroup/GroupRight/${row.id}" onclick="showUserGroupLoader()">
+                                <img class="w-8 h-8" src="/img/userright.png" />
+                            </a>
+                        </td>
+                    </tr>`;
+                $tbody.append(html);
+            });
+        }
+
+        function renderGroupPager() {
+            const $pager = $('.userGroup-pagination-controls').empty();
+            if (groupTotalPages <= 1) return;
+
+            const btn = (label, pg, disabled, active = false) =>
+                `<button class="px-3 py-1 border rounded ${active ? 'bg-primary text-white' : 'bg-surface text-primary'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}" data-page="${pg}" ${disabled ? 'disabled' : ''}>${label}</button>`;
+
+            $pager.append(btn('First', 1, groupCurrentPage === 1));
+            $pager.append(btn('Prev', groupCurrentPage - 1, groupCurrentPage === 1));
+
+            const maxVisible = 5;
+            let start = Math.max(1, groupCurrentPage - Math.floor(maxVisible / 2));
+            let end = Math.min(groupTotalPages, start + maxVisible - 1);
+            if (end - start < maxVisible) start = Math.max(1, end - maxVisible + 1);
+
+            for (let i = start; i <= end; i++) {
+                $pager.append(btn(i, i, false, i === groupCurrentPage));
+            }
+
+            $pager.append(btn('Next', groupCurrentPage + 1, groupCurrentPage === groupTotalPages));
+            $pager.append(btn('Last', groupTotalPages, groupCurrentPage === groupTotalPages));
+        }
+
+        function DeleteData(id) {
+            if (confirm("Are you sure you want to delete this group?")) {
+                $.ajax({
+                    url: '/usergroup/delete/' + id,
+                    type: 'DELETE',
+                    success: function () {
+                        fetchGroupData();
+                    }
+                });
+            }
+        }
+        function showUserGroupLoader() {
+            $('#loadingRiskCategory').removeClass('hidden').addClass('flex');
+        }
+
+        function hideUserGroupLoader() {
+            $('#loadingRiskCategory').addClass('hidden').removeClass('flex');
+        }
+        function showUserGroupLoader2() {
+            $('#loadingRiskCategory2').removeClass('hidden').addClass('flex');
+        }
+        function hideUserGroupLoader2() {
+            $('#loadingRiskCategory2').addClass('hidden').removeClass('flex');
+        }
+</script>
+

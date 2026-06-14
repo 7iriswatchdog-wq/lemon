@@ -1,0 +1,161 @@
+@using AML.ViewModel.ViewModels.Common
+@using Microsoft.AspNetCore.Http
+@model List<AML.ViewModel.ViewModels.Common.ClientMaster>
+@functions {
+    public bool ShowColumn(string colId)
+    {
+        var selectedColumns = ViewBag.SelectedColumns as string;
+        if (string.IsNullOrEmpty(selectedColumns)) return true;
+        return selectedColumns.Split(',').Contains(colId);
+    }
+}
+@{
+    Layout = null;
+    var companyName = Context.Session.GetString("SessCompanyName") ?? "AML Systems";
+    var auditDate = DateTime.UtcNow.AddHours(4).ToString("dd MMM yyyy, HH:mm") + " GST";
+    var orientation = ViewBag.Orientation as string ?? "portrait";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Management Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @@media print {
+            .no-print { display: none !important; }
+            tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 text-[10px] p-8">
+    <div id="pdf-container" class="max-w-[@(orientation == "landscape" ? "1280px" : "1024px")] mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+        <!-- Header -->
+        <div class="flex justify-between items-start border-b border-slate-200 pb-6 mb-8">
+            <div>
+                <h1 class="text-2xl font-black tracking-tight text-slate-900 uppercase">Admin Management Report</h1>
+                <p class="text-slate-500 font-medium mt-1 uppercase tracking-widest text-[8px]">Client and License Administration</p>
+                <div class="mt-4 text-[8px] text-slate-400 space-y-0.5 font-bold uppercase tracking-tight">
+                    <p>Extraction Date: @auditDate</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Company</div>
+                <div class="text-lg font-black text-blue-600">@companyName</div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b-2 border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[8px]">
+                        @if (ShowColumn("clientId")) { <th class="px-3 py-4">Client ID</th> }
+                        @if (ShowColumn("clientName")) { <th class="px-3 py-4">Client Name</th> }
+                        @if (ShowColumn("prefix")) { <th class="px-3 py-4">Prefix</th> }
+                        @if (ShowColumn("userCount")) { <th class="px-3 py-4 text-center">Users</th> }
+                        @if (ShowColumn("searchCount")) { <th class="px-3 py-4 text-center">Limit</th> }
+                        @if (ShowColumn("totalUsageCount")) { <th class="px-3 py-4 text-center">Usage</th> }
+                        @if (ShowColumn("applicationEndDate")) { <th class="px-3 py-4">Expiry Date</th> }
+                        @if (ShowColumn("status")) { <th class="px-3 py-4">Status</th> }
+                        @if (ShowColumn("isActive")) { <th class="px-3 py-4">Blocked</th> }
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @{
+                        var clients = Model as List<AML.ViewModel.ViewModels.Common.ClientMaster>;
+                    }
+                    @if (clients != null && clients.Any())
+                    {
+                        foreach (var item in clients)
+                        {
+                            var isExpired = item.ApplicationEndDate.HasValue && item.ApplicationEndDate.Value.Date < DateTime.Now.Date;
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                @if (ShowColumn("clientId")) { <td class="px-6 py-4 font-medium text-slate-600 border-l-2 border-slate-100 uppercase text-center">@item.ClientId</td> }
+                                @if (ShowColumn("clientName"))
+                                {
+                                    <td class="px-6 py-4">
+                                        <span class="text-blue-600 font-bold">@item.ClientName</span>
+                                    </td>
+                                }
+                                @if (ShowColumn("prefix")) { <td class="px-6 py-4 text-slate-600 text-center">@(item.Prefix ?? "-")</td> }
+                                @if (ShowColumn("userCount")) { <td class="px-6 py-4 text-center text-slate-600 font-medium">@item.UserCount</td> }
+                                @if (ShowColumn("searchCount")) { <td class="px-6 py-4 text-center text-slate-600 font-medium">@item.SearchCount</td> }
+                                @if (ShowColumn("totalUsageCount")) { <td class="px-6 py-4 text-center text-slate-600 font-medium">@item.TotalUsageCount</td> }
+                                @if (ShowColumn("applicationEndDate")) { <td class="px-6 py-4 text-slate-600 text-center">@(item.ApplicationEndDate?.ToString("dd/MM/yyyy") ?? "-")</td> }
+                                @if (ShowColumn("status"))
+                                {
+                                    <td class="px-6 py-4 text-center">
+                                        @if (isExpired)
+                                        {
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-[9px] font-medium bg-amber-100 text-amber-700">
+                                                <span class="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5"></span>
+                                                Expired
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-[9px] font-medium bg-green-100 text-green-700">
+                                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span>
+                                                Active
+                                            </span>
+                                        }
+                                    </td>
+                                }
+                                @if (ShowColumn("isActive"))
+                                {
+                                    <td class="px-6 py-4 text-center">
+                                        @if (item.isActive == 0)
+                                        {
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[9px] font-bold bg-red-50 text-red-600 border border-red-100 uppercase tracking-tight">
+                                                Yes
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[9px] font-bold bg-green-50 text-green-600 border border-green-100 uppercase tracking-tight">
+                                                No
+                                            </span>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9" class="px-3 py-12 text-center text-slate-400 italic font-medium border-l-2 border-slate-100">No client records found.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-12 pt-6 border-t border-slate-100 text-center text-slate-400">
+            <p class="text-[8px] font-black tracking-widest uppercase">
+                CONFIDENTIAL AUDIT LOG - @companyName &copy; @DateTime.Now.Year
+                <br />
+                Computer generated report; hence no signature is required.
+            </p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="/js/pdf-export.js"></script>
+    <script>
+        window.onload = function() {
+            setTimeout(() => {
+                downloadPageAsPDF('#pdf-container', 'Admin_Report_@DateTime.Now.ToString("yyyyMMdd")' + '.pdf', '@orientation');
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

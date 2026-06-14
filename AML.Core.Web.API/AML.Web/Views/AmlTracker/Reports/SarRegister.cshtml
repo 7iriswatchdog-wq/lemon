@@ -1,0 +1,62 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@using System.Collections.Generic
+@model List<SarRegisterRow>
+@{
+    ViewData["Title"] = "SAR Filing Register";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "SAR / STR Filing Register";
+    ViewData["ReportSubtitle"] = "All SAR-linked cases with status and deadline. Overdue rows highlighted.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    string Pill(string s)
+    {
+        var cls = s switch
+        {
+            "Filed" => "bg-emerald-100 text-emerald-800",
+            "Drafted" => "bg-amber-100 text-amber-800",
+            "Required" => "bg-rose-100 text-rose-800",
+            _ => "bg-slate-100 text-slate-700"
+        };
+        return $"<span class=\"px-2 py-0.5 text-xs rounded-full {cls}\">{s}</span>";
+    }
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1300px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden mt-3">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left">
+                        <th class="px-3 py-2">Case</th>
+                        <th class="px-3 py-2">Customer</th>
+                        <th class="px-3 py-2">SAR Status</th>
+                        <th class="px-3 py-2">Reference</th>
+                        <th class="px-3 py-2">Deadline</th>
+                        <th class="px-3 py-2 text-right">Days to Deadline</th>
+                        <th class="px-3 py-2">Filed On</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="7" class="px-3 py-12 text-center text-slate-500">No SAR-linked cases yet.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var r in Model)
+                        {
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 @(r.Overdue ? "bg-rose-50/40" : "")">
+                                <td class="px-3 py-2 font-mono text-xs"><a href="/Case/Process/@r.CaseId" class="text-blue-600 hover:underline">@r.CaseId</a></td>
+                                <td class="px-3 py-2">@r.CustomerName</td>
+                                <td class="px-3 py-2">@Html.Raw(Pill(r.SarStatus ?? ""))</td>
+                                <td class="px-3 py-2 font-mono text-xs">@r.SarReference</td>
+                                <td class="px-3 py-2">@(r.FilingDeadline?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                <td class="px-3 py-2 text-right @(r.Overdue ? "text-rose-700 font-bold" : "")">@(r.DaysToDeadline?.ToString() ?? "—")</td>
+                                <td class="px-3 py-2 text-slate-600">@(r.FiledOn?.ToString("yyyy-MM-dd") ?? "—")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,103 @@
+@using Microsoft.AspNetCore.Http
+@{
+    var companyName = Context.Session.GetString("SessCompanyName") ?? "AML Systems";
+    var reportTitle = ViewData["Title"] ?? "Compliance Report";
+    var orientation = ViewData["Orientation"] as string ?? "portrait";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@reportTitle</title>
+    <!-- Use standard fonts for better PDF support -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0;
+            padding: 20px;
+            background-color: #ffffff;
+            color: #111827;
+        }
+        .pdf-container {
+            width: @(orientation == "landscape" ? "1000px" : "800px");
+            margin: 0 auto;
+        }
+        .header {
+            border-bottom: 2px solid #E5E7EB;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header-title {
+            font-size: 24px;
+            font-weight: 900;
+            color: #111827;
+            margin: 0;
+        }
+        .header-date {
+            font-size: 12px;
+            color: #6B7280;
+            margin-top: 5px;
+        }
+        .company-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2563EB;
+            float: right;
+            margin-top: -35px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 1px solid #E5E7EB;
+            text-align: center;
+            font-size: 10px;
+            color: #9CA3AF;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 20px;
+        }
+        th {
+            background-color: #F9FAFB;
+            color: #374151;
+            font-weight: bold;
+            text-align: left;
+            padding: 8px;
+            border-bottom: 2px solid #E5E7EB;
+        }
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #F3F4F6;
+            color: #4B5563;
+        }
+        .status-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="pdf-container">
+        <!-- Centralized Header -->
+        <div class="header">
+            <h1 class="header-title">@reportTitle</h1>
+            <div class="header-date">Generated on @DateTime.Now.ToString("dd MMM yyyy, HH:mm:ss")</div>
+            <div class="company-name">@companyName</div>
+        </div>
+
+        <!-- Render Specific Report Content Here -->
+        @RenderBody()
+
+        <!-- Centralized Footer -->
+        <div class="footer">
+            Confidential Report - @companyName &copy; @DateTime.Now.Year. This document was generated automatically by the AML Compliance Platform.
+        </div>
+    </div>
+</body>
+</html>

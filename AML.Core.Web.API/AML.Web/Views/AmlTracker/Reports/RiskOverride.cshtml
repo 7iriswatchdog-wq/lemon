@@ -1,0 +1,63 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@using System.Collections.Generic
+@model List<RiskOverrideRow>
+@{
+    ViewData["Title"] = "Risk Override Audit";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "Risk Override Audit";
+    ViewData["ReportSubtitle"] = $"All risk-score overrides in the last {ViewBag.Days} days. Regulator-relevant.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="flex gap-2 my-3">
+            <a href="?days=30" class="px-3 py-1.5 text-xs border rounded @(ViewBag.Days == 30 ? "bg-blue-50 border-blue-300" : "border-slate-300")">30d</a>
+            <a href="?days=90" class="px-3 py-1.5 text-xs border rounded @(ViewBag.Days == 90 ? "bg-blue-50 border-blue-300" : "border-slate-300")">90d</a>
+            <a href="?days=365" class="px-3 py-1.5 text-xs border rounded @(ViewBag.Days == 365 ? "bg-blue-50 border-blue-300" : "border-slate-300")">1y</a>
+            <a href="?days=3650" class="px-3 py-1.5 text-xs border rounded @(ViewBag.Days == 3650 ? "bg-blue-50 border-blue-300" : "border-slate-300")">All</a>
+            <span class="ml-auto text-sm text-slate-600">@Model.Count records</span>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left">
+                        <th class="px-3 py-2">Customer</th>
+                        <th class="px-3 py-2">Assessment Date</th>
+                        <th class="px-3 py-2">Risk Before</th>
+                        <th class="px-3 py-2">Risk After</th>
+                        <th class="px-3 py-2">Override Reason</th>
+                        <th class="px-3 py-2">Comments</th>
+                        <th class="px-3 py-2">Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="7" class="px-3 py-12 text-center text-slate-500">No overrides in this window.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var r in Model)
+                        {
+                            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                <td class="px-3 py-2">
+                                    <div class="font-medium">@r.CustomerName</div>
+                                    <div class="text-xs text-slate-500 font-mono">@r.CustomerCode</div>
+                                </td>
+                                <td class="px-3 py-2 text-slate-600">@(r.AssessmentDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                                <td class="px-3 py-2">@r.RiskBefore</td>
+                                <td class="px-3 py-2 font-semibold">@r.RiskAfter</td>
+                                <td class="px-3 py-2 text-slate-700">@r.OverrideReason</td>
+                                <td class="px-3 py-2 text-xs text-slate-600">@r.Comments</td>
+                                <td class="px-3 py-2 font-mono text-xs">v@(r.AssessmentVersion?.ToString() ?? "—")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

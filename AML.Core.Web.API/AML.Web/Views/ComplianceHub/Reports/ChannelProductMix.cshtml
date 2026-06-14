@@ -1,0 +1,79 @@
+@using AML.ViewModel.ViewModels.ComplianceHub
+@using System.Linq
+@model ChannelProductMixVM
+@{
+    ViewData["Title"] = "Channel & Product Mix";
+    ViewData["ReportTitle"] = "Channel & Product Risk Mix";
+    ViewData["ReportSubtitle"] = "Customer book sliced across delivery channel, payment mode and product, coloured by risk band.";
+    ViewData["Theme"] = "Geography";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+    var bands = new[] { "High", "Medium", "Low", "Unrated" };
+    string BandColor(string b) => b switch { "High" => "#dc2626", "Medium" => "#f59e0b", "Low" => "#10b981", _ => "#94a3b8" };
+}
+
+<style>
+    .stack-row { display:grid; grid-template-columns: 200px 1fr 60px; gap:14px; align-items:center; padding:8px 0; }
+    .stack-row + .stack-row { border-top:1px solid #f1f5f9; }
+    .stack-bar { height:22px; background:#f1f5f9; border-radius:4px; display:flex; overflow:hidden; }
+    .stack-bar > span { display:block; height:100%; font-size:10px; color:#fff; font-weight:700; display:flex; align-items:center; justify-content:center; }
+    .legend-pill { display:inline-flex; align-items:center; gap:5px; font-size:12px; padding:2px 10px; border-radius:9999px; font-weight:600; }
+    .legend-dot { width:10px; height:10px; border-radius:50%; }
+</style>
+
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="_ReportShell" />
+
+        <div class="bg-white border border-slate-200 rounded-xl p-5 mb-4">
+            <div class="flex flex-wrap gap-2 mb-3">
+                <span class="legend-pill" style="background:#fee2e2;color:#991b1b;"><span class="legend-dot" style="background:#dc2626;"></span>High</span>
+                <span class="legend-pill" style="background:#fef3c7;color:#92400e;"><span class="legend-dot" style="background:#f59e0b;"></span>Medium</span>
+                <span class="legend-pill" style="background:#d1fae5;color:#065f46;"><span class="legend-dot" style="background:#10b981;"></span>Low</span>
+                <span class="legend-pill" style="background:#f1f5f9;color:#475569;"><span class="legend-dot" style="background:#94a3b8;"></span>Unrated</span>
+            </div>
+        </div>
+
+        @{
+            void RenderDimension(string title, List<ChannelMixCell> cells)
+            {
+                <div class="bg-white border border-slate-200 rounded-xl p-5 mb-4">
+                    <div class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">@title</div>
+                    @{
+                        var byBucket = cells.GroupBy(c => c.Bucket).Select(g => new {
+                            Name = g.Key, Total = g.Sum(c => c.Count),
+                            Counts = bands.ToDictionary(b => b, b => g.Where(c => c.RiskBand == b).Sum(c => c.Count))
+                        }).OrderByDescending(g => g.Total).ToList();
+                    }
+                    @if (!byBucket.Any())
+                    {
+                        <div class="py-8 text-center text-slate-500 text-sm">No data.</div>
+                    }
+                    else
+                    {
+                        foreach (var b in byBucket)
+                        {
+                            <div class="stack-row">
+                                <div class="font-semibold text-slate-800 text-sm truncate">@b.Name</div>
+                                <div class="stack-bar">
+                                    @foreach (var band in bands)
+                                    {
+                                        var n = b.Counts[band];
+                                        if (n == 0) continue;
+                                        var pct = b.Total == 0 ? 0 : Math.Max(8, n * 100 / b.Total);
+                                        <span style="width:@(pct)%; background:@BandColor(band);" title="@band: @n">@n</span>
+                                    }
+                                </div>
+                                <div class="text-right font-bold text-slate-700">@b.Total</div>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+        }
+
+        @{ RenderDimension("Delivery channel", Model.ChannelByRisk); }
+        @{ RenderDimension("Mode of payment", Model.PaymentByRisk); }
+        @{ RenderDimension("Product",         Model.ProductByRisk); }
+    </div>
+</section>

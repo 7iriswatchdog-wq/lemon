@@ -1,0 +1,84 @@
+<div class="space-y-4">
+    <div class="grid grid-cols-3 gap-4">
+        <!-- Name & Relationship -->
+        <div class="col-span-2">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Name of Corporate Related Parties <span class="text-rose-500">*</span></label>
+            <div class="flex gap-2 mt-1">
+                <input type="text" class="h-11 flex-1 bg-white border border-slate-200 rounded-xl px-4 text-[13px] font-medium outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all" 
+                       :class="{ 'border-rose-500': errors.includes('name') }" 
+                       x-model="formData.name" @@input="updateActiveNodeLabel()" placeholder="Enter name">
+                <button type="button" @@click="checkDuplicates(selectedNode.id)" 
+                        class="w-11 h-11 bg-slate-900 text-white rounded-xl flex items-center justify-center hover:bg-black transition-all active:scale-95 shadow-sm border border-slate-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 28 24" stroke="currentColor" stroke-width="2">
+                        <circle cx="8" cy="10" r="4"></circle>
+                        <line x1="11" y1="13" x2="13.5" y2="15.5" stroke-linecap="round"></line>
+                        <circle cx="18" cy="10" r="4"></circle>
+                        <line x1="21" y1="13" x2="23.5" y2="15.5" stroke-linecap="round"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="col-span-1" x-show="edges.get().filter(e => e.to.toString() === selectedNode?.id?.toString()).length <= 1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Relationship</label>
+            <select class="w-full h-11 mt-1 bg-white border border-slate-200 rounded-xl px-4 text-[13px] font-medium outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all" 
+                    x-model="formData.designation">
+                <option value="">Select</option>
+                <option value="parent">Parent</option>
+                <option value="subsidiary">Subsidiary</option>
+                <option value="associate">Associate</option>
+                <option value="others">Others</option>
+            </select>
+        </div>
+
+        <!-- Incorporation, Residence, Trade License No -->
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Country of Incorporation</label>
+            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.nationality">
+                <option value="">Select</option>
+                <template x-for="nat in studioLists.Nationalities">
+                    <option :value="nat.Value || nat.value" x-text="nat.Text || nat.text"></option>
+                </template>
+            </select>
+        </div>
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Residence Country</label>
+            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.residence">
+                <option value="">Select</option>
+                <template x-for="nat in studioLists.Nationalities">
+                    <option :value="nat.Value || nat.value" x-text="nat.Text || nat.text"></option>
+                </template>
+            </select>
+        </div>
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Trade Licence Number</label>
+            <input type="text" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.tradeLicence" placeholder="Enter number">
+        </div>
+
+        <!-- Trade License Authority, Reg Date, Expiry Date -->
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Trade Licence Authority</label>
+            <select class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.tradeLicenseAuthority">
+                <option value="">Select</option>
+                <template x-for="ra in studioLists.TradeLicenseAuthority">
+                    <option :value="ra.Value || ra.value" x-text="ra.Text || ra.text"></option>
+                </template>
+            </select>
+        </div>
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Date of Registration</label>
+            <input type="text" id="reg-date-picker-corp-rp" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] cursor-pointer outline-none" 
+                   x-model="formData.registrationDate" placeholder="DD/MM/YYYY" readonly>
+        </div>
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Date of Expiry</label>
+            <input type="text" id="expiry-date-picker-corp-rp" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] cursor-pointer outline-none" 
+                   x-model="formData.expiryDate" placeholder="DD/MM/YYYY" readonly>
+        </div>
+
+        <!-- CIF, Documents -->
+        <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-600 ml-1">Customer CIF No</label>
+            <input type="text" class="w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-[13px] outline-none" x-model="formData.cif" placeholder="Enter CIF No">
+        </div>
+    </div>
+</div>

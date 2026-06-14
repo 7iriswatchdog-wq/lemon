@@ -1,0 +1,509 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    //ViewData["Title"] = localizer["TransactionCase Details"];
+
+    // ViewData["Title"] =<h2>@localizer["Transaction Reference No"]: @(Model.RefNo)</h2>
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+}
+@model AML.ViewModel.ViewModels.TransactionScreening.TransactionCaseProcessReportModel
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<div id="printDetails" style="width:100%">
+    <br />
+    <div style="width:100%;display:none" id="logodiv">
+        <div style="width:98%;text-align:center;">
+            <h2>@companyName</h2>
+            <img src="~/img/brand-logo.svg" style="width:8%;float:right;" />
+        </div>
+        @*<div style="float:right;width:20%;padding-left:2%;padding-top:5%">
+                <img src="~/img/brand-logo.svg" style="width:35%" />
+            </div>*@
+        <br />
+        <br />
+    </div><br />
+
+    <div class="row">
+        <div class="col-10">
+            <h2>@localizer["Transaction Reference No"]: @(Model.RefNo)</h2>
+
+        </div>
+        <div class="col-2" ; id="printBtnDiv">
+            <input name="b_print" type="button" onClick="printdiv('printDetails');" value=" Print " style="float:right;margin:20px;width:100px;"><br />
+        </div>
+
+    </div>
+
+    <hr />
+
+    @foreach (var item1 in @Model.Case)
+    {
+        <div class="card card-primary">
+            <div class="px-6 py-4 border-b border-bordercolor">
+                <div class="row">
+                    @{ Console.WriteLine(Model); }
+                    <div class="col"><b>@localizer["Case"]:</b> @(item1.id)</div>
+                    @* <h2>@localizer["Case"]: @item1.id</h2>
+                    *@
+                    <div class="col"><b>@localizer["Status"]:</b> @(Convert.ToString((AML.Core.DataContract.Enum.TranCaseStatus)item1.Status))</div>
+
+                    <div class="col"><b>@localizer["Check Threshold"]:</b> @(item1.Threshold)</div>
+                </div>
+            </div>
+            <input id="hdnStatus" type="hidden" name="CaseId" value="@(item1.Status)" />
+            <!-- /.card-header -->
+            <!-- form start -->
+
+
+            <form role="form" id="frmDocument" class="form-horizontal" enctype="multipart/form-data" method="post">
+                <input id="hdnCaseId" type="hidden" name="CaseId" value="@item1.id" />
+                <div class="p-6">
+
+                    <div class="row">
+
+                        <div class="col"><b>@localizer["Fullname"]:</b> @(item1.Name)</div>
+                        <div class="col"><b>@localizer["Customer Id"]:</b> @(item1.CustRefNo)</div>
+
+
+
+                        <!--<div class="col"><b>Status:</b> @((item1.IsWhiteListed=="YES") ? (Convert.ToString((AML.Core.DataContract.Enum.TranCaseStatus)item1.Status)+"(Whitelisted)") : Convert.ToString((AML.Core.DataContract.Enum.TranCaseStatus)item1.Status))</div>-->
+                        <!--<div class="col"><b>Status:</b> @(Convert.ToString((AML.Core.DataContract.Enum.TranCaseStatus)item1.Status))</div>-->
+                        @{
+                            if (item1.IsWhiteListed == "YES")
+                            {
+                                <div class="col"><b>@localizer["Status"]:</b>@(Convert.ToString((AML.Core.DataContract.Enum.TranCaseStatus)item1.Status))(Whitelisted)</div>
+                            }
+
+                            else
+                            {
+                                <div class="col"><b>@localizer["Status"]:</b> @(Convert.ToString((AML.Core.DataContract.Enum.TranCaseStatus)item1.Status))</div>
+                            }
+                        }
+
+                    </div>
+                    <div class="row">
+
+                        <div class="col"><b>@localizer["Match score"]:</b> @(item1.MatchScore)%</div>
+                        <div class="col"><b>@localizer["Source"]:</b> @(item1.Source)</div>
+                        <div class="col"><b>@localizer["Source Id"]:</b> @(item1.SourceUniqueId)</div>
+
+                    </div>
+                    <hr />
+                    <div class="row" style="display:none;">
+                        <div class="col-4">
+                            <div class="form-group">
+                                <label>@localizer["Document Categories"]</label>
+                                <select id="ddlCategories" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" name="DocumentCategory" asp-items="Model.DocumentCategories">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-group">
+                                <label>@localizer["Document Types"]</label>
+                                <select id="ddlType" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" name="DocumentType" asp-items="Model.DocumentTypes">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    @foreach (var item in @Model.CaseDocuments)
+                    {
+                        @if (item1.id == item.CaseId)
+                        {
+                            <div class="row">
+                                <div class="col-4">
+                                    <div class="form-group">
+                                        <label for="txDocNo">@localizer["Document No"]</label>
+                                        <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtDocNo" asp-for="@item.DocumentName" readonly name="DocumentName" placeholder=@localizer["Document No"]>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="form-group">
+                                        <label for="txIssuedDate">@localizer["Issued Date"]</label>
+                                        <input type="date" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtIssuedDate" asp-for="@item.CreatedOnDB" readonly name="IssuedDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder=@localizer["Document Issued Date"]>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="form-group">
+                                        <label for="txtExpiryDate">@localizer["Expiry Date"]</label>
+
+                                        <input type="date" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtExpiryDate" asp-for="@item.IssuedDateOnDB" readonly name="ExpiryDate" min="@(DateTime.Now.ToString("yyyy-MM-dd"))" max="4444-12-31" placeholder=@localizer["Document Expiry Date"]>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="txtDetails">@localizer["Document Details"]</label>
+                                        <textarea rows="3" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtDetails" name="DocumentDetails" placeholder=@localizer["Document Details"] readonly>@item.DocumentDetails</textarea>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="txtRemarks">@localizer["Remarks"]</label>
+                                        <textarea rows="3" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtRemarks" name="Remarks" placeholder=@localizer["Remarks"] readonly>@item.Remarks </textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr />
+                            <div class="row">
+                                <div class="col-2">
+
+                                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#docModal">
+                                        @localizer["View Uploaded Documents"]
+                                    </button>
+                                </div>
+                            </div>
+                            //Modal
+                            <div class="modal fade" id="docModal" tabindex="-1" role="dialog" aria-labelledby="docModalLabel" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="docModalLabel">Documents</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <ul>
+                                                @foreach (var items in Model.CaseDocuments)
+                                                {
+                                                    <li><a href="" onclick="DownloadDocument( '@items.DocumentFullPath', '@items.DocumentFileName');" target="_self" download>@items.DocumentName - @item.DocumentFileName</a></li>
+
+                                                }
+                                            </ul>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    @*@if (@Model.CaseDocuments.Count() != 0)
+                          {
+                           <div class="row">
+                           <div class="col-2">
+
+                               <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#docModal">
+                                   @localizer["View Uploaded Documents"]
+                               </button>
+                           </div>
+                           </div>
+                        }*@
+
+                </div>
+
+                <form role="form" id="frmCmment" class="form-horizontal" enctype="multipart/form-data" method="post">
+
+                    <div class="p-6" id="caseCmmnt" style="overflow: scroll;overflow-x:hidden; height:auto; max-height: 400px; ">
+                        <h3>@localizer["Case Comments"]</h3>
+
+                        <div class="col-md-12">
+                            @*//  The time line*@
+
+                            <div id="Comments">
+                                @*   //    Timeline time label*@
+                                <div class="time-label">
+                                    @* //   <span class="bg-red">10 Feb. 2014</span>*@
+                                </div>
+                                @*//  Timeline-label*@
+                                <div class="comment-section timeline">
+                                </div>
+                            </div>
+                            <div id="nocomment"><label>No comments yet</label></div>
+                        </div>
+                    </div>
+                    <br />
+
+                </form>
+
+
+                <div class="p-6" style="display:none;">
+                    <h3>@localizer["Case Action"]</h3>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="txtDescription">@localizer["Remarks"]</label>
+                                <textarea rows="3" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtCaseActionRemarks" name="Comment" placeholder=@localizer["Remarks"] readonly>@item1.Comments</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <div class="p-6">
+
+                <h3>API Result</h3>
+                @{ var results = @Model.MatchDataList.FindAll(c => c.CASEID == Convert.ToString(item1.id));}
+                @if (results.Count != 0)
+                {
+                    @foreach (var item in @Model.MatchDataList.Where(c => c.CASEID == Convert.ToString(item1.id)))
+                    {
+                        if (item.MATCHRECORDS.Count != 0)
+                        {
+                            <div class="table-responsive">
+                                <table id="APITable" class="w-full text-sm text-left" cellspacing="0">
+                                    <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                                        <tr>
+                                            <th>Source ID</th>
+                                            <th>Type</th>
+                                            <th>Category</th>
+                                            <th>Name</th>
+                                            <th>Score</th>
+                                            <th>Nationality</th>
+                                            <th>DOB</th>
+                                            <th>@localizer["Remarks"]</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody class="divide-y divide-bordercolor">
+                                        @foreach (var matchdet in item.MATCHRECORDS)
+                                        {
+                                            <tr>
+                                                <td>@matchdet.matchuid</td>
+                                                <td>@matchdet.matchtype</td>
+                                                <td>@matchdet.matchcategory</td>
+                                                <td>@matchdet.matchname</td>
+                                                <td>@matchdet.matchscore</td>
+                                                <td>@matchdet.matchnationality</td>
+                                                <td>@matchdet.matchdob</td>
+                                                <td>
+                                                    <textarea rows="2" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="apiResultRemarks" name="Comment" placeholder=@localizer["Remarks"] readonly>@matchdet.remarks</textarea>
+                                                </td>
+                                            </tr>
+                                        }
+
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        }
+                        else
+                        {
+                            <div style="width:100%;" id="footdiv">
+                                <h4>@localizer["No Potential Hits noted above the Set Threshold"].</h4>
+                            </div>
+                        }
+                    }
+                }
+                else
+                {
+                    <div style="width:100%;" id="footdiv">
+                        <h4>@localizer["No Potential Hits noted above the Set Threshold"].</h4>
+                    </div>
+                }
+
+            </div>
+
+            <div style="width:100%;display:none" id="createddiv">
+                <div style="width:80%;">
+                    <table style="border:0px;width:90%;">
+                    </table>
+                </div>
+            </div>
+            <br />
+            <div class="card-footer">
+            </div>
+        </div>
+    }
+
+    <br />
+    <div style="width:100%;display:none" id="footdiv">
+        <p>Computer generated report; hence no signature is required.</p>
+    </div>
+</div>
+<!-- Modal -->
+<!--<div class="modal fade" id="docModal" tabindex="-1" role="dialog" aria-labelledby="docModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="docModalLabel">Documents</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <ul>
+                    @foreach (var item in Model.CaseDocuments)
+
+                    {
+                        <li><a href="" onclick="DownloadDocument('@item.DocumentFullPath', '@item.DocumentFileName');" target="_self" download>@item.DocumentFileName</a></li>
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>-->
+<script type="text/javascript">
+    function DownloadDocument(fiPath, fiName) {
+        $.ajax({
+            type: "GET",
+            url: "/Case/DownloadCaseDocument",
+            data: {
+                filePath: fiPath,
+                fileName: fiName
+            },
+            success: function (data) {
+                window.location = '/Case/DownloadCaseDocument?filePath=' + fiPath + '&fileName=' + fiName;
+            },
+            error: function (result) {
+                alert('error');
+            }
+        });
+    }
+</script>
+<script type="text/javascript">
+    var comments = [];
+    $('#Comments').hide();
+    $('#nocomment').show();
+
+    $(document).ready(function () {
+
+        if ($('#hdnStatus').val() == '2' || $('#hdnStatus').val() == '3') {
+            $('#txtCaseActionRemarks').attr('disabled', 'disabled');
+            $("input[type=submit]").attr('disabled', 'disabled');
+            $('#ddlUsers').attr('disabled', 'disabled');
+            $("#btnTransfer").attr('disabled', 'disabled');
+        }
+
+        $.ajax({
+            url: '/case/comment/' + $('#hdnCaseId').val(),
+            type: 'get',
+            success: function (response) {
+                comments = response;
+                buildComments();
+            }
+        });
+    });
+
+
+
+
+    $('#frmCmment').submit(function (e) {
+        e.preventDefault();
+        $.ajax({
+            url: '/case/comment',
+            type: 'post',
+            data: $('#frmCmment').serialize(),
+            success: function (response) {
+                comments = response;
+                $('.commment-list').remove();
+                buildComments();
+            }
+        });
+    });
+    $('#frmCloseCase').submit(function (e) {
+        e.preventDefault();
+        var val = $("input[type=submit][clicked=true]").val();
+        if (val == 'Approve Case') {
+            $('#hdnAction').val(2);
+        } else {
+            $('#hdnAction').val(3);
+        }
+        $.ajax({
+            url: '/case/close',
+            type: 'post',
+            data: $('#frmCloseCase').serialize(),
+            success: function (response) {
+                $('#txtCaseActionRemarks').val('');
+                $('#txtCaseActionRemarks').attr('disabled', 'disabled');
+                $("input[type=submit]").attr('disabled', 'disabled');
+                $('#ddlUsers').attr('disabled', 'disabled');
+                $("#btnTransfer").attr('disabled', 'disabled');
+
+                toastr.success(response);
+                setTimeout(function () { location.href = '/case'; }, 3000);
+                location.href = '/case';
+
+            }
+        });
+    });
+
+    $("#frmCloseCase input[type=submit]").click(function () {
+        $("input[type=submit]", $(this).parents("form")).removeAttr("clicked");
+        $(this).attr("clicked", "true");
+    });
+
+
+
+
+
+
+    $('#frmTransferCase').submit(function (e) {
+        e.preventDefault();
+        $.ajax({
+            url: '/case/assign',
+            type: 'post',
+            data: $('#frmTransferCase').serialize(),
+            success: function () {
+                $('#ddlUsers').val(0);
+                toastr.success('Case Transferred');
+            }
+        });
+    });
+
+
+    function buildComments() {
+        if (comments.length) {
+            $('#Comments').show();
+            $('#nocomment').hide();
+            var template = '<div class="commment-list"><i class="fas fa-user bg-green"></i><div class="timeline-item"><span class="time" ><i class="fas fa-clock"></i> <label class="time-ago"></label></span >' +
+                '<h3 class="timeline-header no-border"><a class="a-user" href="#"></a>&nbsp;&nbsp;<label class="case-comment"></label></h3></div></div>';
+            $("#Comments").find('div.comment-section').prepend(template);
+            $.each(comments, function (i, v) {
+
+                setDataOnRow($(template), v, i);
+
+            });
+            $('#txtCaseComment').val('');
+
+            $($("#Comments").find('div.commment-list').last()).remove();
+            $($("#Comments").find('i').last()).remove();
+            $($("#Comments").find('div.commment-list').parent()).append('<div><i class= "fas fa-clock bg-gray" ></i></div>');
+        }
+    }
+
+
+    function setDataOnRow(rowObject, v, i) {
+        $(rowObject).find(".a-user").html(v.createdUser);
+        $(rowObject).find(".time-ago").html(v.duration);
+        $(rowObject).find(".case-comment").html(v.comment);
+        $("#Comments").find('div.comment-section').prepend(rowObject);
+    }
+    function clearDocuemnt() {
+        $('#frmDocument').find("input[type=text], textarea").val("");
+        $('#frmDocument').find("input[type=file]").val(null);
+        $('#frmDocument').find("select").val(0);
+    }
+
+    function printdiv(printpage) {
+
+        var newstr = document.all.item(printpage).innerHTML;
+        var oldstr = document.body.innerHTML;
+        document.body.innerHTML = newstr;
+        document.getElementById("logodiv").style.display = "";
+        document.getElementById("createddiv").style.display = "";
+        document.getElementById("footdiv").style.display = "";
+        document.getElementById("printBtnDiv").style.display = "none";
+        document.getElementById("caseCmmnt").style.maxHeight = "none";
+        window.print();
+        document.body.innerHTML = oldstr;
+        document.getElementById("printBtnDiv").style.display = "";
+        return false;
+    }
+</script>

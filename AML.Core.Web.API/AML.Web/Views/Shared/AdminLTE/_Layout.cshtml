@@ -1,0 +1,1504 @@
+@using AML.Web.Helpers;
+@using Newtonsoft.Json;
+@*test*@
+
+
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@*@using AML.Web.Helpers;*@
+@using static AML.Web.Helpers.NavigationIndicatorHelper;
+@using Microsoft.AspNetCore.Http
+@using AML.Core.ServiceContract.UserAccess
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IUserGroupRightService _userGroupRightService
+@{
+    var userName = HttpContextAccessor.HttpContext.Session.GetString("SessUsername");
+    var userModules = HttpContextAccessor.HttpContext.Session.GetString("SessModules");
+    var clientname = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+    var clientdescription = HttpContextAccessor.HttpContext.Session.GetString("SessDescription");
+    var clientId = HttpContextAccessor.HttpContext.Session.GetString("SessClientId");
+    var logo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+    var email = HttpContextAccessor.HttpContext.Session.GetString("SessEmail");
+    var allowedModules = new List<int>();
+    if (!string.IsNullOrEmpty(userModules))
+    {
+        var modules = JsonConvert.DeserializeObject<List<dynamic>>(userModules);
+        allowedModules = modules.Select(m => (int)m.Menu_Id).ToList();
+    }
+    var dashboardActive = Url.MakeActiveClass("Home", "Index");
+    var dashboardClass = dashboardActive == "active" ? "text-blue-600" : "text-slate-500";
+
+    var notepadActive = Url.MakeActiveClass("Notepad", "Notepadv2");
+    var notepadClass = notepadActive == "active" ? "text-blue-600" : "text-slate-500";
+
+    var amlTrackerActive = Url.MakeActiveClass("AmlTracker", "Index");
+
+    // Permission check for Agentic RAG Bot
+    // bool canViewAgenticBot = false;
+    // if (!string.IsNullOrEmpty(clientId) && !string.IsNullOrEmpty(HttpContextAccessor.HttpContext.Session.GetString("SessGroupId")))
+    // {
+    //     var sessId = HttpContextAccessor.HttpContext.Session.GetString("SessID");
+    //     var userIdStr = HttpContextAccessor.HttpContext.Session.GetString("SessUserId");
+    //     if (int.TryParse(userIdStr, out int userId) && int.TryParse(HttpContextAccessor.HttpContext.Session.GetString("SessGroupId"), out int groupId))
+    //     {
+    //         // Assuming "AgenticChatBot" is the functionality name in admin management
+    //         var rightResult = _userGroupRightService.CheckNameuserrightExists("Agentic", "ChatBot", userId, groupId, sessId, "View");
+    //         canViewAgenticBot = rightResult?.Result ?? false;
+    //     }
+    // }
+}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light only">
+    <title>Search</title>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.0.min.js" type="text/javascript"></script>
+    <link rel="icon" href="data:,">
+    
+    <!-- Design Dependencies -->
+    <link rel="stylesheet" href="~/plugins/fontawesome-free/css/all.min.css">
+    <link href="~/css/tailwind.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/watchdog-modern.css" rel="stylesheet" asp-append-version="true" />
+    <style>
+        /* Inline toast nuke — guaranteed to load on every request and never go
+           stale via CDN/proxy/browser cache, unlike the .css file. Final winner
+           in the cascade for the broken-icon issue we've fought across several
+           CSS-only iterations. */
+        #toast-container > .toast-success,
+        #toast-container > .toast-error,
+        #toast-container > .toast-warning,
+        #toast-container > .toast-info,
+        #toast-container > .toast {
+            background-image: none !important;
+            background-position: 0 0 !important;
+            background-repeat: no-repeat !important;
+            padding-left: 18px !important;
+        }
+        #toast-container > div::before,
+        .toast-success::before,
+        .toast-error::before,
+        .toast-warning::before,
+        .toast-info::before {
+            content: none !important;
+            display: none !important;
+            background: none !important;
+        }
+        .toast-success { background-color: #059669 !important; color: #fff !important; }
+        .toast-error   { background-color: #dc2626 !important; color: #fff !important; }
+        .toast-warning { background-color: #d97706 !important; color: #fff !important; }
+        .toast-info    { background-color: #2563eb !important; color: #fff !important; }
+    </style>
+    @* Pinned to a known-stable version so the icon set (file-up, scan, search, folders, ...) is deterministic;
+       lucide@latest can sporadically rename icons and break pages relying on specific names. *@
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.js"></script>
+    @* Belt-and-braces visibility guard for converted lucide icons.
+       Some page-level CSS or a stale build can leave the converted SVG with
+       no explicit width/height, making it collapse to 0×0 inside a flex
+       button. These rules guarantee any unsized .lucide SVG falls back to
+       a usable size and inherits the current text color. *@
+    <style>
+        svg.lucide { display: inline-block; vertical-align: middle; flex-shrink: 0; }
+        svg.lucide:not([width]) { width: 1em; }
+        svg.lucide:not([height]) { height: 1em; }
+        /* If author forgot a w-? / h-? class on the parent and SVG attrs are stripped */
+        svg.lucide[width="24"][height="24"] { min-width: 1em; min-height: 1em; }
+        svg.lucide path,
+        svg.lucide circle,
+        svg.lucide line,
+        svg.lucide rect,
+        svg.lucide polyline,
+        svg.lucide polygon,
+        svg.lucide ellipse {
+            stroke: currentColor;
+            fill: none;
+        }
+    </style>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    @* ----------------------------------------------------------------
+       Global lucide auto-render.
+       Several pages use Alpine/jQuery to mutate the DOM and inject
+       <i data-lucide="..."> elements after the initial createIcons()
+       call. Without an observer those icons stay as empty <i> tags.
+       The runner also tolerates the lucide CDN script loading late
+       (e.g. incognito, slow CDN) by polling until window.lucide is
+       available, then doing one initial conversion plus installing
+       a MutationObserver for future DOM changes. requestAnimationFrame
+       debounces bursts (Alpine x-for fills, modal opens, etc.).
+    ---------------------------------------------------------------- *@
+    <script>
+      (function () {
+        var pending = false;
+        function run() {
+          if (typeof lucide === 'undefined' || !lucide.createIcons) return;
+          if (pending) return;
+          pending = true;
+          requestAnimationFrame(function () {
+            pending = false;
+            try { lucide.createIcons(); } catch (e) { /* swallow */ }
+          });
+        }
+
+        function install() {
+          // Convert anything already in the DOM.
+          run();
+          // Re-convert whenever new <i data-lucide="*"> nodes are added
+          // or an existing one gets its data-lucide value changed
+          // (Alpine :data-lucide="…").
+          var observer = new MutationObserver(function (mutations) {
+            for (var i = 0; i < mutations.length; i++) {
+              var m = mutations[i];
+              if (m.type === 'attributes' && m.attributeName === 'data-lucide') { run(); return; }
+              if (m.type === 'childList' && m.addedNodes && m.addedNodes.length) {
+                for (var j = 0; j < m.addedNodes.length; j++) {
+                  var n = m.addedNodes[j];
+                  if (n.nodeType !== 1) continue;
+                  if (n.matches && n.matches('i[data-lucide]')) { run(); return; }
+                  if (n.querySelector && n.querySelector('i[data-lucide]')) { run(); return; }
+                }
+              }
+            }
+          });
+          observer.observe(document.documentElement, {
+            childList: true, subtree: true,
+            attributes: true, attributeFilter: ['data-lucide']
+          });
+        }
+
+        function waitForLucide() {
+          if (typeof lucide !== 'undefined' && lucide.createIcons) {
+            install();
+            // Belt-and-braces re-runs to catch icons inserted by deferred
+            // Alpine or jQuery initialisers that beat our observer.
+            document.addEventListener('DOMContentLoaded', run, { once: true });
+            window.addEventListener('load', run, { once: true });
+            setTimeout(run, 250);
+            setTimeout(run, 1000);
+            return;
+          }
+          setTimeout(waitForLucide, 50);
+        }
+        waitForLucide();
+      })();
+    </script>
+
+    @RenderSection("Styles", required: false)
+
+  <style>
+    .donut-chart {
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: conic-gradient(
+                #2563EB 0% 65%,
+                #AD87FF 65% 80%,
+                #38BDF8 80% 100%
+            );
+            position: relative;
+        }
+        .donut-hole {
+            position: absolute;
+            width: 60%;
+            height: 60%;
+            background-color: white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .percentage {
+            position: absolute;
+            background-color: white;
+            padding: 4px 8px;
+            border-radius: 9999px;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+        .percent-20 { top: 15%; right: -20%; }
+        .percent-65 { bottom: -15%; left: 50%; transform: translateX(-50%); }
+        .percent-15 { top: 10%; left: -20%; }
+        /* dropdown-item moved to watchdog-modern.css */
+        @@media (max-width: 640px) {
+            .hidden { padding-left: 0 !important; margin-bottom: 0 !important; }
+        }
+        /* Chat prose */
+        .prose-chat h1, .prose-chat h2, .prose-chat h3 { font-weight: bold; margin: 8px 0 4px 0; font-size: 0.9rem; color: #1e293b; }
+        .prose-chat p { margin-bottom: 12px; line-height: 1.5; }
+        .prose-chat ul { list-style-type: disc; padding-left: 20px; margin: 8px 0; }
+        .prose-chat li { margin-bottom: 4px; }
+        .prose-chat strong { font-weight: 800; color: #020617; }
+        .prose-chat br { content: " "; display: block; margin: 8px 0; }
+        .msg-user-bubble, .msg-user-bubble *, .prose-chat.msg-user-bubble, .prose-chat.msg-user-bubble * { color: #ffffff !important; }
+        /* Sidebar and scrollbar styles moved to watchdog-modern.css */
+  </style>
+  <script>
+    // Futuristic sidebar dropdown toggle
+    function toggleSbDropdown(ddId, chevId) {
+      const dd = document.getElementById(ddId);
+      const chev = document.getElementById(chevId);
+      if (dd) dd.classList.toggle('open');
+      if (chev) chev.classList.toggle('open');
+    }
+  </script>
+  <script defer>
+      let list=[];
+      function handlesmalldevices(){
+            const sidebar=document.getElementById('sidebar');
+            const watchdog=document.getElementById('watchdog');
+            const dashboard=document.getElementById('dashboard');
+            // const nameScreening=document.getElementById('nameScreening');
+            const screenCaseManagement=document.getElementById('screenCaseManagement');
+            // const riskAssessment=document.getElementById('riskAssessment');
+            // const riskAssessmentV2=document.getElementById('riskAssessmentV2');
+            const blocklist=document.getElementById('blocklist');
+                const notepad=document.getElementById('notepad');
+            // const productRiskAssessment=document.getElementById('productRiskAssessment');
+            // const transactionMonitoring=document.getElementById('transactionMonitoring');
+            // const ewra=document.getElementById('ewra');
+            const reports=document.getElementById('reports');
+            // const masters=document.getElementById('masters');
+            // const userManagement=document.getElementById('userManagement');
+            const clientManagement=document.getElementById('clientManagement');
+            const logout=document.getElementById('logout');
+            const reportDrop=document.getElementById('dropdown-arrow7');
+            const clientDrop=document.getElementById('dropdown-arrow9');
+            const userDrop=document.getElementById('dropdown-arrow10');
+
+            if(window.innerWidth<768){
+                sidebar.classList.toggle("w-20");
+                sidebar.classList.toggle("w-56");
+                dashboard.classList.toggle('hidden');
+                watchdog.classList.toggle('hidden');
+                // nameScreening.classList.toggle('hidden');
+                screenCaseManagement.classList.toggle('hidden');
+                // riskAssessment.classList.toggle('hidden');
+                // riskAssessmentV2.classList.toggle('hidden');
+                blocklist.classList.toggle('hidden');
+                    notepad.classList.toggle('hidden');
+                // productRiskAssessment.classList.toggle('hidden');
+                // transactionMonitoring.classList.toggle('hidden');
+                // ewra.classList.toggle('hidden');
+                reports.classList.toggle('hidden');
+                // masters.classList.toggle('hidden');
+                userManagement.classList.toggle('hidden');
+                clientManagement.classList.toggle('hidden');
+                reportDrop.classList.toggle('hidden');
+                userDrop.classList.toggle('hidden');
+                clientDrop.classList.toggle('hidden');
+                logout.classList.toggle('hidden');
+            }
+
+      }
+      function helper(name){
+            if(list.length==0){
+                handlesmalldevices();
+            }
+            const ind=list.indexOf(name);
+
+            if(ind==-1){
+                    list.push(name);
+            }
+             else {
+                list.splice(ind,1)
+            }
+            if(list.length==0){
+                handlesmalldevices();
+            }
+            console.log(list);
+      }
+
+    // SIDEBAR CONFIG
+    function closeOtherParents(currentId) {
+        const parents = [
+            { id: 'name-screening-parent-dropdown', arrow: 'dropdown-arrow-parent' },
+            { id: 'pf-dropdown', arrow: 'dropdown-arrow-pf' },
+            { id: 'reports-dropdown', arrow: 'dropdown-arrow-reports' },
+            { id: 'm-dropdown', arrow: 'dropdown-arrow-8' },
+            { id: 'um-dropdown', arrow: 'dropdown-arrow-9' },
+            { id: 'cm-dropdown', arrow: 'dropdown-arrow-10' }
+        ];
+
+        parents.forEach(p => {
+            if (p.id !== currentId) {
+                const drop = document.getElementById(p.id);
+                const arrow = document.getElementById(p.arrow);
+                if (drop) {
+                    drop.classList.add('hidden');
+                    // Collapse children too
+                    const children = drop.querySelectorAll('ul');
+                    children.forEach(child => child.classList.add('hidden'));
+                    const childArrows = drop.querySelectorAll('.rotate-180');
+                    childArrows.forEach(ca => ca.classList.remove('rotate-180'));
+                }
+                if (arrow) arrow.classList.remove('rotate-180');
+            }
+        });
+    }
+
+    function toggleNameScreening() {
+        closeOtherParents('name-screening-parent-dropdown');
+        const dropdown = document.getElementById('name-screening-parent-dropdown');
+        const dropdownArrow = document.getElementById('dropdown-arrow-parent');
+        
+        const isOpening = dropdown.classList.contains('hidden');
+        dropdown.classList.toggle('hidden');
+        dropdownArrow.classList.toggle('rotate-180');
+
+        // If we are CLOSING the parent, collapse its children also
+        if (!isOpening) {
+            const children = dropdown.querySelectorAll('ul');
+            children.forEach(child => child.classList.add('hidden'));
+            const childArrows = dropdown.querySelectorAll('.rotate-180');
+            childArrows.forEach(ca => ca.classList.remove('rotate-180'));
+        }
+
+        helper("nameScreeningParent");
+    }
+    function toggleCaseCreation() {
+      const dropdown = document.getElementById('case-creation-dropdown');
+      const dropdownArrow = document.getElementById('dropdown-arrow-case');
+      dropdown.classList.toggle('hidden');
+      dropdownArrow.classList.toggle('rotate-180');
+      helper("caseCreation")
+    }
+    function toggleDropdown2() {
+      const dropdown = document.getElementById('ra-dropdown');
+      const dropdownArrow = document.getElementById('dropdown-arrow2');
+     
+      dropdown.classList.toggle('hidden');
+      dropdownArrow.classList.toggle('rotate-180');
+        
+      helper("riskAssessment");
+
+    }
+
+    
+
+    function toggleDropdown3() {
+      const dropdown = document.getElementById('av2-dropdown');
+      const dropdownArrow = document.getElementById('dropdown-arrow3');
+      dropdown.classList.toggle('hidden');
+      dropdownArrow.classList.toggle('rotate-180');
+
+      helper("riskAssessmentV2");
+         
+    }
+    function toggleDropdown4() {
+      const dropdown = document.getElementById('pra-dropdown');
+      const dropdownArrow = document.getElementById('dropdown-arrow4');
+      dropdown.classList.toggle('hidden');
+      dropdownArrow.classList.toggle('rotate-180');
+      
+      helper("productRiskAssessment");
+          
+    }
+    function toggleDropdown5() {
+      const dropdown = document.getElementById('tm-dropdown');
+      const dropdownArrow = document.getElementById('dropdown-arrow5');
+      dropdown.classList.toggle('hidden');
+      dropdownArrow.classList.toggle('rotate-180');
+
+      helper("transactionMonitoring");
+          
+    }
+    function toggleDropdown6() {
+      const dropdown = document.getElementById('ewra-dropdown');
+      const dropdownArrow = document.getElementById('dropdown-arrow6');
+      dropdown.classList.toggle('hidden');
+      dropdownArrow.classList.toggle('rotate-180');
+
+      helper("ewra");
+            
+    }
+    function toggleDropdown7() {
+      const dropdown = document.getElementById('rt-dropdown');
+      const dropdownArrow = document.getElementById('dropdown-arrow7');
+      dropdown.classList.toggle('hidden');
+      dropdownArrow.classList.toggle('rotate-180');
+
+      helper("reports");
+          
+    }
+    function toggleDropdown8() {
+      closeOtherParents('m-dropdown');
+      const dropdown = document.getElementById('m-dropdown');
+      const dropdownArrow = document.getElementById('dropdown-arrow8');
+      dropdown.classList.toggle('hidden');
+      dropdownArrow.classList.toggle('rotate-180');
+          
+      helper("masters");
+
+      }
+        function toggleDropdown9() {
+            closeOtherParents('um-dropdown');
+            const dropdown = document.getElementById('um-dropdown');
+            const dropdownArrow = document.getElementById('dropdown-arrow-9');
+            dropdown.classList.toggle('hidden');
+            dropdownArrow.classList.toggle('rotate-180');
+
+            helper("userManagement");
+            
+        }
+     
+       function toggleDropdown10() {
+          closeOtherParents('cm-dropdown');
+          const dropdown = document.getElementById('cm-dropdown');
+          const dropdownArrow = document.getElementById('dropdown-arrow-10');
+          dropdown.classList.toggle('hidden');
+          dropdownArrow.classList.toggle('rotate-180');
+          
+          helper("clientManagement");
+          
+      }
+       function toggleDropdown11() {
+           helper("dashboard");
+      }
+       function toggleDropdown12() {
+           helper("screeningCaseManagement");
+      }
+       function toggleDropdown13() {
+           helper("blocklist");
+      }
+          function toggleDropdown14() {
+               helper("notepad");
+          }
+       function toggleDropdownPF() {
+           closeOtherParents('pf-dropdown');
+           const dropdown = document.getElementById('pf-dropdown');
+           const dropdownArrow = document.getElementById('dropdown-arrow-pf');
+           dropdown.classList.toggle('hidden');
+           dropdownArrow.classList.toggle('rotate-180');
+           
+           helper("proliferationFinance");
+      }
+               function toggleDropdownReport() {
+                   closeOtherParents('reports-dropdown');
+                   const dropdown = document.getElementById('reports-dropdown');
+                   const dropdownArrow = document.getElementById('dropdown-arrow-reports');
+               dropdown.classList.toggle('hidden');
+               dropdownArrow.classList.toggle('rotate-180');
+
+                   helper("Reports");
+          }
+       function toggleDropdownBlocklist() {
+           const dropdown = document.getElementById('blocklist-dropdown');
+           const dropdownArrow = document.getElementById('dropdown-arrow-blocklist');
+           dropdown.classList.toggle('hidden');
+           dropdownArrow.classList.toggle('rotate-180');
+           helper("blocklistModule");
+      }
+
+          
+
+  </script>
+  <title>Dashboard</title>
+
+</head>
+<body class="flex h-screen overflow-hidden" style="background:#F8FAFC;">
+
+
+    
+        
+<div id="sidebar" class="flex flex-col">
+    <!-- LOGO -->
+    <a asp-controller="Home" asp-action="Index" tabindex="1" class="block" style="text-decoration:none!important">
+        <div class="sidebar-logo">
+            <img src="~/img/brand-icon.svg" alt="Search" class="brand-icon-collapsed" />
+            <img src="~/img/brand-logo-white.svg" alt="Search" class="brand-logo-expanded" />
+        </div>
+    </a>
+
+    <!-- SIDEBAR NAV -->
+    <nav class="flex-1 overflow-y-auto py-3">
+      <div>
+        <!-- Dashboard -->
+        <a asp-controller="Home" asp-action="Index" class="sb-item @(dashboardActive == "active" ? "active" : "")" data-tooltip="Dashboard">
+            <div class="sb-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></div>
+            <span class="sb-text">Dashboard</span>
+        </a>
+
+        <!-- AML Tracker (sub-pages live inside the Tracker view as tabs) -->
+        
+        @if (allowedModules.Contains(21))
+        {
+                    <a asp-controller="AmlTracker" asp-action="Index" class="sb-item @(amlTrackerActive == "active" ? "active" : "")" data-tooltip="AML Tracker">
+                        <div class="sb-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg></div>
+                    <span class="sb-text">AML Tracker</span>
+            </a>
+        }
+
+        @{ var stmActive = Context.Request.Path.Value != null && Context.Request.Path.Value.StartsWith("/stm", StringComparison.OrdinalIgnoreCase) ? "active" : ""; }
+        <a href="/stm" class="sb-item @stmActive" data-tooltip="Sectoral TMS (Insurance &amp; Real Estate)">
+            <div class="sb-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+            <span class="sb-text">Sectoral TMS</span>
+        </a>
+
+        @if (allowedModules.Contains(20))
+        {
+                    <a asp-controller="Notepad" asp-action="Notepadv2" class="sb-item @(notepadActive == "active" ? "active" : "")" data-tooltip="notepad">
+                        <div class="sb-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sticky-note"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" /><path d="M15 3v5a2 2 0 0 0 2 2h5" /><path d="M7 13h10" /><path d="M7 17h10" /><path d="M7 9h3" /></svg></div>
+                        <span class="sb-text">Notepad</span>
+                    </a>
+                   
+         @*  <a asp-controller="Notepad" asp-action="Notepadv2" tabindex="2">
+                        <li class="flex items-center px-4 py-3 rounded-md mb-2 @notepadClass @(notepadActive == "active" ? "bg-[#F8FAFC]" : "hover:bg-[#F8FAFC]") hover:text-slate-800 transition-colors" data-tooltip="notepad">
+                    
+                    <span id="notepad" class="hidden md:block ml-3 mt-0.5 font-medium text-[15px]">Notepad</span>
+                </li>
+            </a> *@
+                   @*  <a asp-controller="Notepad" asp-action="Notepadv2" tabindex="3">
+                <li class="flex items-center px-4 py-3 rounded-md mb-2 @(Context.Request.Path.Value.Contains("Notepad2") ? "bg-[#F8FAFC] text-blue-600" : "hover:bg-[#F8FAFC]") hover:text-slate-800 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-todo"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
+                    <span id="amltracker" class="hidden md:block ml-3 mt-0.5 font-medium text-[15px]">AML Tracker</span>
+                </li>
+            </a> *@
+        }
+
+        @if (allowedModules.Contains(1) || allowedModules.Contains(3))
+        {
+            var individualActive = Url.MakeActiveClass("Case", "Create");
+            var corporateActive = Url.MakeActiveClass("Corporate", "CorporateScreening");
+            var studioActive = Url.MakeActiveClass("Case", "Studio");
+            var duediligence = Url.MakeActiveClass("Case", "Index");
+            var completedCase = Url.MakeActiveClass("Case", "CompletedCaseIndex");
+            var InstantSanction = Url.MakeActiveClass("SanctionScreening", "Index");
+            var nameScreeningActive = (individualActive == "active" || corporateActive == "active" || studioActive == "active" || duediligence == "active" || completedCase == "active" || InstantSanction == "active");
+
+            <!-- Screening -->
+            <div class="sb-item @(nameScreeningActive ? "active" : "")" data-tooltip="Screening" onclick="toggleSbDropdown('screening-dd','screening-chev')">
+                <div class="sb-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
+                <span class="sb-text">Screening</span>
+                <svg id="screening-chev" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sb-chevron @(nameScreeningActive ? "open" : "")"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+            <div id="screening-dd" class="sb-dropdown @(nameScreeningActive ? "open" : "")">
+                <!-- Case Creation sub-toggle -->
+                <div class="sb-sub-item" onclick="toggleSbDropdown('casecreation-dd','casecreation-chev')" style="padding-left:60px;justify-content:space-between">
+                    <div style="display:flex;align-items:center;gap:10px"><div class="sb-dot"></div><span>Case Creation</span></div>
+                    <svg id="casecreation-chev" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sb-chevron @((individualActive == "active" || corporateActive == "active") ? "open" : "")" style="opacity:1"><path d="m6 9 6 6 6-6"/></svg>
+                </div>
+                <div id="casecreation-dd" class="sb-nested-dropdown @((individualActive == "active" || corporateActive == "active" || studioActive == "active") ? "open" : "")">
+                    <a asp-controller="Case" asp-action="Studio" class="sb-sub-item @(studioActive == "active" ? "active" : "")"><div class="sb-dot"></div>Case Studio</a>
+                    <a asp-controller="Case" asp-action="Create" class="sb-sub-item @(individualActive == "active" ? "active" : "")"><div class="sb-dot"></div>Individual (Manual)</a>
+                            <a asp-controller="Corporate" asp-action="CorporateScreening" class="sb-sub-item @(corporateActive == "active" ? "active" : "")"><div class="sb-dot"></div>Corporate (Manual)</a>
+                </div>
+                <a asp-controller="Case" asp-action="Index" class="sb-sub-item @(duediligence == "active" ? "active" : "")"><div class="sb-dot"></div>Due Diligence</a>
+                <a asp-controller="Case" asp-action="CompletedCaseIndex" class="sb-sub-item @(completedCase == "active" ? "active" : "")"><div class="sb-dot"></div>Completed Cases</a>
+                <a asp-controller="SanctionScreening" asp-action="Index" class="sb-sub-item @(InstantSanction == "active" ? "active" : "")"><div class="sb-dot"></div>UAEIEC UN NAS</a>
+            </div>
+        }
+
+        @if (allowedModules.Contains(4))
+        {
+            var caseCreationProliferationActive = Url.MakeActiveClass("ProliferationFinance", "CaseCreation");
+            var ProliferationCaseManagerActive = Url.MakeActiveClass("ProliferationFinance", "CaseManager");
+            var ProliferationActive = (caseCreationProliferationActive == "active" || ProliferationCaseManagerActive == "active");
+
+            <!-- Proliferation -->
+            <div class="sb-item @(ProliferationActive ? "active" : "")" data-tooltip="Proliferation" onclick="toggleSbDropdown('pf-dd','pf-chev')">
+                <div class="sb-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg></div>
+                <span class="sb-text">Proliferation</span>
+                <svg id="pf-chev" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sb-chevron @(ProliferationActive ? "open" : "")"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+            <div id="pf-dd" class="sb-dropdown @(ProliferationActive ? "open" : "")">
+                <a asp-controller="ProliferationFinance" asp-action="CaseCreation" class="sb-sub-item @(caseCreationProliferationActive == "active" ? "active" : "")"><div class="sb-dot"></div>Case Creation</a>
+                <a asp-controller="ProliferationFinance" asp-action="CaseManager" class="sb-sub-item @(ProliferationCaseManagerActive == "active" ? "active" : "")"><div class="sb-dot"></div>Case Manager</a>
+            </div>
+        }
+
+        @if (allowedModules.Contains(19))
+        {
+            var internalwatchlist = Url.MakeActiveClass("InternalWatchList", "Create");
+            <!-- BlockList -->
+            <a asp-controller="InternalWatchList" asp-action="Create" class="sb-item @(internalwatchlist == "active" ? "active" : "")" data-tooltip="BlockList">
+                <div class="sb-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/><circle cx="12" cy="13" r="2"/><path d="M15 18a3 3 0 0 0-6 0"/></svg></div>
+                <span class="sb-text">BlockList</span>
+            </a>
+        }
+
+        @if (allowedModules.Contains(4))
+        {
+            var caseReportActive = Url.MakeActiveClass("Report", "CaseReport");
+            var clientCase = Url.MakeActiveClass("ClientCase", "DataLoadReport");
+            var schedulerLogs = Url.MakeActiveClass("Report", "OngoingmonitoringSchedulerLogs");
+            var getScreeningDataSetsActive = Url.MakeActiveClass("Report", "DatasetUpdateLogs");
+            var blocklistUpdateLogsActive = Url.MakeActiveClass("Report", "GetBlocklistUpdateLogs");
+            var associationsActive = Url.MakeActiveClass("Associations", "Index");
+            var ReportsActive = (caseReportActive == "active" || clientCase == "active" || schedulerLogs == "active" || getScreeningDataSetsActive == "active" || blocklistUpdateLogsActive == "active" || associationsActive == "active");
+
+            <!-- Reports -->
+            <div class="sb-item @(ReportsActive ? "active" : "")" data-tooltip="Reports" onclick="toggleSbDropdown('reports-dd','reports-chev')">
+                <div class="sb-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
+                <span class="sb-text">Reports</span>
+                <svg id="reports-chev" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sb-chevron @(ReportsActive ? "open" : "")"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+            <div id="reports-dd" class="sb-dropdown @(ReportsActive ? "open" : "")">
+                <a asp-controller="Report" asp-action="CaseReport" class="sb-sub-item @(caseReportActive == "active" ? "active" : "")"><div class="sb-dot"></div>Case</a>
+                <a asp-controller="Associations" asp-action="Index" class="sb-sub-item @(associationsActive == "active" ? "active" : "")"><div class="sb-dot"></div>Customer Associations</a>
+                <a asp-controller="Report" asp-action="DatasetUpdateLogs" class="sb-sub-item @(getScreeningDataSetsActive == "active" ? "active" : "")"><div class="sb-dot"></div>Dataset Logs</a>
+                <a asp-controller="Report" asp-action="OngoingmonitoringSchedulerLogs" class="sb-sub-item @(schedulerLogs == "active" ? "active" : "")"><div class="sb-dot"></div>Scheduler Logs</a>
+                <a asp-controller="ClientCase" asp-action="DataLoadReport" class="sb-sub-item @(clientCase == "active" ? "active" : "")"><div class="sb-dot"></div>Bulk Upload Logs</a>
+                <a asp-controller="Report" asp-action="GetBlocklistUpdateLogs" class="sb-sub-item @(blocklistUpdateLogsActive == "active" ? "active" : "")"><div class="sb-dot"></div>Blocklist Logs</a>
+            </div>
+        }
+
+        @{
+            var complianceHubActive = Url.MakeActiveClass("ComplianceHub", "Hub");
+        }
+        <!-- Compliance Hub -->
+        <a asp-controller="ComplianceHub" asp-action="Hub" class="sb-item @(complianceHubActive == "active" ? "active" : "")" data-tooltip="Compliance Hub">
+            <div class="sb-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
+            <span class="sb-text">Compliance Hub</span>
+        </a>
+
+        @if (allowedModules.Contains(8))
+        {
+            var adminManagement = Url.MakeActiveClass("AdminManagement", "Index");
+            <!-- Admin -->
+            <a asp-controller="AdminManagement" asp-action="Index" class="sb-item @(adminManagement == "active" ? "active" : "")" data-tooltip="Admin">
+                <div class="sb-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                <span class="sb-text">@localizer["Admin"]</span>
+            </a>
+        }
+      </div>
+
+      <!-- Logout -->
+      <a asp-controller="UserAccess" asp-action="Logout" class="sb-logout" style="margin-top:auto">
+          <div class="sb-icon" style="width:38px;height:38px"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg></div>
+          <span class="sb-text">Sign Out</span>
+      </a>
+    </nav>
+</div>
+
+
+   <div class="flex-1 h-screen overflow-y-auto min-w-0" style="background:#F8FAFC;">
+
+            <div id="new" style="padding:0;">
+                <div class="wrapper">
+                    <div class="loader text-center" id="AjaxLoader" style="display:none;">
+                        <div class="flex items-center justify-center gap-2 py-8">
+                            <div class="h-3 w-3 rounded-full bg-blue-500 animate-bounce" style="animation-delay:0s"></div>
+                            <div class="h-3 w-3 rounded-full bg-blue-400 animate-bounce" style="animation-delay:.15s"></div>
+                            <div class="h-3 w-3 rounded-full bg-blue-300 animate-bounce" style="animation-delay:.3s"></div>
+                        </div>
+                    </div>
+                    <div class="se-pre-con"></div>
+                    @RenderBody()
+                @RenderSection("Scripts", required: false)
+                    <partial name="_ExportModal" />
+                </div>
+            </div>
+        </div>
+    
+    
+    @*<div class="footer mt-5 mb-3 txt-white pr-5" style="text-align:right !important">
+            <span>©2024 Search. All rights reserved.</span>
+        </div>*@
+
+    @*<partial name="AdminLTE/_Scripts" />*@ @*Loading all script tags*@
+    <script>
+    jQuery(document).ready(function(){
+        jQuery(".nav.nav-pills.nav-sidebar .dropdown .dropdown-content").css("display", "none");
+        jQuery(".nav-link.dropbtn").parent().removeClass("show-submenu");
+        jQuery(".nav-link.dropbtn").click(function () {
+            if (jQuery(this).parent().hasClass("show-submenu")) {
+                jQuery(this).parent().removeClass("show-submenu");
+            } else {
+                jQuery(".nav-link.dropbtn").parent().removeClass("show-submenu");
+                jQuery(this).parent().addClass("show-submenu");
+            }
+        });
+    });
+
+
+    </script>
+
+    
+
+
+    @await Component.InvokeAsync("NToastNotify")
+    <script>
+        // Mirror Startup.cs ToastrOptions for inline toastr.X() calls in views.
+        // 2026-05-03 update: previous "persist forever" config caused toasts to stack
+        // up when actions fired in quick succession (e.g. adding 5 related parties → 5
+        // overlapping pills). Now: short auto-dismiss + close button + extended time
+        // when the user hovers, so they stay long enough to read but don't pile up.
+        if (typeof toastr !== 'undefined') {
+            toastr.options = Object.assign(toastr.options || {}, {
+                timeOut: 4000,
+                extendedTimeOut: 2000,
+                closeButton: true,
+                tapToDismiss: true,
+                progressBar: true,
+                preventDuplicates: true,
+                newestOnTop: true,
+                positionClass: 'toast-bottom-right'
+            });
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="~/js/pdf-export.js"></script>
+
+    @if (allowedModules.Contains(17) && (ViewBag.HideChatbot == null || (bool)ViewBag.HideChatbot == false))
+    {
+        <!-- Agentic RAG FAB & Chat -->
+        <div x-data="agenticChat()" class="fixed bottom-6 right-6 z-[9999] no-pdf" x-init="init()" x-cloak>
+            <style>
+                .msg-user-bubble, 
+                .msg-user-bubble *, 
+                .msg-user-bubble p, 
+                .msg-user-bubble span, 
+                .msg-user-bubble strong,
+                .msg-user-bubble li,
+                div.bg-blue-600,
+                div.bg-blue-600 *,
+                div.bg-blue-600 p,
+                div.bg-blue-600 span,
+                div.bg-blue-600 strong,
+                div.bg-blue-600 li,
+                div[class*="max-w-"].msg-user-bubble > div:not(.cr-header) > p,
+                div[class*="max-w-"].bg-blue-600 > div:not(.cr-header) > p {
+                    color: #ffffff !important;
+                }
+            </style>
+            <!-- FAB Button -->
+            <button @@click.stop="toggleChat()" 
+                    class="relative h-14 w-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center group transform hover:scale-105 active:scale-95">
+                <i data-lucide="message-square" x-show="!isOpen" class="h-6 w-6"></i>
+                <i data-lucide="x" x-show="isOpen" class="h-6 w-6" style="display: none;"></i>
+                <!-- #22 Notification Badge: shows when a new AI reply arrived while closed -->
+                <span x-show="hasUnread && !isOpen"
+                      class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-white animate-bounce"></span>
+            </button>
+
+            <!-- Backdrop for Expanded Modal -->
+            <div x-show="isOpen && isExpanded" 
+                 class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99998]"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @@click="isExpanded = false"
+                 style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;">
+            </div>
+
+            <!-- Chat Popup -->
+            <div x-show="isOpen" 
+                 x-on:click.outside="if(!isExpanded) isOpen = false"
+                 style="display: none;"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+                 :class="isExpanded ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[80vh] md:w-[850px] md:h-[85vh] z-[99999]' : 'absolute bottom-20 right-0 w-[400px] h-[550px] z-[9999]'"
+                 class="bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-300">
+                
+                <!-- Header -->
+                <div class="p-4 bg-blue-600 text-white flex justify-between items-center rounded-t-2xl shadow-lg border-b border-primary/20">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                            <i data-lucide="bot" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg tracking-tight">Case Assistant</h3>
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                                <span class="text-xs text-white/80 font-medium">Online & Ready</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button @@click="toggleHistory" class="p-2 hover:bg-white/20 rounded-full transition-all duration-300 group" title="Conversation History">
+                            <i data-lucide="history" class="w-5 h-5 text-white group-hover:scale-110 transition-transform"></i>
+                        </button>
+                        <button @@click="resetChat" class="p-2 hover:bg-white/20 rounded-full transition-all duration-300 group" title="New Chat">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5 text-white group-hover:rotate-[-45deg] transition-transform"></i>
+                        </button>
+                        <!-- #13 Expand toggle -->
+                        <button @@click="isExpanded = !isExpanded" class="p-2 hover:bg-white/20 rounded-full transition-all duration-300" :title="isExpanded ? 'Collapse' : 'Expand'">
+                            <i :data-lucide="isExpanded ? 'minimize-2' : 'maximize-2'" class="w-5 h-5 text-white"></i>
+                        </button>
+                        <button @@click="toggleChat" class="p-2 hover:bg-white/20 rounded-full transition-all duration-300" title="Close">
+                            <i data-lucide="minus" class="w-5 h-5 text-white"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- History View -->
+                <div x-show="viewMode === 'history'" x-cloak class="flex-1 overflow-y-auto bg-slate-50 custom-scrollbar">
+                    <div class="p-4 space-y-6">
+                        <template x-for="group in getGroupedHistory()" :key="group.label">
+                            <div class="space-y-3">
+                                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1" x-text="group.label"></h3>
+                                <template x-for="item in group.items" :key="item.id">
+                                    <div class="group relative bg-white border border-slate-200 rounded-xl p-3 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+                                         @@click="loadConversation(item)">
+                                        <div class="flex justify-between items-start mb-1">
+                                            <span class="text-[11px] font-bold text-slate-800 line-clamp-1 flex-1" x-text="item.title || 'Untitled Conversation'"></span>
+                                            <span x-show="item.caseId" class="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-600 text-[9px] font-black rounded uppercase" x-text="item.caseId"></span>
+                                        </div>
+                                        <!-- #15 Snippet preview -->
+                                        <p class="text-[10px] text-slate-400 line-clamp-1 mt-0.5" x-text="getHistorySnippet(item)"></p>
+                                        <div class="flex justify-between items-center mt-2">
+                                            <span class="text-[9px] text-slate-400 font-medium" :title="item.timestamp" x-text="formatDateShort(item.timestamp)"></span>
+                                            <div class="flex items-center gap-1">
+                                                <!-- Delete Confirmation Logic -->
+                                                <template x-if="deleteConfirmId !== item.id">
+                                                    <button @@click.stop="deleteConfirmId = item.id" class="p-1 text-slate-300 hover:text-red-500 transition-colors">
+                                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                                    </button>
+                                                </template>
+                                                <template x-if="deleteConfirmId === item.id">
+                                                    <div class="flex items-center gap-2 bg-slate-100 rounded-lg p-0.5">
+                                                        <button @@click.stop="deleteConversation(item.id)" class="text-green-600 hover:scale-125 transition-transform"><i data-lucide="check" class="w-4 h-4"></i></button>
+                                                        <button @@click.stop="deleteConfirmId = null" class="text-red-500 hover:scale-125 transition-transform"><i data-lucide="x" class="w-4 h-4"></i></button>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        <div x-show="savedHistory.length === 0" class="text-center py-10">
+                            <i data-lucide="archive" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i>
+                            <p class="text-xs text-slate-400">No saved conversations yet.</p>
+                        </div>
+                        <!-- #17 Clear All -->
+                        <div x-show="savedHistory.length > 0" class="pt-2 border-t border-slate-100">
+                            <button @@click="clearAllHistory()"
+                                    class="w-full text-center text-[10px] text-red-400 hover:text-red-600 py-2 transition-colors">
+                                Clear all history
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div x-show="viewMode === 'chat'" id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50 custom-scrollbar">
+                    <template x-for="(msg, index) in messages" :key="index">
+                        <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                            <div :class="msg.role === 'user' ? 'bg-blue-600 text-white text-xs msg-user-bubble' : 'bg-white border border-slate-200 text-slate-800 text-xs'"
+                                 class="relative group max-w-[85%] p-3 rounded-2xl shadow-sm leading-relaxed prose-chat">
+                                <div x-html="renderMessage(msg.content)"></div>
+                                <template x-if="msg.cases && msg.cases.length > 0">
+                                    <div class="mt-3 space-y-2 border-t border-slate-100 pt-3">
+                                        <div class="text-[10px] text-slate-500 font-bold mb-1">Select a matching case:</div>
+                                        <template x-for="c in msg.cases" :key="c.id">
+                                            <button @@click="selectCaseFromList(c)" 
+                                                    class="block w-full text-left px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] border border-blue-200 transition-colors font-medium">
+                                                <span class="font-bold" x-text="c.caseId"></span> - <span x-text="c.customerName"></span> (<span x-text="c.status"></span>)
+                                            </button>
+                                        </template>
+                                        
+                                        <div class="flex items-center gap-2 mt-2">
+                                            <input type="text" 
+                                                   x-model="manualCaseInput" 
+                                                   @@keydown.enter="submitManualCaseId()"
+                                                   placeholder="Or enter Case ID manually..." 
+                                                   class="flex-grow px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] focus:ring-1 focus:ring-blue-500 outline-none text-slate-700">
+                                            <button @@click="submitManualCaseId()" 
+                                                    class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition-all shadow-sm">
+                                                Submit
+                                            </button>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div class="flex justify-between items-center mt-2 border-t border-slate-100 pt-2" x-show="msg.role === 'assistant' && msg.isComplete">
+                                    <!-- #21 Dynamic source label -->
+                                    <span class="text-[9px] opacity-50 font-bold uppercase tracking-wider text-slate-400"
+                                          x-text="currentCaseId ? 'Source: Case Context' : 'Source: Module Knowledge'"></span>
+                                    <button @@click="copyToClipboard(msg.content, $event)" class="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-600 transition-all opacity-0 group-hover:opacity-100" title="Copy to clipboard">
+                                        <i data-lucide="copy" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div x-show="isTyping" class="flex flex-col gap-2">
+                        <div class="flex justify-start">
+                            <div class="bg-white border border-slate-200 px-3 py-2 rounded-2xl shadow-sm flex items-center gap-2">
+                                <div class="flex gap-1">
+                                    <span class="h-1 w-1 bg-blue-500 rounded-full animate-bounce"></span>
+                                    <span class="h-1 w-1 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                                    <span class="h-1 w-1 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-medium italic" x-text="thinkingText"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Predefined Questions -->
+                    <div x-show="!isTyping && !isStreaming && !awaitingCaseSearch && predefinedQuestions && predefinedQuestions.length > 0 && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && messages[messages.length - 1].isComplete" class="space-y-2 pt-2 border-t border-slate-100 mt-2">
+                        <template x-for="q in predefinedQuestions" :key="q">
+                            <button @@click="selectQuestion(q)" 
+                                    class="block w-full text-left p-3 text-xs bg-white border border-blue-100 text-blue-600 rounded-xl hover:bg-blue-50 transition-all shadow-sm">
+                                <span x-text="q"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div x-show="showInput" x-cloak class="p-4 bg-white border-t border-slate-100">
+                    <div class="relative flex items-center gap-2">
+                        <input @@keydown.enter="sendMessage()" 
+                               x-model="userInput"
+                               type="text" 
+                               :placeholder="getPlaceholder()"
+                               class="w-full pl-4 pr-12 py-3 bg-slate-100 border-none rounded-xl text-xs focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+                        <!-- #19 Stop streaming button -->
+                        <button x-show="isStreaming" @@click="stopStream()"
+                                class="absolute right-12 h-8 w-8 bg-red-500 text-white rounded-lg flex items-center justify-center hover:bg-red-600 transition-all shadow-md"
+                                title="Stop">
+                            <i data-lucide="square" class="h-3 w-3"></i>
+                        </button>
+                        <button @@click="sendMessage()" 
+                                :disabled="isStreaming"
+                                class="absolute right-2 h-8 w-8 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700 transition-all shadow-md disabled:opacity-40">
+                            <i data-lucide="send" class="h-4 w-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function agenticChat() {
+                return {
+                    isOpen: false,
+                    isTyping: false,
+                    isStreaming: false,       // #19 — true while SSE stream is active
+                    isExpanded: false,        // #13 — expand toggle
+                    hasUnread: false,         // #22 — unread badge
+                    currentAbortController: null, // #19 — AbortController for stream
+                    userInput: '',
+                    showInput: false,
+                    showOptions: true,
+                    currentCaseId: null,
+                    currentConversationId: sessionStorage.getItem('lemonActiveConvId') ? parseInt(sessionStorage.getItem('lemonActiveConvId')) : null,
+                    currentModule: 'General',
+                    viewMode: 'chat', 
+                    thinkingText: 'Thinking...',
+                    thinkingInterval: null,
+                    deleteConfirmId: null,
+                    currentTitle: sessionStorage.getItem('lemonActiveConvTitle') || 'New Conversation',
+                    predefinedQuestions: [],
+                    awaitingCaseSearch: false,
+                    pendingCaseQuery: null,
+                    manualCaseInput: '',
+                    savedHistory: JSON.parse(localStorage.getItem('lemonHistory') || '[]'),
+                    messages: JSON.parse(sessionStorage.getItem('lemonActiveChat') || '[{"role": "assistant", "content": "Hello! I am your Case Assistant. How can I help you today?", "isComplete": true}]'),
+                    init() {
+                        this.detectModule();
+                        this.extractContextId();
+                        if (!this.currentCaseId && sessionStorage.getItem('lemonActiveCaseId')) {
+                            this.currentCaseId = sessionStorage.getItem('lemonActiveCaseId');
+                        }
+                        this.updateQuestions();
+                        this.showInput = true;
+                        this.scrollToBottom();
+                        setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 100);
+                    },
+                    saveToStorage() {
+                        sessionStorage.setItem('lemonActiveChat', JSON.stringify(this.messages));
+                        sessionStorage.setItem('lemonActiveConvTitle', this.currentTitle);
+                        if (this.currentConversationId) {
+                            sessionStorage.setItem('lemonActiveConvId', this.currentConversationId.toString());
+                        } else {
+                            sessionStorage.removeItem('lemonActiveConvId');
+                        }
+                        if (this.currentCaseId) {
+                            sessionStorage.setItem('lemonActiveCaseId', this.currentCaseId);
+                        } else {
+                            sessionStorage.removeItem('lemonActiveCaseId');
+                        }
+                    },
+                    toggleChat() {
+                        this.isOpen = !this.isOpen;
+                        if (this.isOpen) {
+                            this.hasUnread = false; // #22 clear badge on open
+                            setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 100);
+                            this.scrollToBottom();
+                        }
+                    },
+                    toggleHistory() {
+                        this.viewMode = this.viewMode === 'chat' ? 'history' : 'chat';
+                        this.deleteConfirmId = null;
+                        if (this.viewMode === 'history') {
+                             setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 50);
+                        }
+                        this.scrollToBottom();
+                    },
+                    detectModule() {
+                        const path = window.location.pathname.toLowerCase();
+                        if (path === '/' || path.includes('/home') || path.includes('/dashboard')) this.currentModule = 'Dashboard';
+                        else if (path.includes('/proliferationfinance')) this.currentModule = 'PF Creation';
+                        else if (path.includes('/case/create') || path.includes('/corporate/corporatescreening')) this.currentModule = 'Case Creation';
+                        else if (path.includes('/case')) this.currentModule = 'Due Diligence';
+                        else if (path.includes('/report') || path.includes('/completedcaseindex')) this.currentModule = 'Reports';
+                        else if (path.includes('/adminmanagement') || path.includes('/user') || path.includes('/admin')) this.currentModule = 'Admin';
+                        else if (path.includes('/process') || path.includes('/details')) this.currentModule = 'Process';
+                        // #7/#8/#9 — previously missing modules
+                        else if (path.includes('/amltracker')) this.currentModule = 'AmlTracker';
+                        else if (path.includes('/stm')) this.currentModule = 'STM';
+                        else if (path.includes('/compliancehub')) this.currentModule = 'ComplianceHub';
+                        else if (path.includes('/sanctionscreening')) this.currentModule = 'SanctionScreening';
+                        else this.currentModule = 'General';
+                    },
+                    getPlaceholder() {
+                        if (this.currentModule === 'Dashboard') return "Ask about global stats...";
+                        if (this.currentModule === 'Process') return "Ask about this case...";
+                        return "Ask a question... (e.g. #12345)";
+                    },
+                    updateQuestions() {
+                        const mappings = {
+                            'Dashboard':          ['How many high-risk cases are pending?', 'Show me status breakdown for today', 'What is the current customer count?'],
+                            'Due Diligence':      ['What is the status of the case?', 'What should I do next?', 'What was the case history?'],
+                            'Case Creation':      ['Mandatory fields guide', 'Individual vs. Corporate differences', 'How to upload OCR/Bulk?'],
+                            'PF Creation':        ['How to search by goods?', 'What is a Dual-Use item?', 'How to review hits for chemicals?'],
+                            'Reports':            ['How to export Completed Cases?', 'Show me case status distribution', 'Can I search by date range?'],
+                            'Admin':              ['How to create a new user group?', 'Help with client permissions', 'Configure screening thresholds'],
+                            'Process':            ['What is the status of the case?', 'What should I do next?', 'What was the case history?'],
+                            // #7/#8/#9 — new modules
+                            'AmlTracker':         ['What cases are in my queue?', 'How does SLA tracking work?', 'How do I assign a case?'],
+                            'SanctionScreening':  ['What lists are screened?', 'What does the match score mean?', 'How is this different from full case creation?'],
+                            'ComplianceHub':      ['What regulations are available?', 'How do I search policy documents?', 'How do I access FATF guidance?'],
+                            'STM':                ['How are suspicious transactions flagged?', 'What is an STR?', 'How do rule thresholds work?'],
+                            'General':            ['How to get started?', 'Help with login and sessions', 'Contact system administrator']
+                        };
+                        this.predefinedQuestions = mappings[this.currentModule] || mappings['General'];
+                    },
+
+                    extractContextId() {
+                        // Match patterns like /case/Process/12345 or /Process/12345 or /Details/12345
+                        const urlMatch = window.location.pathname.match(/\/(?:case\/)?(?:Process|Details)\/([A-Z0-9]+)/i);
+                        if (urlMatch) { 
+                            this.currentCaseId = urlMatch[1]; 
+                        } else {
+                            this.currentCaseId = null;
+                        }
+                    },
+
+                    loadConversation(item) {
+                        if (this.messages.length > 1) this.archiveCurrentChat();
+                        this.messages = JSON.parse(JSON.stringify(item.messages));
+                        this.currentTitle = item.title;
+                        this.currentConversationId = item.id;
+                        this.currentCaseId = item.caseId;
+                        this.viewMode = 'chat';
+                        this.showInput = true;
+                        this.showOptions = false;
+                        this.saveToStorage();
+                        this.scrollToBottom();
+                    },
+                    archiveCurrentChat() {
+                        if (this.messages.length <= 1) return;
+                        const convId = this.currentConversationId || Date.now();
+                        this.currentConversationId = convId;
+                        const conversation = {
+                            id: convId,
+                            title: this.currentTitle,
+                            caseId: this.currentCaseId,
+                            messages: JSON.parse(JSON.stringify(this.messages)),
+                            timestamp: new Date().toISOString()
+                        };
+                        this.savedHistory = this.savedHistory.filter(h => h.id !== convId);
+                        this.savedHistory.unshift(conversation);
+                        localStorage.setItem('lemonHistory', JSON.stringify(this.savedHistory.slice(0, 50)));
+                        this.saveToStorage();
+                    },
+                    deleteConversation(id) {
+                        this.savedHistory = this.savedHistory.filter(c => c.id !== id);
+                        localStorage.setItem('lemonHistory', JSON.stringify(this.savedHistory));
+                        this.deleteConfirmId = null;
+                        setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 50);
+                    },
+                    copyToClipboard(text, event) {
+                        navigator.clipboard.writeText(text).then(() => {
+                            const btn = event.currentTarget;
+                            const original = btn.innerHTML;
+                            btn.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-green-500"></i>';
+                            if(window.lucide) lucide.createIcons();
+                            setTimeout(() => { 
+                                btn.innerHTML = original; 
+                                if(window.lucide) lucide.createIcons();
+                            }, 2000);
+                        });
+                    },
+                    selectQuestion(q) {
+                        this.messages.push({ role: 'user', content: q, isComplete: true });
+                        // Remove the selected question so the rest remain as tail questions
+                        this.predefinedQuestions = this.predefinedQuestions.filter(x => x !== q);
+                        // #20 — route predefined questions through the SSE stream (same as custom)
+                        this.userInput = q;
+                        this.sendMessage(null, true);
+                        this.saveToStorage();
+                    },
+
+                    resetChat() {
+                        this.archiveCurrentChat();
+                        this.messages = [
+                            { role: 'assistant', content: 'Hello! I am your Case Assistant. How can I help you today?', isComplete: true }
+                        ];
+                        this.currentTitle = 'New Conversation';
+                        this.currentConversationId = null;
+                        sessionStorage.removeItem('lemonActiveConvId');
+                        sessionStorage.removeItem('lemonActiveConvTitle');
+                        this.currentCaseId = null;
+                        this.updateQuestions();
+                        this.showInput = true;
+                        this.viewMode = 'chat';
+                        this.saveToStorage();
+                        this.extractContextId();
+                        this.scrollToBottom();
+                    },
+                    async sendMessage(queryType = null, skipPush = false) {
+                        if (!this.userInput.trim() && !queryType) return;
+
+                        const isFirstMessage = this.messages.length <= 1;
+                        const userMsg = this.userInput || (queryType ? `Tell me about the ${queryType}.` : "");
+                        if (!skipPush) {
+                            this.messages.push({ role: 'user', content: userMsg, isComplete: true });
+                            this.saveToStorage();
+                        }
+                        this.userInput = '';
+
+                        // FUZZY SEARCH INTERCEPT
+                        if (this.awaitingCaseSearch) {
+                            this.isTyping = true;
+                            this.stopThinkingAnimation();
+                            this.startThinkingAnimation(["Searching for cases...", "Querying database...", "Filtering matches..."]);
+                            try {
+                                const searchUrl = `/api/Chat/search-cases?query=${encodeURIComponent(userMsg)}`;
+                                const res = await fetch(searchUrl);
+                                const cases = await res.json();
+                                this.stopThinkingAnimation();
+                                this.isTyping = false;
+
+                                if (!cases || cases.length === 0) {
+                                    this.messages.push({
+                                        role: 'assistant',
+                                        content: 'No matching cases found in the system database. Please try another name or enter the Case ID manually.',
+                                        isComplete: true,
+                                        cases: []
+                                    });
+                                } else if (cases.length === 1) {
+                                    const c = cases[0];
+                                    this.currentCaseId = c.caseId;
+                                    this.awaitingCaseSearch = false;
+                                    this.messages.push({
+                                        role: 'assistant',
+                                        content: `Found exactly one match: **${c.customerName}** (Case ID: **${c.caseId}**, Status: **${c.status}**). Case selected automatically.`,
+                                        isComplete: true
+                                    });
+                                    // Trigger the original pending query
+                                    this.userInput = this.pendingCaseQuery || 'What is the status of the case?';
+                                    this.pendingCaseQuery = null;
+                                    await this.sendMessage(null, true);
+                                } else {
+                                    // Multiple cases found
+                                    this.awaitingCaseSearch = false;
+                                    this.messages.push({
+                                        role: 'assistant',
+                                        content: `I found ${cases.length} cases matching **"${userMsg}"**. Please select the correct case from the options below:`,
+                                        isComplete: true,
+                                        cases: cases
+                                    });
+                                }
+                            } catch (err) {
+                                this.stopThinkingAnimation();
+                                this.isTyping = false;
+                                this.messages.push({
+                                    role: 'assistant',
+                                    content: 'An error occurred while searching for the case. Please try again.',
+                                    isComplete: true
+                                });
+                            }
+                            this.saveToStorage();
+                            this.scrollToBottom();
+                            setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 50);
+                            return;
+                        }
+
+                        const msgLower = userMsg.toLowerCase();
+                        const isCaseQuery = msgLower.includes("status of the case") || 
+                                            msgLower.includes("what should i do next") || 
+                                            msgLower.includes("what was the case history") || 
+                                            userMsg === 'What is the status of the case?' ||
+                                            userMsg === 'What should I do next?' ||
+                                            userMsg === 'What was the case history?';
+
+                        let caseIdMatch = userMsg.match(/#([A-Z0-9]+)/i) || userMsg.match(/\b([A-Z]*[0-9][A-Z0-9]*)\b/i);
+
+                        if (isCaseQuery && !this.currentCaseId && !caseIdMatch) {
+                            this.pendingCaseQuery = userMsg;
+                            this.awaitingCaseSearch = true;
+                            this.messages.push({
+                                role: 'assistant',
+                                content: 'Please enter the Customer Name or Case ID to search for the case.',
+                                isComplete: true
+                            });
+                            this.saveToStorage();
+                            this.scrollToBottom();
+                            setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 50);
+                            return;
+                        }
+
+                        this.isTyping = true;
+                        this.showOptions = false;
+                        // DYNAMIC THINKING TEXT (GEMINI STYLE)
+                        let logicChain = ["Thinking..."];
+                        const msgLowerAgain = userMsg.toLowerCase();
+                        
+                        if (this.currentModule === 'Dashboard') 
+                            logicChain = ["Calculating system-wide metrics...", "Analyzing active vs blocked counts...", "Structuring totals..."];
+                        else if (this.currentModule === 'Admin') 
+                            logicChain = ["Scanning SQL Client registry...", "Analyzing organization status...", "Preparing client summary..."];
+                        else if (this.currentModule === 'PF Creation') 
+                            logicChain = ["Connecting to MongoDB Ledger...", "Analyzing UAE Cabinet Decision 156...", "Checking HS/CAS Match results...", "Structuring hits..."];
+                        else if (msgLower.includes('#') || msgLower.includes('status') || msgLower.includes('case')) 
+                            logicChain = ["Searching SQL Case Archive...", "Retrieving match history...", "Interpreting risk score...", "Structuring case summary..."];
+                        else if (this.currentModule === 'Due Diligence') 
+                            logicChain = ["Analyzing risk profile...", "Validating mandatory fields...", "Checking sanction history...", "Structuring Due Diligence result..."];
+                        else 
+                            logicChain = ["Processing your request...", "Analyzing context...", "Generating result..."];
+
+                        this.startThinkingAnimation(logicChain);
+                        this.scrollToBottom();
+
+                        caseIdMatch = userMsg.match(/#([A-Z0-9]+)/i) || userMsg.match(/\b([A-Z]*[0-9][A-Z0-9]*)\b/i);
+                        let typeToUse = queryType || this.pendingQueryType;
+                        let caseId = caseIdMatch ? caseIdMatch[1] : (typeToUse ? this.currentCaseId : (this.currentCaseId || null));
+
+                        if (caseIdMatch) {
+                            this.currentCaseId = caseId;
+                            this.pendingQueryType = null; // Clear it once used
+                        }
+
+                        // For predefined questions, use the extracted caseId or prompt the user
+                        if (queryType === 'predefined') {
+                            caseId = caseId || 'undefined';
+                        }
+
+                        const isGeneral = !caseId || caseId === 'undefined';
+
+                        // Prepare History (only role and content) — #23 window from config default 10
+                        const historyWindow = 10;
+                        const history = (this.messages || [])
+                            .filter(m => m.isComplete && m.content)
+                            .slice(-historyWindow)
+                            .map(m => ({ role: m.role, content: m.content }));
+
+                        try {
+                            // #19 — abort previous stream before starting a new one
+                            if (this.currentAbortController) this.currentAbortController.abort();
+                            this.currentAbortController = new AbortController();
+
+                            const url = isGeneral
+                                ? `/api/Chat/stream/general?prompt=${encodeURIComponent(userMsg)}&module=${this.currentModule}&isNewChat=${isFirstMessage}`
+                                : `/api/Chat/stream/${caseId}?queryType=${encodeURIComponent(typeToUse || '')}&isNewChat=${isFirstMessage}&prompt=${encodeURIComponent(userMsg)}`;
+
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(history),
+                                signal: this.currentAbortController.signal
+                            });
+
+                            if (!response.ok) {
+                                this.stopThinkingAnimation();
+                                throw new Error('Network error');
+                            }
+
+                            const reader = response.body.getReader();
+                            const decoder = new TextDecoder();
+                            const assistantMsgIndex = this.messages.push({ role: 'assistant', content: '', isComplete: false }) - 1;
+                            this.isTyping = false;
+                            this.isStreaming = true; // #19
+                            this.stopThinkingAnimation();
+
+                            while (true) {
+                                const { value, done } = await reader.read();
+                                if (done) break;
+                                const chunk = decoder.decode(value);
+                                chunk.split('\n').forEach(line => {
+                                    if (line.startsWith('data: ')) {
+                                        try {
+                                            const data = JSON.parse(line.substring(6));
+                                            if (data.t.startsWith('[TITLE]: ')) {
+                                                this.currentTitle = data.t.substring(9);
+                                            } else {
+                                                this.messages[assistantMsgIndex].content += data.t;
+                                                this.scrollToBottom();
+                                            }
+                                        } catch (e) { }
+                                    }
+                                });
+                            }
+                            this.messages[assistantMsgIndex].isComplete = true;
+                            this.isStreaming = false; // #19
+                            // #22 — mark unread if panel is closed
+                            if (!this.isOpen) this.hasUnread = true;
+                            this.saveToStorage();
+                            this.archiveCurrentChat();
+                        } catch (e) {
+                            this.isTyping = false;
+                            this.isStreaming = false;
+                            if (e.name !== 'AbortError') {
+                                this.messages.push({ role: 'assistant', content: 'Error connecting to AI service.', isComplete: true });
+                            }
+                        }
+
+                        this.isTyping = false;
+                        this.scrollToBottom();
+                        setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 50);
+
+                    },
+                    selectCaseFromList(c) {
+                        this.currentCaseId = c.caseId;
+                        this.messages.push({
+                            role: 'user',
+                            content: `Selected case: **${c.customerName}** (ID: **${c.caseId}**)`,
+                            isComplete: true
+                        });
+                        this.messages.push({
+                            role: 'assistant',
+                            content: `Case **${c.caseId}** selected. Proceeding to answer: *"${this.pendingCaseQuery || 'What is the status of the case?'}"*`,
+                            isComplete: true
+                        });
+                        const lastAsst = [...this.messages].reverse().find(m => m.role === 'assistant' && m.cases);
+                        if (lastAsst) {
+                            delete lastAsst.cases;
+                        }
+                        this.userInput = this.pendingCaseQuery || 'What is the status of the case?';
+                        this.pendingCaseQuery = null;
+                        this.sendMessage(null, true);
+                    },
+                    submitManualCaseId() {
+                        const val = this.manualCaseInput.trim();
+                        if (!val) return;
+                        this.currentCaseId = val;
+                        this.manualCaseInput = '';
+                        this.messages.push({
+                            role: 'user',
+                            content: `Selected case ID manually: **${val}**`,
+                            isComplete: true
+                        });
+                        this.messages.push({
+                            role: 'assistant',
+                            content: `Case **${val}** selected. Proceeding to answer: *"${this.pendingCaseQuery || 'What is the status of the case?'}"*`,
+                            isComplete: true
+                        });
+                        const lastAsst = [...this.messages].reverse().find(m => m.role === 'assistant' && m.cases);
+                        if (lastAsst) {
+                            delete lastAsst.cases;
+                        }
+                        this.userInput = this.pendingCaseQuery || 'What is the status of the case?';
+                        this.pendingCaseQuery = null;
+                        this.sendMessage(null, true);
+                    },
+                    renderMessage(content) {
+                        if (!content) return "";
+                        // Configure marked to handle single line breaks
+                        marked.setOptions({
+                            breaks: true,
+                            gfm: true
+                        });
+                        return marked.parse(content);
+                    },
+                    scrollToBottom() {
+                        setTimeout(() => {
+                            const container = document.getElementById('chatMessages');
+                            if (container) container.scrollTop = container.scrollHeight;
+                        }, 100);
+                    },
+                    startThinkingAnimation(steps) {
+                        this.stopThinkingAnimation();
+                        let i = 0;
+                        this.thinkingText = steps[0];
+                        this.thinkingInterval = setInterval(() => {
+                            i = (i + 1) % steps.length;
+                            this.thinkingText = steps[i];
+                        }, 1800);
+                    },
+                    stopThinkingAnimation() {
+                        if (this.thinkingInterval) {
+                            clearInterval(this.thinkingInterval);
+                            this.thinkingInterval = null;
+                        }
+                    },
+                    // #19 — stop the current stream
+                    stopStream() {
+                        if (this.currentAbortController) {
+                            this.currentAbortController.abort();
+                            this.currentAbortController = null;
+                        }
+                        this.isStreaming = false;
+                        this.isTyping = false;
+                        this.stopThinkingAnimation();
+                        // Mark last assistant message as complete
+                        const last = this.messages[this.messages.length - 1];
+                        if (last && last.role === 'assistant' && !last.isComplete) {
+                            last.content += ' *(stopped)*';
+                            last.isComplete = true;
+                        }
+                        this.saveToStorage();
+                    },
+                    // #17 — clear all localStorage history
+                    clearAllHistory() {
+                        this.savedHistory = [];
+                        localStorage.removeItem('lemonHistory');
+                    },
+                    // #15 — first user message snippet for history list
+                    getHistorySnippet(item) {
+                        const first = (item.messages || []).find(m => m.role === 'user');
+                        return first ? first.content.substring(0, 60) + (first.content.length > 60 ? '...' : '') : '';
+                    },
+                    getGroupedHistory() {
+                        if (!this.savedHistory || this.savedHistory.length === 0) return [];
+                        const groups = {};
+                        const sorted = [...this.savedHistory].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                        sorted.forEach(item => {
+                            const date = new Date(item.timestamp);
+                            const today = new Date();
+                            // #16 — fix: create a NEW date for yesterday to avoid mutating today
+                            const yesterday = new Date();
+                            yesterday.setDate(yesterday.getDate() - 1);
+                            let label = 'Earlier';
+
+                            if (date.toDateString() === today.toDateString()) label = 'Today';
+                            else if (date.toDateString() === yesterday.toDateString()) label = 'Yesterday';
+
+                            if (!groups[label]) groups[label] = { label, items: [] };
+                            groups[label].items.push(item);
+                        });
+                        return Object.values(groups);
+                    },
+                    formatDateShort(ts) {
+                        if(!ts) return "";
+                        const date = new Date(ts);
+                        return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    }
+                }
+            }
+        </script>
+    }
+  </body>
+</html>
+
+
+
+
+
+
+

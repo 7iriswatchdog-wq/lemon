@@ -1,0 +1,84 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model CustomerAcceptanceVM
+@{
+    ViewData["Title"] = "New Customer Acceptance";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "New Customer Acceptance";
+    ViewData["ReportSubtitle"] = $"Customers onboarded in the last {Model.DaysBack} days, intake-by-day chart, initial risk.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var maxDay = Model.ByDay.Count == 0 ? 1 : Math.Max(1, Model.ByDay.Max(b => b.Count));
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="flex gap-2 my-3">
+            <a href="?days=7" class="px-3 py-1.5 text-xs border rounded @(Model.DaysBack == 7 ? "bg-blue-50 border-blue-300" : "border-slate-300")">7d</a>
+            <a href="?days=30" class="px-3 py-1.5 text-xs border rounded @(Model.DaysBack == 30 ? "bg-blue-50 border-blue-300" : "border-slate-300")">30d</a>
+            <a href="?days=90" class="px-3 py-1.5 text-xs border rounded @(Model.DaysBack == 90 ? "bg-blue-50 border-blue-300" : "border-slate-300")">90d</a>
+            <a href="?days=365" class="px-3 py-1.5 text-xs border rounded @(Model.DaysBack == 365 ? "bg-blue-50 border-blue-300" : "border-slate-300")">1y</a>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 mb-4">
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Total</div><div class="text-2xl font-semibold text-slate-800">@Model.Total</div></div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3"><div class="text-[10px] uppercase text-blue-700 font-bold">Individuals</div><div class="text-2xl font-semibold text-blue-700">@Model.Individuals</div></div>
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-3"><div class="text-[10px] uppercase text-purple-700 font-bold">Corporates</div><div class="text-2xl font-semibold text-purple-700">@Model.Corporates</div></div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg p-4 mb-4">
+            <h3 class="font-semibold text-slate-800 mb-2">Daily intake</h3>
+            @if (Model.ByDay.Any())
+            {
+                var w = 600.0 / Math.Max(1, Model.ByDay.Count);
+                <svg viewBox="0 0 600 120" preserveAspectRatio="none" class="w-full h-28">
+                    @{ double x = 0; }
+                    @foreach (var b in Model.ByDay)
+                    {
+                        var h = b.Count * 110.0 / maxDay;
+                        var y = 120 - h;
+                        <rect x="@(x.ToString("0.0"))" y="@(y.ToString("0.0"))" width="@((w-1).ToString("0.0"))" height="@(h.ToString("0.0"))" fill="#2563eb"><title>@b.Label · @b.Count</title></rect>
+                        x += w;
+                    }
+                </svg>
+            }
+            else { <p class="text-sm text-slate-500 italic">No new customers in this window.</p> }
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left">
+                        <th class="px-3 py-2">Customer</th>
+                        <th class="px-3 py-2">Type</th>
+                        <th class="px-3 py-2">Nationality</th>
+                        <th class="px-3 py-2">Profession</th>
+                        <th class="px-3 py-2">Initial Risk</th>
+                        <th class="px-3 py-2 text-right">Cases</th>
+                        <th class="px-3 py-2">Onboarded By</th>
+                        <th class="px-3 py-2">When</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Rows)
+                    {
+                        var rcls = (r.InitialRisk ?? "").ToLowerInvariant().Contains("high") ? "bg-rose-100 text-rose-800"
+                            : (r.InitialRisk ?? "").ToLowerInvariant().Contains("medium") ? "bg-amber-100 text-amber-800"
+                            : (r.InitialRisk ?? "").ToLowerInvariant().Contains("low") ? "bg-emerald-100 text-emerald-800"
+                            : "bg-slate-100 text-slate-700";
+                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                            <td class="px-3 py-2"><a href="@Url.Action("Customer360","AmlTracker", new { cmid = r.CustomerMasterId })" class="text-blue-700 hover:underline font-medium">@r.FullName</a><div class="text-xs text-slate-500 font-mono">@r.CustomerCode</div></td>
+                            <td class="px-3 py-2 text-slate-600">@r.CustomerType</td>
+                            <td class="px-3 py-2">@r.Nationality</td>
+                            <td class="px-3 py-2 text-slate-600">@r.Profession</td>
+                            <td class="px-3 py-2"><span class="px-2 py-0.5 text-xs rounded-full @rcls">@(r.InitialRisk ?? "—")</span></td>
+                            <td class="px-3 py-2 text-right">@r.Cases</td>
+                            <td class="px-3 py-2 text-slate-600 text-xs">@r.CreatedBy</td>
+                            <td class="px-3 py-2 text-slate-600 text-xs">@(r.CreatedOn?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                        </tr>
+                    }
+                    @if (!Model.Rows.Any()) { <tr><td colspan="8" class="px-3 py-12 text-center text-slate-500">No new customers in this window.</td></tr> }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

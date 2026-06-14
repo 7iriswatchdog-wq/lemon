@@ -1,0 +1,110 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model WorkspaceVM
+@{
+    ViewData["Title"] = "QA Workspace";
+    ViewData["ActiveTab"] = "Workspace";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+    string QaPill(int code, string label)
+    {
+        var cls = code switch
+        {
+            2 => "bg-emerald-100 text-emerald-800",
+            3 => "bg-rose-100 text-rose-800",
+            1 => "bg-amber-100 text-amber-800",
+            4 => "bg-blue-100 text-blue-800",
+            _ => "bg-slate-100 text-slate-600"
+        };
+        return $"<span class=\"px-2 py-0.5 text-xs rounded-full {cls}\">{label}</span>";
+    }
+    string RiskPill(string tier)
+    {
+        var cls = tier switch
+        {
+            "High" => "bg-rose-100 text-rose-800",
+            "Medium" => "bg-amber-100 text-amber-800",
+            "Low" => "bg-emerald-100 text-emerald-800",
+            _ => "bg-slate-100 text-slate-600"
+        };
+        return $"<span class=\"px-2 py-0.5 text-xs rounded-full {cls}\">{tier}</span>";
+    }
+}
+
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <div class="mb-3">
+            <h1 class="text-2xl font-semibold text-slate-800">QA Workspace</h1>
+            <p class="text-sm text-slate-500">Cases that need a QA decision, sorted by oldest closed-without-QA first.</p>
+        </div>
+
+        <partial name="_TrackerTabs" />
+
+        @if (!string.IsNullOrEmpty(Model.FlashMessage))
+        {
+            var cls = Model.FlashLevel switch
+            {
+                "success" => "bg-emerald-50 border-emerald-300 text-emerald-800",
+                "error" => "bg-rose-50 border-rose-300 text-rose-800",
+                _ => "bg-blue-50 border-blue-300 text-blue-800"
+            };
+            <div class="border @cls rounded p-3 mb-4 text-sm">@Model.FlashMessage</div>
+        }
+
+        @if (!Model.CurrentUserCanQa)
+        {
+            <div class="border bg-amber-50 border-amber-300 text-amber-900 rounded p-3 mb-4 text-sm">
+                Read-only — your role isn't authorized for QA actions.
+            </div>
+        }
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left">
+                        <th class="px-3 py-2">Case</th>
+                        <th class="px-3 py-2">Customer</th>
+                        <th class="px-3 py-2">Case Status</th>
+                        <th class="px-3 py-2">Risk</th>
+                        <th class="px-3 py-2">Hits</th>
+                        <th class="px-3 py-2">Owner</th>
+                        <th class="px-3 py-2">QA</th>
+                        <th class="px-3 py-2">Days Closed</th>
+                        <th class="px-3 py-2">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Rows.Any())
+                    {
+                        <tr><td colspan="9" class="px-3 py-12 text-center text-slate-500">No cases waiting for QA. Queue is clear.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var r in Model.Rows)
+                        {
+                            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                <td class="px-3 py-2 font-mono text-xs"><a href="/Case/Process/@r.CaseId" class="text-blue-600 hover:underline">@r.CaseId</a></td>
+                                <td class="px-3 py-2">
+                                    <div class="font-medium">@r.CustomerName</div>
+                                    <div class="text-xs text-slate-500">@r.CustomerCode · @r.CustomerType · @r.Nationality</div>
+                                </td>
+                                <td class="px-3 py-2 text-slate-600">@r.StatusLabel</td>
+                                <td class="px-3 py-2">@Html.Raw(RiskPill(r.RiskTier))</td>
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    @if (r.IsPep) { <span class="px-1.5 py-0.5 mr-1 text-[10px] font-semibold rounded bg-amber-100 text-amber-800">PEP</span> }
+                                    @if (r.IsSanction) { <span class="px-1.5 py-0.5 mr-1 text-[10px] font-semibold rounded bg-rose-100 text-rose-800">SAN</span> }
+                                    @if (r.IsAdverseMedia) { <span class="px-1.5 py-0.5 mr-1 text-[10px] font-semibold rounded bg-amber-100 text-amber-800">AM</span> }
+                                </td>
+                                <td class="px-3 py-2 text-xs text-slate-600">@r.OwnerName</td>
+                                <td class="px-3 py-2">@Html.Raw(QaPill(r.QaStatusCode, r.QaStatusLabel))</td>
+                                <td class="px-3 py-2 text-slate-700">@(r.DaysClosedWithoutQa?.ToString() ?? "—")</td>
+                                <td class="px-3 py-2">
+                                    <a href="/AmlTracker/Index?Search=@r.CaseId" class="text-xs text-blue-600 hover:underline">Open in tracker</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

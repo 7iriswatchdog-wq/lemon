@@ -1,0 +1,1023 @@
+﻿@using AML.Web.Helpers;
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var culture = System.Threading.Thread.CurrentThread.CurrentUICulture.Name.ToLowerInvariant();
+
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+        var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+        var userModules = HttpContextAccessor.HttpContext.Session.GetString("SessModules");
+	var allowedModules = new List<int>();
+	 if (!string.IsNullOrEmpty(userModules))
+    {
+        var modules = JsonConvert.DeserializeObject<List<dynamic>>(userModules);
+        allowedModules = modules.Select(m => (int)m.Menu_Id).ToList();
+    }
+
+}
+@model AML.ViewModel.ViewModels.Kyc.KycIndividualModel
+<!--Plugin CSS file with desired skin-->
+<link rel="stylesheet" href="/plugins/ion-rangeslider/css/ion.rangeSlider.css" />
+
+<!--jQuery-->
+<script src="/plugins/ion-rangeslider/js/ion.rangeSlider.js"></script>
+
+<!--Plugin JavaScript file-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ion-rangeslider/2.3.0/js/ion.rangeSlider.min.js"></script>
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<style>
+    .chck_box {
+        margin: 0 12px 0 0;
+        vertical-align: middle;
+        position: relative;
+        top: -1px;
+    }
+</style>
+
+@* for the loading effect like data tables ... *@
+<style>
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+            .dt-loader div:nth-child(1) {
+                left: 8px;
+                animation: dt-anim1 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(2) {
+                left: 8px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(3) {
+                left: 32px;
+                animation: dt-anim2 0.6s infinite;
+            }
+
+            .dt-loader div:nth-child(4) {
+                left: 56px;
+                animation: dt-anim3 0.6s infinite;
+            }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }</style>
+
+<body>
+    <div class="max-w-screen h-full items-center ">
+
+        <div id="loadingeffect" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
+            <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+        </div>
+		<!-- RIGHT SIDE NAV -->
+		@* <nav class="border-b">
+			<div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+				<div>
+					<h2 class="text-2xl font-bold">Individual</h2>
+				</div>
+				<div class="md:block hidden">
+					<img src="@Clientlogo" alt="Client Logo" width="50px" />
+				</div>
+			</div>
+		</nav> *@
+        <nav class="flex items-center px-4 h-[72.8px] border-b">
+            <div class="flex items-center justify-between w-full">
+                <!-- Title -->
+                <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                    @localizer["Individual"]
+                </h2>
+
+                <!-- Right-side content -->
+                <div class="text-sm md:text-base text-right">
+                    <img src="@Clientlogo" alt="Client Logo" width="50px" />
+                </div>
+            </div>
+        </nav>
+	<div class="h-auto bg-gray-50 items-center  ">
+	
+		<div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4  mx-auto">
+			
+			<!-- NAME SCREENING -->
+               <form class="space-y-6" asp-controller="Kyc" asp-action="CreateIndividualKyc" enctype="multipart/form-data" method="post">
+			<div class="w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+               <div class="overflow-x-auto">
+				
+                    <nav class="border-b mb-6 w-fit flex space-x-2 sm:space-x-2 sm:flex-wrap sm:gap-4">
+                             @if (allowedModules.Contains(1)) // Check if menu ID is allowed
+								{
+									<a asp-controller="case" asp-action="create" class="text-[#64748B] font-extralight rounded-t-lg pb-4" onclick="showLoadingAndRedirect(event, this)">Name Screening</a>
+								}
+								@if (allowedModules.Contains(11)) // Check if menu ID is allowed
+								{
+								  <a asp-controller="Kyc" asp-action="CreateIndividualKyc" class="border-b-2 rounded-t-lg border-blue-600 pb-4 font-normal text-md" onclick="showLoadingAndRedirect(event, this)">KYC Profile Screening</a>
+								}
+								@if (allowedModules.Contains(1)) // Check if menu ID is allowed
+								{
+									<a asp-controller="ClientCase" asp-route-type="I" asp-action="UploadExcel" class="text-[#64748B] font-extralight rounded-t-lg pb-4" onclick="showLoadingAndRedirect(event, this)">Bulk Upload Screening</a>
+								}
+					</nav>
+				
+               </div>
+                    
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                            <div>
+                                <label data-toggle="tooltip" data-placement="top" title="Exclude Sir, Honorable, HH, Dr, Professor, parenthesis, apostrophe, period, comma, hyphens, Sr, Jr, Roman numbers, familiar relationship." class="block text-sm font-medium text-gray-700 mb-1">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" placeholder="Enter full name" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="FullName" maxlength="100" id="fullName" Required onkeypress="alphaCheck(event)">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nationality</label> 
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" id="ddlCountryList"  asp-items="Model.CountryList" asp-for="Nationality">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>
+                                <input class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="hidden" asp-for="Nationality" id="nationality" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label> 
+                                <input  placeholder="Enter Place of Birth" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" type="date" id="DOB" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" onchange="dobOnChange()">
+                                <input type="hidden" asp-for="DOB" id="hdnDOB" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Place of Birth</label>
+                                <input placeholder="Enter Place of Birth" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" type="text" asp-for="PlaceOfBirth" maxlength="20" id="Placeofbirth">
+                               
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Residence Status</label>
+                                @{
+                                    if (CultureHelper.IsRighToLeft())
+                                    {
+                                        
+                                        <select class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" id="ddlResidenceStatus" asp-for="ResidenceStatus">
+                                            <option value="مقيم" selected="selected">@localizer["Resident"]</option>
+                                            <option value="غير مقيم">@localizer["Non Resident"]</option>
+                                        </select>
+
+                                    }
+                                    else
+                                    {
+                                        <select class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" id="ddlResidenceStatus" asp-for="ResidenceStatus" asp-items="Model.ResidentialStatusList">
+                                            <option value="مقيم" selected="selected">@localizer["Resident"]</option>
+                                            <option value="غير مقيم">@localizer["Non Resident"]</option>
+                                        </select>
+                                        
+                                    }
+                                }
+                                
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Martial Status</label> 
+                                <input class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="MaritalStatus" maxlength="20" id="maritalstatus" />
+                                  
+
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">ID Type</label> 
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" id="ddlIdType" asp-for="CustomerIdType">
+                                    <option value="Emirates ID" selected="selected">@localizer["Emirates ID"]</option>
+                                    <option value="Passport">@localizer["Passport"]</option>
+                                    <option value="National ID">@localizer["National ID"]</option>
+                                </select>
+
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">ID Number</label> 
+                                <input type="text" placeholder="Enter ID Number" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="CustomerIdNumber" maxlength="20" onkeypress="alphaNumericCheck(event)">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">ID Expiry Date</label> 
+                                <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="IdExpdate" min="@(DateTime.Now.ToString("yyyy-MM-dd"))" id="passportexpirydate">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Source of Income</label> 
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="Sourceofincome" id="sourcofincomes">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                    <option value="Operations/Trading">@localizer["Operations/Trading"]</option>
+                                    <option value="Investments/Dividends">@localizer["Investments/Dividends"]</option>
+                                    <option value="Finance">@localizer["Finance"]</option>
+                                    <option value="Other">@localizer["Other"]</option>
+                                    <option value="Salary">@localizer["Salary"]</option>
+                                </select>
+                               
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Occupation Type</label> 
+                                <select id="ddlOccupation" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-items="Model.ProfessionalList">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>
+                              
+                            </div>
+                             <div class="form-group row" style="display:none;" id="OccupOther">
+                                <div class="col-sm-3">
+                                    <label for="other_ps">@localizer["Other (Please Specify)"] :</label>
+                                </div>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control mb-2 mt-2" id="ddlFundSourcehdn" placeholder=@localizer["Other"] asp-for="OccupatinTypeTxt">
+
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Product Type</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" id="ddlProductType" asp-for="ProductName" asp-items="Model.ProductTypeList">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>
+                               
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Delivery Channel</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="DeliveryChannelName" asp-items="Model.DeliveryChannelList">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Mode of Payment</label> 
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="Modeofpayment" asp-items="Model.ModeofpaymentList" id="ddlDeliveryChannel">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">PEP Declaration</label> 
+                                <select id="ddlpepstatus" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="PEPStatus">
+                                    <option value="0">--@localizer["EMPTY"]--</option>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                    <option value="Unsure">Unsure</option>
+                                </select>
+                            </div>
+                            @* style="height: 40px;" *@
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                <textarea rows="1" asp-for="Address" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight resize-none" id="Address" name="Address"  placeholder=@localizer["Address"]></textarea>
+                            </div>
+                        </div>
+                    
+                </div>
+
+                <!-- BANK DETAILS -->
+                <div class="w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+                    <div class="mb-6 w-fit font-semibold">
+                        <nav class="flex space-x-2 sm:space-x-2 sm:flex-wrap sm:gap-4">
+                            <h2 class="text-lg">Bank Details</h2>
+                        </nav>
+                    </div>
+                    
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Account Number</label> 
+                                <input type="text" placeholder="Enter Account Number" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="BankAccountNo" maxlength="20" id="bankacc">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Bank Name</label> 
+                                <input type="text" placeholder="Enter Bank Name" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="BankAccountName" maxlength="20" id="Bankname">
+                               
+                            </div>
+                           
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Bank Branch</label> 
+                                <input type="text" placeholder="Enter Bank Branch" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="BankAccountBranch" maxlength="20" id="Bankbranch">
+                            </div>
+                        </div>
+               
+                </div>
+
+                <!-- EMPLOYEE INFO -->
+                <div class="w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+                    <div class="mb-6 w-fit font-semibold">
+                        <nav class="flex space-x-2 sm:space-x-2 sm:flex-wrap sm:gap-4">
+                            <h2 class="text-lg">Employee Info</h2>
+                        </nav>
+                    </div>
+                   
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                <input type="text" placeholder="Enter full name" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="EmployerName" onkeypress="alphaCheck(event)">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Address</label> 
+                                <input type="text" placeholder="Enter Address" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="EmployerAddress">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Residence Address</label> 
+                                <input type="text" placeholder="Enter Residence Address" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="ResidenceAddress">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label> 
+                                <input type="email" placeholder="Enter Email" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="Email">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label> 
+                                <input type="text" placeholder="Enter Mobile Number" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="Mobile">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Remarks</label> 
+                                <textarea rows="1" asp-for="Remarks" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight resize-none" id="txtRemarks"  name="Remarks" placeholder=@localizer["Remarks"]></textarea>
+                            </div>
+                        </div>
+                   
+                </div>
+
+                <!-- DOCUMENT INFO -->
+                <div class="w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+                    <div class="flex justify-between items-center mb-2 overflow-x-auto gap-4">
+                            <input type="hidden" id="corpDivIndex" value="1" />
+
+                            <input type="hidden" id="rowIndex_0" value="0" />
+                        <h1 class="text-lg font-semibold text-gray-900">Document Info</h1>
+                            <button type="button" class="bg-[#2563EB] text-white text-sm md:px-4 md:py-2 px-2 py-1 rounded-lg flex items-center gap-2 hover:bg-primary transition-colors" onclick="addDocuments()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="w-4 h-4">
+                                <circle cx="12" cy="12" r="12" fill="white" />
+                                <g fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 8v8"></path>
+                                    <path d="M8 12h8"></path>
+                                </g>
+                            </svg>
+                            @* <img src="./SVGS/upload-cloud 2.svg" alt="Upload Document" class="s-2" /> *@
+                            Add Document
+                        </button>
+                    </div>
+                        <div class="corporate">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Document Reference</label> 
+                                <input type="text" placeholder="Enter Document Reference" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" id="txtDocNo_0" name="CaseDocumentsL[0].DocumentName" asp-for="CaseDocumentsL[0].DocumentName" maxlength="20">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Issue Date</label> 
+                                <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" id="txtIssuedDate" name="CaseDocumentsL[0].IssuedDate" asp-for="CaseDocumentsL[0].IssuedDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label> 
+                                <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" id="txtExpiryDate" name="CaseDocumentsL[0].ExpiryDate" asp-for="CaseDocumentsL[0].ExpiryDate" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))">
+                            </div>
+                            <div class="">
+                                <input type="file" name="CaseDocumentsL[0].Document" class="w-full bg-[#F0F4FF] px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-gray-600 flex items-center justify-center gap-2 font-extralight" asp-for="CaseDocumentsL[0].Document" id="txtFile">
+                              @* <button class="w-full bg-[#F0F4FF] px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-gray-600 flex items-center justify-center gap-2 font-extralight"  type="file" name="CaseDocumentsL[0].Document"  asp-for="CaseDocumentsL[0].Document" id="txtFile">
+                                    <img src="./SVGS/upload-cloud%201.svg" alt="upload-cloud%201">
+                                    Upload Document
+                                </inpu*@
+                            </div>
+                            <div>
+                                    <button class="bg-[#2563EB] text-white text-sm  px-4 py-2.5 rounded-lg flex items-center gap-2 hover:bg-primary transition-colors DelCorporate " id="btnCorpDel_0" onclick="removeCorporate(0)" disabled>
+                                    <!-- <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="w-4 h-4">
+                                        <circle cx="12" cy="12" r="12" fill="white" />
+                                        <g fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 8v8"></path>
+                                            <path d="M8 12h8"></path>
+                                        </g>
+                                    </svg> -->
+                                    
+                                    Remove
+                                </button>
+                                    <input type="hidden" id="isRemoved_0" value="false" name="CaseDocumentsL[0].isRemoved" />
+                                    
+                           </div>
+                           
+                        </div>
+                            <div id="corporateBodyDiv" class="mt-4 mb-4"></div>
+                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Match Parameter</label>
+                            <input type="number" placeholder="Enter Match Parameter" class="w-full px-3 py-2 border border-gray-300 rounded-md font-extralight" asp-for="Threshold" id="textInput" value="70" min="50" max="100">
+                        </div>
+                        <div class="flex flex-col sm:flex-row justify-end space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
+                            <a asp-controller="Kyc" asp-action="CreateIndividualKyc" onclick="showLoadingAndRedirect(event, this)"
+                               class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 text-center transition duration-200">
+                                Cancel
+                            </a>
+                            <button type="submit" id="btnSubmit" class="px-6 py-2 bg-[#2563EB] text-white rounded-md hover:bg-primary-hover">Submit</button>
+                        </div>
+                    </div>
+                </form>
+                
+            </div>
+        </div>
+    </div>
+
+   @* <div class="custom_container">
+        <div class="sas-breadcrumbs aml-breadcrumbs pb-3">
+            <ul class="mb-0 pl-0 d-flex">
+                <li><a href="#">Home</a></li>/
+                <li><a href="#">KYC</a></li>/
+                <li><a href="#">Individual </a></li>
+            </ul>
+        </div>
+        <div class="page-heading">
+            <div class="sas-card rounded-card br-10 mb-2 bg-blue">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><b>Individual KYC</b></h5>
+                    <div class="menu-icon">
+                        <i class="lni lni-microsoft"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sas-card rounded-card br-10 mb-2 bg-blue">
+            <form asp-controller="Kyc" asp-action="CreateIndividualKyc" class="form_contents" enctype="multipart/form-data" method="post">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Individual KYC Details</h6>
+                </div>
+                <hr />
+
+                <div class="row mb-2">
+                    <div class="col-sm-12">
+                        <label data-toggle="tooltip" data-placement="top" title="Exclude Sir, Honorable, HH, Dr, Professor, parenthesis, apostrophe, period, comma, hyphens, Sr, Jr, Roman numbers, familiar relationship.">@localizer["Full Name"] <span class="text-danger">*</span> </label> <br>
+                        <input class="form-control mandatory" type="text" asp-for="FullName" maxlength="100" id="fullName" Required onkeypress="alphaCheck(event)" />
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-sm-4">
+                        <label>@localizer["Date of Birth"] </label> <br>
+                        <input class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="date" id="DOB" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" onchange="dobOnChange()" />
+                        <input type="hidden" asp-for="DOB" id="hdnDOB" />
+                    </div>
+                    <div class="col-sm-4">
+
+                        <label>@localizer["Nationality"]</label> <br>
+
+                        <select id="ddlCountryList" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-items="Model.CountryList" asp-for="Nationality">
+                            <option value="0">--@localizer["EMPTY"]--</option>
+                        </select>
+                        <input class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="hidden" asp-for="Nationality" id="nationality" />
+
+                    </div>
+                    <div class="col-sm-4">
+                        <label>@localizer["Place of Birth"]</label> <br>
+                        <input class="form-control " type="text" asp-for="PlaceOfBirth" maxlength="20" id="Placeofbirth" />
+                    </div>
+                </div>
+
+                <div class="row mb-2">
+                   
+                    <div class="col-sm-4">
+                        <label>@localizer["Residence Status"]</label>
+
+                        @{
+                            if (CultureHelper.IsRighToLeft())
+                            {
+                                <select id="ddlResidenceStatus" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-for="ResidenceStatus">
+                                    <option value="مقيم" selected="selected">@localizer["Resident"]</option>
+                                    <option value="غير مقيم">@localizer["Non Resident"]</option>
+                                </select>
+
+
+                            }
+                            else
+                            {
+                                <select id="ddlResidenceStatus" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-for="ResidenceStatus" asp-items="Model.ResidentialStatusList">
+                                </select>
+                            }
+                        }
+
+                    </div>
+                    <div class="col-sm-4">
+                        <label>@localizer["Marital Status"]</label> <br>
+                        <input class="form-control " type="text" asp-for="MaritalStatus" maxlength="20" id="maritalstatus" />
+                    </div>
+                    <div class="col-sm-4">
+
+                        <div class="form-group">
+                            <label>@localizer["Id Type"]*@ @*<span class="text-danger">*</span>*@@*</label>
+
+                            <select id="ddlIdType" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-for="CustomerIdType">
+                                <option value="Emirates ID" selected="selected">@localizer["Emirates ID"]</option>
+                                <option value="Passport">@localizer["Passport"]</option>
+                                <option value="National ID">@localizer["National ID"]</option>
+                            </select>*@
+
+                            @*<span asp-validation-for="CustomerIdType" class="text-danger"></span>*@
+                        @*</div>
+                    </div>
+
+              
+                   
+                </div>
+                <div class="row mb-2">
+                         
+                    <div class="col-sm-4">
+                        <div class="form-group">
+                            <label for="txtIdNumber">@localizer["Id Number"]*@ @*<span class="text-danger">*</span>*@@*</label>
+                            <input type="text" asp-for="CustomerIdNumber" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtIdNumber" placeholder=@localizer["Id Number"] maxlength="20" onkeypress="alphaNumericCheck(event)">*@
+                            @*<span asp-validation-for="CustomerIdNumber" class="text-danger"></span>*@
+                        @*</div>
+                    </div>
+                   
+                    
+                     <div class="col-sm-4">
+                        <label>@localizer["ID Expiry Date"]</label> <br>
+                        <input class="form-control " type="date" asp-for="IdExpdate" min="@(DateTime.Now.ToString("yyyy-MM-dd"))" id="passportexpirydate" />
+                    </div>
+                    <div class="col-sm-4">
+                        <label>@localizer["Source of Income"]</label> <br>
+                        <select class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-for="Sourceofincome" id="sourcofincomes">
+                            <option value="0">--@localizer["EMPTY"]--</option>
+                            <option value="Operations/Trading">@localizer["Operations/Trading"]</option>
+                            <option value="Investments/Dividends">@localizer["Investments/Dividends"]</option>
+                            <option value="Finance">@localizer["Finance"]</option>
+                            <option value="Other">@localizer["Other"]</option>
+                            <option value="Salary">@localizer["Salary"]</option>
+                        </select>
+
+                    </div>
+                    </div>
+
+                   
+                <div class="row mb-2">
+                    
+                    <div class="col-sm-4">
+                        <label>@localizer["Occupation Type"]</label>
+                       
+                       
+                        <select id="ddlOccupation" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-items="Model.ProfessionalList">
+                            <option value="0">--@localizer["EMPTY"]--</option>
+                        </select>
+                    </div>
+                    <div class="form-group row" style="display:none;" id="OccupOther">
+                        <div class="col-sm-3">
+                            <label for="other_ps">@localizer["Other (Please Specify)"] :</label>
+                        </div>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control mb-2 mt-2" id="ddlFundSourcehdn" placeholder=@localizer["Other"] asp-for="OccupatinTypeTxt">
+
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <label>@localizer["Product Type"]</label>
+                        <select id="ddlProductType" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-for="ProductName" asp-items="Model.ProductTypeList">
+                            <option value="0">--@localizer["EMPTY"]--</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-4">
+                        <label>@localizer["Delivery Channel"]</label>
+                        <select id="ddlDeliveryChannel" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-for="DeliveryChannelName" asp-items="Model.DeliveryChannelList">
+                            <option value="0">--@localizer["EMPTY"]--</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    
+                    <div class="col-sm-4">
+                        <label>@localizer["Mode of Payment"]</label>
+                        <select id="ddlDeliveryChannel" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-for="Modeofpayment" asp-items="Model.ModeofpaymentList">
+                            <option value="0">--@localizer["EMPTY"]--</option>
+                        </select>
+                    </div>
+                   
+                   
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col-sm-4">
+                        <label>@localizer["Bank Account No"]</label> <br>
+                        <input class="form-control " type="text" asp-for="BankAccountNo" maxlength="20" id="bankacc" />
+                    </div>
+                    <div class="col-sm-4">
+                        <label>@localizer["Bank Name"]</label> <br>
+                        <input class="form-control " type="text" asp-for="BankAccountName" maxlength="20" id="Bankname" />
+                    </div>
+                    <div class="col-sm-4">
+                        <label>@localizer["Bank Branch"]</label><br>
+                        <input class="form-control " type="text" asp-for="BankAccountBranch" maxlength="20" id="Bankbranch" />
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-sm-4">
+                        <label>@localizer["Pep Declaration"]</label> <br>
+                        <select id="ddlpepstatus" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-for="PEPStatus" >
+                            <option value="0">--@localizer["EMPTY"]--</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                            <option value="Unsure">Unsure</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-4">
+                        <label>@localizer["Address"]</label> <br>
+                        <textarea rows="2" asp-for="Address" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="Address" name="Address" style="height: 40px;" placeholder=@localizer["Address"]></textarea>
+                    </div>
+                </div>
+
+
+                <div class="form-row ">
+                    <div class="d-flex justify-content-between align-items-center mb-2 mt-3">
+                        <h6 class="mb-0">Name And Address Of the Employer (if Salaried)</h6>
+                    </div>
+                </div>
+                <hr />
+
+                <div class="form-row mb-2 ">
+                    <div class="col">
+                        @localizer["Name"]   
+                        <input class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="text" asp-for="EmployerName" onkeypress="alphaCheck(event)" />
+                    </div>
+                    <div class="col">
+                        @localizer["Address"]
+
+
+                        <textarea rows="2" asp-for="EmployerAddress" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="EmployerAddress" name="EmployerAddress" style="height: 40px;" placeholder=@localizer["Employer Address"]></textarea>*@
+                        @*<input class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="text" asp-for="EmployerAddress" />*@
+                   @* </div>
+                    <div class="col">
+                        @localizer["Residence Address"]  *@
+
+                        @*<textarea rows="2" asp-for="ResidenceAddress" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="ResidenceAddress" name="ResidenceAddress" style="height: 40px;" placeholder=@localizer["Address"]></textarea>*@
+                        @*<input class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="text" asp-for="ResidenceAddress" />*@
+                    @*</div>
+                </div>
+
+                <div class="form-row mb-4">
+
+                    <div class="col-sm-4">
+                        <label>@localizer["Email Address"] </label> <br>
+                        <input class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="text" asp-for="Email" />
+                    </div>
+
+                    <div class="col-sm-4">
+                        <label>@localizer["Mob. No"].</label> <br>
+                        <input class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="text" asp-for="Mobile" onkeypress="isNumber(event)" />
+                    </div>
+
+                    <div class="col-sm-4">
+                        <label>@localizer["Remarks"]</label><br>
+                        <textarea rows="2" asp-for="Remarks" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtRemarks" style="height:40px;" name="Remarks" placeholder=@localizer["Remarks"]></textarea>
+                    </div>*@
+
+          @*          <div class="col-sm-4">
+                        <label></label>
+                        <div class="row mt-3 ml-3">
+                            <div class="col-sm-1">
+                                <label>@localizer["PEP"]</label>
+                            </div>
+                            <div class="col-sm-2">
+                                <input type="radio" id="rbPEP1" asp-for="PEPStatus" value="1" />
+                                <label for="rbPEP1">@localizer["Yes"]</label>
+                            </div>
+                            <div class="col-sm-2">
+                                <input type="radio" id="rbPEP2" asp-for="PEPStatus" value="0" checked="checked" />
+                                <lable for="rbPEP2">@localizer["No"]</lable>
+                            </div>
+                        </div>
+                    </div>*@
+                @*</div>
+           
+
+            <div id="divGuardian" style="display:none;">
+                <div class="form-row text-center" style="background-color: #347B98">
+                    <p style="color:white" ;>
+                        @localizer["For Minor and Incompetent Applicant Only"]
+                    </p>
+                </div>
+                <div class="form-row">
+                    <div class="col">
+                        <label>@localizer["Name of the Guardian"]</label>
+                        <input class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="text" asp-for="GuardianName" onkeypress="alphaCheck(event)" />
+                        <label>@localizer["Relationship with Applicant"]</label>
+                        <input class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="text" asp-for="GuardianRelation" onkeypress="alphaCheck(event)" />
+                    </div>
+                </div>
+            </div>
+            <br />*@
+
+            @*<input type="hidden" id="C6Threshold" asp-for="C6Threshold" value="50" />
+                <input type="hidden" id="Threshold" asp-for="Threshold" value="75" />*@
+            <br />
+
+                <!--document section-->
+
+               
+
+               
+                       @* <div class="form-group">
+                            <input type="hidden" id="corpDivIndex" value="1" />
+
+                            <input type="hidden" id="rowIndex_0" value="0" />
+                             <button type="button" onclick="addDocuments()" class="sas-button p-10-25 color-white bg-color-2 submit_btn">@localizer["Add Documents"]</button>
+                            
+                        </div>
+                   
+           <div class="corporate">
+                <div class="row">*@
+                   
+                    @*<div class="col-10">*@
+                        @*<div class="row">
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <label for="txDocNo_0">@localizer["Document Reference"]</label>
+                                    <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtDocNo_0" name="CaseDocumentsL[0].DocumentName" asp-for="CaseDocumentsL[0].DocumentName" placeholder=@localizer["Document Reference"] maxlength="20">
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <label for="txIssuedDate">@localizer["Issued Date"]</label>
+                                    <input type="date" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtIssuedDate" name="CaseDocumentsL[0].IssuedDate" asp-for="CaseDocumentsL[0].IssuedDate" max="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder=@localizer["Document Issued Date"]>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <label for="txtExpiryDate">@localizer["Expiry Date"]</label>
+
+                                    <input type="date" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtExpiryDate" name="CaseDocumentsL[0].ExpiryDate" asp-for="CaseDocumentsL[0].ExpiryDate" max="2077-12-31" min="@(DateTime.Now.ToString("yyyy-MM-dd"))" placeholder=@localizer["Document Expiry Date"]>
+
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <label for="txtFile">@localizer["Document"]</label>
+                                    <input type="file" name="CaseDocumentsL[0].Document" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-for="CaseDocumentsL[0].Document" id="txtFile">
+                                </div>
+                            </div>
+                            <div class="col-1">
+                                <div class="form-group">
+                                    <label for="txtAction">@localizer["Action"]</label>
+                                    <input type="hidden" id="isRemoved_0" value="false" name="CaseDocumentsL[0].isRemoved" />
+                                    <input type="button" class="DelCorporate form-control-file" id="btnCorpDel_0" onclick="removeCorporate(0)" disabled value="@localizer["Remove"]" />
+                                </div>
+                            </div>
+                        </div>
+                        <div id="corporateBodyDiv"></div>*@
+                    @*</div>*@
+               @* </div>
+            </div>
+            <div class="form-row">                
+                <div class="col-4">
+                    <div class="form-group">
+                            <label class="form_label" for="match_para">@localizer["Match Parameter"]</label>
+                            <input type="number" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-for="Threshold" id="textInput" value="70" min="50" max="100" placeholder=@localizer["70"] />
+                    </div>
+                </div>*@
+                   
+                @*<div class="col-md-7">
+                    <div class="form-group range-slider-div">
+                        <label for="js-range-slider">@localizer["Threshold"]</label><br />
+                        <span class="min-value">50</span>
+                        <input type="range" min="50" max="100" name="my_range" value="85" oninput="updateTextInput(this.value);" style="width:90%">
+                        <span class="max-value" style="right: 90px;">100</span>
+                        <input type="text" asp-for="Threshold" id="textInput" value="" readonly style="width:30px">
+                    </div>
+                </div>*@
+            @*</div>
+
+                <div class="form-row justify-content-between">
+
+
+                    <label>@localizer["Signature"]</label> <br><br>
+
+
+
+                    <label> Date : @DateTime.Now</label>
+
+                </div>
+
+            <div class="row justify-content-center">
+                <button type="submit" id="btnSubmit" class="sas-button p-10-25 color-white submit_btn">@localizer["Submit"]</button>
+            </div>
+            </form>
+        </div>
+    </div>*@
+
+    
+</body>
+
+
+
+<script type="text/javascript">
+    document.getElementById('textInput').value = 70
+    //function updateTextInput(val) {
+    //    document.getElementById('textInput').value = val;
+    //}
+
+    function alphaNumericCheck(e) {
+        var key = e.keyCode;
+        if (!(key > 47 && key < 58) && !(key > 64 && key < 91) && !(key > 96 && key < 123)) {
+            if (key == 34 || key == 32) {
+
+            } else {
+                e.preventDefault();
+            }
+        }
+    }
+
+
+    $('#ddlCountryList').change(function () {
+        $('#nationality').val($('#ddlCountryList :selected').text());
+
+    });
+    $('#btnSubmit').click(function () {
+        // $('.se-pre-con').show();
+        // $('.se-pre-con').fadeOut(10000);
+        $('#loadingeffect').show();
+        // $('#loadingeffect').hide();
+    });
+    function alphaCheck(e) {
+        var key = e.keyCode;
+        if (!(key > 64 && key < 91) && !(key > 96 && key < 123)) {
+            if (key == 34 || key == 32) {
+
+            } else {
+                e.preventDefault();
+            }
+        }
+    }
+    $('#ddlOccupation').change(function () {
+        if ($('#ddlOccupation :selected').text() == "Other") {
+            var x = document.getElementById('OccupOther');
+
+            x.style.display = "";
+            $('#ddlFundSourcehdn').val('');
+        }
+        else {
+            var x = document.getElementById('OccupOther');
+            x.style.display = "none";
+
+            $('#ddlFundSourcehdn').val($('#ddlOccupation :selected').text());
+        }
+    });
+
+    function isNumber(e) {
+        var charCode = e.keyCode;
+       
+        if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+             e.preventDefault();
+            return false;
+           
+        }
+        else
+            return true;
+    }
+
+    $(document).ready(function () {
+        $(document).find("input[type=text]").val('');
+        $(document).find("input[type=number]").val('');
+        $('#ResidenceAddress').val('');
+        $('#EmployerAddress').val('');
+        $(document).find("select").val('0');
+        $('#ddlIdType').val('Emirates ID');
+        $('#ddlResidenceStatus').val('Resident');
+    });
+    function dobOnChange() {
+        $('#hdnDOB').val($('#DOB').val());
+        var dateString = $('#hdnDOB').val();
+        var age = getAge(dateString);
+        if (age < 18) {
+            var x = document.getElementById('divGuardian');
+            x.style.display = "block";
+            $('#GuardianName').prop("required", true);
+            $('#GuardianRelation').prop("required", true);
+        }
+        else {
+            var x = document.getElementById('divGuardian');
+            x.style.display = "none";
+            $('#GuardianName').prop("required", false);
+            $('#GuardianRelation').prop("required", false);
+        }
+    }
+    function getAge(dateString) {
+        var today = new Date();
+        var birthDate = new Date(dateString);
+        var age = today.getFullYear() - birthDate.getFullYear();
+        var m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    }
+    $(document).ready(function () {
+        $("#textInput").val("70");
+    });
+
+    function updateTextInput(val) {
+        document.getElementById('textInput').value = val;
+    }
+</script>
+<script>
+    function addDocuments() {
+
+       // alert("add documents");
+        var corpDivIndexVal = $('#corpDivIndex').val();
+        //alert("corpDivIndexVal");
+        //alert( $('#corpDivIndex').val());
+        var CorpCount = $('.Corporate:visible').length;
+        if (CorpCount < 4) {
+            var corpDiv = document.createElement('div');
+            corpDiv.setAttribute('id', 'corporateDiv_' + corpDivIndexVal); // div id.
+            corpDiv.setAttribute('class', 'Corporate mt-4 mb-6');
+
+            
+                          
+            var divStr4 = "<div class='grid grid-cols-1 md:grid-cols-3 gap-6'>";
+            divStr4 += "<div>";
+            divStr4 += " <input type='text' class='w-full px-3 py-2 border border-gray-300 rounded-md font-extralight' name = 'CaseDocumentsL[" + corpDivIndexVal + "].DocumentName' asp-for= 'CaseDocumentsL[" + corpDivIndexVal + "].DocumentName' id='DocumentName_" + corpDivIndexVal + "' placeholder='Document Reference' maxlength='20'>";
+            divStr4 += "</div>";
+
+            var divstr2 = "<div>";
+            divstr2 += "<input type='date' class='w-full px-3 py-2 border border-gray-300 rounded-md font-extralight' id = 'txtIssuedDate' name = 'CaseDocumentsL[" + corpDivIndexVal + "].IssuedDate' asp-for= 'CaseDocumentsL[" + corpDivIndexVal + "].IssuedDate'  max='@(DateTime.Now.ToString("yyyy-MM-dd"))' placeholder = 'Document Issued Date'>";
+            divstr2 += "</div>";
+
+            var divstr3 = "<div >";
+            divstr3 += "<input type='date' class='w-full px-3 py-2 border border-gray-300 rounded-md font-extralight' id = 'txtExpiryDate' name = 'CaseDocumentsL[" + corpDivIndexVal + "].ExpiryDate' asp-for= 'CaseDocumentsL[" + corpDivIndexVal + "].ExpiryDate'  max='2077-12-31' min='@(DateTime.Now.ToString("yyyy-MM-dd"))' placeholder = 'Document Expiry Date']>";
+            divstr3 += "</div>";
+
+            var divstr5 = "<div  class=''>";
+                divstr5 += "<input type='file' name='CaseDocumentsL[" + corpDivIndexVal + "].Document' class='w-full bg-[#F0F4FF] px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-gray-600 flex items-center justify-center gap-2 font-extralight' asp-for='CaseDocumentsL[" + corpDivIndexVal + "].Document' id = 'txtFile' >";
+            divstr5 += "</div>";
+
+            var divStr1 = "<div>";
+            divStr1 += "<input type='hidden' id='isRemoved_" + corpDivIndexVal + "' value='false' name='CorporateDetailList[" + corpDivIndexVal + "].isRemoved' class='form-control'/>";
+            divStr1 += "<button class='bg-[#2563EB] text-white text-sm px-4 py-2.5 rounded-lg flex items-center gap-2 hover:bg-primary transition-colors DelCorporate '   type = 'button'  id = 'btnCorpDel_" + corpDivIndexVal + "' onclick = 'removeDocument(" + corpDivIndexVal + ")'> Remove</button>";
+            divStr1 += "</div></div>";
+
+            //corpDiv.innerHTML = divStr4 + divstr2 + divstr3 + divstr5 + divStr1 ;
+            corpDiv.innerHTML = divStr4 + divstr2 + divstr3 + divstr5 + divStr1;
+
+            var div = document.getElementById('corporateBodyDiv');
+            div.appendChild(corpDiv);
+            $('#corpDivIndex').val(parseInt(corpDivIndexVal) + 1);
+            var d = new Date(),
+                month = '' + (d.getMonth() + 1),
+                day = '' + d.getDate(),
+                year = d.getFullYear();
+
+            if (month.length < 2)
+                month = '0' + month;
+            if (day.length < 2)
+                day = '0' + day;
+
+            var dateToday = year + '-' + month + '-' + day;
+            $("#txtAccomplishedDate_" + corpDivIndexVal).val(dateToday);
+        } else {
+            //alert("Maximum number of Corporates is 5")
+            toastr.error('@localizer["Cannot add more than 5 Documents."]', {
+                tapToDismiss: true, showMethod: 'fadeIn', showDuration: 200
+            });
+        }
+        createTable(corpDivIndexVal);
+        addListRow(corpDivIndexVal);
+        var CorpCount = $('.Corporate:visible').length;
+        if (CorpCount > 1) {
+            $('.DelCorporate').show();
+        }
+    }
+    function removeDocument(i) {
+        $('#corporateDiv_' + i).remove();
+    }
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    })
+</script>
+
+@* for the cancel  *@
+<script>
+    function showLoadingAndRedirect(event, element) {
+        event.preventDefault(); // Prevent default anchor action
+        document.getElementById("loadingeffect").style.display = "flex"; // Show loader
+
+        // Optional: wait a bit before redirecting (for loader visibility)
+        setTimeout(() => {
+            window.location.href = element.getAttribute("href");
+        }, 300); // 300ms delay for smooth transition
+    }
+</script>

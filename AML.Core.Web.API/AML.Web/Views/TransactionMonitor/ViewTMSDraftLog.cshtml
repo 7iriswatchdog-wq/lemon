@@ -1,0 +1,338 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+
+
+@model List<AML.ViewModel.ViewModels.TransactionMonitor.TMSDraftLogModel>
+
+<style>
+    .card {
+        font-family: "Source Sans Pro",-apple-system,BlinkMacSystemFont, "Segoe UI", Roboto,"Helvetica Neue", Arial,sans-serif, "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+    }
+
+    .table {
+        font-family: "Source Sans Pro",-apple-system,BlinkMacSystemFont, "Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif, "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+    }
+
+    .has-search .form-control {
+        padding-left: 2.375rem;
+    }
+
+    .has-search .form-control-feedback {
+        position: absolute;
+        z-index: 2;
+        display: block;
+        width: 2.375rem;
+        height: 2.375rem;
+        line-height: 2.375rem;
+        text-align: center;
+        pointer-events: none;
+        color: #aaa;
+    }
+
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 45px;
+        height: 20px;
+        vertical-align: middle;
+        margin-top: 8px;
+    }
+
+        .switch input {
+            display: none;
+        }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #A1A6AB;
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 14px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+    input:checked + .slider {
+        background-color: cornflowerblue;
+    }
+
+    input:focus + .slider {
+        box-shadow: 0 0 1px #2196F3;
+    }
+
+    input:checked + .slider:before {
+        -webkit-transform: translateX(26px);
+        -ms-transform: translateX(26px);
+        transform: translateX(26px);
+    }
+
+    /* Rounded sliders */
+    .slider.round {
+        border-radius: 34px;
+    }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"></script>
+
+<div class="custom-container">
+    <div class="sas-breadcrumbs pb-3">
+        <ul class="mb-0 pl-0 d-flex">
+            <li><a href="#">Home</a></li>/
+            <li><a href="#">Reports</a></li>/
+            <li><a href="#">TMS Draft Log</a></li>
+        </ul>
+    </div>
+    <div class="page-heading">
+        <div class="sas-card rounded-card br-50 mb-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><b>AML Transaction Monitoring Draft Log</b></h4>
+                <div class="menu-icon">
+                    <i class="lni lni-microsoft"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="bg-surface rounded-xl border border-bordercolor p-6 shadow-none mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">AML Transaction Monitoring Draft Log Filter</h6>
+        </div>
+        <hr />
+    
+        <div style="width: 100%; padding-left: -10px;">
+            <div class="table-responsive">
+                <table id="example" class="w-full text-sm text-left" cellspacing="0">
+                    <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                        <tr>
+                            @*<div class="form-group has-search">
+                                <span class="fa fa-search form-control-feedback"></span>
+                                <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" placeholder="Search for Rule Name, Rule Id">
+                                </div>*@
+                        </tr>
+                        <tr>
+                            <th>@localizer["Rule Id"]</th>
+
+                            <th>@localizer["Rule Name"]</th>
+                            <th>@localizer["Rule Score"]</th>
+
+                            <th>@localizer["Rule Parameter"]</th>
+                            <th>@localizer["Rule operator"]</th>
+                            <th>@localizer["Rule ParameterDesc"]</th>
+                            <th>@localizer["View"]</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-bordercolor">
+
+
+
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <td>@item.TMSRuleId</td>
+
+
+                                <td>
+                                    @item.TMSRuleName
+
+                                </td>
+                                <td>@item.TMSScore</td>
+
+                                <td>
+                                    <ul style="list-style: none;">
+                                        @foreach (var b in @item.DataList)
+                                        {
+                                            if (@b.TMSRuleparameter == "TF")
+                                            {
+                                                <li>
+                                                    Time Frame
+                                                </li>
+                                            }
+                                            if (@b.TMSRuleparameter == "COMP")
+                                            {
+                                                <li>
+                                                    Compare
+                                                </li>
+                                            }
+                                            if (@b.TMSRuleparameter == "MATCH")
+                                            {
+                                                <li>
+                                                    Data Match
+                                                </li>
+                                            }
+
+
+                                        }
+                                    </ul>
+                                </td>
+                                <td>
+                                    <ul style="list-style: none;">
+                                        @foreach (var b in @item.DataList)
+                                        {
+                                            <li>@b.TMSRuleOperator</li>
+                                        }
+                                    </ul>
+                                </td>
+                                <td>
+                                    <ul style="list-style: none;">
+                                        @foreach (var b in @item.DataList)
+                                        {
+                                            <li>@b.TMSRuleParameterDescription</li>
+                                        }
+                                    </ul>
+                                </td>
+
+
+
+
+                                <td><a onclick="ruleid(@item.TMSRuleId)">View</a></td>
+                            </tr>
+
+                        }
+
+
+
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="modal fade" id="exampleModalLong" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document" style="width:90%!important">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">RULE HITS</h5>
+                <button type="button" id="btntest" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                @*<div style="width:100% !important;height:70px !important;" id="printBtnDiv">
+
+                    <input name="b_print" type="button" onClick="printPage();" value=" Print " style="float:right;margin:20px;width:50px;"><br />
+                    </div>*@
+
+                <div class="table-responsive">
+
+
+
+
+                    <table id="data" class="w-full text-sm text-left" cellspacing="0">
+                        <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                            <tr>
+                                <th>@localizer["id"]</th>
+                                <th>@localizer["Tran Refno"]</th>
+                                <th>@localizer["Tran Date"]</th>
+                                <th>@localizer["Remitter ID"]</th>
+                                <th>@localizer["Remitter Name"]</th>
+                                <th>@localizer["Remitter Nation Code"]</th>
+                                <th>@localizer["Remitter Type"]</th>
+                                <th>@localizer["Beneficiary Id"]</th>
+                                <th>@localizer["Beneficiary Name"]</th>
+                                <th>@localizer["Beneficiary Nation Code"]</th>
+                                <th>@localizer["Beneficiary Type"]</th>
+                                <th>@localizer["Amount"]</th>
+                                <th>@localizer["Currency"]</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data_tbody">
+                        </tbody>
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+<script type="text/javascript">
+
+
+    $(document).ready(function() {
+
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+
+    $(document).ready(function() {
+        $('#example').DataTable({
+            searching: false, paging: false, info: false
+        });
+    });
+
+
+    function ruleid(id)
+    {
+        //alert(id);
+
+        $.ajax({
+                url: '/TransactionMonitor/TmsResults',
+                type: 'Post',
+                dataType: "json",
+                //contextType: "application/json; charset=utf-8",
+                data: {id:id},
+                dataType:"json",
+                cache: false,
+                success: function (data) {
+
+                  //console.log(data.info);
+
+
+                     if(data != ""){
+                       
+                         if(data.status_code == 200){
+                            if(data.info.length < 1){
+                               console.table(data);
+                              return false;
+                            }else{
+                                 
+                                var i=1;
+                                var text="";
+                                 $.each(data.info, function (index, value) {
+                                     text+="<tr><td>"+i+"</td><td>"+value.tranRefno+"</td><td>"+value.tranDate+"</td><td>"+value.remitterId+"</td><td>"+value.remitterName+"</td><td>"+value.remitterNationCode+"</td><td>"+value.remitterType+"</td><td>"+value.beneficiaryId+"</td><td>"+value.beneficiaryName+"</td><td>"+value.beneficiaryNationCode+"</td><td>"+value.beneficiaryType+"</td><td>"+value.amount+"</td><td>"+value.currency+"</td></tr>";
+                                     i++;
+                                  });
+                                $("#data_tbody").html(text);
+                                $("#exampleModalLong").modal("toggle");
+                            }
+                        }
+
+                    }
+                               
+                        
+                }
+
+           });
+
+    }
+
+</script>

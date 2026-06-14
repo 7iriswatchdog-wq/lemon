@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <!-- Vis.js for Network Diagram -->
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+    body { font-family: 'Outfit', sans-serif; }
+    
+    .vis-network { outline: none; }
+    .vis-manipulation { display: none !important; }
+
+    /* Side Sheet Transition */
+    .side-sheet {
+        transition: transform 0.3s ease-in-out;
+        transform: translateX(100%);
+    }
+    .side-sheet.open {
+        transform: translateX(0);
+    }
+  </style>
+  <script>
+    function toggleDropdown() {
+      const dropdown = document.getElementById('name-screening-dropdown');
+      const dropdownArrow = document.getElementById('dropdown-arrow');
+      dropdown.classList.toggle('hidden');
+      dropdownArrow.classList.toggle('rotate-180');
+    }
+  </script>
+  <title>Case Creation Studio</title>
+</head>
+<body class="flex h-screen overflow-hidden bg-gray-50">
+  <!-- LEFT SIDEBAR -->
+  <div class="flex flex-col md:w-56 w-20 h-full bg-white text-sm text-black border-r shrink-0 z-20">
+    <div class="flex items-center mb-6 p-4 border-b">
+      <img src="./LOGO.svg" alt="Logo" class="h-10 w-10 mr-2"> <span class="hidden md:block text-lg font-medium">WatchDog</span>
+    </div>
+    <nav class="flex-1 overflow-y-auto px-2">
+      <ul>
+        <li class="flex items-center p-4 rounded-md mb-1 hover:bg-[#F8FAFC]">
+          <a class="inline-flex" href="index.html"><img src="./SVGS/DASHBOARDICON.svg" alt="DASHBOARDICON"> <span class="hidden md:block ml-1 mt-0.5">Dashboard</span></a>
+        </li>
+        <li class="flex flex-col mb-1">
+          <div class="inline-flex items-center p-4 cursor-pointer justify-between hover:bg-[#F8FAFC] rounded-md" onclick="toggleDropdown()">
+            <img src="./SVGS/NameScreen.svg" class="text-black" alt="NameScreen"> <span class="ml-1 md:inline-flex hidden items-center w-28 truncate text-ellipsis">Name Screening</span> <svg id="dropdown-arrow" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down ml-1 transition-transform duration-200 md:block hidden">
+            <path d="m6 9 6 6 6-6"></path></svg>
+          </div>
+          <ul id="name-screening-dropdown" class="pl-8 mb-1">
+            <li class="p-2 bg-[#F8FAFC] rounded-md mr-1">
+              <a href="#">
+              <div class="flex items-center gap-4 cursor-pointer">
+                <div class="w-0.5 h-6 bg-[#2563EB] rounded"></div><span class="font-medium text-blue-700">Case Studio</span>
+              </div></a>
+            </li>
+            <li class="p-2 hover:bg-gray-100 rounded-md mr-1">
+              <a href="individual.html">
+              <div class="flex items-center gap-4 cursor-pointer">
+                <div class="w-0.5 h-6 bg-gray-50 rounded"></div><span class="">Individual (Legacy)</span>
+              </div></a>
+            </li>
+            <li class="p-2 hover:bg-gray-100 rounded-md mr-1">
+              <a href="corporate.html">
+              <div class="flex items-center gap-4 cursor-pointer">
+                <div class="w-0.5 h-6 bg-gray-50 rounded"></div><span class="">Corporate (Legacy)</span>
+              </div></a>
+            </li>
+          </ul>
+        </li>
+        <li class="flex items-center p-4 hover:bg-[#F8FAFC] rounded-md mb-1"><a href="casemanager.html" class="inline-flex"><img src="./SVGS/CM.png" class="text-black" alt="CM"> <span class="hidden md:block ml-1 w-28 truncate text-ellipsis">Case Manager</span></a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div class="flex-1 flex flex-col h-full overflow-hidden relative">
+    <!-- TOP NAV -->
+    <nav class="border-b bg-white z-10 shrink-0">
+      <div class="flex flex-row items-center justify-between w-full p-4">
+        <div>
+          <h2 class="text-xl font-bold text-gray-800">Case Creation Studio</h2>
+          <p class="text-xs text-gray-500">Design hierarchy and relationships</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="btn-joint-party" class="px-3 py-2 bg-purple-50 border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-100 flex items-center gap-2 text-sm transition-colors" title="Select nodes to group as a Joint Party">
+            <i data-lucide="users" class="w-4 h-4"></i> Create Joint Party
+          </button>
+          <div class="w-px h-6 bg-gray-300 mx-1"></div>
+          <button id="btn-auto-layout" class="px-3 py-2 bg-gray-100 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 text-sm transition-colors">
+            <i data-lucide="layout-template" class="w-4 h-4"></i> Auto Layout
+          </button>
+          <button class="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm shadow-sm transition-colors">
+            <i data-lucide="save" class="w-4 h-4"></i> Save Case Structure
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- STUDIO WORKSPACE -->
+    <div class="flex flex-1 overflow-hidden relative">
+      <!-- TOOLS SIDEBAR -->
+      <div class="w-64 bg-white border-r flex flex-col shrink-0 shadow-sm z-10">
+        <div class="p-4 border-b bg-gray-50">
+          <h3 class="font-semibold text-gray-700 text-sm flex items-center gap-2">
+            <i data-lucide="boxes" class="w-4 h-4"></i> Toolbox
+          </h3>
+        </div>
+        
+        <div class="p-4 flex-1 overflow-y-auto space-y-6">
+          <div class="space-y-3">
+            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Drag to Canvas</div>
+            
+            <div class="draggable-item p-3 border border-gray-200 rounded-lg cursor-grab hover:border-blue-400 hover:shadow-md transition-all flex items-center gap-3 bg-white" draggable="true" data-type="corporate" data-status="pending">
+              <div class="w-8 h-8 rounded bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-600">
+                <i data-lucide="building-2" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1">
+                <div class="font-medium text-sm text-gray-800">Corporate</div>
+                <div class="text-[10px] text-gray-500">Pending Entity</div>
+              </div>
+              <i data-lucide="grip-vertical" class="w-4 h-4 text-gray-300"></i>
+            </div>
+            
+            <div class="draggable-item p-3 border border-gray-200 rounded-lg cursor-grab hover:border-blue-400 hover:shadow-md transition-all flex items-center gap-3 bg-white" draggable="true" data-type="individual" data-status="pending">
+              <div class="w-8 h-8 rounded bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-600">
+                <i data-lucide="user" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1">
+                <div class="font-medium text-sm text-gray-800">Individual</div>
+                <div class="text-[10px] text-gray-500">Pending Entity</div>
+              </div>
+              <i data-lucide="grip-vertical" class="w-4 h-4 text-gray-300"></i>
+            </div>
+
+            <div class="draggable-item p-3 border border-gray-200 rounded-lg cursor-grab hover:border-blue-400 hover:shadow-md transition-all flex items-center gap-3 bg-white" draggable="true" data-type="shareholder" data-status="pending">
+              <div class="w-8 h-8 rounded bg-orange-100 border border-orange-200 flex items-center justify-center text-orange-600">
+                <i data-lucide="pie-chart" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1">
+                <div class="font-medium text-sm text-gray-800">Shareholder</div>
+                <div class="text-[10px] text-gray-500">Pending Entity</div>
+              </div>
+              <i data-lucide="grip-vertical" class="w-4 h-4 text-gray-300"></i>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-4 border-t border-gray-100">
+            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Relationships</div>
+            <button id="btn-add-edge" class="w-full py-2.5 border border-dashed border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 hover:text-blue-600 hover:border-blue-400 flex items-center justify-center gap-2 text-sm transition-all">
+              <i data-lucide="link" class="w-4 h-4"></i> Add Hierarchy Link
+            </button>
+          </div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="p-4 bg-gray-50 border-t">
+          <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Status Legend</div>
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-2 text-xs text-gray-700 font-medium">
+              <div class="w-4 h-4 rounded shadow-sm bg-[#22c55e] border border-[#16a34a]"></div> Screened (Locked)
+            </div>
+            <div class="flex items-center gap-2 text-xs text-gray-700 font-medium">
+              <div class="w-4 h-4 rounded shadow-sm bg-[#f97316] border border-[#ea580c]"></div> Pending (Editable)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CANVAS -->
+      <div class="flex-1 relative bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9IiNmOGZhZmMiLz4KPGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9IiNlMmU4ZjAiLz4KPC9zdmc+')] bg-repeat" id="canvas-container">
+        <div id="network-canvas" class="absolute inset-0 w-full h-full"></div>
+      </div>
+
+      <!-- ENTITY DETAILS SIDE SHEET -->
+      <div id="side-sheet" class="side-sheet fixed top-0 right-0 w-[450px] h-full bg-white shadow-2xl z-30 border-l flex flex-col">
+        <div class="p-4 border-b flex items-center justify-between bg-gray-50">
+          <div>
+            <h3 id="sheet-title" class="font-bold text-gray-800">Entity Details</h3>
+            <p id="sheet-subtitle" class="text-xs text-gray-500">Individual Screening Form</p>
+          </div>
+          <button id="btn-close-sheet" class="p-2 hover:bg-gray-200 rounded-full transition-colors">
+            <i data-lucide="x" class="w-5 h-5 text-gray-600"></i>
+          </button>
+        </div>
+        
+        <div id="sheet-content" class="flex-1 overflow-y-auto p-6 space-y-6">
+          <!-- Form will be dynamically injected here -->
+        </div>
+
+        <div class="p-4 border-t bg-gray-50 flex items-center justify-end gap-3">
+            <button id="btn-sheet-cancel" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+            <button id="btn-sheet-save" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm shadow-sm transition-colors">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Templates -->
+  <template id="tpl-form-individual">
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="col-span-2">
+          <label class="block text-xs font-semibold text-gray-500 mb-1">FULL NAME</label>
+          <input type="text" class="form-input w-full p-2 border border-gray-300 rounded-md font-extralight text-sm" value="{name}" {disabled}>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">DATE OF BIRTH</label>
+          <input type="date" class="form-input w-full p-2 border border-gray-300 rounded-md font-extralight text-sm" {disabled}>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">NATIONALITY</label>
+          <select class="form-input w-full p-2 border border-gray-300 rounded-md font-extralight text-sm" {disabled}>
+            <option>United Arab Emirates</option>
+            <option>United Kingdom</option>
+            <option>India</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 mb-1">ID TYPE</label>
+        <select class="form-input w-full p-2 border border-gray-300 rounded-md font-extralight text-sm" {disabled}>
+            <option>Emirates ID</option>
+            <option>Passport</option>
+        </select>
+      </div>
+      <div class="pt-4 border-t">
+        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Compliance Screening</h4>
+        <div class="space-y-2">
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked {disabled}> Sanction
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" {disabled}> PEP
+            </label>
+        </div>
+      </div>
+      {screenButton}
+    </div>
+  </template>
+
+  <template id="tpl-form-corporate">
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 mb-1">COMPANY NAME</label>
+        <input type="text" class="form-input w-full p-2 border border-gray-300 rounded-md font-extralight text-sm" value="{name}" {disabled}>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">TRADE LICENSE</label>
+          <input type="text" class="form-input w-full p-2 border border-gray-300 rounded-md font-extralight text-sm" {disabled}>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">EXPIRY DATE</label>
+          <input type="date" class="form-input w-full p-2 border border-gray-300 rounded-md font-extralight text-sm" {disabled}>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 mb-1">JURISDICTION</label>
+        <select class="form-input w-full p-2 border border-gray-300 rounded-md font-extralight text-sm" {disabled}>
+            <option>DIFC</option>
+            <option>ADGM</option>
+            <option>Mainland</option>
+        </select>
+      </div>
+      {screenButton}
+    </div>
+  </template>
+
+  <script>
+    lucide.createIcons();
+
+    // Node Visuals
+    function getSvgIcon(type, status, groupId = null, order = null) {
+        const color = status === 'screened' ? '#16a34a' : '#ea580c'; 
+        const bg = status === 'screened' ? '#f0fdf4' : '#fff7ed'; 
+        const strokeColor = status === 'screened' ? '#22c55e' : '#f97316';
+        let iconPath = '';
+        
+        if (type === 'corporate') {
+            iconPath = '<path d="M4 10h16v10H4z"/><path d="M8 10V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v6"/><path d="M12 14v2"/>';
+        } else if (type === 'individual' || type === 'shareholder') {
+            iconPath = '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>';
+        }
+
+        const groupLabel = groupId ? `<text x="80" y="25" font-family="sans-serif" font-size="12" font-weight="bold" fill="#a855f7" text-anchor="middle">GP: ${groupId}</text>` : '';
+        const orderLabel = order ? `<circle cx="25" cy="25" r="12" fill="#a855f7"/><text x="25" y="29" font-family="sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">${order}</text>` : '';
+
+        const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+            <rect x="10" y="10" width="140" height="130" rx="20" fill="${bg}" stroke="${strokeColor}" stroke-width="${status === 'screened' ? 2 : 4}" ${status === 'screened' ? '' : 'stroke-dasharray="8 4"'}/>
+            ${groupLabel}
+            ${orderLabel}
+            <g transform="translate(45, 40) scale(3)" stroke="${color}" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                ${iconPath}
+            </g>
+            ${status === 'screened' ? '<g transform="translate(125, 20) scale(1.5)" stroke="#16a34a" stroke-width="3"><path d="M20 6L9 17l-5-5"/></g>' : ''}
+        </svg>`;
+        
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+
+    const nodes = new vis.DataSet([]);
+    const edges = new vis.DataSet([]);
+    const container = document.getElementById('network-canvas');
+    const data = { nodes, edges };
+    const options = {
+        interaction: { hover: true, multiselect: true },
+        manipulation: {
+            enabled: false,
+            addEdge: function(edgeData, callback) {
+                if (edgeData.from !== edgeData.to) {
+                    edgeData.color = { color: '#94a3b8' };
+                    callback(edgeData);
+                }
+                network.disableEditMode();
+                document.getElementById('btn-add-edge').classList.remove('bg-blue-50', 'text-blue-600', 'border-blue-400');
+            }
+        },
+        edges: {
+            arrows: 'to',
+            color: { color: '#94a3b8' },
+            width: 2,
+            smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.4 }
+        },
+        nodes: {
+            shape: 'image',
+            size: 45,
+            font: { face: 'Outfit', size: 14, color: '#334155', multi: 'html' }
+        },
+        physics: { enabled: false }
+    };
+
+    const network = new vis.Network(container, data, options);
+
+    // Side Sheet Management
+    const sheet = document.getElementById('side-sheet');
+    const sheetContent = document.getElementById('sheet-content');
+    let selectedNodeId = null;
+
+    function openSheet(nodeId) {
+        selectedNodeId = nodeId;
+        const node = nodes.get(nodeId);
+        const isScreened = node.status === 'screened';
+        
+        document.getElementById('sheet-title').innerText = node.label.replace(/<[^>]*>?/gm, '').split('\n')[0];
+        document.getElementById('sheet-subtitle').innerText = `${node.type.toUpperCase()} SCREENING FORM ${isScreened ? '(READ-ONLY)' : ''}`;
+        
+        let template = document.getElementById(node.type === 'corporate' ? 'tpl-form-corporate' : 'tpl-form-individual').innerHTML;
+        
+        const screenButton = isScreened ? '' : `
+            <div class="pt-6">
+                <button onclick="screenNode('${nodeId}')" class="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold shadow-md transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="shield-check"></i> Run Screening Now
+                </button>
+            </div>
+        `;
+
+        template = template.replace(/{name}/g, node.label.split('\n')[0].replace(/<b>/g, '').replace(/<\/b>/g, ''))
+                           .replace(/{disabled}/g, isScreened ? 'disabled' : '')
+                           .replace(/{screenButton}/g, screenButton);
+
+        sheetContent.innerHTML = template;
+        lucide.createIcons();
+        
+        sheet.classList.add('open');
+        document.getElementById('btn-sheet-save').disabled = isScreened;
+        document.getElementById('btn-sheet-save').style.opacity = isScreened ? 0.5 : 1;
+    }
+
+    function closeSheet() {
+        sheet.classList.remove('open');
+        selectedNodeId = null;
+    }
+
+    document.getElementById('btn-close-sheet').onclick = closeSheet;
+    document.getElementById('btn-sheet-cancel').onclick = closeSheet;
+
+    network.on('click', function(params) {
+        if (params.nodes.length > 0) {
+            openSheet(params.nodes[0]);
+        } else {
+            closeSheet();
+        }
+    });
+
+    function screenNode(nodeId) {
+        const node = nodes.get(nodeId);
+        
+        // If in a group, check approval dependency
+        if (node.groupId) {
+            const groupNodes = nodes.get({
+                filter: function(item) { return item.groupId === node.groupId && item.order > node.order; }
+            });
+            const pendingDependents = groupNodes.filter(n => n.status !== 'screened');
+            
+            if (pendingDependents.length > 0) {
+                const depNames = pendingDependents.map(n => n.label.split('\n')[0].replace(/<[^>]*>?/gm, '')).join(', ');
+                alert(`Approval Dependency Violation: You cannot approve/screen this node until [${depNames}] are approved first.`);
+                return;
+            }
+        }
+
+        nodes.update({
+            id: nodeId,
+            status: 'screened',
+            image: getSvgIcon(node.type, 'screened', node.groupId, node.order)
+        });
+        
+        // Check group risk if all are screened
+        if (node.groupId) {
+            updateGroupRisk(node.groupId);
+        }
+        
+        openSheet(nodeId); // Refresh sheet to read-only
+    }
+
+    function updateGroupRisk(groupId) {
+        const groupNodes = nodes.get({ filter: function(item) { return item.groupId === groupId; } });
+        const allScreened = groupNodes.every(n => n.status === 'screened');
+        
+        // Find the "Group" node if any, or just update UI
+        if (allScreened) {
+            console.log(`Group ${groupId} Overall Risk: Calculated`);
+            // In a real app, update a group summary node or DB
+        }
+    }
+
+    // Drag & Drop
+    const canvasContainer = document.getElementById('canvas-container');
+    canvasContainer.addEventListener('dragover', (e) => e.preventDefault());
+    canvasContainer.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const type = e.dataTransfer.getData('type');
+        if (type) {
+            const rect = canvasContainer.getBoundingClientRect();
+            const canvasPos = network.DOMtoCanvas({x: e.clientX - rect.left, y: e.clientY - rect.top});
+            const label = prompt("Enter entity name:", type.charAt(0).toUpperCase() + type.slice(1));
+            if (!label) return;
+            nodes.add({
+                id: vis.util.randomUUID(),
+                label: `<b>${label}</b>\n<i style="color:#64748b; font-size:11px">${type}</i>`,
+                image: getSvgIcon(type, 'pending'),
+                x: canvasPos.x, y: canvasPos.y,
+                type: type, status: 'pending'
+            });
+        }
+    });
+
+    document.querySelectorAll('.draggable-item').forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('type', item.getAttribute('data-type'));
+        });
+    });
+
+    // Joint Party Button
+    let groupCounter = 100;
+    document.getElementById('btn-joint-party').onclick = function() {
+        const selection = network.getSelection();
+        if (selection.nodes.length < 2) {
+            alert("Select at least 2 entities to form a group.");
+            return;
+        }
+        
+        const gId = groupCounter++;
+        let order = 1;
+        
+        // Update nodes to be in group with order
+        selection.nodes.forEach(nId => {
+            const node = nodes.get(nId);
+            nodes.update({
+                id: nId,
+                groupId: gId,
+                order: order,
+                image: getSvgIcon(node.type, node.status, gId, order)
+            });
+            order++;
+        });
+        
+        alert(`Joint Party Group ${gId} created. Group Risk: Unclassified (Waiting for all members)`);
+        network.unselectAll();
+    };
+
+    // Add Edge Mode
+    document.getElementById('btn-add-edge').onclick = function() {
+        network.addEdgeMode();
+        this.classList.add('bg-blue-50', 'text-blue-600', 'border-blue-400');
+    };
+
+    // Auto Layout
+    document.getElementById('btn-auto-layout').onclick = function() {
+        network.setOptions({
+            layout: { hierarchical: { enabled: true, direction: 'UD', sortMethod: 'directed', nodeSpacing: 250, levelSeparation: 150 } },
+            physics: { enabled: true, hierarchicalRepulsion: { nodeDistance: 250 } }
+        });
+        setTimeout(() => {
+            network.setOptions({ layout: { hierarchical: { enabled: false } }, physics: { enabled: false } });
+        }, 1000);
+    };
+
+    // Initial Data
+    setTimeout(() => {
+        const id1 = '101', id2 = '102', id3 = '103';
+        nodes.add([
+            { id: id1, label: '<b>Main Account</b>\n<i style="color:#64748b; font-size:11px">corporate</i>', image: getSvgIcon('corporate', 'pending', 101, 1), type: 'corporate', status: 'pending', groupId: 101, order: 1 },
+            { id: id2, label: '<b>Joint Holder A</b>\n<i style="color:#64748b; font-size:11px">individual</i>', image: getSvgIcon('individual', 'pending', 101, 2), type: 'individual', status: 'pending', groupId: 101, order: 2 },
+            { id: id3, label: '<b>Joint Holder B</b>\n<i style="color:#64748b; font-size:11px">individual</i>', image: getSvgIcon('individual', 'pending', 101, 3), type: 'individual', status: 'pending', groupId: 101, order: 3 }
+        ]);
+        edges.add([{ from: id1, to: id2 }, { from: id1, to: id3 }]);
+        network.fit();
+    }, 500);
+
+  </script>
+</body>
+</html>

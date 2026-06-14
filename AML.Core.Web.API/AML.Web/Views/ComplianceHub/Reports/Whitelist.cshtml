@@ -1,0 +1,66 @@
+@using AML.ViewModel.ViewModels.ComplianceHub
+@using System.Linq
+@model WhitelistGovernanceVM
+@{
+    ViewData["Title"] = "Whitelist Governance";
+    ViewData["ReportTitle"] = "Whitelist Governance Register";
+    ViewData["ReportSubtitle"] = "Every whitelist event with the matching justification comment. Flags unjustified or stale whitelistings.";
+    ViewData["Theme"] = "Governance";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+<style>
+    .wl-stat-row { display:grid; grid-template-columns: repeat(3,1fr); gap:12px; margin-bottom:18px; }
+    .wl-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; }
+    .wl-card .n { font-size:28px; font-weight:800; line-height:1; }
+    .wl-card .l { font-size:11px; text-transform:uppercase; font-weight:700; color:#64748b; margin-top:6px; }
+    .ev-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px 16px; margin-bottom:10px; transition: box-shadow .15s; }
+    .ev-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.04); }
+    .ev-card.unjustified { border-left:4px solid #dc2626; }
+    .ev-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .ev-just { background:#f8fafc; border-left:3px solid #84cc16; padding:8px 12px; border-radius:6px; font-size:13px; color:#334155; margin-top:8px; font-style:italic; }
+    .ev-just.empty { border-left-color:#dc2626; background:#fef2f2; color:#991b1b; font-style:normal; font-weight:600; }
+</style>
+
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="_ReportShell" />
+
+        <div class="wl-stat-row">
+            <div class="wl-card" style="border-left:4px solid #84cc16;"><div class="n" style="color:#4d7c0f;">@Model.TotalEvents</div><div class="l">Total events</div></div>
+            <div class="wl-card" style="border-left:4px solid #dc2626;"><div class="n" style="color:#991b1b;">@Model.Unjustified</div><div class="l">No justification</div></div>
+            <div class="wl-card" style="border-left:4px solid #d97706;"><div class="n" style="color:#92400e;">@Model.OlderThan1Year</div><div class="l">Older than 1 year</div></div>
+        </div>
+
+        @if (!Model.Events.Any())
+        {
+            <div class="bg-white border border-slate-200 rounded-xl p-12 text-center text-slate-500">No whitelist events recorded.</div>
+        }
+        else
+        {
+            foreach (var e in Model.Events)
+            {
+                <div class="ev-card @(string.IsNullOrWhiteSpace(e.Justification) ? "unjustified" : "")">
+                    <div class="ev-head">
+                        <div>
+                            <div class="font-bold text-slate-800">@e.FullName <span class="text-xs font-mono text-slate-500 ml-2">@e.CustomerCode</span></div>
+                            <div class="text-xs text-slate-500 mt-1">
+                                Whitelisted @e.WhitelistedOn.ToString("yyyy-MM-dd") · @e.DaysAgo days ago
+                                @if (!string.IsNullOrWhiteSpace(e.WhitelistedBy)) { <span> · by <b>@e.WhitelistedBy</b></span> }
+                            </div>
+                        </div>
+                        @if (e.DaysAgo > 365) { <span class="text-[11px] px-2 py-1 rounded-full bg-amber-100 text-amber-800 font-bold uppercase">Stale</span> }
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(e.Justification))
+                    {
+                        <div class="ev-just">"@e.Justification"</div>
+                    }
+                    else
+                    {
+                        <div class="ev-just empty">No justification comment found.</div>
+                    }
+                </div>
+            }
+        }
+    </div>
+</section>

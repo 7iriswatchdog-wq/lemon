@@ -1,0 +1,48 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@using System.Collections.Generic
+@model List<FourEyesAttemptRow>
+@{
+    ViewData["Title"] = "4-Eyes Blocked Attempts";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "4-Eyes Blocked Attempts";
+    ViewData["ReportSubtitle"] = "Self-approval attempts caught by maker-checker enforcement.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1300px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden mt-3">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left">
+                        <th class="px-3 py-2">When</th>
+                        <th class="px-3 py-2">User</th>
+                        <th class="px-3 py-2">Action</th>
+                        <th class="px-3 py-2">Cases</th>
+                        <th class="px-3 py-2">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="5" class="px-3 py-12 text-center text-slate-500">No 4-eyes blocks recorded. Either no one tried, or no QA actions yet.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var r in Model)
+                        {
+                            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                <td class="px-3 py-2 text-slate-600 whitespace-nowrap">@(r.CreatedOn?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")</td>
+                                <td class="px-3 py-2">@r.UserName</td>
+                                <td class="px-3 py-2"><span class="px-2 py-0.5 text-xs rounded bg-rose-50 text-rose-700">@r.Action</span></td>
+                                <td class="px-3 py-2 font-mono text-xs">@r.CaseIdsCsv</td>
+                                <td class="px-3 py-2 text-xs text-slate-600">@r.Details</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

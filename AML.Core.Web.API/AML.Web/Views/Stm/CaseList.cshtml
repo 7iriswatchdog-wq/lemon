@@ -1,0 +1,85 @@
+@model List<AML.ViewModel.ViewModels.SectoralTMS.StmCaseModel>
+@{
+    ViewData["Title"] = "STM - " + (ViewBag.PageTitle ?? "Cases");
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var isOpen = (ViewBag.PageTitle as string ?? "").Contains("Open", StringComparison.OrdinalIgnoreCase);
+    ViewBag.StmActive = isOpen ? "open" : "completed";
+}
+
+@await Html.PartialAsync("_StmLayout")
+
+<div class="px-6 pb-12">
+    <div class="stm-card">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <div class="stm-page-title">@ViewBag.PageTitle</div>
+                <div class="stm-page-sub">@(isOpen ? "Cases awaiting review. Click into any case to investigate and decide." : "All reviewed cases - approved, rejected, escalated or closed.")</div>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3 mb-4">
+            <a href="@(isOpen ? "/stm/cases/open" : "/stm/cases/completed")" class="stm-nav-pill @(string.IsNullOrEmpty(ViewBag.ActiveSector as string) ? "active" : "")">All</a>
+            <a href="@(isOpen ? "/stm/cases/open" : "/stm/cases/completed")?sector=INS" class="stm-nav-pill @((ViewBag.ActiveSector as string) == "INS" ? "active" : "")">Insurance</a>
+            <a href="@(isOpen ? "/stm/cases/open" : "/stm/cases/completed")?sector=RE" class="stm-nav-pill @((ViewBag.ActiveSector as string) == "RE" ? "active" : "")">Real Estate</a>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="stm-table">
+                <thead>
+                    <tr>
+                        <th>Case Ref</th>
+                        <th>Sector</th>
+                        <th>Customer</th>
+                        <th>Transaction</th>
+                        <th>Amount</th>
+                        <th>Rules Hit</th>
+                        <th>Risk</th>
+                        <th>Status</th>
+                        @if (!isOpen) { <th>Reviewed</th> }
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model == null || Model.Count == 0)
+                    {
+                        <tr><td colspan="@(isOpen ? 9 : 10)" class="text-center text-slate-500 py-8">No cases found.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var c in Model)
+                        {
+                            var statusClass = c.Status switch
+                            {
+                                "OPEN" => "open",
+                                "IN_REVIEW" => "review",
+                                "APPROVED" => "approved",
+                                "REJECTED" => "rejected",
+                                "ESCALATED" => "high",
+                                _ => "closed"
+                            };
+                            <tr>
+                                <td class="font-mono text-xs">@c.CaseRefNo</td>
+                                <td>@c.SectorName</td>
+                                <td><div>@c.CustomerName</div><div class="text-xs text-slate-500">@c.CustomerId</div></td>
+                                <td class="font-mono text-xs">@c.TranRefNo<div class="text-xs text-slate-500">@(c.TranDate?.ToString("yyyy-MM-dd"))</div></td>
+                                <td>@c.Amount?.ToString("N2") @c.Currency</td>
+                                <td class="text-xs max-w-md">@c.RuleNames</td>
+                                <td><span class="stm-badge @(c.RiskRating?.ToLower() ?? "low")">@c.RiskRating</span></td>
+                                <td><span class="stm-badge @statusClass">@c.Status</span></td>
+                                @if (!isOpen)
+                                {
+                                    <td class="text-xs">@(c.ReviewedOn?.ToString("yyyy-MM-dd"))</td>
+                                }
+                                <td><a href="/stm/cases/view/@c.Id" class="text-blue-600 hover:underline text-xs font-medium">View</a></td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
+</script>

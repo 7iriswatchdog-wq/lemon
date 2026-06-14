@@ -1,0 +1,167 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model Customer360VM
+@{
+    ViewData["Title"] = "Customer 360 — " + Model.FullName;
+    ViewData["ActiveTab"] = "Reports";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <div class="mb-3 flex items-start justify-between gap-4 flex-wrap">
+            <div>
+                <h1 class="text-2xl font-semibold text-slate-800">Customer 360 — @Model.FullName</h1>
+                <p class="text-sm text-slate-500 font-mono">@Model.CustomerCode · @Model.CustomerType · @Model.Nationality</p>
+            </div>
+            <a href="@Url.Action("Reports", "AmlTracker")" class="px-3 py-2 text-sm border border-slate-300 hover:bg-slate-50 rounded">← All Reports</a>
+        </div>
+        <partial name="_TrackerTabs" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+            <div class="bg-white border border-slate-200 rounded-lg p-4">
+                <h3 class="font-semibold text-slate-800 mb-2">Profile</h3>
+                <dl class="text-sm">
+                    <div class="flex justify-between py-1 border-b border-slate-100"><dt class="text-slate-500">Full name</dt><dd class="font-medium">@Model.FullName</dd></div>
+                    <div class="flex justify-between py-1 border-b border-slate-100"><dt class="text-slate-500">DOB</dt><dd>@(Model.DOB?.ToString("yyyy-MM-dd") ?? "—")</dd></div>
+                    <div class="flex justify-between py-1 border-b border-slate-100"><dt class="text-slate-500">Mobile</dt><dd>@(string.IsNullOrEmpty(Model.Mobile) ? "—" : Model.Mobile)</dd></div>
+                    <div class="flex justify-between py-1 border-b border-slate-100"><dt class="text-slate-500">Profession</dt><dd>@(Model.Profession ?? "—")</dd></div>
+                    <div class="flex justify-between py-1 border-b border-slate-100"><dt class="text-slate-500">Employer</dt><dd>@(Model.Employer ?? "—")</dd></div>
+                    <div class="flex justify-between py-1 border-b border-slate-100"><dt class="text-slate-500">Sector</dt><dd>@(Model.EmployerSector ?? "—")</dd></div>
+                    <div class="flex justify-between py-1 border-b border-slate-100"><dt class="text-slate-500">Residence</dt><dd>@(Model.Residence ?? "—")</dd></div>
+                    <div class="flex justify-between py-1 border-b border-slate-100"><dt class="text-slate-500">Whitelisted</dt><dd>@(string.Equals(Model.IsWhiteListed, "Y", StringComparison.OrdinalIgnoreCase) ? "Yes" : "No")</dd></div>
+                    <div class="flex justify-between py-1"><dt class="text-slate-500">Onboarded</dt><dd>@(Model.CreatedOn?.ToString("yyyy-MM-dd") ?? "—") <span class="text-xs text-slate-400">by @Model.CreatedBy</span></dd></div>
+                </dl>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-lg p-4 lg:col-span-2">
+                <h3 class="font-semibold text-slate-800 mb-2">Risk score evolution</h3>
+                @{
+                    int RiskTierNum(string s)
+                    {
+                        if (string.IsNullOrWhiteSpace(s)) return 0;
+                        var l = s.ToLowerInvariant();
+                        if (l.Contains("high")) return 3;
+                        if (l.Contains("medium")) return 2;
+                        if (l.Contains("low")) return 1;
+                        return 0;
+                    }
+                    string TierColor(int t) => t switch { 3 => "#e11d48", 2 => "#d97706", 1 => "#059669", _ => "#94a3b8" };
+                }
+                @if (Model.RiskHistory.Any())
+                {
+                    var pts = Model.RiskHistory.Select((p, i) => new { Idx = i, Date = p.AssessmentDate, Tier = RiskTierNum(p.FinalRiskScore), Label = p.FinalRiskScore }).ToList();
+                    var n = pts.Count;
+                    var w = 600.0;
+                    var h = 160.0;
+                    var stepX = n > 1 ? (w - 40) / (n - 1) : 0;
+                    Func<int, double> Y = tier => h - 20 - (tier * (h - 40) / 3.0);
+                    var path = string.Join(" ", pts.Select((p, i) =>
+                        $"{(i == 0 ? "M" : "L")}{(20 + i * stepX).ToString("0.0")},{Y(p.Tier).ToString("0.0")}"));
+                    <svg viewBox="0 0 @w @h" class="w-full h-40">
+                        <line x1="20" y1="@Y(0).ToString("0.0")" x2="@(w - 10)" y2="@Y(0).ToString("0.0")" stroke="#e2e8f0" />
+                        <line x1="20" y1="@Y(1).ToString("0.0")" x2="@(w - 10)" y2="@Y(1).ToString("0.0")" stroke="#e2e8f0" />
+                        <line x1="20" y1="@Y(2).ToString("0.0")" x2="@(w - 10)" y2="@Y(2).ToString("0.0")" stroke="#e2e8f0" />
+                        <line x1="20" y1="@Y(3).ToString("0.0")" x2="@(w - 10)" y2="@Y(3).ToString("0.0")" stroke="#e2e8f0" />
+                        <text x="0" y="@(Y(3) + 4).ToString("0.0")" font-size="10" fill="#64748b">High</text>
+                        <text x="0" y="@(Y(2) + 4).ToString("0.0")" font-size="10" fill="#64748b">Med</text>
+                        <text x="0" y="@(Y(1) + 4).ToString("0.0")" font-size="10" fill="#64748b">Low</text>
+                        <text x="0" y="@(Y(0) + 4).ToString("0.0")" font-size="10" fill="#94a3b8">—</text>
+                        <path d="@path" fill="none" stroke="#2563eb" stroke-width="2" />
+                        @foreach (var p in pts)
+                        {
+                            <circle cx="@(20 + p.Idx * stepX).ToString("0.0")" cy="@Y(p.Tier).ToString("0.0")" r="4" fill="@TierColor(p.Tier)">
+                                <title>@p.Date.ToString("yyyy-MM-dd") · @p.Label</title>
+                            </circle>
+                        }
+                    </svg>
+                    <table class="min-w-full text-sm mt-3">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr class="text-left"><th class="px-3 py-2">Date</th><th class="px-3 py-2">Final Risk</th><th class="px-3 py-2">Version</th><th class="px-3 py-2">Override</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model.RiskHistory)
+                            {
+                                <tr class="border-b border-slate-100">
+                                    <td class="px-3 py-2 text-slate-600">@p.AssessmentDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td class="px-3 py-2 font-semibold">@p.FinalRiskScore</td>
+                                    <td class="px-3 py-2 font-mono text-xs">v@(p.Version?.ToString() ?? "—")</td>
+                                    <td class="px-3 py-2 text-xs text-slate-600">@p.Override</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="text-sm text-slate-500 italic">No V2 risk assessments recorded for this customer.</p>
+                }
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg p-4 mt-4">
+            <h3 class="font-semibold text-slate-800 mb-2">All cases (@Model.Cases.Count)</h3>
+            @if (Model.Cases.Any())
+            {
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr class="text-left"><th class="px-3 py-2">Case</th><th class="px-3 py-2">Status</th><th class="px-3 py-2">Match</th><th class="px-3 py-2">Risk</th><th class="px-3 py-2">Source</th><th class="px-3 py-2">Created</th><th class="px-3 py-2">Last Updated</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.Cases)
+                        {
+                            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                <td class="px-3 py-2 font-mono text-xs"><a href="/Case/Process/@c.CaseId" class="text-blue-600 hover:underline">@c.CaseId</a></td>
+                                <td class="px-3 py-2">@c.Status</td>
+                                <td class="px-3 py-2">@(c.MatchScore?.ToString() ?? "—")</td>
+                                <td class="px-3 py-2">@(c.RiskScore?.ToString() ?? "—")</td>
+                                <td class="px-3 py-2 text-slate-600">@c.Source</td>
+                                <td class="px-3 py-2 text-slate-600 text-xs">@(c.CreatedOn?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                                <td class="px-3 py-2 text-slate-600 text-xs">@(c.UpdatedOn?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else { <p class="text-sm text-slate-500 italic">No cases for this customer.</p> }
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+            <div class="bg-white border border-slate-200 rounded-lg p-4">
+                <h3 class="font-semibold text-slate-800 mb-2">Case comments timeline</h3>
+                @if (Model.Comments.Any())
+                {
+                    <ul class="space-y-2">
+                        @foreach (var c in Model.Comments)
+                        {
+                            <li class="border-l-2 border-blue-300 pl-3">
+                                <div class="text-xs text-slate-500">@(c.CreatedOn?.ToString("yyyy-MM-dd HH:mm") ?? "—") · @c.CreatedBy · case #@c.CaseId</div>
+                                <div class="text-sm text-slate-700">@c.Comment</div>
+                            </li>
+                        }
+                    </ul>
+                }
+                else { <p class="text-sm text-slate-500 italic">No comments yet.</p> }
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-lg p-4">
+                <h3 class="font-semibold text-slate-800 mb-2">Whitelist history</h3>
+                @if (Model.WhitelistHistory.Any())
+                {
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-200"><tr class="text-left"><th class="px-3 py-2">Action</th><th class="px-3 py-2">By</th><th class="px-3 py-2">When</th></tr></thead>
+                        <tbody>
+                            @foreach (var w in Model.WhitelistHistory)
+                            {
+                                <tr class="border-b border-slate-100">
+                                    <td class="px-3 py-2">@w.Action</td>
+                                    <td class="px-3 py-2">@w.PerformedBy</td>
+                                    <td class="px-3 py-2 text-xs text-slate-600">@(w.PerformedOn?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else { <p class="text-sm text-slate-500 italic">No whitelist activity.</p> }
+            </div>
+        </div>
+    </div>
+</section>

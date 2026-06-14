@@ -1,0 +1,113 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model AnnualMlroVM
+@{
+    ViewData["Title"] = $"Annual MLRO Report — {Model.Year}";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = $"Annual MLRO Report — {Model.Year}";
+    ViewData["ReportSubtitle"] = $"Period: {Model.PeriodStart:yyyy-MM-dd} to {Model.PeriodEnd:yyyy-MM-dd}";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var thisYear = DateTime.UtcNow.Year;
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="flex gap-2 my-3">
+            @for (int y = thisYear; y >= thisYear - 4; y--)
+            {
+                <a href="?year=@y" class="px-3 py-1.5 text-xs border rounded @(Model.Year == y ? "bg-blue-50 border-blue-300 font-semibold" : "border-slate-300")">@y</a>
+            }
+            <span class="ml-auto text-xs text-slate-500">Print/save this page (Ctrl+P) for the regulator pack.</span>
+        </div>
+
+        <h2 class="text-sm font-bold uppercase tracking-wide text-slate-600 mt-6 mb-2">Case Volumes</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Opened</div><div class="text-2xl font-semibold text-blue-700">@Model.CasesOpened</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Closed</div><div class="text-2xl font-semibold text-emerald-700">@Model.CasesClosed</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Approved</div><div class="text-2xl font-semibold text-emerald-700">@Model.CasesApproved</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Rejected</div><div class="text-2xl font-semibold text-rose-700">@Model.CasesRejected</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Whitelisted</div><div class="text-2xl font-semibold text-emerald-700">@Model.CasesWhitelisted</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Auto-cleared</div><div class="text-2xl font-semibold text-slate-700">@Model.CasesAutoCleared</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Pending Year-End</div><div class="text-2xl font-semibold text-amber-700">@Model.CasesPendingAtYearEnd</div></div>
+        </div>
+
+        <h2 class="text-sm font-bold uppercase tracking-wide text-slate-600 mt-6 mb-2">Quality Assurance</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3"><div class="text-[10px] uppercase text-emerald-700 font-bold">QA Approved</div><div class="text-2xl font-semibold text-emerald-700">@Model.QaApproved</div></div>
+            <div class="bg-rose-50 border border-rose-200 rounded-lg p-3"><div class="text-[10px] uppercase text-rose-700 font-bold">QA Rejected</div><div class="text-2xl font-semibold text-rose-700">@Model.QaRejected</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">QA Reject Rate</div><div class="text-2xl font-semibold text-slate-800">@Model.QaRejectRate%</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Avg Turnaround</div><div class="text-2xl font-semibold text-slate-800">@Model.AvgQaTurnaroundHours <span class="text-sm text-slate-500">h</span></div></div>
+        </div>
+
+        <h2 class="text-sm font-bold uppercase tracking-wide text-slate-600 mt-6 mb-2">Risk</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="bg-rose-50 border border-rose-200 rounded-lg p-3"><div class="text-[10px] uppercase text-rose-700 font-bold">High Risk</div><div class="text-2xl font-semibold text-rose-700">@Model.HighRisk</div></div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3"><div class="text-[10px] uppercase text-amber-700 font-bold">Medium Risk</div><div class="text-2xl font-semibold text-amber-700">@Model.MediumRisk</div></div>
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3"><div class="text-[10px] uppercase text-emerald-700 font-bold">Low Risk</div><div class="text-2xl font-semibold text-emerald-700">@Model.LowRisk</div></div>
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Risk Overrides</div><div class="text-2xl font-semibold text-slate-800">@Model.RiskOverrides</div></div>
+        </div>
+
+        <h2 class="text-sm font-bold uppercase tracking-wide text-slate-600 mt-6 mb-2">Screening Hits</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-[10px] uppercase text-slate-500 font-bold">Total Hits</div><div class="text-2xl font-semibold text-slate-800">@Model.TotalScreeningHits</div></div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3"><div class="text-[10px] uppercase text-amber-700 font-bold">PEP</div><div class="text-2xl font-semibold text-amber-700">@Model.PepHits</div></div>
+            <div class="bg-rose-50 border border-rose-200 rounded-lg p-3"><div class="text-[10px] uppercase text-rose-700 font-bold">Sanction</div><div class="text-2xl font-semibold text-rose-700">@Model.SanctionHits</div></div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3"><div class="text-[10px] uppercase text-amber-700 font-bold">Adverse Media</div><div class="text-2xl font-semibold text-amber-700">@Model.AdverseMediaHits</div></div>
+        </div>
+
+        <h2 class="text-sm font-bold uppercase tracking-wide text-slate-600 mt-6 mb-2">SAR / STR</h2>
+        <div class="grid grid-cols-3 gap-3">
+            <div class="bg-rose-50 border border-rose-200 rounded-lg p-3"><div class="text-[10px] uppercase text-rose-700 font-bold">Required</div><div class="text-2xl font-semibold text-rose-700">@Model.SarRequired</div></div>
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3"><div class="text-[10px] uppercase text-emerald-700 font-bold">Filed</div><div class="text-2xl font-semibold text-emerald-700">@Model.SarFiled</div></div>
+            <div class="bg-rose-50 border border-rose-200 rounded-lg p-3"><div class="text-[10px] uppercase text-rose-700 font-bold">Overdue</div><div class="text-2xl font-semibold text-rose-700">@Model.SarOverdue</div></div>
+        </div>
+
+        <h2 class="text-sm font-bold uppercase tracking-wide text-slate-600 mt-6 mb-2">Customer Onboarding</h2>
+        <div class="grid grid-cols-2 gap-3">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3"><div class="text-[10px] uppercase text-blue-700 font-bold">New Customers</div><div class="text-2xl font-semibold text-blue-700">@Model.CustomersOnboarded</div></div>
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3"><div class="text-[10px] uppercase text-emerald-700 font-bold">Whitelistings</div><div class="text-2xl font-semibold text-emerald-700">@Model.CustomersWhitelisted</div></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
+            <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 font-semibold">Top Jurisdictions</div>
+                <table class="min-w-full text-sm">
+                    <thead><tr class="bg-slate-50 border-b border-slate-200 text-left"><th class="px-3 py-2">Country</th><th class="px-3 py-2 text-right">Cases</th></tr></thead>
+                    <tbody>
+                        @foreach (var b in Model.TopJurisdictions)
+                        {
+                            <tr class="border-b border-slate-100"><td class="px-3 py-2">@b.Label</td><td class="px-3 py-2 text-right font-semibold">@b.Count</td></tr>
+                        }
+                        @if (!Model.TopJurisdictions.Any()) { <tr><td colspan="2" class="px-3 py-6 text-center text-slate-500">—</td></tr> }
+                    </tbody>
+                </table>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 font-semibold">Top Decision-Makers</div>
+                <table class="min-w-full text-sm">
+                    <thead><tr class="bg-slate-50 border-b border-slate-200 text-left"><th class="px-3 py-2">Analyst</th><th class="px-3 py-2 text-right">Decisions</th></tr></thead>
+                    <tbody>
+                        @foreach (var b in Model.TopAnalysts)
+                        {
+                            <tr class="border-b border-slate-100"><td class="px-3 py-2">@(string.IsNullOrWhiteSpace(b.Label) ? "—" : b.Label)</td><td class="px-3 py-2 text-right font-semibold">@b.Count</td></tr>
+                        }
+                        @if (!Model.TopAnalysts.Any()) { <tr><td colspan="2" class="px-3 py-6 text-center text-slate-500">—</td></tr> }
+                    </tbody>
+                </table>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 font-semibold">Top QA Reject Reasons</div>
+                <table class="min-w-full text-sm">
+                    <thead><tr class="bg-slate-50 border-b border-slate-200 text-left"><th class="px-3 py-2">Reason</th><th class="px-3 py-2 text-right">Count</th></tr></thead>
+                    <tbody>
+                        @foreach (var b in Model.TopRejectReasons)
+                        {
+                            <tr class="border-b border-slate-100"><td class="px-3 py-2">@b.Label</td><td class="px-3 py-2 text-right font-semibold">@b.Count</td></tr>
+                        }
+                        @if (!Model.TopRejectReasons.Any()) { <tr><td colspan="2" class="px-3 py-6 text-center text-slate-500">—</td></tr> }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>

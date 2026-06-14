@@ -1,0 +1,672 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    ViewData["Title"] = localizer["Case Details"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Loader -->
+<div id="loadingdetails" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:flex;">
+    <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+</div>
+
+<style>
+    table th, table td {
+        text-align: center;
+        vertical-align: middle;
+        padding: 0.75rem;
+        
+    }
+
+    /* Optional: Allow horizontal scrolling for smaller screens */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+    .dt-loader div {
+        position: absolute;
+        top: 8px;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: #2563eb;
+        animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    }
+
+        .dt-loader div:nth-child(1) {
+            left: 8px;
+            animation: dt-anim1 0.6s infinite;
+        }
+
+        .dt-loader div:nth-child(2) {
+            left: 8px;
+            animation: dt-anim2 0.6s infinite;
+        }
+
+        .dt-loader div:nth-child(3) {
+            left: 32px;
+            animation: dt-anim2 0.6s infinite;
+        }
+
+        .dt-loader div:nth-child(4) {
+            left: 56px;
+            animation: dt-anim3 0.6s infinite;
+        }
+
+    @@keyframes dt-anim1 {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes dt-anim2 {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(24px);
+        }
+    }
+
+    @@keyframes dt-anim3 {
+        0% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0);
+        }
+    }
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+        width: 100%;
+    }
+
+    /* .details-card {
+        background: #fff;
+        border-radius: 1rem;
+        box-shadow: 0 2px 8px #e9effd;
+        border: 1px solid #2563eb22;
+        width: 100%;
+        max-width: 100%;
+    } */
+
+    /* .details-table {
+        border-radius: 0.5rem;
+        width: 100%;
+        table-layout: auto;
+        overflow-x: unset;
+    }
+
+        .details-table th, .details-table td {
+            padding: 0.75rem 1rem;
+            word-break: break-word;
+        }
+
+        .details-table th {
+            background: #E9EFFD;
+            font-weight: 600;
+        }
+
+    .details-table {
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+        .details-table tr {
+            border-bottom: 1px solid #f0f4ff;
+        }
+
+            .details-table tr:last-child {
+                border-bottom: none;
+            } */
+
+    .details-badge {
+        display: inline-block;
+        background: #eff6ff;
+        color: #2563eb;
+        border-radius: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        margin-right: 0.25rem;
+        font-size: 0.95em;
+    }
+
+    .details-badge-red {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .details-img {
+        border-radius: 0.75rem;
+        border: 1px solid #e9effd;
+        width: 170px;
+        height: 170px;
+        object-fit: cover;
+    }
+
+    .details-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .details-title {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #2563eb;
+    }
+
+    .details-back-btn {
+        padding: 0.5rem 1.5rem;
+        background: #2563eb;
+        color: #fff;
+        border-radius: 0.5rem;
+        border: none;
+        transition: background 0.2s;
+    }
+
+        .details-back-btn:hover {
+            background: #1d4ed8;
+        }
+
+    .details-section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #2563eb;
+    }
+
+    .details-note {
+        color: #64748B;
+        font-size: 0.98em;
+    }
+
+    .details-download-btn {
+        padding: 0.5rem 1.5rem;
+        background: #2563eb;
+        color: #fff;
+        border-radius: 0.5rem;
+        border: none;
+        transition: background 0.2s;
+    }
+</style>
+
+@* <nav class="bg-white border-b mb-6">
+    <div class="flex justify-between p-5">
+        <h2 class="text-2xl font-bold">Case Details</h2>
+        <div class="hidden md:block"><img src="@Clientlogo" alt="Client Logo" width="50px" /></div>
+    </div>
+</nav>
+
+<div class="container mx-auto px-4 py-6"> *@
+<div class="max-w-screen h-full items-center">
+@* <nav class="bg-white border-b mb-6">
+    <div class="flex justify-between p-5">
+        <h2 class="text-2xl font-bold">Case Details</h2>
+        <div class="hidden md:block"><img src="@Clientlogo" alt="Client Logo" width="50px" /></div>
+    </div>
+</nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Case Details
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+
+
+@* <div class="container mx-auto px-4 py-6"> *@
+    <div class="h-auto bg-gray-50 items-center ">
+        <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4  mx-auto space-y-4">
+            <!-- Filter Section (unchanged) -->
+            <div class="w-full bg-white rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100">
+   
+
+                    @if (ViewBag.user != null)
+                    {
+                        <div class="details-card details-section ">
+                        <div class="details-header mb-6 flex items-center gap-2">
+                            <h6 class="details-section-title mr-auto">
+                                @localizer["Details"]
+                            </h6>
+
+                            <a asp-controller="Case" asp-action="process" asp-route-CaseId="@ViewBag.user.caseid">
+                                <button type="button" id="btnBack" class="details-back-btn">
+                                    Back
+                                </button>
+                            </a>
+
+                            @if (ViewBag.user.Type == "KYC6")
+                            {
+                                @if (!string.IsNullOrEmpty(ViewBag.user.Resourcesid))
+                                {
+                                    <button class="details-download-btn"
+                                            onclick="location.href='@Url.Action("CallApi", "Case", new { Id = ViewBag.user.Resourcesid, Category = ViewBag.user.Category })'">
+                                        Download
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="details-download-btn"
+                                            onclick="location.href='@Url.Action("CallApiMatchuid", "Case", new { Id = ViewBag.user.MatchUid, Category = ViewBag.user.Category })'">
+                                        Download
+                                    </button>
+                                }
+                            }
+                        </div>
+                            @* <div class="details-header mb-6">
+                                <h6 class="details-section-title">@localizer["Details"]</h6>
+                            <a asp-controller="Case" asp-action="process" asp-route-CaseId="@ViewBag.user.caseid">
+                            <button type="button" id="btnBack" class="details-back-btn">Back</button></a>
+                                @if(ViewBag.user.Type == "KYC6")
+                                {
+                                    @if (ViewBag.user.Resourcesid != "")
+                                    {
+                                        
+                                        @* <button class="h-7 px-3 text-[10px] bg-blue-600 text-white rounded" onclick="location.href='@Url.Action("CallApi", "Case", new { Id = ViewBag.user.Resourcesid, Category = ViewBag.user.Category })'">
+                                            Download
+                                        </button> *@
+                                        
+                                       @*  <button class="details-download-btn" onclick="location.href='@Url.Action("CallApi", "Case", new { Id = ViewBag.user.Resourcesid, Category = ViewBag.user.Category })'">
+                                            Download
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="details-download-btn" onclick="location.href='@Url.Action("CallApiMatchuid", "Case", new { Id = ViewBag.user.MatchUid, Category = ViewBag.user.Category })'">
+                                            Download
+                                        </button>
+                                        
+                                    }
+
+                                }
+                            
+                            </div> *@ 
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                                <div>
+                                    <span class="details-label">@localizer["Name"]:</span>
+                                    <h2 class="details-value font-bold text-xl mt-2">
+                                        @(ViewBag.user.Users.Forename + " " + ViewBag.user.Users.Middlename + " " + ViewBag.user.Users.Surname)
+                                        @(ViewBag.user.Users.IsDeceased == true ? "(Deceased)" : "")
+                                    </h2>
+                                    <div class="mt-4">
+                                    @if (!string.IsNullOrWhiteSpace(ViewBag.user.Users.ImageURL))
+                                        {
+                                            <img src="@Html.Raw(ViewBag.user.Users.ImageURL)" class="details-img" alt="User Image">
+                                        }
+                                        else
+                                        {
+                                            @* <img src="~/img/No-image-available.png" class="details-img" alt="No Image"> *@
+                                            @* <p>No Image</p> *@
+                                        }
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="mb-2"><span class="details-label">@localizer["Born"]:</span> <span class="details-value">@ViewBag.user.Users.YearOfBirth</span></div>
+                                    <div class="mb-2"><span class="details-label">@localizer["Gender"]:</span> <span class="details-value">@ViewBag.user.Users.Gender</span></div>
+                                    <div class="mb-2"><span class="details-label">@localizer["PEP Level"]:</span> <span class="details-value">@ViewBag.user.Users.PepLevel</span></div>
+                                    <div class="mb-2"><span class="details-label">@localizer["DOB"]:</span> <span class="details-value">@ViewBag.user.Users.DateOfBirth</span></div>
+                                    <div class="mb-2"><span class="details-label">@localizer["Nationality"]:</span> <span class="details-value">@ViewBag.user.Users.Nationality.Name</span></div>
+                                    <div class="mb-2"><span class="details-label">@localizer["Email"]:</span> <span class="details-value">@ViewBag.user.Users.Email</span></div>
+                                </div>
+                                <div>
+                                    <div class="mb-2">
+                                        <span class="details-label">@localizer["Alias"]:</span>
+                                        @foreach (var item in @ViewBag.user.Users.Aliases)
+                                        {
+                                            <span class="details-badge">@($"{item.Forename} {item.Middlename} {item.Surname}")</span>
+                                        }
+                                    </div>
+                                    <div class="mb-2">
+                                        <span class="details-label">@localizer["Addresses"]:</span>
+                                        @foreach (var item in @ViewBag.user.Users.Addresses)
+                                        {
+                                            <div class="details-note">@($"{item.Address1} {item.Address2} {item.Address3} {item.Address4} {item.City} {item.County} {item.Country.Name} {item.Postcode}")</div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                <div>
+                                    @if (ViewBag.user.Users.Sanctions.Count != 0)
+                                    {
+                                        <div class="mb-2">
+                                            <span class="details-label">@localizer["Current Sanctions"]:</span>
+                                            @foreach (var item in ViewBag.user.Users.Sanctions)
+                                            {
+                                                @if (item.IsCurrent == true)
+                                                {
+                                                    <span class="details-badge details-badge-red">@item.SanctionType.Description</span>
+                                                }
+                                            }
+                                        </div>
+                                    }
+                                    <div class="mb-2">
+                                        <span class="details-label">@localizer["Political Positions"]:</span>
+                                        @foreach (var item in @ViewBag.user.Users.PoliticalPositions)
+                                        {
+                                            <div class="details-note">@($"{item.Description}, {item.Country.Name} {(item.From != "" ? "From " + item.From : "")} {(item.To != "" ? "To " + item.To : "")}")</div>
+                                        }
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="mb-2">
+                                        <span class="details-label">@localizer["Notes"]:</span>
+                                        @foreach (var item in ViewBag.user.Users.Notes)
+                                        {
+                                            <div class="details-note">@item.Text</div>
+                                        }
+                                    </div>
+                                    <div class="mb-2"><span class="details-label">@localizer["Reference ID"]:</span> <span class="details-value">@ViewBag.user.Users.Id</span></div>
+                                </div>
+                            </div>
+                            @if (ViewBag.user.Users.LinkedBusinesses.Count != 0)
+                            {
+                                <div class="mb-8">
+                                    <span class="details-section-title">@localizer["Business Details"]</span>
+                                <div class="w-full overflow-x-auto">
+                                    <table class="min-w-[640px] w-full text-left text-sm text-gray-800">
+                                        <thead class="bg-[#E9EFFD] font-semibold">
+                                                <tr>
+                                                    <th>@localizer["Business Id"]</th>
+                                                    <th>@localizer["Business Name"]</th>
+                                                    <th>@localizer["Position"]</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in @ViewBag.user.Users.LinkedBusinesses)
+                                                {
+                                                    <tr>
+                                                        <td>@item.BusinessId</td>
+                                                        <td>@item.BusinessName</td>
+                                                        <td>@item.Position</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            }
+                            @if (ViewBag.user.Users.LinkedPersons.Count != 0)
+                            {
+                                <div class="mb-8">
+                                    <span class="details-section-title">@localizer["Linked Persons"]</span>
+                                    <div class="w-full overflow-x-auto">
+                                    <table class="min-w-[640px] w-full text-left text-sm text-gray-800">
+                                        <thead class="bg-[#E9EFFD] font-semibold">
+                                                <tr>
+                                                    <th>@localizer["Person ID"]</th>
+                                                    <th>@localizer["Name"]</th>
+                                                    <th>@localizer["Association"]</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in @ViewBag.user.Users.LinkedPersons)
+                                                {
+                                                    <tr>
+                                                        <td>@item.PersonId</td>
+                                                        <td>@item.Name</td>
+                                                        <td>@item.Association</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            }
+                            @if (ViewBag.user.Users.Articles.Count != 0)
+                            {
+                                <div class="mb-8">
+                                    <span class="details-section-title">@localizer["Articles"]</span>
+                                    <div class="w-full overflow-x-auto">
+                                        <table class="min-w-[640px] w-full text-left text-sm text-gray-800">
+                                            <thead class="bg-[#E9EFFD] font-semibold">
+                                                    <tr>
+                                                        <th>@localizer["Url"]</th>
+                                                        <th>@localizer["Date Collected"]</th>
+                                                        <th>@localizer["Category"]</th>
+                                                        <th>@localizer["C6 Url"]</th>
+                                                    </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in ViewBag.user.Users.Articles)
+                                                {
+                                                    <tr>
+                                                        <td>@item.OriginalURL</td>
+                                                        <td>@item.DateCollected</td>
+                                                        @{
+                                                            string category = "";
+                                                            foreach (var data in item.Categories)
+                                                            {
+                                                                category += " " + data.Name;
+                                                            }
+                                                        }
+                                                        <td>@category</td>
+                                                        <td>@item.C6URL</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (ViewBag.business != null)
+                    {
+                        <div class="details-card details-section">
+                        <div class="details-header mb-6 flex items-center gap-2">
+                            <h6 class="details-section-title mr-auto">
+                                @localizer["Details"]
+                            </h6>
+
+                            <a asp-controller="Case" asp-action="process" asp-route-CaseId="@ViewBag.business.caseid">
+                                <button type="button" id="btnBack" class="details-back-btn">
+                                    Back
+                                </button>
+                            </a>
+
+                            @if (ViewBag.business.Type == "KYC6")
+                            {
+                                @if (!string.IsNullOrEmpty(ViewBag.business.Resourcesid))
+                                {
+                                    <button class="details-download-btn"
+                                            onclick="location.href='@Url.Action("CallApi", "Case", new { Id = ViewBag.business.Resourcesid, Category = ViewBag.business.Category })'">
+                                        Download
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="details-download-btn"
+                                            onclick="location.href='@Url.Action("CallApiMatchuid", "Case", new { Id = ViewBag.business.MatchUid, Category = ViewBag.business.Category })'">
+                                        Download
+                                    </button>
+                                }
+                            }
+                        </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                <div>
+                                    <span class="details-label">@localizer["Name"]:</span>
+                                    <h2 class="details-value font-bold text-xl mt-2">@ViewBag.business.Users.BusinessName</h2>
+                                    <div class="mb-2"><span class="details-label">@localizer["Reference Id"]:</span> <span class="details-value">@ViewBag.business.Users.Id</span></div>
+                                    <div class="mb-2"><span class="details-label">@localizer["Website"]:</span> <span class="details-value">@ViewBag.business.Users.Website</span></div>
+                                    <div class="mb-2"><span class="details-label">@localizer["Telephone Number"]:</span> <span class="details-value">@ViewBag.business.Users.TelephoneNumber</span></div>
+                                    <div class="mb-2"><span class="details-label">@localizer["Fax Number"]:</span> <span class="details-value">@ViewBag.business.Users.FaxNumber</span></div>
+                                </div>
+                                <div>
+                                    <div class="mb-2">
+                                        <span class="details-label">@localizer["Addresses"]:</span>
+                                        @foreach (var item in @ViewBag.business.Users.Addresses)
+                                        {
+                                            <div class="details-note">@($"{item.Address1} {item.Address2} {item.Address3} {item.Address4} {item.City} {item.County} {item.Country.Name} {item.Postcode}")</div>
+                                        }
+                                    </div>
+                                    @if (ViewBag.business.Users.Sanctions.Count != 0)
+                                    {
+                                        <div class="mb-2">
+                                            <span class="details-label">@localizer["Current Sanctions"]:</span>
+                                            @foreach (var item in ViewBag.business.Users.Sanctions)
+                                            {
+                                                @if (item.IsCurrent == true)
+                                                {
+                                                    <span class="details-badge details-badge-red">@item.SanctionType.Description</span>
+                                                }
+                                            }
+                                        </div>
+                                    }
+                                    <div class="mb-2">
+                                        <span class="details-label">@localizer["Alias"]:</span>
+                                        @foreach (var item in @ViewBag.business.Users.Aliases)
+                                        {
+                                            <span class="details-badge">@item.BusinessName</span>
+                                        }
+                                    </div>
+                                    <div class="mb-2">
+                                        <span class="details-label">@localizer["Notes"]:</span>
+                                        @foreach (var item in ViewBag.business.Users.Notes)
+                                        {
+                                            <div class="details-note">@item.Text</div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            @if (ViewBag.business.Users.Articles.Count != 0)
+                            {
+                                <div class="mb-8">
+                                    <span class="details-section-title">@localizer["Articles"]</span>
+                                    <div class="w-full overflow-x-auto">
+                                        <table class="min-w-[640px] w-full text-left text-sm text-gray-800">
+                                            <thead class="bg-[#E9EFFD] font-semibold">
+                                                    <tr>
+                                                        <th>@localizer["Url"]</th>
+                                                        <th>@localizer["Date Collected"]</th>
+                                                        <th>@localizer["Category"]</th>
+                                                        <th>@localizer["C6 Url"]</th>
+                                                    </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in ViewBag.business.Users.Articles)
+                                                {
+                                                    <tr>
+                                                        <td>@item.OriginalURL</td>
+                                                        <td>@item.DateCollected</td>
+                                                        @{
+                                                            string category = "";
+                                                            foreach (var data in item.Categories)
+                                                            {
+                                                                category += " " + data.Name;
+                                                            }
+                                                        }
+                                                        <td>@category</td>
+                                                        <td>@item.C6URL</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            }
+                            @if (ViewBag.business.Users.LinkedBusinesses.Count != 0)
+                            {
+                                <div class="mb-8">
+                                    <span class="details-section-title">@localizer["Business Details"]</span>
+                                <div class="w-full overflow-x-auto">
+                                    <table class="min-w-[640px] w-full text-left text-sm text-gray-800">
+                                        <thead class="bg-[#E9EFFD] font-semibold">
+                                                <tr>
+                                                    <th>@localizer["Business Id"]</th>
+                                                    <th>@localizer["Business Name"]</th>
+                                                    <th>@localizer["Position"]</th>
+                                                </tr>
+                                        </thead>
+                                            <tbody>
+                                                @foreach (var item in @ViewBag.business.Users.LinkedBusinesses)
+                                                {
+                                                    <tr>
+                                                        <td>@item.BusinessId</td>
+                                                        <td>@item.BusinessName</td>
+                                                        <td>@item.Position</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            }
+                            @if (ViewBag.business.Users.LinkedPersons.Count != 0)
+                            {
+                                <div class="mb-8">
+                                    <span class="details-section-title">@localizer["Linked Persons"]</span>
+                                    <div class="w-full overflow-x-auto">
+                                        <table class="min-w-[640px] w-full text-left text-sm text-gray-800">
+                                            <thead class="bg-[#E9EFFD] font-semibold">
+                                                <tr>
+                                                    <th>@localizer["Person ID"]</th>
+                                                    <th>@localizer["Name"]</th>
+                                                    <th>@localizer["Position"]</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in @ViewBag.business.Users.LinkedPersons)
+                                                {
+                                                    <tr>
+                                                        <td>@item.PersonId</td>
+                                                        <td>@item.Name</td>
+                                                        <td>@item.Position</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <div class="card-footer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script>
+     $(document).ready(function () {
+        // Ensure loader shows immediately
+        $("#loadingdetails").show();
+    });
+
+    $(window).on("load", function () {
+        // Hide loader after everything including images is loaded
+        $("#loadingdetails").fadeOut("slow");
+    });
+
+    // Show loader on back button click
+    $(document).ready(function () {
+        $('.details-back-btn').on('click', function () {
+            $('#loadingdetails').show();
+        });
+    });
+</script>

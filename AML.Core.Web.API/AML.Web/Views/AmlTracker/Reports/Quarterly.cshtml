@@ -1,0 +1,73 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model QuarterTrendVM
+@{
+    ViewData["Title"] = "Quarterly Trend";
+    ViewData["ActiveTab"] = "Reports";
+    ViewData["ReportTitle"] = "Quarterly Case Trend";
+    ViewData["ReportSubtitle"] = $"Case volumes per quarter, last {Model.QuartersBack} quarters.";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var maxOpened = Model.Points.Count == 0 ? 1 : Math.Max(1, Model.Points.Max(p => p.Opened));
+    var maxClosed = Model.Points.Count == 0 ? 1 : Math.Max(1, Model.Points.Max(p => p.Closed));
+    var maxVal = Math.Max(maxOpened, maxClosed);
+}
+<section class="content py-6 px-4">
+    <div class="max-w-[1300px] mx-auto">
+        <partial name="Reports/_ReportShell" />
+
+        <div class="flex gap-2 my-3">
+            <a href="?quarters=4" class="px-3 py-1.5 text-xs border rounded @(Model.QuartersBack == 4 ? "bg-blue-50 border-blue-300" : "border-slate-300")">4 quarters</a>
+            <a href="?quarters=8" class="px-3 py-1.5 text-xs border rounded @(Model.QuartersBack == 8 ? "bg-blue-50 border-blue-300" : "border-slate-300")">8 quarters</a>
+            <a href="?quarters=12" class="px-3 py-1.5 text-xs border rounded @(Model.QuartersBack == 12 ? "bg-blue-50 border-blue-300" : "border-slate-300")">3 years</a>
+            <a href="?quarters=20" class="px-3 py-1.5 text-xs border rounded @(Model.QuartersBack == 20 ? "bg-blue-50 border-blue-300" : "border-slate-300")">5 years</a>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg p-4 mb-4">
+            <h3 class="font-semibold text-slate-800 mb-2">Cases opened per quarter</h3>
+            @if (Model.Points.Any())
+            {
+                var w = 700.0 / Math.Max(1, Model.Points.Count);
+                <svg viewBox="0 0 700 200" preserveAspectRatio="none" class="w-full h-44">
+                    @{ double x = 0; }
+                    @foreach (var p in Model.Points)
+                    {
+                        var openedH = p.Opened * 180.0 / maxVal;
+                        var closedH = p.Closed * 180.0 / maxVal;
+                        var openedY = 190 - openedH;
+                        var closedY = 190 - closedH;
+                        var bar = (w - 4) / 2;
+                        <rect x="@(x.ToString("0.0"))" y="@(openedY.ToString("0.0"))" width="@(bar.ToString("0.0"))" height="@(openedH.ToString("0.0"))" fill="#2563eb"><title>@p.Label · Opened @p.Opened</title></rect>
+                        <rect x="@((x + bar + 1).ToString("0.0"))" y="@(closedY.ToString("0.0"))" width="@(bar.ToString("0.0"))" height="@(closedH.ToString("0.0"))" fill="#059669"><title>@p.Label · Closed @p.Closed</title></rect>
+                        @Html.Raw($"<text x='{(x + bar).ToString("0.0")}' y='195' font-size='9' fill='#64748b' text-anchor='middle'>{p.Label}</text>")
+                        x += w;
+                    }
+                </svg>
+                <div class="text-xs text-slate-500 mt-1 flex gap-3">
+                    <span><span class="inline-block w-3 h-3 bg-blue-600 mr-1"></span>Opened</span>
+                    <span><span class="inline-block w-3 h-3 bg-emerald-600 mr-1"></span>Closed</span>
+                </div>
+            }
+            else { <p class="text-sm text-slate-500 italic">No quarterly data available.</p> }
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left"><th class="px-3 py-2">Quarter</th><th class="px-3 py-2 text-right">Opened</th><th class="px-3 py-2 text-right">Closed (same Q)</th><th class="px-3 py-2 text-right">Approved</th><th class="px-3 py-2 text-right">Rejected</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Points)
+                    {
+                        <tr class="border-b border-slate-100">
+                            <td class="px-3 py-2 font-medium">@p.Label</td>
+                            <td class="px-3 py-2 text-right text-blue-700 font-semibold">@p.Opened</td>
+                            <td class="px-3 py-2 text-right text-emerald-700 font-semibold">@p.Closed</td>
+                            <td class="px-3 py-2 text-right">@p.Approved</td>
+                            <td class="px-3 py-2 text-right">@p.Rejected</td>
+                        </tr>
+                    }
+                    @if (!Model.Points.Any()) { <tr><td colspan="5" class="px-3 py-12 text-center text-slate-500">—</td></tr> }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,1125 @@
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+
+@model AML.ViewModel.ViewModels.Report.ReportLogSearchModel
+
+
+
+@{
+    ViewData["Title"] = localizer["Case Report"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Due Diligence - Search</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Scrollable lists styling */
+        .scrollable-list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        
+        .scrollable-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .scrollable-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .scrollable-list::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+        
+        .scrollable-list::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+    </style>
+    
+
+    <style>
+        .dt-loader {
+            position: relative;
+            width: 80px;
+            height: 20px;
+        }
+
+            .dt-loader div {
+                position: absolute;
+                top: 8px;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: #2563eb;
+                animation-timing-function: cubic-bezier(0,1,1,0);
+            }
+
+                .dt-loader div:nth-child(1) {
+                    left: 8px;
+                    animation: dt-anim1 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(2) {
+                    left: 8px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(3) {
+                    left: 32px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(4) {
+                    left: 56px;
+                    animation: dt-anim3 0.6s infinite;
+                }
+
+        @@keyframes dt-anim1 {
+            0% {
+                transform: scale(0);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @@keyframes dt-anim2 {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(24px);
+            }
+        }
+
+        @@keyframes dt-anim3 {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(0);
+            }
+        }
+
+        #caseDetailsTbl, #caseDetailsTbl th, #caseDetailsTbl td {
+            border: none !important;
+            border-radius: 0 !important;
+        }
+
+        th.sortable {
+            cursor: pointer;
+            position: relative;
+            padding-right: 20px;
+        }
+
+            th.sortable::after {
+                content: "▲\A▼";
+                white-space: pre;
+                font-size: 10px;
+                position: absolute;
+                right: 6px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #bbb;
+                line-height: 1;
+                text-align: center;
+            }
+
+            th.sortable.active.asc::after {
+                content: "▲";
+                color: #000;
+            }
+
+            th.sortable.active.desc::after {
+                content: '\A▼';
+                color: #000;
+            }
+    </style>
+</head>
+<body class="bg-appbg min-h-screen text-textprimary">
+    @await Html.PartialAsync("_ExportModal")
+    <div id="loadingCaseDetails"
+         class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-[9999] hidden">
+        <div class="dt-loader">
+            <div></div><div></div><div></div><div></div>
+        </div>
+    </div>
+    <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
+        <div class="flex items-center gap-2 text-textmuted text-xs mb-2">
+            <span class="text-textprimary font-medium">Reports</span>
+            <i data-lucide="chevron-right" class="h-3 w-3"></i>
+            <span class="text-textprimary font-medium">Dataset Update Logs</span>
+        </div>
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+
+            <!-- <div> -->
+                <h1 class="text-2xl font-bold text-textprimary tracking-tight">Dataset Update Logs</h1>
+                <!-- <p class="text-textmuted text-sm mt-1">Manage and review all individual and corporate cases.</p> -->
+            <!-- </div> -->
+            @*  <div class="flex items-center gap-3 w-full md:w-auto">
+                <button onclick="ExportList(false)" ;
+                        class="bg-surface border border-bordercolor shadow-sm hover:bg-appbg text-textlabel font-bold h-10 px-5 rounded-md flex items-center gap-2 transition-colors text-sm">
+                    <i data-lucide="download" class="h-4 w-4"></i>
+                    Export
+                </button>
+            </div> *@
+        </div>
+
+        <!-- Customer Lists Section -->
+
+        @* <div class="bg-surface rounded-xl border border-bordercolor p-5 shadow-sm">
+
+        @*<div class="bg-surface rounded-xl border border-bordercolor p-5 shadow-sm">
+>>>>>>> f48056573354e002599f36cea82f398e949f42fb
+            <h3 class="text-sm font-bold text-textprimary tracking-tight mb-4">Customer Lists</h3>
+            
+            <!-- Contract Start Date -->
+            <div class="mb-6">
+                <div class="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1">Contract Start Date</div>
+                <div class="text-lg font-bold text-purple-800">
+                    @(Model.ClientContractStartDate == DateTime.MinValue ? "N/A" : Model.ClientContractStartDate.ToString("dd/MM/yyyy"))
+                </div>
+            </div>
+            
+            <!-- Individuals and Corporates in two columns -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Individuals List -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="text-sm font-bold text-blue-800 uppercase tracking-wider mb-3">Individuals (@Model.IndividualNames.Count)</div>
+                    @if (Model.IndividualNames.Any())
+                    {
+                        <ul class="list-disc list-inside space-y-1 text-sm scrollable-list">
+                            @foreach (var name in Model.IndividualNames)
+                            {
+                                <li class="text-blue-700">@name</li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-sm text-primary italic">No individuals found</p>
+                    }
+                </div>
+                
+                <!-- Corporates List -->
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="text-sm font-bold text-green-800 uppercase tracking-wider mb-3">Corporates (@Model.CorporateNames.Count)</div>
+                    @if (Model.CorporateNames.Any())
+                    {
+                        <ul class="list-disc list-inside space-y-1 text-sm scrollable-list">
+                            @foreach (var name in Model.CorporateNames)
+                            {
+                                <li class="text-green-700">@name</li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-sm text-green-600 italic">No corporates found</p>
+                    }
+                </div>
+            </div>
+
+        </div> *@
+
+
+        <!-- Filters Section -->
+        <div class="bg-surface rounded-xl border border-bordercolor p-5 shadow-sm">
+
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-sm font-bold text-textprimary tracking-tight">Filter</h3>
+
+
+                <button type="button"
+                        onclick="clearFilters()" id="resetBtn"
+                        class="bg-primary hover:bg-primary text-white font-bold h-10 px-4 rounded-md text-sm">
+                    Reset
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+
+                <!-- Start Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Start Date</label>
+                    @*  <input type="date" id="startDate" asp-for="StartDate" max="@(DateTime.Now.ToString("yyyy/MM/dd"))"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm"> *@
+
+                    <input type="text" id="startDate" name="StartDate"
+                           placeholder="dd/MM/yyyy"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                    <span id="formattedDate" hidden></span>
+                </div>
+
+                <!-- End Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">End Date</label>
+                    <input type="text" id="endDate" name="EndDate"
+                           placeholder="dd/MM/yyyy"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                    <span id="formattedEndDate" hidden></span>
+                    @*  <input type="date" id="endDate" asp-for="EndDate" max="@(DateTime.Now.ToString("yyyy/MM/dd"))"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm"> *@
+                </div>
+
+                
+                <!-- Datasets Dropdown -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Datasets</label>
+                    <select id="datasetsFilter" name="Datasets"
+                            class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                        <option value="">Select</option>
+                        <option value="OFCN">OFCN</option>
+                        <option value="OFAC">OFAC</option>
+                        <option value="UN">UN</option>
+                        <option value="EU">EU</option>
+                        <option value="KYC6">KYC6</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-3">
+
+                    
+                    
+
+                    <!-- Apply Filters -->
+                    <button onclick="applyFilters()" id="applyBtn"
+                            class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white font-semibold h-10 px-5 rounded-md text-sm transition">
+                        @* <i data-lucide="search" class="h-4 w-4"></i> *@
+                        Apply
+                    </button>
+
+                    <button type="button" 
+                            onclick="showExportOptions()"
+                            class="flex items-center gap-2 border border-bordercolor bg-surface hover:bg-appbg text-textlabel font-semibold h-10 px-5 rounded-md text-sm transition focus:outline-none shadow-sm">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                        Export
+                    </button>
+
+
+                </div>
+
+            </div>
+        </div>
+        <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row gap-4 items-center w-full">
+                <!-- Search wrapper -->
+                <div class="relative flex-1 w-full">
+                    <i data-lucide="search" class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-textmuted"></i>
+                    <input type="text"
+                           id="searchInput"
+                           placeholder="Search"
+                           class="pl-10 h-11 w-full rounded-md border border-bordercolor bg-surface px-3 py-2 text-sm
+                                  ring-offset-white focus-visible:outline-none focus-visible:ring-2
+                                  focus-visible:ring-blue-500/20 focus-visible:border-blue-500
+                                  shadow-sm transition-all placeholder:text-textmuted">
+                </div>
+                @* <button onclick="exportTableToCSV('clients.csv')" class="h-11 px-6 inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-textlabel font-medium rounded-md transition-colors border border-bordercolor">
+                    Export
+                </button>
+                <button onclick="resetFilters()" class="h-11 px-6 inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-textlabel font-medium rounded-md transition-colors border border-bordercolor">
+                    Reset
+                </button> *@
+            </div>
+
+            <div class="bg-surface rounded-xl border border-bordercolor shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left whitespace-nowrap table-fixed">
+                        <thead class="text-[10px] text-textmuted  bg-appbg border-b border-bordercolor">
+                            <tr>
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(0, this)" *@>Updated Date</th>
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(1, this)" *@>Datasets</th>
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(2, this)" *@ >+Delta</th> 
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(3, this)" *@>+Delta Ind</th>
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(4, this)" *@>+Delta Corp</th>
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(5, this)" *@>Deleted</th>
+                                <th class="px-6 py-4 font-bold h-12 w-1/5" @* onclick="sortTable(6, this)" *@>Cumulative</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientsTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-6 py-4 bg-appbg border-t border-bordercolor flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-bold text-textmuted uppercase tracking-wider">Show</label>
+                            <select id="pageSize" onchange="changePageSize()"
+                                    class="h-8 w-20 rounded-md border border-bordercolor bg-surface pl-3 pr-8 text-xs font-bold text-textlabel focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <div class="h-4 w-px bg-slate-200"></div>
+                        <div class="text-xs font-bold text-textmuted uppercase tracking-wider">
+                            Showing <span id="showingStart" class="text-textprimary">0</span> - <span id="showingEnd" class="text-textprimary">0</span>
+                            <span class="mx-1 text-slate-300">of</span>
+                            <span id="totalRecords" class="text-textprimary">0</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button id="prevBtn" onclick="previousPage()"
+                                class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                            <i data-lucide="chevron-left" class="h-3.5 w-3.5"></i>
+                            Previous
+                        </button>
+                        <button id="nextBtn" onclick="nextPage()"
+                                class="h-8 px-4 flex items-center gap-2 text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                            Next
+                            <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <iframe id="pdfExportFrame" style="position: absolute; left: -9999px; visibility: hidden; width: 1024px; height: 100%;"></iframe>
+</body>
+</html>
+<div id="nameModalOverlay" 
+     class="fixed inset-0 bg-black/40 hidden z-[9999] opacity-0 transition-opacity duration-300 backdrop-blur-sm flex items-center justify-center"
+     onclick="handleModalOverlayClick(event)">
+    <div id="nameModalDialog" 
+         class="relative w-[90%] md:w-[800px] bg-surface rounded-xl shadow-2xl flex flex-col scale-95 opacity-0 transition-all duration-300 overflow-hidden max-h-[90vh]"
+         onclick="event.stopPropagation()">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center px-6 py-4 border-b border-bordercolor bg-appbg">
+            <h2 class="text-lg font-bold text-textprimary tracking-tight">Uploaded Records</h2>
+            <button onclick="closePopup()"
+                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm">
+                        Close
+                    </button>
+            @* <button onclick="()" class="text-textmuted hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50 flex items-center justify-center" aria-label="Close modal">
+                <i data-lucide="x" class="h-5 w-5"></i>
+            </button> *@
+        </div>
+
+        <!-- Loader overlay inside Modal -->
+        <div id="modalLoader" class="absolute inset-0 bg-surface/90 z-10 flex flex-col items-center justify-center backdrop-blur-sm hidden text-primary">
+             <i data-lucide="loader-2" class="h-10 w-10 animate-spin mb-3"></i>
+             <span class="text-sm font-semibold text-textlabel tracking-tight">Loading records...</span>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 overflow-y-auto flex-1 bg-surface">
+            <div id="modalRecordContainer" class="flex flex-col h-full bg-blue-50/30 border border-blue-100 rounded-xl overflow-hidden shadow-sm">
+                <div id="modalRecordHeader" class="px-5 py-3.5 bg-blue-50/70 border-b border-blue-100 flex justify-between items-center">
+                    <h3 id="modalCategoryTitle" class="font-bold text-sm text-blue-800 uppercase tracking-widest">Records</h3>
+                    <span id="modalRecordCount" class="bg-blue-200 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">0</span>
+                </div>
+                <div class="p-4 flex-1">
+                    <ul id="modalRecordList" class="text-sm space-y-1.5 max-h-[40vh] overflow-y-auto scrollable-list text-textlabel font-medium">
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@* <div class="custom-container aml-casereport">
+    <div class="page-heading">
+        <div class="sas-card rounded-card br-20 mb-2 bg-blue">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><b>Screening Database Logs</b></h4>
+
+                <div class="menu-icon">
+                    <i class="lni lni-microsoft"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sas-card rounded-card mb-2 bg-blue">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">Screening Database Logs</h6>
+        </div>
+        <hr />
+
+        <div class="form-contents">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="dtDOB">Start Date</label>
+                        <input type="date" asp-for="StartDate" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="dtStartDate" min="2000-01-01" max="@DateTime.Now.ToString("yyyy-MM-dd")" placeholder="Start Date">
+                        <span asp-validation-for="StartDate" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="dtDOB">End Date</label>
+                        <input type="date" asp-for="EndDate" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="dtEndDate" max="@DateTime.Now.ToString("yyyy-MM-dd")" placeholder="End Date"> <!--3000-12-31-->
+                        <span asp-validation-for="EndDate" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="row justify-content-end">
+            <div class="d-flex justify-content-between align-items-center">
+                <button type="submit" id="btnSearch" class="h-10 px-4 rounded-lg border border-bordercolor bg-surface hover:bg-appbg text-textprimary text-[13px] font-bold transition-colors" onclick="LoadTable();">GO</button>
+                <button type="reset" id="btnReset" class="h-10 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[13px] font-bold transition-colors ml-2 mr-3">Clear All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- /.card-body -->
+    <!--/form--> 
+    @*  <div class="bg-surface rounded-xl border border-bordercolor shadow-none mb-4">
+        <div class="px-6 py-4 border-b border-bordercolor">
+        @*<h3 class="card-title">Results</h3>*@
+    @*</div>*@
+    @* <div class="sas-card rounded-card mb-2 bg-blue">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="table-responsive">
+                <button type="button" onclick="ExportList(true);" class="sas-button p-8-25 bg-color-2 ml-2">Export to PDF <i class="fas fa-file-pdf ml-2"></i></button>
+                <button type="button" onclick="ExportList(false);" class="sas-button p-8-25 bg-color-1 ml-3">Export to Excel <i class="fas fa-file-excel-o ml-2"></i></button>
+                <br />
+                <br />
+                <table id="filterTable" class="w-full text-sm text-left" cellspacing="0">
+                    <thead class="text-[13px] font-medium text-textlabel bg-appbg border-b-2 border-bordercolor">
+                        <tr>
+                            
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div> *@ 
+<script>
+    let pageSize = 10;
+    let currentPage = 1;
+    let totalRecords = 0;
+    let orderColumn = 0;
+    let orderDirection = 'desc';
+    let drawCounter = 1;
+
+    $(document).ready(function () {
+        lucide.createIcons();
+        loadData();
+
+        // Filters should work only upon clicking the Apply button
+        /*
+        $('#searchInput').on('input', function() {
+            currentPage = 1;
+            loadData();
+        });
+
+        $('#datasetsFilter').on('change', function() {
+            currentPage = 1;
+            loadData();
+        });
+        */
+    });
+
+    function formatDate(value) {
+        if (!value) return null;
+
+        // ✅ Already in yyyy-MM-dd
+        if (value.includes('-') && value.split('-')[0].length === 4) {
+            return value;
+        }
+
+        // ✅ Convert dd/MM/yyyy → yyyy-MM-dd
+        if (value.includes('/')) {
+            let parts = value.split('/');
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+
+        return null;
+    }
+        function formatDateTime(dateStr) {
+        if (!dateStr) return { date: '-', time: '-' };
+
+        const d = new Date(dateStr);
+
+        return {
+            date: d.toLocaleDateString('en-GB'), // 20/02/2026
+            time: d.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',   // ✅ added
+                hour12: true
+            }) // 06:43:15 PM
+        };
+    }
+
+
+    function showExportOptions() {
+        const columns = [
+            { id: "updatedDate", label: "Updated Date" },
+            { id: "datasets", label: "Datasets" },
+            { id: "delta", label: "+Delta" },
+            { id: "individual", label: "+Delta Ind" },
+            { id: "corporate", label: "+Delta Corp" },
+            { id: "cumulative", label: "Cumulative" }
+        ];
+
+        openExportModal({
+            getColumnsByActiveTab: () => columns,
+            onExport: (format, selectedColumns, orientation) => {
+                const orientationValue = orientation || 'portrait';
+                ExportList(format === 'pdf', selectedColumns, orientationValue);
+            }
+        });
+    }
+
+    function ExportList(isPDF, selectedColumns, orientation) {
+        const startDate = formatDate($('#startDate').val());
+        const endDate = formatDate($('#endDate').val());
+        const datasets = $('#datasetsFilter').val();
+        const searchValue = $('#searchInput').val() || '';
+        const params = `startDate=${startDate}&endDate=${endDate}&datasets=${datasets}&searchValue=${encodeURIComponent(searchValue)}&selectedColumns=${selectedColumns || ''}&orientation=${orientation || 'portrait'}`;
+        
+        if (isPDF) {
+            $('#loader').removeClass('hidden').addClass('flex');
+            const url = `/Report/DatasetUpdateLogs_PDF?${params}`;
+            $('#pdfExportFrame').attr('src', url);
+        } else {
+            const url = `/Report/DatasetUpdateLogsExportReport?${params}`;
+            window.location.href = url;
+        }
+    }
+
+
+    function sortTable(columnIndex, element) {
+        $('.sortable').removeClass('active asc desc');
+        if (orderColumn === columnIndex) {
+            orderDirection = orderDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            orderColumn = columnIndex;
+            orderDirection = 'asc';
+        }
+        $(element).addClass('active ' + orderDirection);
+        loadData();
+    }
+     function applyFilters() {
+        loadData();
+    }
+
+    function loadData() {
+        
+        $("#loadingCaseDetails").removeClass("hidden");
+        $.ajax({
+            url: '/Report/DatasetUpdateLogsCustompagination',
+            type: 'POST',
+            data: {
+                draw: drawCounter++,
+                start: (currentPage - 1) * pageSize,
+                length: pageSize,
+                orderColumn: orderColumn,
+                orderDirection: orderDirection,
+                search: { value: $('#searchInput').val() },
+                startDate: formatDate($('#startDate').val()),
+                endDate: formatDate($('#endDate').val()),
+                datasets: $('#datasetsFilter').val()
+            },
+            success: function (resp) {
+                if (resp.error) {
+                   // $('#clientsTableBody').empty().append('<tr><td colspan="5" class="h-24 text-center text-red-500">Error: ' + resp.error + '</td></tr>');
+                   $('#clientsTableBody').empty().append('<tr><td colspan="5" class="h-24 text-center text-red-500">Something went wrong</td></tr>');
+                   toastr.error('Error: ' + resp.error);
+                    return;
+                }
+               
+                window.datasetUpdateLogsData = resp.data; 
+                renderTable(resp.data);
+                totalRecords = resp.recordsFiltered;
+                updatePagination();
+            },
+            complete: function () {
+                $("#loadingCaseDetails").addClass("hidden");
+            },
+            error: function (xhr) {
+                $('#clientsTableBody').empty().append('<tr><td colspan="5" class="h-24 text-center text-red-500">Something went wrong</td></tr>');
+                toastr.error('HTTP Error: ' + xhr.status + ' ' + xhr.statusText);
+            }
+        });
+    }
+
+    function renderTable(data) {
+        const tbody = $('#clientsTableBody').empty();
+
+        console.log(data);
+        if (!data || data.length === 0) {
+            tbody.append('<tr><td colspan="5" class="h-24 text-center text-textmuted">No client records found.</td></tr>');
+            return;
+        }
+
+        data.forEach(row => {
+            //  const { date, time } = formatDate(row.updatedDate);
+            const formattedDate = formatDate(row.updatedDate);
+            const updated = formatDateTime(row.updatedDate);
+            
+            tbody.append(`
+                <tr class="bg-surface border-b border-bordercolor hover:bg-appbg transition-colors">
+                   <td class="px-6 py-4">
+                             <!-- Updated (only if exists) -->
+                            ${updated ? `
+                                <div class="text-xs text-textlabel">
+                                    <div>${updated.date || '-'}</div>
+                                    <div class="ml-2">
+                                        ${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </td>
+
+
+
+                <td class="px-6 py-4 ">${(row.datasets || '').replace('UAE IEC LIST', 'UAE IEC')}</td>
+                <td class="px-6 py-4 ">${row.delta}</td>
+                 <td class="px-6 py-4 ">
+                    ${(row.datasets && row.datasets.toLowerCase().includes('kyc6')) || !row.individual || row.individual == 0 ? row.individual : `
+                        <a href="javascript:void(0)" onclick="openPopup('${updated.date}','${row.datasets}', 'INDIVIDUAL')" class="text-primary font-bold underline cursor-pointer">${row.individual}</a>
+                    `}
+                 </td>
+                 <td class="px-6 py-4 ">
+                    ${(row.datasets && row.datasets.toLowerCase().includes('kyc6')) || !row.corporate || row.corporate == 0 ? row.corporate : `
+                        <a href="javascript:void(0)" onclick="openPopup('${updated.date}','${row.datasets}', 'CORPORATE')" class="text-green-600 font-bold underline cursor-pointer">${row.corporate}</a>
+                    `}
+                 </td>
+                 <td class="px-6 py-4 ">
+                    ${(row.datasets && row.datasets.toLowerCase().includes('kyc6')) || !row.deleted || row.deleted == 0 || row.deleted == "0" ? (row.deleted || row.deleted === 0 || row.deleted === "0" ? row.deleted : '0') : `
+                        <a href="javascript:void(0)" onclick="openDeletedPopup(${row.id})" class="text-red-600 font-bold underline cursor-pointer">${row.deleted || '-'}</a>
+                    `}
+                 </td>
+                 <td class="px-6 py-4 ">${row.cumulative}</td>
+                </tr>
+            `);
+        });
+        lucide.createIcons();
+    }
+
+    function updatePagination() {
+        const start = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+        const end = Math.min(currentPage * pageSize, totalRecords);
+
+        $('#showingStart').text(start);
+        $('#showingEnd').text(end);
+        $('#totalRecords').text(totalRecords);
+
+        $('#prevBtn').prop('disabled', currentPage === 1);
+        $('#nextBtn').prop('disabled', end >= totalRecords);
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        loadData();
+    }
+
+    function previousPage() {
+        if (currentPage > 1) goToPage(currentPage - 1);
+    }
+
+    function nextPage() {
+        if (currentPage * pageSize < totalRecords) goToPage(currentPage + 1);
+    }
+
+    function changePageSize() {
+        pageSize = parseInt($('#pageSize').val());
+        currentPage = 1;
+        loadData();
+    }
+    
+    document.addEventListener("DOMContentLoaded", function () {
+
+        function initDatePicker(selector, defaultDate, isEndDate = false) {
+            return flatpickr(selector, {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                defaultDate: defaultDate,
+                allowInput: true,
+
+                // ✅ Conditional logic
+                // ...(isEndDate
+                //     ? { minDate: "today" }   // End Date → no past dates
+                //     : { maxDate: "today" }   // Start Date → no future dates
+                // )
+            });
+        }
+
+        // ✅ Start Date → 1 year back, max today
+        const startPicker = initDatePicker("#startDate", new Date().fp_incr(-365));
+
+        // ✅ End Date → today, min today
+        const endPicker = initDatePicker("#endDate", new Date(), true);
+
+    });
+    
+    function clearFilters() {
+        // Reset text inputs and dropdowns
+        $('#searchInput').val('');
+        $('#datasetsFilter').val('');
+        currentPage = 1;
+
+        // Reset dates
+        const today = new Date();
+        const lastYear = new Date();
+        lastYear.setFullYear(today.getFullYear() - 1);
+
+        // Reset Flatpickr instances
+        if (document.querySelector("#startDate")._flatpickr) {
+            document.querySelector("#startDate")._flatpickr.setDate(lastYear, true);
+        }
+
+        if (document.querySelector("#endDate")._flatpickr) {
+            document.querySelector("#endDate")._flatpickr.setDate(today, true);
+        }
+
+        // Apply the reset state
+        loadData();
+    }
+
+    async function openPopup(date, dataset, category) {
+        const overlay = document.getElementById("nameModalOverlay");
+        const dialog = document.getElementById("nameModalDialog");
+        const modalLoader = document.getElementById("modalLoader");
+
+        // Step 1: Show overlay & modal immediately with loader
+        document.getElementById("modalRecordList").innerHTML = "";
+        document.getElementById("modalRecordCount").textContent = "0";
+        overlay.classList.remove("hidden");
+        modalLoader.classList.remove("hidden");
+
+        setTimeout(() => {
+            overlay.classList.remove("opacity-0");
+            dialog.classList.remove("scale-95", "opacity-0");
+            dialog.classList.add("scale-100", "opacity-100");
+        }, 10);
+
+        try {
+            // date = "07/04/2026" (DD/MM/YYYY)
+
+            const parts = date.split('/');
+            const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`; 
+
+
+            const response = await fetch(`/GetNamesByCreatedDate?date=${formattedDate}&type=${dataset}&category=${category}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+
+            const data = await response.json();
+
+            let listHtml = "";
+            let recordCount = 0;
+            const maxRecords = 100;
+
+            if (data && data.length > 0) {
+                for (const item of data) {
+                    const isCorporateItem = item.category !== "INDIVIDUAL";
+                    const isCorporateFilter = category !== "INDIVIDUAL";
+
+                    if ((category === "INDIVIDUAL" && item.category === "INDIVIDUAL") || 
+                        (isCorporateFilter && isCorporateItem)) {
+                        
+                        const li = `<li class="py-2 px-3 border-b border-bordercolor last:border-0">${item.fullname}</li>`;
+                        if (recordCount < maxRecords) listHtml += li;
+                        recordCount++;
+                    }
+                }
+            }
+
+            const recordList = document.getElementById("modalRecordList");
+            const modalCategoryTitle = document.getElementById("modalCategoryTitle");
+            const modalRecordCount = document.getElementById("modalRecordCount");
+            
+            const modalRecordContainer = document.getElementById("modalRecordContainer");
+            const modalRecordHeader = document.getElementById("modalRecordHeader");
+            
+            modalCategoryTitle.textContent = category === "INDIVIDUAL" ? "Individual" : "Corporate";
+            modalRecordCount.textContent = recordCount;
+
+            if (category === "INDIVIDUAL") {
+                modalRecordContainer.className = "flex flex-col h-full bg-blue-50/30 border border-blue-100 rounded-xl overflow-hidden shadow-sm";
+                modalRecordHeader.className = "px-5 py-3.5 bg-blue-50/70 border-b border-blue-100 flex justify-between items-center";
+                modalCategoryTitle.className = "font-bold text-sm text-blue-800 uppercase tracking-widest";
+                modalRecordCount.className = "bg-blue-200 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm";
+            } else {
+                modalRecordContainer.className = "flex flex-col h-full bg-green-50/30 border border-green-100 rounded-xl overflow-hidden shadow-sm";
+                modalRecordHeader.className = "px-5 py-3.5 bg-green-50/70 border-b border-green-100 flex justify-between items-center";
+                modalCategoryTitle.className = "font-bold text-sm text-green-800 uppercase tracking-widest";
+                modalRecordCount.className = "bg-green-200 text-green-800 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm";
+            }
+
+            if (recordCount > 0) {
+                recordList.innerHTML = listHtml;
+            } else {
+                let iconColor = category === "INDIVIDUAL" ? "text-blue-200" : "text-green-200";
+                let catName = category === "INDIVIDUAL" ? "individual" : "corporate";
+                recordList.innerHTML = `<li class="py-8 text-center text-textmuted italic flex flex-col items-center gap-3"><i data-lucide="inbox" class="h-8 w-8 ${iconColor}"></i>No ${catName} records found</li>`;
+            }
+
+                // Re-initialize for empty states inbox icons
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+
+        } catch (err) {
+            console.error("Error fetching name list:", err);
+            document.getElementById("modalRecordList").innerHTML = `<li class="text-red-500 text-center py-4 font-bold bg-red-50 rounded-lg">Error loading data</li>`;
+            if (typeof toastr !== 'undefined') {
+                toastr.error("Failed to load records.");
+            }
+        } finally {
+            document.getElementById("modalLoader").classList.add("hidden");
+        }
+    }
+     async function openDeletedPopup(id) {
+        const overlay = document.getElementById("nameModalOverlay");
+        const dialog = document.getElementById("nameModalDialog");
+        const modalLoader = document.getElementById("modalLoader");
+
+        // Step 1: Show overlay & modal immediately with loader
+        document.getElementById("modalRecordList").innerHTML = "";
+        document.getElementById("modalRecordCount").textContent = "0";
+        overlay.classList.remove("hidden");
+        modalLoader.classList.remove("hidden");
+
+        setTimeout(() => {
+            overlay.classList.remove("opacity-0");
+            dialog.classList.remove("scale-95", "opacity-0");
+            dialog.classList.add("scale-100", "opacity-100");
+        }, 10);
+
+        try {
+            // date = "07/04/2026" (DD/MM/YYYY)
+
+            const parts = date.split('/');
+            const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+
+
+            const response = await fetch(`/GetNamesByCreatedDate?date=${formattedDate}&type=${dataset}&category=${category}`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+
+            const data = await response.json();
+
+            let listHtml = "";
+            let recordCount = 0;
+            const maxRecords = 100;
+
+            if (data && data.length > 0) {
+                for (const item of data) {
+                    const isCorporateItem = item.category !== "INDIVIDUAL";
+                    const isCorporateFilter = category !== "INDIVIDUAL";
+
+                    if ((category === "INDIVIDUAL" && item.category === "INDIVIDUAL") ||
+                        (isCorporateFilter && isCorporateItem)) {
+
+                        const li = `<li class="py-2 px-3 border-b border-bordercolor last:border-0">${item.fullname}</li>`;
+                        if (recordCount < maxRecords) listHtml += li;
+                        recordCount++;
+                    }
+                }
+            }
+
+            const recordList = document.getElementById("modalRecordList");
+            const modalCategoryTitle = document.getElementById("modalCategoryTitle");
+            const modalRecordCount = document.getElementById("modalRecordCount");
+
+            const modalRecordContainer = document.getElementById("modalRecordContainer");
+            const modalRecordHeader = document.getElementById("modalRecordHeader");
+
+            modalCategoryTitle.textContent = category === "INDIVIDUAL" ? "Individual" : "Corporate";
+            modalRecordCount.textContent = recordCount;
+
+            if (category === "INDIVIDUAL") {
+                modalRecordContainer.className = "flex flex-col h-full bg-blue-50/30 border border-blue-100 rounded-xl overflow-hidden shadow-sm";
+                modalRecordHeader.className = "px-5 py-3.5 bg-blue-50/70 border-b border-blue-100 flex justify-between items-center";
+                modalCategoryTitle.className = "font-bold text-sm text-blue-800 uppercase tracking-widest";
+                modalRecordCount.className = "bg-blue-200 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm";
+            } else {
+                modalRecordContainer.className = "flex flex-col h-full bg-green-50/30 border border-green-100 rounded-xl overflow-hidden shadow-sm";
+                modalRecordHeader.className = "px-5 py-3.5 bg-green-50/70 border-b border-green-100 flex justify-between items-center";
+                modalCategoryTitle.className = "font-bold text-sm text-green-800 uppercase tracking-widest";
+                modalRecordCount.className = "bg-green-200 text-green-800 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm";
+            }
+
+            if (recordCount > 0) {
+                recordList.innerHTML = listHtml;
+            } else {
+                let iconColor = category === "INDIVIDUAL" ? "text-blue-200" : "text-green-200";
+                let catName = category === "INDIVIDUAL" ? "individual" : "corporate";
+                recordList.innerHTML = `<li class="py-8 text-center text-textmuted italic flex flex-col items-center gap-3"><i data-lucide="inbox" class="h-8 w-8 ${iconColor}"></i>No ${catName} records found</li>`;
+            }
+
+                // Re-initialize for empty states inbox icons
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+
+        } catch (err) {
+            console.error("Error fetching name list:", err);
+            document.getElementById("modalRecordList").innerHTML = `<li class="text-red-500 text-center py-4 font-bold bg-red-50 rounded-lg">Error loading data</li>`;
+            if (typeof toastr !== 'undefined') {
+                toastr.error("Failed to load records.");
+            }
+        } finally {
+            document.getElementById("modalLoader").classList.add("hidden");
+        }
+    }
+
+    function closePopup() {
+        const overlay = document.getElementById("nameModalOverlay");
+        const dialog = document.getElementById("nameModalDialog");
+        
+        // Add leave animations
+        overlay.classList.add("opacity-0");
+        dialog.classList.remove("scale-100", "opacity-100");
+        dialog.classList.add("scale-95", "opacity-0");
+        
+        // Wait for transition to finish before hiding
+        setTimeout(() => {
+            overlay.classList.add("hidden");
+        }, 300);
+    }
+
+    // Handle click outside to close
+    function handleModalOverlayClick(event) {
+        if (event.target.id === "nameModalOverlay") {
+            closePopup();
+        }
+    }
+
+    // Close modal on Escape key
+    document.addEventListener("keydown", function(event) {
+        if (event.key === "Escape") {
+            const overlay = document.getElementById("nameModalOverlay");
+            if (overlay && !overlay.classList.contains("hidden")) {
+                closePopup();
+            }
+        }
+    });
+
+    async function openDeletedPopup(id) {
+        const overlay = document.getElementById("nameModalOverlay");
+        const dialog = document.getElementById("nameModalDialog");
+        const modalLoader = document.getElementById("modalLoader");
+
+        // Step 1: Show overlay & modal immediately with loader
+        document.getElementById("modalRecordList").innerHTML = "";
+        document.getElementById("modalRecordCount").textContent = "0";
+        overlay.classList.remove("hidden");
+        modalLoader.classList.remove("hidden");
+
+        setTimeout(() => {
+            overlay.classList.remove("opacity-0");
+            dialog.classList.remove("scale-95", "opacity-0");
+            dialog.classList.add("scale-100", "opacity-100");
+        }, 10);
+
+        try {
+            // Find the row data from the already fetched data
+            const rowData = window.datasetUpdateLogsData.find(row => row.id == id);
+
+            if (!rowData) {
+                throw new Error("No data found for this record.");
+            }
+
+            // Handle both PascalCase and camelCase property names
+            const deletedNames = rowData.DeletedNames || rowData.deletedNames;
+
+            if (!deletedNames) {
+                throw new Error("No deleted names found for this record.");
+            }
+
+            let listHtml = "";
+            let recordCount = 0;
+            const maxRecords = 100;
+
+            // Assuming DeletedNames is a comma-separated string
+            const names = deletedNames.split(',').map(name => name.trim());
+
+            for (const name of names) {
+                const li = `<li class="py-2 px-3 border-b border-bordercolor last:border-0">${name}</li>`;
+                if (recordCount < maxRecords) listHtml += li;
+                recordCount++;
+            }
+
+            const recordList = document.getElementById("modalRecordList");
+            const modalCategoryTitle = document.getElementById("modalCategoryTitle");
+            const modalRecordCount = document.getElementById("modalRecordCount");
+
+            modalCategoryTitle.textContent = "Deleted";
+            modalRecordCount.textContent = recordCount;
+
+            // Set the modal styling for deleted records
+            const modalRecordContainer = document.getElementById("modalRecordContainer");
+            const modalRecordHeader = document.getElementById("modalRecordHeader");
+
+            modalRecordContainer.className = "flex flex-col h-full bg-red-50/30 border border-red-100 rounded-xl overflow-hidden shadow-sm";
+            modalRecordHeader.className = "px-5 py-3.5 bg-red-50/70 border-b border-red-100 flex justify-between items-center";
+            modalCategoryTitle.className = "font-bold text-sm text-red-800 uppercase tracking-widest";
+            modalRecordCount.className = "bg-red-200 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm";
+
+            if (recordCount > 0) {
+                recordList.innerHTML = listHtml;
+            } else {
+                recordList.innerHTML = `<li class="py-8 text-center text-textmuted italic flex flex-col items-center gap-3"><i data-lucide="inbox" class="h-8 w-8 text-red-200"></i>No deleted records found</li>`;
+            }
+
+            // Re-initialize for empty states inbox icons
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+
+        } catch (err) {
+            console.error("Error fetching deleted name list:", err);
+            document.getElementById("modalRecordList").innerHTML = `<li class="text-red-500 text-center py-4 font-bold bg-red-50 rounded-lg">Error loading data</li>`;
+            if (typeof toastr !== 'undefined') {
+                toastr.error("Failed to load deleted records.");
+            }
+        } finally {
+            document.getElementById("modalLoader").classList.add("hidden");
+        }
+    }
+</script>
+
+

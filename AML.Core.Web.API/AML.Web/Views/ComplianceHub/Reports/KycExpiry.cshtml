@@ -1,0 +1,125 @@
+@using AML.ViewModel.ViewModels.ComplianceHub
+@using System.Linq
+@model KycExpiryVM
+@{
+    ViewData["Title"] = "KYC Document Expiry";
+    ViewData["ReportTitle"] = "KYC Document Expiry Calendar";
+    ViewData["ReportSubtitle"] = "Passport, Emirates ID and National ID expiry timeline. Buckets by 30 / 60 / 90 days.";
+    ViewData["Theme"] = "Lifecycle";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+    // Build a 12-month calendar grid
+    var today = DateTime.UtcNow.Date;
+    var monthStart = new DateTime(today.Year, today.Month, 1);
+    var months = Enumerable.Range(0, 12).Select(i => monthStart.AddMonths(i)).ToList();
+    var byMonth = Model.Rows
+        .Where(r => r.ExpiryDate >= monthStart && r.ExpiryDate < monthStart.AddMonths(12))
+        .GroupBy(r => new { r.ExpiryDate.Year, r.ExpiryDate.Month })
+        .ToDictionary(g => $"{g.Key.Year}-{g.Key.Month}", g => g.ToList());
+    int Max(int min) => byMonth.Values.Count == 0 ? min : Math.Max(min, byMonth.Values.Max(v => v.Count));
+    var maxPerMonth = Max(1);
+}
+
+<style>
+    .kyc-stat-strip { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:18px; }
+    .kyc-stat { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+    .kyc-stat-num { font-size:24px; font-weight:800; line-height:1; }
+    .kyc-stat-lbl { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#64748b; font-weight:700; margin-top:4px; }
+
+    .kyc-cal { display:grid; grid-template-columns: repeat(6, 1fr); gap:10px; margin:18px 0; }
+    .kyc-month { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:12px; min-height:100px; display:flex; flex-direction:column; gap:6px; position:relative; transition:transform .15s ease, box-shadow .15s ease; }
+    .kyc-month:hover { transform:translateY(-2px); box-shadow:0 6px 14px rgba(0,0,0,.05); }
+    .kyc-month.is-current { background:linear-gradient(135deg,#eff6ff,#fff); border-color:#bfdbfe; }
+    .kyc-month-label { font-size:10px; text-transform:uppercase; font-weight:800; color:#94a3b8; letter-spacing:.05em; }
+    .kyc-month-count { font-size:22px; font-weight:800; color:#0f172a; line-height:1; }
+    .kyc-month-bar { height:6px; border-radius:3px; background:#f1f5f9; overflow:hidden; margin-top:auto; }
+    .kyc-month-bar > span { display:block; height:100%; background:linear-gradient(90deg,#2563eb,#1d4ed8); }
+    .kyc-month .docs { font-size:10px; color:#64748b; line-height:1.4; }
+
+    .kyc-table { background:#fff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; }
+    .kyc-table table { width:100%; font-size:13px; }
+    .kyc-table th { background:#f8fafc; text-align:left; padding:10px 12px; font-weight:700; color:#475569; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+    .kyc-table td { padding:10px 12px; border-top:1px solid #f1f5f9; }
+    .badge-bucket { display:inline-block; padding:2px 9px; border-radius:9999px; font-size:11px; font-weight:700; }
+    .b-expired { background:#fee2e2; color:#991b1b; }
+    .b-30 { background:#fef3c7; color:#92400e; }
+    .b-60 { background:#fef9c3; color:#854d0e; }
+    .b-90 { background:#ecfccb; color:#3f6212; }
+    .b-future { background:#e2e8f0; color:#475569; }
+</style>
+
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="_ReportShell" />
+
+        <div class="kyc-stat-strip">
+            <div class="kyc-stat" style="border-left:4px solid #dc2626;">
+                <div style="background:#fee2e2;color:#991b1b;width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <div><div class="kyc-stat-num" style="color:#991b1b;">@Model.Expired</div><div class="kyc-stat-lbl">Already Expired</div></div>
+            </div>
+            <div class="kyc-stat" style="border-left:4px solid #d97706;">
+                <div style="background:#fef3c7;color:#92400e;width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div><div class="kyc-stat-num" style="color:#92400e;">@Model.Within30</div><div class="kyc-stat-lbl">Within 30 days</div></div>
+            </div>
+            <div class="kyc-stat" style="border-left:4px solid #ca8a04;">
+                <div style="background:#fef9c3;color:#854d0e;width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div><div class="kyc-stat-num" style="color:#854d0e;">@Model.Within60</div><div class="kyc-stat-lbl">31–60 days</div></div>
+            </div>
+            <div class="kyc-stat" style="border-left:4px solid #65a30d;">
+                <div style="background:#ecfccb;color:#3f6212;width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div><div class="kyc-stat-num" style="color:#3f6212;">@Model.Within90</div><div class="kyc-stat-lbl">61–90 days</div></div>
+            </div>
+        </div>
+
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">Expiry calendar — next 12 months</h3>
+        <div class="kyc-cal">
+            @foreach (var m in months)
+            {
+                var key = $"{m.Year}-{m.Month}";
+                var docs = byMonth.ContainsKey(key) ? byMonth[key] : new List<KycExpiryRow>();
+                var pct = maxPerMonth == 0 ? 0 : (int)(docs.Count * 100.0 / maxPerMonth);
+                <div class="kyc-month @(m == monthStart ? "is-current" : "")">
+                    <div class="kyc-month-label">@m.ToString("MMM yyyy")</div>
+                    <div class="kyc-month-count">@docs.Count</div>
+                    <div class="docs">@string.Join(" · ", docs.GroupBy(d => d.DocumentType).Select(g => $"{g.Count()} {g.Key}"))</div>
+                    <div class="kyc-month-bar"><span style="width:@(pct)%"></span></div>
+                </div>
+            }
+        </div>
+
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mt-6 mb-2">All upcoming + expired documents</h3>
+        <div class="kyc-table">
+            <table>
+                <thead><tr><th>Customer</th><th>Document</th><th>Number</th><th>Expiry</th><th>When</th><th>Bucket</th></tr></thead>
+                <tbody>
+                @if (!Model.Rows.Any())
+                {
+                    <tr><td colspan="6" class="px-3 py-12 text-center text-slate-500">No KYC document expiry dates recorded yet.</td></tr>
+                }
+                else
+                {
+                    foreach (var r in Model.Rows.Take(500))
+                    {
+                        <tr>
+                            <td><div class="font-semibold text-slate-800">@r.FullName</div><div class="text-xs text-slate-500 font-mono">@r.CustomerCode</div></td>
+                            <td>@r.DocumentType</td>
+                            <td class="font-mono text-xs">@r.DocumentNumber</td>
+                            <td>@r.ExpiryDate.ToString("yyyy-MM-dd")</td>
+                            <td class="text-xs text-slate-600">@(r.DaysUntil < 0 ? $"{Math.Abs(r.DaysUntil)} days ago" : $"in {r.DaysUntil} days")</td>
+                            <td><span class="badge-bucket b-@r.Bucket">@(r.Bucket == "expired" ? "EXPIRED" : r.Bucket == "future" ? "FUTURE" : $"≤ {r.Bucket}d")</span></td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

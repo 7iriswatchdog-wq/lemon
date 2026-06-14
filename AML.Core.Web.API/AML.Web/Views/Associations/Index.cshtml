@@ -1,0 +1,393 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@using System.Linq
+@model CustomerAssociationsVM
+@{
+    ViewData["Title"] = "Customer Associations";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+    var groupsWithRelations = Model.Groups.Where(g => g.RelatedParties.Any()).ToList();
+    var totalGroups = groupsWithRelations.Count;
+    var totalRelated = groupsWithRelations.Sum(g => g.RelatedParties.Count);
+
+    string Initials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "??";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpper();
+        return ($"{parts[0][0]}{parts[^1][0]}").ToUpper();
+    }
+    string TypeLabel(string t) => t switch
+    {
+        "I" => "Individual",
+        "C" => "Corporate",
+        "S" => "Shareholder",
+        "B" => "Beneficiary",
+        "V" => "Vendor",
+        _ => string.IsNullOrEmpty(t) ? "—" : t
+    };
+    string FlagLabel(string f) => string.IsNullOrEmpty(f) ? "Related Party" :
+        System.Text.RegularExpressions.Regex.Replace(f.Replace('_', ' '), @"\b\w", m => m.Value.ToUpper());
+}
+
+<style>
+    /* ── Associations Report — page-level polish ── */
+    .assoc-page-bg { background: linear-gradient(180deg, #f8fafc 0%, #ffffff 240px); }
+
+    /* Stat card */
+    .assoc-stat {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+    }
+    .assoc-stat-icon {
+        width: 44px; height: 44px;
+        border-radius: 10px;
+        display: inline-flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .assoc-stat-num { font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1; }
+    .assoc-stat-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #64748b; font-weight: 700; margin-top: 4px; }
+
+    /* Filter / toolbar */
+    .assoc-toolbar {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px 14px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .assoc-search {
+        flex: 1 1 240px;
+        position: relative;
+    }
+    .assoc-search input {
+        width: 100%;
+        padding: 9px 12px 9px 36px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 13px;
+    }
+    .assoc-search input:focus { border-color: #2563eb; outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+    .assoc-search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+
+    /* The big group panel — one per main party */
+    .assoc-panel {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        margin-bottom: 18px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, .04);
+        transition: box-shadow .2s ease;
+    }
+    .assoc-panel:hover { box-shadow: 0 8px 24px rgba(15, 23, 42, .06); }
+
+    .assoc-panel-head {
+        padding: 16px 18px;
+        background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        cursor: pointer;
+        user-select: none;
+    }
+    .assoc-panel-head .head-avatar {
+        width: 46px; height: 46px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.18);
+        border: 2px solid rgba(255,255,255,.35);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 14px; flex-shrink: 0;
+    }
+    .assoc-panel-head .head-info { flex: 1; min-width: 0; }
+    .assoc-panel-head .head-name { font-weight: 800; font-size: 16px; line-height: 1.2; }
+    .assoc-panel-head .head-meta { font-size: 11px; opacity: .85; margin-top: 4px; display: flex; gap: 14px; flex-wrap: wrap; }
+    .assoc-panel-head .head-meta span { display: inline-flex; align-items: center; gap: 4px; }
+    .assoc-panel-head .head-pill {
+        background: rgba(255,255,255,.22);
+        border: 1px solid rgba(255,255,255,.35);
+        border-radius: 9999px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .assoc-panel-head .head-toggle {
+        font-size: 14px; opacity: .85; transition: transform .2s ease;
+    }
+    .assoc-panel.collapsed .head-toggle { transform: rotate(-90deg); }
+
+    .assoc-panel-body { padding: 18px; }
+    .assoc-panel.collapsed .assoc-panel-body { display: none; }
+
+    /* Empty state for the whole report */
+    .assoc-empty {
+        background: #fff;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+        padding: 64px 24px;
+        text-align: center;
+        color: #64748b;
+    }
+    .assoc-empty .empty-icon {
+        width: 64px; height: 64px;
+        margin: 0 auto 14px;
+        border-radius: 50%;
+        background: #eff6ff;
+        color: #2563eb;
+        display: inline-flex; align-items: center; justify-content: center;
+    }
+
+    /* Compact relationship-type legend chips */
+    .assoc-legend {
+        display: flex; gap: 8px; flex-wrap: wrap;
+        margin: 0 0 12px;
+    }
+    .assoc-legend-chip {
+        font-size: 11px; font-weight: 600;
+        padding: 3px 9px; border-radius: 9999px;
+        border: 1px solid;
+        display: inline-flex; align-items: center; gap: 5px;
+    }
+    .assoc-legend-chip::before {
+        content: ''; width: 8px; height: 8px; border-radius: 50%;
+        background: currentColor; opacity: .85;
+    }
+
+    .assoc-no-match {
+        display: none;
+        background: #fff; border: 1px dashed #e2e8f0; border-radius: 12px;
+        padding: 28px; text-align: center; color: #94a3b8; font-size: 13px;
+    }
+    .assoc-no-match.show { display: block; }
+</style>
+
+<section class="content py-6 px-4 assoc-page-bg">
+    <div class="max-w-[1500px] mx-auto">
+        <div class="mb-4">
+            <h1 class="text-2xl font-semibold text-slate-800">Customer Associations</h1>
+            <p class="text-sm text-slate-500 mt-1">Every main party with their shareholders, signatories, owners and related parties — visualised as org-charts.</p>
+        </div>
+
+        <!-- Stat strip -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-4">
+            <div class="assoc-stat">
+                <div class="assoc-stat-icon" style="background:#eff6ff;color:#2563eb;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01"/><path d="M9 13h.01"/><path d="M9 17h.01"/><path d="M15 9h.01"/><path d="M15 13h.01"/><path d="M15 17h.01"/></svg>
+                </div>
+                <div>
+                    <div class="assoc-stat-num">@totalGroups</div>
+                    <div class="assoc-stat-lbl">Main Parties with Associations</div>
+                </div>
+            </div>
+            <div class="assoc-stat">
+                <div class="assoc-stat-icon" style="background:#f0fdf4;color:#059669;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div>
+                    <div class="assoc-stat-num">@totalRelated</div>
+                    <div class="assoc-stat-lbl">Total Related Parties</div>
+                </div>
+            </div>
+            <div class="assoc-stat">
+                <div class="assoc-stat-icon" style="background:#fef3c7;color:#d97706;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/><path d="M3 7l9 6 9-6"/><path d="M16 19l2 2 4-4"/></svg>
+                </div>
+                <div>
+                    <div class="assoc-stat-num">@(totalGroups == 0 ? 0 : Math.Round(totalRelated * 1.0 / totalGroups, 1))</div>
+                    <div class="assoc-stat-lbl">Avg Per Main Party</div>
+                </div>
+            </div>
+            <div class="assoc-stat">
+                <div class="assoc-stat-icon" style="background:#fce7f3;color:#be185d;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+                </div>
+                <div>
+                    <div class="assoc-stat-num">
+                        @groupsWithRelations.SelectMany(g => g.RelatedParties).Select(r => r.FlagType).Distinct().Count()
+                    </div>
+                    <div class="assoc-stat-lbl">Distinct Relationship Types</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toolbar: search + collapse all -->
+        <div class="assoc-toolbar mb-4" x-data="associationsReport()">
+            <div class="assoc-search">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Search by main party name, customer code, or related party name..." x-model="query" @@input.debounce.150ms="filter()" />
+            </div>
+            <button type="button" @@click="toggleAll(true)" class="text-xs px-3 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 font-medium inline-flex items-center gap-1.5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                Expand all
+            </button>
+            <button type="button" @@click="toggleAll(false)" class="text-xs px-3 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 font-medium inline-flex items-center gap-1.5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                Collapse all
+            </button>
+        </div>
+
+        <!-- Legend (clickable chips will filter to that relationship type) -->
+        <div class="assoc-legend">
+            <span class="assoc-legend-chip" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe;">Shareholder</span>
+            <span class="assoc-legend-chip" style="background:#e0e7ff;color:#3730a3;border-color:#c7d2fe;">Corporate Shareholder</span>
+            <span class="assoc-legend-chip" style="background:#fef3c7;color:#92400e;border-color:#fde68a;">Signatory</span>
+            <span class="assoc-legend-chip" style="background:#f3e8ff;color:#6b21a8;border-color:#e9d5ff;">Management</span>
+            <span class="assoc-legend-chip" style="background:#d1fae5;color:#065f46;border-color:#a7f3d0;">Related Shareholder</span>
+            <span class="assoc-legend-chip" style="background:#ffe4e6;color:#9f1239;border-color:#fecdd3;">Director / Beneficial Owner</span>
+        </div>
+
+        @if (!groupsWithRelations.Any())
+        {
+            <div class="assoc-empty">
+                <div class="empty-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                </div>
+                <div style="font-size:15px;font-weight:600;color:#334155;">No customer associations recorded</div>
+                <div style="font-size:13px;margin-top:4px;">When you add shareholders, signatories, owners or related parties to a case, they'll appear here grouped by main party.</div>
+            </div>
+        }
+        else
+        {
+            <div id="assoc-results">
+            @foreach (var grp in groupsWithRelations)
+            {
+                // Build a parent->children map for this main party
+                var byParent = grp.RelatedParties
+                    .GroupBy(r => string.IsNullOrEmpty(r.ParentId) ? "" : r.ParentId)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+                var rootChildren = byParent.ContainsKey("") ? byParent[""] : new List<AssociationRow>();
+
+                // Recursive renderer for org-chart subtree
+                Func<AssociationRow, int, string> renderNode = null;
+                renderNode = (row, depth) =>
+                {
+                    var sb = new System.Text.StringBuilder();
+                    var rt = row.FlagType ?? "";
+                    sb.Append($"<div class=\"org-node\" data-rel-type=\"{System.Net.WebUtility.HtmlEncode(rt)}\">");
+                    sb.Append("<div class=\"org-card\">");
+                    sb.Append($"<div class=\"org-avatar\">{System.Net.WebUtility.HtmlEncode(Initials(row.Name))}</div>");
+                    sb.Append("<div class=\"org-body\">");
+                    sb.Append($"<span class=\"org-name\">{System.Net.WebUtility.HtmlEncode(row.Name)}</span>");
+                    sb.Append($"<span class=\"org-badge\">{System.Net.WebUtility.HtmlEncode(FlagLabel(row.FlagType))}</span>");
+                    if (!string.IsNullOrWhiteSpace(row.Relationship))
+                        sb.Append($"<span class=\"org-rel\">{System.Net.WebUtility.HtmlEncode(row.Relationship)}</span>");
+                    if (!string.IsNullOrWhiteSpace(row.Nationality))
+                        sb.Append($"<span class=\"org-displayid\">{System.Net.WebUtility.HtmlEncode(row.Nationality)}</span>");
+                    sb.Append("</div></div>");
+
+                    // Children of this row, keyed by row.Id (string compare with parent_id)
+                    var key = row.Id.ToString();
+                    if (byParent.ContainsKey(key))
+                    {
+                        sb.Append("<div class=\"org-children\">");
+                        foreach (var child in byParent[key])
+                            sb.Append(renderNode(child, depth + 1));
+                        sb.Append("</div>");
+                    }
+                    sb.Append("</div>");
+                    return sb.ToString();
+                };
+
+                // Build searchable haystack for client-side filter
+                var haystack = string.Join(" ",
+                    new[] { grp.MainPartyName, grp.MainPartyCode }
+                        .Concat(grp.RelatedParties.Select(r => r.Name))
+                        .Concat(grp.RelatedParties.Select(r => r.Relationship ?? ""))
+                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                ).ToLowerInvariant();
+
+                <div class="assoc-panel" data-haystack="@haystack">
+                    <div class="assoc-panel-head" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <div class="head-avatar">@Initials(grp.MainPartyName)</div>
+                        <div class="head-info">
+                            <div class="head-name">@grp.MainPartyName</div>
+                            <div class="head-meta">
+                                <span title="Customer code"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg> @grp.MainPartyCode</span>
+                                <span title="Customer type">@TypeLabel(grp.MainPartyType)</span>
+                                @if (!string.IsNullOrWhiteSpace(grp.MainPartyNationality))
+                                {
+                                    <span title="Nationality"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> @grp.MainPartyNationality</span>
+                                }
+                                @if (grp.CreatedOn.HasValue)
+                                {
+                                    <span title="Created">@grp.CreatedOn.Value.ToString("yyyy-MM-dd")</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="head-pill">@grp.RelatedParties.Count Related @(grp.RelatedParties.Count == 1 ? "Party" : "Parties")</div>
+                        <div class="head-toggle">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                    </div>
+                    <div class="assoc-panel-body">
+                        <div class="org-chart-wrap">
+                            <div class="org-chart">
+                                <div class="org-node">
+                                    <div class="org-card org-card-main">
+                                        <div class="org-avatar org-avatar-main">@Initials(grp.MainPartyName)</div>
+                                        <div class="org-body">
+                                            <span class="org-name">@grp.MainPartyName</span>
+                                            <span class="org-badge org-badge-main">Main Party</span>
+                                            <span class="org-displayid">@grp.MainPartyCode</span>
+                                        </div>
+                                    </div>
+                                    @if (rootChildren.Any())
+                                    {
+                                        <div class="org-children">
+                                            @foreach (var child in rootChildren)
+                                            {
+                                                @Html.Raw(renderNode(child, 1))
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            </div>
+
+            <div id="assoc-no-match" class="assoc-no-match">
+                No associations match your search.
+            </div>
+        }
+    </div>
+</section>
+
+<script>
+    function associationsReport() {
+        return {
+            query: '',
+            filter() {
+                const q = (this.query || '').trim().toLowerCase();
+                const panels = document.querySelectorAll('#assoc-results .assoc-panel');
+                let visible = 0;
+                panels.forEach(p => {
+                    const hay = p.dataset.haystack || '';
+                    const show = !q || hay.indexOf(q) !== -1;
+                    p.style.display = show ? '' : 'none';
+                    if (show) visible++;
+                });
+                const noMatch = document.getElementById('assoc-no-match');
+                if (noMatch) noMatch.classList.toggle('show', q && visible === 0);
+            },
+            toggleAll(expand) {
+                document.querySelectorAll('#assoc-results .assoc-panel').forEach(p => {
+                    if (expand) p.classList.remove('collapsed');
+                    else p.classList.add('collapsed');
+                });
+            }
+        };
+    }
+</script>

@@ -1,0 +1,304 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Group Rights";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo= HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model AML.ViewModel.ViewModels.UserAccess.UserGroupRightDetailsModel
+<style>
+    ul li {
+        list-style-type: none;
+    }
+    .dt-loader {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+    .dt-loader div {
+        position: absolute;
+        top: 8px;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: #2563eb; /* Tailwind's blue-600 */
+        animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    }
+
+    .dt-loader div:nth-child(1) {
+        left: 8px;
+        animation: dt-anim1 0.6s infinite;
+    }
+
+    .dt-loader div:nth-child(2) {
+        left: 8px;
+        animation: dt-anim2 0.6s infinite;
+    }
+
+    .dt-loader div:nth-child(3) {
+        left: 32px;
+        animation: dt-anim2 0.6s infinite;
+    }
+
+    .dt-loader div:nth-child(4) {
+        left: 56px;
+        animation: dt-anim3 0.6s infinite;
+    }
+
+    @@keyframes dt-anim1 {
+        0% { transform: scale(0); }
+        100% { transform: scale(1); }
+    }
+
+    @@keyframes dt-anim2 {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(24px); }
+    }
+
+    @@keyframes dt-anim3 {
+        0% { transform: scale(1); }
+        100% { transform: scale(0); }
+    }
+</style>
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<div class="custom-container">
+    @*<div class="sas-breadcrumbs aml-breadcrumbs mt-2">
+            <ul class="mb-0 pl-0 d-flex">
+                <li><a href="#">Home</a></li>/
+                <li><a href="#">User Management</a></li>/
+                <li><a href="#">User Group</a></li>
+            </ul>
+        </div>
+        <div class="page-heading">
+            <div class="sas-card rounded-card br-10 mb-2 bg-blue">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><b>Group Rights</b></h4>
+                    <div class="menu-icon">
+                        <i class="lni lni-microsoft"></i>
+                    </div>
+                </div>
+            </div>*@
+    @* <nav class="border-b">
+        <div class="flex flex-row items-center justify-between w-full h-full md:p-5 p-5">
+            <div>
+                <h2 class="text-2xl font-bold">Group Rights</h2>
+            </div>
+            <div class="md:block hidden">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav> *@
+    <nav class="flex items-center px-4 h-[72.8px] border-b w-full">
+        <div class="flex items-center justify-between w-full">
+            <!-- Title -->
+            <h2 class="text-base md:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                Group Rights
+            </h2>
+
+            <!-- Right-side content -->
+            <div class="text-sm md:text-base text-right">
+                <img src="@Clientlogo" alt="Client Logo" width="50px" />
+            </div>
+        </div>
+    </nav>
+    <div class="h-full bg-gray-50 items-center container">
+        <div class="grid md:grid-cols-1 grid-cols-1 justify-center items-center md:p-8 p-4 md:gap-6 gap-4 container mx-auto">
+            <div class="sas-card rounded-card w-full bg-surface rounded-xl shadow-sm p-8 overflow-hidden border border-blue-100 relative">
+                <form role="form" asp-controller="UserGroup" asp-action="GroupRight" class="form-horizontal" enctype="multipart/form-data" method="post">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                        <h6 class="text-lg font-semibold text-gray-700"><label>@Model.UserGroupName</label></h6>
+                        @* <div class="flex flex-col sm:flex-row justify-end space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
+                <button type="submit" id="btnSave" class="px-6 py-2 bg-[#2563EB] text-white rounded-md hover:bg-primary-hover">Save</button>
+                <button type="button" class="px-6 py-2 border border-gray-300 rounded-md text-gray-700" onclick="location.href='@Url.Action("Index", "UserGroup")'">Cancel</button>
+            </div>*@
+                    </div>
+
+                    <div class="form mt-4 relative">
+                        <div>
+                            <input type="hidden" asp-for="UserGroupId" id="txtUserGroup" />
+                            @if (Model != null)
+                        {
+                            <div class="grid md:grid-cols-2 gap-6">
+                                @for (int i = 0; i < Model.UserGroupRightDetails.Count(); i++)
+                                {
+                                        if (Model.UserGroupRightDetails[i].ModuleName != "Identity Type" && Model.UserGroupRightDetails[i].ModuleName != "ETL" && Model.UserGroupRightDetails[i].ModuleName != "Designation" && Model.UserGroupRightDetails[i].ModuleName != "Free Source" && Model.UserGroupRightDetails[i].ModuleName != "Block List" )
+                                    {
+                                <ul class="col-sm-6">
+                                    <li>
+                                        <div class="form-group clearfix bg-gray-50 rounded-lg p-4 shadow-sm border">
+                                            <div class="icheck-primary d-inline flex items-center space-x-2">
+                                                <input name="ModuleIds" id="@Model.UserGroupRightDetails[i].ModuleName@i" type="checkbox" value="@Model.UserGroupRightDetails[i].ModuleId" checked="@Model.UserGroupRightDetails[i].IsModule" class="form-checkbox text-primary w-4 h-4 rounded border-gray-400" />
+                                                <label for="@Model.UserGroupRightDetails[i].ModuleName@i" class="text-sm font-medium text-gray-700">@Model.UserGroupRightDetails[i].ModuleName</label>
+                                                <br>
+                                            </div>
+                                        </div>
+                                        <div class="mt-4 space-y-2 pl-6">
+                                            @for (int j = 0; j < Model.UserGroupRightDetails[i].UserGroupRightDetails.Count(); j++)
+                                                {
+                                            <ul class="col-sm-6">
+                                                <li>
+                                                    <div class="form-group clearfix">
+                                                        <div class="icheck-success d-inline flex items-center space-x-2">
+                                                            <input name="FunctionalityIds" id="@Model.UserGroupRightDetails[i].UserGroupRightDetails[j].FunctionalityName@j" value="@Model.UserGroupRightDetails[i].UserGroupRightDetails[j].FunctionalityId" type="checkbox" checked="@Model.UserGroupRightDetails[i].UserGroupRightDetails[j].IsFunctionality" class="form-checkbox text-green-600 w-4 h-4 rounded border-gray-400" />
+                                                            <label for="@Model.UserGroupRightDetails[i].UserGroupRightDetails[j].FunctionalityName@j" class="text-sm text-gray-600">@Model.UserGroupRightDetails[i].UserGroupRightDetails[j].FunctionalityName</label>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                                }
+                                        </div>
+                                    </li>
+                                </ul>
+                                    }
+                                }
+                            </div>
+                        }
+                        </div>
+                    </div>
+
+                    <div id="loadingRiskCategory"
+                         class="absolute inset-0 bg-surface bg-opacity-75 items-center justify-center z-50 hidden">
+                        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row justify-end space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
+                        <button type="submit" id="btnSave" class="h-10 w-10 inline-flex items-center justify-center bg-[#2563EB] text-white rounded-md hover:bg-primary-hover" title="Save" aria-label="Save"><i class="fas fa-save"></i></button>
+                        <button type="button" class="cancel-button h-10 w-10 inline-flex items-center justify-center border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100" title="Cancel" aria-label="Cancel"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="card-footer">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @*  <script>
+                    $(document).ready(function () {
+                        $('form').submit(function (event) {
+                            event.preventDefault(); // Prevent page reload
+
+                            var data = {};
+                            data.UserGroupId = $('#txtUserGroup').val();
+
+                            $("input:checkbox[name='FunctionalityIds']:checked").each(function (index) {
+                                data['FunctionalityIds[' + index + ']'] = $(this).val();
+                            });
+
+                            $.ajax({
+                                type: 'POST',
+                                url: '/usergroup/GroupRight',
+                                data: data,
+                                success: function (res) {
+                                    window.location.href = '@Url.Action("Index", "UserGroup")';
+                                    // Optionally: window.location.href = '/usergroup';
+                                },
+                                error: function () {
+                                    alert("Failed to save group rights.");
+                                }
+                            });
+                        });
+                    });
+                    $('li :checkbox').on('click', function () {
+                        var $chk = $(this),
+                            $li = $chk.closest('li'),
+                            $ul, $parent;
+                        if ($li.has('ul')) {
+                            $li.find(':checkbox').not(this).prop('checked', this.checked)
+                        }
+                        do {
+                            $ul = $li.parent();
+                            //$parent = $ul.siblings(':checkbox');
+                            $parent = $ul.siblings('div.form-group').find(':checkbox');
+                            if ($chk.is(':checked')) {
+                                $parent.prop('checked', $ul.has(':checkbox:not(:checked)').length == 0)
+                            } else {
+                                $parent.prop('checked', false)
+                            }
+                            $chk = $parent;
+                            $li = $chk.closest('li');
+                        } while ($ul.is(':not(.someclass)'));
+                    });
+        </script>*@
+    <script>
+    $(document).ready(function () {
+        $('form').submit(function (event) {
+            event.preventDefault();
+
+            // Show loader and disable submit
+            $("#loadingRiskCategory").css("display", "flex");
+            $('#btnSave').prop("disabled", true).addClass("opacity-50 cursor-not-allowed");
+
+            var FunctionalityIds = [];
+            $("input:checkbox[name='FunctionalityIds']:checked").each(function () {
+                FunctionalityIds.push($(this).val());
+            });
+
+            var usergrouprights = {
+                UserGroupId: $('#txtUserGroup').val(),
+                FunctionalityIds: FunctionalityIds
+            };
+            $.ajax({
+                type: 'POST',
+                url: '/usergroup/GroupRight',
+                data: usergrouprights,
+                dataType: 'json',
+                    success: function (data) {
+                        // Redirect after success
+                        window.location.href = '/AdminManagement/Details/@ViewBag.ClientId';
+                    },
+                error: function () {
+                    alert("Error while saving. Please try again.");
+                    $("#loadingRiskCategory").fadeOut();
+                    $('#btnSave').prop("disabled", false).removeClass("opacity-50 cursor-not-allowed");
+                }
+            });
+        });
+
+        // Cancel button handler (also shows loader before redirecting)
+        $('.cancel-button').on('click', function () {
+            $("#loadingRiskCategory").css("display", "flex");
+            setTimeout(function () {
+                window.location.href = '/AdminManagement/Details/@ViewBag.ClientId';
+            }, 500); // Delay just to show the loader effect
+        });
+    });
+
+    // Checkbox logic remains unchanged
+    $('li :checkbox').on('click', function () {
+        var $chk = $(this),
+            $li = $chk.closest('li'),
+            $ul, $parent;
+        if ($li.has('ul')) {
+            $li.find(':checkbox').not(this).prop('checked', this.checked);
+        }
+        do {
+            $ul = $li.parent();
+            $parent = $ul.siblings('div.form-group').find(':checkbox');
+            if ($chk.is(':checked')) {
+                $parent.prop('checked', $ul.has(':checkbox:not(:checked)').length == 0);
+            } else {
+                $parent.prop('checked', false);
+            }
+            $chk = $parent;
+            $li = $chk.closest('li');
+        } while ($ul.is(':not(.someclass)'));
+    });
+    </script>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,552 @@
+@using AML.ViewModel.ViewModels.EtlBatch
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Customer Upload (Bulk Upload Listing)";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+@model AML.ViewModel.ViewModels.CustomerCase.ETLReport
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Upload - Search</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .dt-loader { position: relative; width: 80px; height: 20px; }
+        .dt-loader div { position: absolute; top: 8px; width: 13px; height: 13px; border-radius: 50%; background: #2563eb; animation-timing-function: cubic-bezier(0,1,1,0); }
+        .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+        .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+        @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+        @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+
+        th.sortable { cursor: pointer; position: relative; padding-right: 20px; }
+        th.sortable::after { content: "▲\A▼"; white-space: pre; font-size: 10px; position: absolute; right: 6px; top: 50%; transform: translateY(-50%); color: #bbb; line-height: 1; text-align: center; }
+        th.sortable.active.asc::after { content: "▲"; color: #000; }
+        th.sortable.active.desc::after { content: '\A▼'; color: #000; }
+    </style>
+</head>
+
+<body class="bg-appbg min-h-screen text-textprimary">
+
+    <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
+        <div class="flex items-center gap-2 text-textmuted text-xs mb-2">
+            <span class="text-textprimary font-medium">Reports</span>
+            <i data-lucide="chevron-right" class="h-3 w-3"></i>
+            <span class="text-textprimary font-medium">Customer Bulk Upload Logs</span>
+        </div>
+
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-textprimary tracking-tight">Customer Bulk Upload Logs</h1>
+            </div>
+            @* <div class="text-sm md:text-base text-right flex items-center gap-3">
+                <img  alt="Client Logo" width="50" class="rounded-sm shadow-sm border border-bordercolor" />
+            </div> *@
+        </div>
+
+        <!-- Form for API Submission -->
+        <form id="dataLoadForm" role="form" asp-action="DataLoadReport" asp-controller="ClientCase"  class="form-horizontal" enctype="multipart/form-data" method="post" >
+        
+        <!-- Filters Section -->
+        <div class="bg-surface rounded-xl border border-bordercolor p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-sm font-bold text-textprimary tracking-tight">Filters</h3>
+                <button type="button" onclick="clearFilters()" id="resetBtn" class="bg-primary hover:bg-primary-hover text-white font-bold h-10 px-4 rounded-md text-sm transition">
+                    Reset
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <!-- Start Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Start Date</label>
+                    <input type="text" id="startDate" name="FromDate" placeholder="dd/MM/yyyy" class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm" value="@(Model.FromDate.ToString("yyyy-MM-dd"))">
+                </div>
+
+                <!-- End Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">End Date</label>
+                    <input type="text" id="endDate" name="ToDate" placeholder="dd/MM/yyyy" class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm" value="@(Model.ToDate.ToString("yyyy-MM-dd"))">
+                </div>
+
+                <!-- Match Type -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Match Type</label>
+                    <select id="MatchType" asp-for="MatchType" asp-items="@Model.MatchingTypeList" class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm"></select>
+                </div>
+
+                <!-- Customer -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Customer</label>
+                    <input type="text" id="Customer" name="Customer" placeholder="Customer" value="@Model.Customer" class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                </div>
+            </div>
+
+            <div class="mt-5 flex items-center justify-end gap-3 w-full">
+                <!-- Submit Form button representing existing API behavior -->
+                <button type="submit" id="btnSearch" onclick="showLoader()" class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white font-semibold h-10 px-5 rounded-md text-sm transition shadow-sm">
+                    Apply
+                </button>
+
+                <!-- Standardized Export Button -->
+                <button type="button" onclick="showExportOptions()" class="flex items-center gap-2 border border-bordercolor bg-surface hover:bg-appbg text-textlabel font-semibold h-10 px-4 rounded-md text-sm transition focus:outline-none shadow-sm">
+                    <i data-lucide="download" class="h-4 w-4"></i>
+                    Export
+                </button>
+            </div>
+        </div>
+        </form>
+        <iframe id="pdfExportFrame" style="position: absolute; left: -9999px; visibility: hidden; width: 1024px; height: 100%;"></iframe>
+        <input id="hdnBatchId" type="hidden" />
+
+        <!-- Table UI -->
+        <div class="space-y-4">
+            
+            <div class="flex items-center gap-4 border-b border-bordercolor pb-2">
+                <button type="button" onclick="showTable('table1', this)" class="nav-btn font-semibold text-sm pb-2 border-b-2 border-blue-600 text-primary">File Details</button>
+                <button type="button" onclick="showTable('table2', this)" class="nav-btn font-semibold text-sm pb-2 border-b-2 border-transparent text-textmuted hover:text-textlabel">Customer Details</button>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 items-center w-full">
+                <!-- Search -->
+                <div class="relative flex-1 w-full">
+                    <i data-lucide="search" class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-textmuted"></i>
+                    <input type="text" id="searchInput" placeholder="Search by File Name" onkeyup="filterTableActive()" 
+                           class="pl-10 h-11 w-full rounded-md border border-bordercolor bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 shadow-sm transition-all placeholder:text-textmuted">
+                </div>
+                @* <button onclick="filterTableActive()" id="searchButton" class="h-11 px-5 rounded-md bg-primary text-white text-sm font-semibold hover:bg-primary-hover transition-all shadow-sm">
+                    Search
+                </button> *@
+                <form method="post" action="/ClientCase/GeneratePdf" id="pdfForm" class="hidden">
+                     <input type="hidden" name="BatchID" id="pdfBatchId" />
+                     <button type="submit" id="btnPdf"></button>
+                </form>
+                <button onclick="exportPdf()" id="exportBtn" style="display: none;" class="flex items-center gap-2 border border-bordercolor bg-surface hover:bg-appbg text-textlabel font-semibold h-11 px-5 rounded-md text-sm transition">
+                    <i data-lucide="download" class="h-4 w-4"></i> Export PDF
+                </button>
+            </div>
+
+            <div class="bg-surface rounded-xl border border-bordercolor shadow-sm overflow-hidden">
+                <!-- Table 1: File Details -->
+                <div id="table1-container" class="overflow-x-auto">
+                    <table class="w-full text-sm text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-textmuted bg-appbg border-b border-bordercolor">
+                            <tr>
+                                @* <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 0)">File Name</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 1)">Uploaded on</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table1', 2)">Uploaded By</th> *@
+
+                                <th class="px-4 py-4 font-semibold h-12">File Name</th>
+                                <th class="px-4 py-4 font-semibold h-12">Uploaded on</th>
+                                <th class="px-4 py-4 font-semibold h-12">Uploaded By</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table1Body" class="divide-y divide-slate-100" style="font-size: 12px;">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Table 2: Customer Details -->
+                <div id="table2-container" class="overflow-x-auto hidden">
+                    <table class="w-full text-sm text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-textmuted bg-appbg border-b border-bordercolor">
+                            <tr>
+                                @* <th class="px-4 py-4 font-semibold h-12 w-[50px] sortable" onclick="sortTable('table2', 0)">#</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 1)">Customer Id</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 2)">Customer Name</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 3)">Nationality</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 4)">Date Of Birth</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 5)">Matched</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 6)">Source</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 7)">Uid</th>
+                                <th class="px-4 py-4 font-semibold h-12 sortable" onclick="sortTable('table2', 8)">Date</th> *@
+
+                                <th class="px-4 py-4 font-semibold h-12 w-[50px]">#</th>
+                                <th class="px-4 py-4 font-semibold h-12">Customer Id</th>
+                                <th class="px-4 py-4 font-semibold h-12">Customer Name</th>
+                                <th class="px-4 py-4 font-semibold h-12">Nationality</th>
+                                <th class="px-4 py-4 font-semibold h-12">Date Of Birth</th>
+                                <th class="px-4 py-4 font-semibold h-12">Matched</th>
+                                <th class="px-4 py-4 font-semibold h-12">Source</th>
+                                <th class="px-4 py-4 font-semibold h-12">Uid</th>
+                                <th class="px-4 py-4 font-semibold h-12">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table2Body" class="divide-y divide-slate-100" style="font-size: 12px;">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex items-center justify-between px-4 py-4 border-t border-bordercolor bg-surface">
+                    <div class="flex items-center gap-2 text-sm">
+                        <select id="pageSize" class="h-8 rounded-md border border-bordercolor bg-surface px-2 pr-7 text-sm" onchange="changePageSize()">
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <label class="text-textlabel font-medium">Entries per page</label>
+                    </div>
+                    <div class="text-sm text-textmuted">
+                        Showing <span id="showingStart" class="font-medium text-textprimary">0</span> to <span id="showingEnd" class="font-medium text-textprimary">0</span> of <span id="totalCases" class="font-medium text-textprimary">0</span> cases
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="prevBtn" onclick="previousPage()" class="h-8 px-3 text-sm font-medium border border-bordercolor bg-surface rounded-md text-textlabel disabled:opacity-50 disabled:cursor-not-allowed hover:bg-appbg">
+                            Previous
+                        </button>
+                        <button id="nextBtn" onclick="nextPage()" class="h-8 px-3 text-sm font-medium border border-bordercolor bg-surface rounded-md text-textlabel disabled:opacity-50 disabled:cursor-not-allowed hover:bg-appbg">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script type="text/javascript">
+    lucide.createIcons();
+
+    let rawData1 = @Html.Raw(JsonConvert.SerializeObject(Model.DataList ?? new List<EtlBatchModel>()));
+    
+    let rawData2 = [];
+    
+    let filteredData1 = [];
+    let filteredData2 = [];
+    
+    let currentPage = 1;
+    let size = 10;
+    
+    let activeTable = 'table1';
+    let sortCol = -1;
+    let sortAsc = true;
+
+    $(document).ready(function () {
+        const savedSize = localStorage.getItem('pageSize');
+        if (savedSize) {
+            size = parseInt(savedSize);
+            $('#pageSize').val(savedSize);
+        }
+
+        flatpickr("#startDate", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", allowInput: true });
+        flatpickr("#endDate", { dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", allowInput: true });
+
+        loadData1();
+    });
+
+    function showLoader() {
+        $('#loader').removeClass('hidden');
+    }
+
+    function clearFilters() {
+        const today = new Date();
+        const lastYear = new Date();
+        lastYear.setFullYear(today.getFullYear() - 1);
+        
+        if (document.querySelector("#startDate")._flatpickr) {
+            document.querySelector("#startDate")._flatpickr.setDate(lastYear, true);
+        }
+        if (document.querySelector("#endDate")._flatpickr) {
+            document.querySelector("#endDate")._flatpickr.setDate(today, true);
+        }
+        $('#MatchType').val(1);
+        $('#Customer').val('');
+        $('#searchInput').val('');
+        
+        $('#dataLoadForm').submit();
+    }
+
+    /* Table 1 Data */
+    function loadData1() {
+        activeTable = 'table1';
+        let searchVal = $('#searchInput').val()?.toLowerCase() || '';
+        
+        filteredData1 = rawData1.filter(x => 
+            !searchVal || 
+            (x.FileName && x.FileName.toLowerCase().includes(searchVal)) ||
+            (x.AddedUser && x.AddedUser.toLowerCase().includes(searchVal))
+        );
+
+        if (sortCol >= 0) {
+            filteredData1.sort((a,b) => {
+                let v1 = sortCol === 0 ? a.FileName : sortCol === 1 ? a.AddedOn : a.AddedUser;
+                let v2 = sortCol === 0 ? b.FileName : sortCol === 1 ? b.AddedOn : b.AddedUser;
+                return sortAsc ? String(v1).localeCompare(String(v2)) : String(v2).localeCompare(String(v1));
+            });
+        }
+
+        renderTable();
+    }
+
+    /* Table 2 Data */
+    function loadData2() {
+        activeTable = 'table2';
+        let searchVal = $('#searchInput').val()?.toLowerCase() || '';
+        
+        filteredData2 = rawData2.filter(x => 
+            !searchVal || 
+            (x.customerId && String(x.customerId).toLowerCase().includes(searchVal)) ||
+            (x.firstName && String(x.firstName).toLowerCase().includes(searchVal)) ||
+            (x.lastName && String(x.lastName).toLowerCase().includes(searchVal))
+        );
+
+        if (sortCol >= 0) {
+            filteredData2.sort((a,b) => {
+                let keys = ['slno','customerId','firstName','nationality','dob','isMatched','source','uid','createdOnDB'];
+                let v1 = a[keys[sortCol]];
+                let v2 = b[keys[sortCol]];
+                return sortAsc ? String(v1).localeCompare(String(v2)) : String(v2).localeCompare(String(v1));
+            });
+        }
+
+        renderTable();
+    }
+
+    function formatDate(value) {
+        if (!value) return null;
+
+        // ✅ Already in yyyy-MM-dd
+        if (value.includes('-') && value.split('-')[0].length === 4) {
+            return value;
+        }
+
+        // ✅ Convert dd/MM/yyyy → yyyy-MM-dd
+        if (value.includes('/')) {
+            let parts = value.split('/');
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+
+        return null;
+    }
+        function formatDateTime(dateStr) {
+        if (!dateStr) return { date: '-', time: '-' };
+
+        const d = new Date(dateStr);
+
+        return {
+            date: d.toLocaleDateString('en-GB'), // 20/02/2026
+            time: d.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',   // ✅ added
+                hour12: true
+            }) // 06:43:15 PM
+        };
+    }
+
+    function filterTableActive() {
+        currentPage = 1;
+        if(activeTable === 'table1') loadData1();
+        else loadData2();
+    }
+
+    function renderTable() {
+        let activeData = activeTable === 'table1' ? filteredData1 : filteredData2;
+        let tbodyId = activeTable === 'table1' ? 'table1Body' : 'table2Body';
+        const tbody = document.getElementById(tbodyId);
+        
+        let startIdx = (currentPage - 1) * size;
+        let endIdx = Math.min(startIdx + size, activeData.length);
+        let pageData = activeData.slice(startIdx, endIdx);
+
+        if (!pageData.length) {
+            tbody.innerHTML = `<tr><td colspan="9" class="h-24 text-center"><div class="text-textmuted">No results found.</div></td></tr>`;
+        } else {
+            if (activeTable === 'table1') {
+                tbody.innerHTML = pageData.map(item => `
+                    <tr onclick="fetchCustomerData(${item.Id})" class="bg-surface border-b border-bordercolor hover:bg-appbg cursor-pointer">
+                        <td class="px-4 py-4 font-medium text-textlabel">${item.FileName || '-'}</td>
+                            <td class="px-4 py-4">
+                                ${item.AddedOn ? (() => {
+                                    const added = formatDateTime(item.AddedOn);
+                                    return `
+                                        <div class="text-xs text-textlabel">
+                                            <div>${added?.date || '-'}</div>
+                                            <div class="ml-2">${added?.time.replace(/\s?(AM|PM)/i, '') || ''}</div>
+                                        </div>
+                                    `;
+                                })() : '-'}
+                            </td>
+                        <td class="px-4 py-4">${item.AddedUser || '-'}</td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = pageData.map((v, i) => `
+                    <tr class="bg-surface border-b border-bordercolor hover:bg-appbg">
+                        <td class="px-4 py-4 font-medium text-textlabel">${startIdx + i + 1}</td>
+                        <td class="px-4 py-4">${v.customerId || '-'}</td>
+                        <td class="px-4 py-4">${[v.firstName, v.middleName, v.lastName].filter(Boolean).join(' ') || '-'}</td>
+                        <td class="px-4 py-4">${v.nationality || '-'}</td>
+                        <td class="px-4 py-4">${(v.dob && v.dob.includes('0001')) ? "NA" : (v.dob ? v.dob.substr(0, v.dob.indexOf(' ')) : '-')}</td>
+                        <td class="px-4 py-4">${(v.isMatched == 1 || String(v.isMatched).toLowerCase() === 'true') ? '<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium bg-yellow-100 text-yellow-800">Pending</span>' : '<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium bg-green-100 text-green-800">Auto</span>'}</td>
+                        <td class="px-4 py-4">${v.source || '-'}</td>
+                        <td class="px-4 py-4">${v.uid || '-'}</td>
+                        <td class="px-4 py-4">${v.createdOnDB || '-'}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        updatePagination(activeData.length);
+    }
+
+    /*
+    function sortTable(tbl, colIdx) {
+        if(colIdx === sortCol) {
+            sortAsc = !sortAsc;
+        } else {
+            sortCol = colIdx;
+            sortAsc = true;
+        }
+        
+        document.querySelectorAll(`#${tbl}-container th.sortable`).forEach((th, i) => {
+            th.classList.remove('active', 'asc', 'desc');
+            if (i === colIdx) {
+                th.classList.add('active', sortAsc ? 'asc' : 'desc');
+            }
+        });
+        filterTableActive();
+    }
+    */
+
+    function updatePagination(totalRecords) {
+        const start = totalRecords === 0 ? 0 : (currentPage - 1) * size + 1;
+        const end = Math.min(currentPage * size, totalRecords);
+
+        $('#showingStart').text(start);
+        $('#showingEnd').text(end);
+        $('#totalCases').text(totalRecords);
+
+        $('#prevBtn').prop('disabled', currentPage === 1);
+        $('#nextBtn').prop('disabled', end >= totalRecords || totalRecords === 0);
+    }
+
+    function previousPage() { if (currentPage > 1) { currentPage--; renderTable(); } }
+    function nextPage() { currentPage++; renderTable(); }
+    
+    function changePageSize() {
+        size = parseInt($('#pageSize').val());
+        localStorage.setItem('pageSize', size);
+        currentPage = 1;
+        renderTable();
+    }
+
+    function showTable(tableId, btn) {
+        activeTable = tableId;
+        currentPage = 1;
+
+        $('.nav-btn').removeClass('border-blue-600 text-primary').addClass('border-transparent text-textmuted hover:text-textlabel');
+        $(btn).removeClass('border-transparent text-textmuted hover:text-textlabel').addClass('border-blue-600 text-primary');
+
+        $('#table1-container').toggleClass('hidden', tableId !== 'table1');
+        $('#table2-container').toggleClass('hidden', tableId !== 'table2');
+        
+        $('#searchInput').attr('placeholder', tableId === 'table1' ? "Search by File Name" : "Search by Customer Name/ID");
+        $('#searchInput').val('');
+        
+        if(tableId === 'table2' && $('#hdnBatchId').val()) {
+            $('#exportBtn').show();
+        } else {
+            $('#exportBtn').hide();
+        }
+
+        filterTableActive();
+    }
+
+    function fetchCustomerData(batchId) {
+        $('#hdnBatchId').val(batchId);
+        showLoader();
+
+        $.ajax({
+            type: "GET",
+            url: "/ClientCase/ViewCustomerData?BatchID=" + batchId,
+            success: function (result) {
+                rawData2 = result || [];
+                const btn2 = document.querySelectorAll('.nav-btn')[1];
+                showTable('table2', btn2);
+                $('#loader').addClass('hidden');
+            },
+            error: function () {
+                $('#loader').addClass('hidden');
+                alert("Failed to load customer details");
+            }
+        });
+    }
+
+    function exportPdf() {
+        const batchId = $('#hdnBatchId').val();
+        if(batchId) {
+            $('#pdfBatchId').val(batchId);
+            $('#btnPdf').click();
+        }
+    }
+
+    function showExportOptions() {
+        const columns = [
+            // File Details Group
+            { id: "fileName", label: "File Name", tab: "File Details" },
+            { id: "uploadedOn", label: "Uploaded On", tab: "File Details" },
+            { id: "uploadedBy", label: "Uploaded By", tab: "File Details" },
+            
+            // Customer Details Group
+            { id: "customerId", label: "Customer ID", tab: "Customer Details" },
+            { id: "name", label: "Customer Name", tab: "Customer Details" },
+            { id: "nationality", label: "Nationality", tab: "Customer Details" },
+            { id: "dob", label: "Date of Birth", tab: "Customer Details" },
+            { id: "source", label: "Source", tab: "Customer Details" },
+            { id: "matched", label: "Matched", tab: "Customer Details" },
+            { id: "status", label: "Status", tab: "Customer Details" },
+            { id: "date", label: "Date", tab: "Customer Details" }
+        ];
+
+        openExportModal({
+            columns: columns,
+            onExport: (format, selectedColumns, orientation) => {
+                ExportList(format === 'pdf', selectedColumns, orientation);
+            }
+        });
+    }
+
+    function ExportList(isPDF, selectedColumns, orientation) {
+        const fromDate = $('#startDate').val();
+        const toDate = $('#endDate').val();
+        const matchType = $('#MatchType').val();
+        const customer = $('#Customer').val();
+        const searchValue = $('#searchInput').val() || '';
+        const batchId = $('#hdnBatchId').val() || '';
+
+        const queryParams = `FromDate=${fromDate}&ToDate=${toDate}&MatchType=${matchType}&Customer=${customer}&searchValue=${searchValue}&selectedColumns=${selectedColumns}&orientation=${orientation}`;
+
+        if (isPDF) {
+            showLoader();
+            const url = `/ClientCase/DataLoad_PDF?${queryParams}`;
+            $('#pdfExportFrame').attr('src', url);
+        } else {
+            showLoader();
+            const url = `/ClientCase/DataLoad_Excel?${queryParams}`;
+            window.location.href = url;
+            setTimeout(() => $('#loader').addClass('hidden'), 2000);
+        }
+    }
+</script>

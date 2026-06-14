@@ -1,0 +1,205 @@
+@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var clientId = HttpContextAccessor.HttpContext.Session.GetString("SessClientId");
+    var logo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+@model AML.ViewModel.ViewModels.User.UserModel
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lemon - Sign In</title>
+    <link href="~/css/tailwind.css" rel="stylesheet" />
+    <style>
+        .carousel-item {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+            .carousel-item.active {
+                display: flex;
+                opacity: 1;
+            }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Left Section -->
+        <div class="w-1/2 bg-[#2563EB] p-8 md:flex flex-col relative hidden">
+            <!-- Main Content -->
+            <div class="flex-grow flex flex-col items-center justify-center text-center text-white max-w-md mx-auto relative">
+                <!-- Carousel -->
+                <div id="carousel" class="mb-8 w-full">
+                    <div class="carousel-item active">
+                        <div class="flex flex-col items-center">
+                            @* class="w-full h-full object-cover" *@
+                            <img src="~/img/image1.svg" alt="AML CFT Screening Illustration" style=" max-height: 448px; width: auto; height: auto;  " />
+                            <h1 class="text-3xl font-bold mb-2">AML CFT Screening</h1>
+                            <p class="text-white/80 mb-2 text-sm max-w-sm">
+                                Carry out Screening of your Customers against Sanction Lists in a simplified and compliant manner
+                            </p>
+                        </div>
+                    </div>
+                    <div class="carousel-item ">
+                        <div class="flex flex-col items-center">
+                            <img src="~/img/image2.svg" alt="AML CFT Screening Illustration" style=" max-height: 448px; width: auto; height: auto;" />
+                            <h1 class="text-3xl font-bold mb-4">AML CFT Risk Assessment</h1>
+                            <p class="text-white/80 mb-2 text-sm max-w-sm">
+                                Identify AML CFT Risk of your customers.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="carousel-item ">
+                        <div class="flex flex-col items-center">
+                            <img src="~/img/image3.svg" alt="AML CFT Screening Illustration" style=" max-height: 448px; width: auto; height: auto;" />
+                            <h1 class="text-3xl font-bold mb-4">Advisory</h1>
+                            <p class="text-white/80 mb-2 text-sm max-w-sm">
+                                Reach out to us for end to end AML Compliance
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Carousel Dots -->
+                <div class="absolute bottom-[5%] flex gap-2 mt-4">
+                    <div class="w-2 h-2 rounded-full bg-surface cursor-pointer" onclick="setActiveSlide(0)"></div>
+                    <div class="w-2 h-2 rounded-full bg-surface/50 cursor-pointer" onclick="setActiveSlide(1)"></div>
+                    <div class="w-2 h-2 rounded-full bg-surface/50 cursor-pointer" onclick="setActiveSlide(2)"></div>
+                </div>
+            </div>
+
+            @* <!-- Footer -->
+            <div class="text-white text-xs text-center mt-auto font-normal">
+                Powered by The National Compliance Consulting LLC
+            </div> *@
+        </div>
+
+        <!-- Right Section -->
+        <div class="md:w-1/2 w-full p-8 flex items-center justify-center mx-auto">
+            <div class="max-w-md w-full">
+                <div class="mb-8 mt-2 flex items-center justify-start">
+                    <img src="~/img/brand-logo.svg" alt="Search" class="h-10" />
+                </div>
+                <h2 class="md:text-2xl text-xl font-bold mb-2 tracking-wide">Sign Into Your Account</h2>
+                <p class="text-gray-500 md:text-sm text-xs tracking-normal mb-6 font-light">Welcome back! Please enter your details.</p>
+
+                <!-- Form -->
+                <form asp-controller="UserAccess" asp-action="Login" enctype="multipart/form-data" method="post" class="space-y-4">
+                    <!-- Workspace / Tenant ID -->
+                    <div class="flex flex-col">
+                        <label for="ClientName" class="text-[13px] font-medium text-[#374151] mb-1">Workspace / Tenant ID</label>
+                        <input type="text" id="ClientName" asp-for="ClientName" class="w-full h-[48px] px-[12px] bg-[#FFFFFF] border border-[#D1D5DB] rounded-[8px] focus:outline-none focus:border-[#2563EB] focus:ring-[3px] focus:ring-[#2563EB]/12 transition-shadow" />
+                        <span class="text-[12px] text-[#6B7280] mt-1">Enter the workspace name provided by your compliance admin.</span>
+                        <span asp-validation-for="ClientName" class="text-[12px] text-[#DC2626] mt-1"></span>
+                    </div>
+
+                    <!-- Username or Email -->
+                    <div class="flex flex-col">
+                        <label for="Username" class="text-[13px] font-medium text-[#374151] mb-1">Username or Email</label>
+                        <input type="text" id="Username" asp-for="UserName" class="w-full h-[48px] px-[12px] bg-[#FFFFFF] border border-[#D1D5DB] rounded-[8px] focus:outline-none focus:border-[#2563EB] focus:ring-[3px] focus:ring-[#2563EB]/12 transition-shadow" />
+                        <span asp-validation-for="UserName" class="text-[12px] text-[#DC2626] mt-1"></span>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="flex flex-col">
+                        <label for="password" class="text-[13px] font-medium text-[#374151] mb-1">Password</label>
+                        <div class="relative flex items-center">
+                            <input type="password" id="password" asp-for="Password" class="w-full h-[48px] pl-[12px] pr-[40px] bg-[#FFFFFF] border border-[#D1D5DB] rounded-[8px] focus:outline-none focus:border-[#2563EB] focus:ring-[3px] focus:ring-[#2563EB]/12 transition-shadow" />
+                            <button type="button" class="absolute right-[12px] text-gray-400 hover:text-gray-600 focus:outline-none" onclick="togglePassword();" tabindex="-1">
+                                <svg class="w-[16px] h-[16px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    <line id="slashLine" x1="4" y1="4" x2="20" y2="20" stroke="currentColor" stroke-width="2" style="display: none;"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="text-[12px] text-[#DC2626] mt-1"></span>
+                    </div>
+
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="flex items-center justify-between p-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-[#2563EB] focus:ring-[#2563EB]">
+                            <span class="ml-2 text-sm text-gray-600">Remember me</span>
+                        </label>
+                        <a href="/auth/Forgot" class="text-sm text-[#2563EB] hover:underline">Forgot Password?</a>
+                    </div>
+
+                    <!-- Sign In Button -->
+                    <button type="submit" class="w-full bg-[#2563EB] text-white py-2 rounded-lg hover:bg-[#3651D4] transition-colors" id="signin">
+                        Sign In
+                    </button>
+                </form>
+                @if (!string.IsNullOrEmpty(Convert.ToString(ViewData["Error"])))
+                {
+                    <div class="text-[12px] text-[#DC2626] mt-2">Wrong Username, Password and/or Workspace</div>
+                }
+                @if (!string.IsNullOrEmpty(Convert.ToString(ViewData["Success"])))
+                {
+                    <div class="text-[12px] text-green-600 mt-2">@ViewData["Success"]</div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="se-pre-con1" style="display:none"></div>
+    <script src="~/plugins/jquery/jquery.min.js"></script>
+    <script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+            if (window.location.pathname === "/auth/login") {
+            window.history.replaceState({}, document.title, "/");
+        }
+        function togglePassword() {
+            const passwordInput = document.getElementById("password");
+            const slashLine = document.getElementById("slashLine");
+
+            const isHidden = passwordInput.type === "password";
+            passwordInput.type = isHidden ? "text" : "password";
+
+
+            slashLine.style.display = isHidden ? "block" : "none";
+
+        }
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.carousel-item');
+        const dots = document.querySelectorAll('.flex.gap-2.mt-4 > div');
+
+        function setActiveSlide(index) {
+            slides[currentSlide].classList.remove('active');
+            dots[currentSlide].classList.remove('bg-surface');
+            dots[currentSlide].classList.add('bg-surface/50');
+
+            currentSlide = index;
+            slides[currentSlide].classList.add('active');
+            dots[currentSlide].classList.remove('bg-surface/50');
+            dots[currentSlide].classList.add('bg-surface');
+        }
+
+        function nextSlide() {
+            setActiveSlide((currentSlide + 1) % slides.length);
+        }
+
+        // Auto-advance the carousel every 5 seconds
+        setInterval(nextSlide, 5000);
+
+        $('form').on('submit', function () {
+            $('.se-pre-con1').show();
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+

@@ -1,0 +1,38 @@
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace AML.ViewModel.ViewModels.Report
+{
+    public class DatasetUpdateLogsModel
+    {
+        public int Id { get; set; }
+
+        public string Datasets { get; set; }
+
+        public string Delta { get; set; }
+        
+        public string Cumulative { get; set; }
+
+        public string Deleted { get; set; }
+
+        public string Individual { get; set; }
+
+        public string DeletedNames { get; set; }
+
+        public string Corporate { get; set; }
+
+
+
+        public string UpdatedDate { get; set; }
+    }
+
+    public class DatasetUpdateReportDownloadModel
+    {
+        public string UploadedBy { get; set; }
+        public int TotalRows { get; set; }
+        public List<DatasetUpdateLogsModel> Data { get; set; }
+
+    }
+
+    
+}

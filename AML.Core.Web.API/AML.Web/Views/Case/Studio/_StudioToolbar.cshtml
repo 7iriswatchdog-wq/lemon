@@ -1,0 +1,158 @@
+<div class="floating-toolbar" :style="toolbarPos.x ? `left: ${toolbarPos.x}px; top: ${toolbarPos.y}px; bottom: auto; transform: none;` : ''">
+    <!-- Selection Tools -->
+    <button class="toolbar-btn" :class="{ 'active': activeTool === 'pointer' }" @@click="setTool('pointer')" title="Select Tool (S)">
+        <i data-lucide="mouse-pointer-2" class="w-5 h-5"></i>
+    </button>
+    <button class="toolbar-btn" :class="{ 'active': activeTool === 'hand' }" @@click="setTool('hand')" title="Pan Tool (P)">
+        <i data-lucide="grab" class="w-5 h-5"></i>
+    </button>
+    <button class="toolbar-btn" :class="{ 'active': activeTool === 'connect' }" @@click="setTool('connect')" title="Edge Linker (L)">
+        <i data-lucide="git-branch-plus" class="w-5 h-5"></i>
+    </button>
+    
+    <div class="h-6 w-px bg-slate-200/50 mx-1 self-center"></div>
+
+    <!-- Layout Tools -->
+    <div class="relative group" @@mouseenter="showLayoutMenu = true" @@mouseleave="showLayoutMenu = false">
+        <button class="toolbar-btn" :class="{ 'active': showLayoutMenu }" title="Layout Options">
+            <i data-lucide="layout" class="w-5 h-5"></i>
+        </button>
+        <div x-show="showLayoutMenu" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4 scale-90"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             class="add-node-dropdown cols-2 before:content-[''] before:absolute before:bottom-[-60px] before:left-0 before:right-0 before:h-[60px] before:bg-transparent">
+            <div class="add-node-item group" @@click="autoLayout('adaptive'); showLayoutMenu = false">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all">
+                    <i data-lucide="layout" style="color: #4299e1;" class="w-5 h-5"></i>
+                </div>
+                <span class="text-center">Hub Layout</span>
+            </div>
+            <div class="add-node-item group" @@click="autoLayout('hierarchical'); showLayoutMenu = false">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-all">
+                    <i data-lucide="git-branch" style="color: #9f7aea;" class="w-5 h-5"></i>
+                </div>
+                <span class="text-center">Tree View</span>
+            </div>
+        </div>
+    </div>
+    
+    <button class="toolbar-btn" @@click="fitView()" title="Fit View (F)">
+        <i data-lucide="maximize" class="w-5 h-5"></i>
+    </button>
+    
+    <!-- Group Tool with Popover -->
+    <div class="relative" @@mouseenter="showGroupPopover = true" @@mouseleave="showGroupPopover = false">
+        <button class="toolbar-btn" 
+                :class="{ 'active': showGroupPopover || groups.length > 0 }" 
+                @@click="selectedNodes.length >= 2 ? groupEntities() : null"
+                title="Group Selection (G) · Hover to manage groups">
+            <i data-lucide="layout-grid" class="w-5 h-5"></i>
+            <!-- badge showing group count -->
+            <span x-show="groups.length > 0"
+                  class="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 text-white text-[8px] font-black rounded-full flex items-center justify-center"
+                  x-text="groups.length"></span>
+        </button>
+
+        <!-- Groups Popover (Grid Layout matching other tools) -->
+        <div x-show="showGroupPopover"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+             class="add-node-dropdown custom-scrollbar before:content-[''] before:absolute before:bottom-[-60px] before:left-0 before:right-0 before:h-[60px] before:bg-transparent"
+             :class="(groups.length + (selectedNodes.length >= 2 ? 1 : 0)) > 4 ? 'cols-3' : 'cols-2'"
+             style="max-height: 420px; overflow-y: auto; overflow-x: hidden;">
+            
+            <!-- Empty State -->
+            <template x-if="groups.length === 0">
+                <div class="col-span-2 py-6 text-center">
+                    <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i data-lucide="layers-3" class="w-6 h-6 text-slate-300"></i>
+                    </div>
+                    <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest">No groups yet</p>
+                </div>
+            </template>
+
+            <!-- Group Grid Items -->
+            <template x-for="(group, idx) in groups" :key="group.id">
+                <div class="add-node-item group" @@click="openGroupSettings(group.id); showGroupPopover = false">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center group-hover:opacity-80 transition-all"
+                         :style="`background-color: ${hexToRgba(['#2563EB', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#6366F1'][idx % 7], 0.15)}; color: ${['#2563EB', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#6366F1'][idx % 7]}`">
+                        <span class="text-[11px] font-black" x-text="'G' + (idx + 1)"></span>
+                    </div>
+                    <span class="text-center truncate w-full" x-text="group.label"></span>
+                </div>
+            </template>
+
+            <!-- Create from Selection (Special Grid Item) -->
+            <template x-if="selectedNodes.length >= 2">
+                <div class="add-node-item group border-dashed border-blue-200 bg-blue-50/30" @@click="groupEntities(); showGroupPopover = false">
+                    <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
+                    </div>
+                    <span class="text-center text-blue-600">New (<span x-text="selectedNodes.length"></span>)</span>
+                </div>
+            </template>
+        </div>
+    </div>
+    
+    <div class="h-6 w-px bg-slate-200/50 mx-1 self-center"></div>
+
+    <!-- Node Creator -->
+    <div class="relative group" @@mouseenter="showAddNode = true" @@mouseleave="showAddNode = false">
+        <button class="toolbar-btn" :class="{ 'active': showAddNode }" title="Add Entity (A)">
+            <i data-lucide="plus-circle" class="w-6 h-6"></i>
+        </button>
+
+        <div x-show="showAddNode" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+         @@click.away="showAddNode = false"
+         class="add-node-dropdown"
+         :class="treeNodes.length === 0 ? 'cols-2' : 'cols-3'">
+        
+        <!-- Main Entities Section (Always Visible) -->
+        <div class="add-node-item group" @@click="clickAdd('C', true); showAddNode = false">
+            <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all">
+                <i data-lucide="building-2" style="color: #4299e1;" class="w-4 h-4"></i>
+            </div>
+            <span class="text-[11px] font-bold">MAIN CORP</span>
+        </div>
+        <div class="add-node-item group" @@click="clickAdd('I', true); showAddNode = false">
+            <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                <i data-lucide="user" style="color: #10B981;" class="w-4 h-4"></i>
+            </div>
+            <span class="text-[11px] font-bold">MAIN INDIV</span>
+        </div>
+        
+        <!-- Related Parties Section (Visible after Main Entity added) -->
+        <template x-for="role in RelatedPartyRoles">
+            <div class="add-node-item group" 
+                 @@click="clickAdd(role.type, false, role.id); showAddNode = false" 
+                 x-show="treeNodes.length > 0">
+                <div class="avatar-short shadow-sm !w-9 !h-9 !text-[9px]" 
+                     :class="role.type === 'C' ? 'corp' : (role.id === 'authorized_signatory' ? 'signatory' : (role.id === 'senior_management' ? 'mgmt' : ''))" 
+                     x-text="{'related_individual_shareholder':'IRP', 'related_corporate_shareholder':'CRP', 'individual_shareholder':'ISH', 'corporate_shareholder':'CSH', 'authorized_signatory':'AS', 'senior_management':'SM'}[role.id] || '??'"></div>
+                <span class="text-center leading-tight text-[10px] font-bold" x-text="role.label.replace('Individual ', 'IND ').replace('Corporate ', 'CORP ').toUpperCase()"></span>
+            </div>
+        </template>
+    </div>
+    </div>
+
+    <div class="h-6 w-px bg-slate-200/50 mx-1 self-center"></div>
+
+    <!-- History & Zoom -->
+    <button class="toolbar-btn" @@click="zoomIn()" title="Zoom In">
+        <i data-lucide="zoom-in" class="w-5 h-5"></i>
+    </button>
+    <button class="toolbar-btn" @@click="zoomOut()" title="Zoom Out">
+        <i data-lucide="zoom-out" class="w-5 h-5"></i>
+    </button>
+    <button class="toolbar-btn" @@click="clearCanvas()">
+        <i data-lucide="refresh-cw" class="w-5 h-5 text-rose-400"></i>
+    </button>
+</div>

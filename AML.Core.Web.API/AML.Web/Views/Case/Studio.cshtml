@@ -1,0 +1,690 @@
+@{
+    ViewBag.Title = "Case Creation Studio";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/studio.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<script>
+    // Global configuration for the studio
+    window.studioData = {
+        ScreeningOptions: @Html.Raw(Json.Serialize(ViewBag.ScreeningSources)),
+        Nationalities: @Html.Raw(Json.Serialize(Model.Nationalities)),
+        EntityType: @Html.Raw(Json.Serialize(Model.EntityType)),
+        BusinessTypeList: @Html.Raw(Json.Serialize(Model.BusinessTypeList)),
+        Products: @Html.Raw(Json.Serialize(Model.ProductTypeList)),
+        DeliveryChannels: @Html.Raw(Json.Serialize(Model.DeliveryChannelList)),
+        PaymentModes: @Html.Raw(Json.Serialize(Model.ModeofpaymentList)),
+        Professions: @Html.Raw(Json.Serialize(Model.ProfessionalList)),
+        Industries: @Html.Raw(Json.Serialize(Model.EmployerIndustryList)),
+        Sectors: @Html.Raw(Json.Serialize(Model.EmployerSectorList)),
+        TradeLicenseAuthority: @Html.Raw(Json.Serialize(Model.RegistrationAuthorityList)),
+        IdTypes: @Html.Raw(Json.Serialize(Model.IdTypes)),
+        Gender: @Html.Raw(Json.Serialize(Model.GenderList)),
+        CounterParties: @Html.Raw(Json.Serialize(Model.CounterPartyList)),
+        GoldenVisa: @Html.Raw(Json.Serialize(Model.GoldenVisaList))
+    };
+</script>
+
+<div id="studio-app" 
+     x-data="caseStudio()" 
+     x-init="init()" 
+     @@mousemove="handleToolbarDrag($event)"
+     @@mouseup="stopToolbarDrag()"
+     x-cloak>
+    
+    <div id="studio-container">
+        <!-- Header Section -->
+        <partial name="Studio/_StudioHeader" />
+
+        <div id="studio-main">
+            <!-- Sidebar (Entity Tree) -->
+            <partial name="Studio/_StudioSidebar" />
+
+            <!-- Canvas Area -->
+            <div class="flex-1 relative overflow-hidden bg-slate-50 flex flex-col">
+                <partial name="Studio/_StudioCanvas" />
+                <partial name="Studio/_StudioToolbar" />
+            </div>
+
+            <!-- Property Panel (Side Sheet) -->
+            <partial name="Studio/_StudioPropertyPanel" />
+        </div>
+    </div>
+
+    <!-- Fetch Confirmation Modal -->
+    <div x-show="showFetchConfirm" 
+         class="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden"
+             @@click.away="showFetchConfirm = false"
+             x-transition:enter="transition ease-out duration-300 transform"
+             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+            
+            <div class="p-8 text-center">
+                <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i data-lucide="layers" class="w-10 h-10"></i>
+                </div>
+                
+                <h3 class="text-xl font-black text-slate-800 mb-3 tracking-tight">Workspace Not Empty</h3>
+                <p class="text-sm text-slate-500 font-medium leading-relaxed mb-8">
+                    Do you want to overwrite the current workspace or add the new items to your existing nodes?
+                </p>
+                
+                <div class="flex flex-col gap-3">
+                    <button @@click="handleFetchChoice('overwrite')" 
+                            class="flex items-center justify-center gap-3 w-full h-14 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold transition-all shadow-lg shadow-red-200 group">
+                        <i data-lucide="refresh-cw" class="w-5 h-5 group-hover:rotate-180 transition-transform duration-500"></i>
+                        Overwrite Workspace
+                    </button>
+                    
+                    <button @@click="handleFetchChoice('add')" 
+                            class="flex items-center justify-center gap-3 w-full h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-blue-200">
+                        <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                        Add Along with Existing
+                    </button>
+                    
+                    <button @@click="showFetchConfirm = false" 
+                            class="w-full h-12 text-slate-400 hover:text-slate-600 font-bold text-sm transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legacy Duplicate Check Modal -->
+    <div x-show="isDuplicateModalOpen" 
+         x-cloak
+         class="fixed inset-0 flex items-center justify-center bg-black/40 p-4"
+         style="z-index: 10000;"
+         x-transition>
+
+        <div @@click.away="!isProcessActionModalOpen && closeDuplicateModal()"
+             class="bg-white rounded-xl shadow-xl w-full max-w-7xl">
+
+            <!-- Header -->
+            <div class="flex items-center justify-between px-8 py-5 border-b border-gray-100 bg-white rounded-t-xl">
+                <h2 class="text-xl font-extrabold text-[#0F172A] tracking-tight">Search Duplicates</h2>
+                <button @@click="closeDuplicateModal()"
+                        class="bg-[#F85151] hover:bg-red-600 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-lg shadow-red-100 transition-all active:scale-95">
+                    Close
+                </button>
+            </div>
+
+            <!-- Table -->
+            <div class="max-h-[350px] overflow-y-auto">
+                <table class="w-full text-sm text-left">
+                        <thead class="bg-[#F1F5F9] text-[#475569] sticky top-0 z-20 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-left">REF ID</th>
+                                <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-left">CREATED ON</th>
+                                <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-left">CUST. NAME</th>
+                                <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-left">CASE STATUS</th>
+                                <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-left">TYPE</th>
+                                <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-left">LINK</th>
+                            </tr>
+                        </thead>
+                        <tbody id="duplicateTableBody" class="divide-y divide-gray-100 bg-white">
+                            <template x-for="(item, index) in duplicateResults" :key="item.customerId">
+                                <tr class="hover:bg-blue-50/30 transition-colors" :class="index % 2 === 0 ? 'bg-white' : 'bg-[#F8FAFC]'">
+                                    <td class="px-6 py-4 font-bold text-[#0F172A]" x-text="item.refId || item.customerId || '-'"></td>
+                                    <td class="px-6 py-4 text-[#475569] text-[12px] leading-tight max-w-[120px]">
+                                        <span x-text="item.createdOn ? new Date(item.createdOn).toLocaleDateString('en-GB') : '-'"></span><br/>
+                                        <span class="text-[10px] opacity-75" x-text="item.createdOn ? new Date(item.createdOn).toLocaleTimeString('en-GB') : ''"></span>
+                                    </td>
+                                    <td class="px-6 py-4 font-bold text-[#1E293B]" x-text="(item.firstName || item.lastName || item.middleName) ? ([item.firstName, item.middleName, item.lastName].filter(Boolean).join(' ')) : (item.customerName || item.name || item.label || '-')"></td>
+                                    <td class="px-6 py-4">
+                                        <template x-if="item.caseStatus && item.caseStatus.toLowerCase().includes('pending')">
+                                            <span class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FEF3C7] border border-[#F59E0B]/30 shadow-sm min-w-[110px]">
+                                                <i data-lucide="clock" class="w-3.5 h-3.5 text-[#92400E]"></i>
+                                                <span class="text-[#92400E] text-[11px] font-black" x-text="item.caseStatus"></span>
+                                            </span>
+                                        </template>
+                                        <template x-if="!item.caseStatus || !item.caseStatus.toLowerCase().includes('pending')">
+                                            <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-tight min-w-[110px]" :class="getStatusClass(item.caseStatus)" x-text="item.caseStatus || 'Unknown'"></span>
+                                        </template>
+                                    </td>
+                                    <td class="px-6 py-4 text-[#64748B] font-bold text-[12px]" x-text="item.type === 'I' ? 'Individual' : (item.type === 'C' ? 'Corporate' : (item.type || '-'))"></td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center justify-start gap-3">
+                                            <a :href="getProcessUrl(item)" target="_blank" class="inline-flex items-center gap-1.5 text-[#2563EB] font-bold hover:underline text-[12px]">
+                                                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                                                View
+                                            </a>
+                                            <button @@click="processDuplicate(item)" class="text-[#2563EB] font-bold hover:underline text-[12px]">Process</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        <template x-if="duplicateResults.length === 0">
+                            <tr>
+                                <td colspan="6" class="px-6 py-20 text-center text-gray-400 italic">
+                                    No potential matches identified in the system.
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Process Action Selection Modal -->
+    <div x-show="typeof isProcessActionModalOpen !== 'undefined' && isProcessActionModalOpen" 
+         x-cloak
+         class="fixed inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+         style="z-index: 10100;"
+         x-transition>
+        
+        <div @@click.away="isProcessActionModalOpen = false"
+             class="bg-white rounded-[32px] shadow-2xl w-full max-w-xl p-0 overflow-hidden"
+             x-transition:enter="transition ease-out duration-300 transform"
+             x-transition:enter-start="scale-95 opacity-0 translate-y-8"
+             x-transition:enter-end="scale-100 opacity-100 translate-y-0">
+            
+            <!-- Modal Header -->
+            <div class="px-8 py-6 bg-slate-50 border-b flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="layers" class="w-6 h-6 text-blue-600"></i>
+                    </div>
+                    <div class="text-left">
+                        <h3 class="text-xl font-black text-slate-800 tracking-tight">Import Record</h3>
+                        <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Select import role & hierarchy mode</p>
+                    </div>
+                </div>
+                <button @@click="isProcessActionModalOpen = false" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <div class="p-8">
+                <!-- Main Entity Section -->
+                <div class="mb-8">
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <div class="w-1 h-3 bg-blue-500 rounded-full"></div>
+                        Main Entity Hierarchy
+                    </div>
+                    <div class="grid grid-cols-1 gap-4">
+                        <!-- Main Corporate -->
+                        <button x-show="isTypeMatch('C')"
+                                @@click="importDuplicate('root', true)" 
+                                class="flex items-center gap-6 p-6 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-3xl transition-all group relative">
+                            <div class="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i data-lucide="crown" class="w-8 h-8 text-amber-500"></i>
+                            </div>
+                            <div class="text-left">
+                                <span class="text-sm font-black text-slate-800 block">Set as MAIN CORP</span>
+                                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Import full hierarchy from system record</span>
+                            </div>
+                        </button>
+
+                        <!-- Main Individual -->
+                        <button x-show="isTypeMatch('I')"
+                                @@click="importDuplicate('root', true)" 
+                                class="flex items-center gap-6 p-6 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-3xl transition-all group relative">
+                            <div class="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i data-lucide="user-check" class="w-8 h-8 text-emerald-500"></i>
+                            </div>
+                            <div class="text-left">
+                                <span class="text-sm font-black text-slate-800 block">Set as MAIN INDIV</span>
+                                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Import full hierarchy from system record</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Related Parties Section -->
+                <div>
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <div class="w-1 h-3 bg-emerald-500 rounded-full"></div>
+                        Related Party Roles
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <template x-for="role in RelatedPartyRoles">
+                            <button x-show="isTypeMatch(role.type)"
+                                    @@click="importDuplicate(role.id, false)" 
+                                    class="flex flex-col items-center justify-center p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-blue-200 rounded-2xl transition-all group">
+                                <div class="avatar-short shadow-sm !w-10 !h-10 !text-[11px] mb-2 group-hover:scale-110 transition-transform" 
+                                     :class="role.type === 'C' ? 'corp' : (role.id === 'authorized_signatory' ? 'signatory' : (role.id === 'senior_management' ? 'mgmt' : ''))" 
+                                     x-text="{'related_individual_shareholder':'IRP', 'related_corporate_shareholder':'CRP', 'individual_shareholder':'ISH', 'corporate_shareholder':'CSH', 'authorized_signatory':'AS', 'senior_management':'SM'}[role.id] || '??'"></div>
+                                <span class="text-center leading-tight text-[9px] font-black text-slate-600 uppercase" x-text="role.label"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-8 py-5 bg-slate-50 border-t flex justify-center">
+                <button @@click="isProcessActionModalOpen = false" 
+                        class="text-xs font-black text-slate-400 hover:text-slate-600 uppercase tracking-widest transition-colors">
+                    Back to search results
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div x-show="typeof isSuccessModalOpen !== 'undefined' && isSuccessModalOpen" 
+         x-cloak
+         class="fixed inset-0 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"
+         style="z-index: 11000;"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        
+        <div class="bg-white rounded-[40px] shadow-2xl max-w-md w-full p-10 text-center relative overflow-hidden"
+             @@click.away="closeSuccess()"
+             x-transition:enter="transition ease-out duration-300 transform"
+             x-transition:enter-start="opacity-0 scale-95 translate-y-8"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+            
+            <div class="absolute top-0 left-0 right-0 h-2 bg-emerald-500"></div>
+            
+            <div class="flex flex-col items-center gap-8">
+                <div class="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center ring-8 ring-emerald-50/50">
+                    <i data-lucide="check-circle" class="w-12 h-12"></i>
+                </div>
+                
+                <div class="space-y-3">
+                    <h2 class="text-2xl font-black text-slate-800 tracking-tight">Case Creation Successful!</h2>
+                    <p class="text-sm font-bold text-slate-400 uppercase tracking-widest px-4">Your hierarchy has been submitted for screening.</p>
+                    
+                    <div class="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Reference ID</div>
+                        <div class="text-lg font-black text-blue-600 tracking-tight" x-text="caseRefId"></div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 w-full" x-data="{ copied: false }">
+                    <button @@click="navigator.clipboard.writeText(caseRefId); copied = true; setTimeout(() => copied = false, 2000)"
+                            class="h-14 border-2 border-slate-100 rounded-2xl font-black text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-widest">
+                        <i data-lucide="copy" class="w-4 h-4" x-show="!copied"></i>
+                        <i data-lucide="check" class="w-4 h-4 text-emerald-500" x-show="copied"></i>
+                        <span x-text="copied ? 'Copied' : 'Copy'"></span>
+                    </button>
+                    
+                    <a href="/case" class="h-14 bg-slate-900 text-white rounded-2xl font-black flex items-center justify-center text-xs uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-slate-200">
+                        View Cases
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Settings Modal (Global) -->
+    <div x-show="isGroupModalOpen" 
+         class="fixed inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+         style="z-index: 10500;"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @@click.self="isGroupModalOpen = false"
+         x-cloak>
+        
+        <div class="bg-white w-[520px] rounded-2xl shadow-2xl overflow-hidden border border-slate-200"
+             x-transition:enter="transition ease-out duration-300 transform"
+             x-transition:enter-start="scale-95 opacity-0 translate-y-4"
+             x-transition:enter-end="scale-100 opacity-100 translate-y-0"
+             x-init="$watch('isGroupModalOpen', value => { if(value) { $nextTick(() => lucide.createIcons()); } })">
+            
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b bg-slate-50 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
+                        <i data-lucide="layout-grid" class="w-4.5 h-4.5 text-emerald-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-slate-800 tracking-tight" 
+                            x-text="activeGroupId ? (groups.find(g => g.id === activeGroupId)?.label || 'Group Settings') : 'Group Settings'"></h3>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider"
+                           x-text="activeGroupId ? ((groups.find(g => g.id === activeGroupId)?.nodeIds?.length || 0) + ' members · ' + (groups.find(g => g.id === activeGroupId)?.risk || 'Unclassified')) : ''"></p>
+                    </div>
+                </div>
+                <button @@click="isGroupModalOpen = false" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-5 space-y-4">
+
+                <!-- Action Cards -->
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Rename -->
+                    <button class="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-blue-300 hover:bg-blue-50 transition-all text-left group"
+                            @@click="renameGroup(activeGroupId)">
+                        <div class="w-8 h-8 rounded-lg bg-blue-50 group-hover:bg-blue-600 flex items-center justify-center transition-all">
+                            <i data-lucide="edit-3" class="w-4 h-4 text-blue-500 group-hover:text-white transition-colors"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-black text-slate-700">Rename</p>
+                            <p class="text-[9px] text-slate-400">Edit group label</p>
+                        </div>
+                    </button>
+
+                    <!-- Add selected nodes -->
+                    <button class="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-emerald-300 hover:bg-emerald-50 transition-all text-left group"
+                            @@click="addNodesToGroup(activeGroupId)"
+                            :disabled="selectedNodes.length === 0"
+                            :class="selectedNodes.length === 0 ? 'opacity-40 cursor-not-allowed' : ''">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 group-hover:bg-emerald-600 flex items-center justify-center transition-all">
+                            <i data-lucide="plus" class="w-4 h-4 text-emerald-500 group-hover:text-white transition-colors"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-black text-slate-700">Add Selected</p>
+                            <p class="text-[9px] text-slate-400" x-text="selectedNodes.length + ' node(s) selected'"></p>
+                        </div>
+                    </button>
+
+                    <!-- Remove selected members -->
+                    <button class="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-amber-300 hover:bg-amber-50 transition-all text-left group"
+                            @@click="removeNodesFromGroup(activeGroupId)"
+                            :disabled="selectedGroupMembers.length === 0"
+                            :class="selectedGroupMembers.length === 0 ? 'opacity-40 cursor-not-allowed' : ''">
+                        <div class="w-8 h-8 rounded-lg bg-amber-50 group-hover:bg-amber-600 flex items-center justify-center transition-all">
+                            <i data-lucide="minus" class="w-4 h-4 text-amber-500 group-hover:text-white transition-colors"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-black text-slate-700">Remove Selected</p>
+                            <p class="text-[9px] text-slate-400">From this group</p>
+                        </div>
+                    </button>
+
+                    <!-- Dissolve -->
+                    <button class="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-rose-300 hover:bg-rose-50 transition-all text-left group"
+                            @@click="dissolveGroup(activeGroupId); isGroupModalOpen = false">
+                        <div class="w-8 h-8 rounded-lg bg-rose-50 group-hover:bg-rose-600 flex items-center justify-center transition-all">
+                            <i data-lucide="ungroup" class="w-4 h-4 text-rose-500 group-hover:text-white transition-colors"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-black text-slate-700">Dissolve</p>
+                            <p class="text-[9px] text-slate-400">Remove group boundary</p>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Members List (Scrolling section) -->
+                <div class="pt-2">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Members</p>
+                        <p class="text-[10px] font-bold text-slate-400" x-text="selectedGroupMembers.length + ' selected'"></p>
+                    </div>
+                    <div class="space-y-1.5 max-h-[300px] overflow-y-auto custom-scrollbar pr-2" x-init="$nextTick(() => lucide.createIcons())">
+                        <template x-for="nodeId in (groups.find(g => g.id === activeGroupId)?.nodeIds || [])" :key="nodeId">
+                            <div class="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-colors group/item">
+                                <div class="flex items-center gap-3">
+                                    <!-- Checkbox -->
+                                    <div class="flex items-center h-5">
+                                        <input type="checkbox" 
+                                               :checked="selectedGroupMembers.includes(nodeId)"
+                                               @@change="toggleGroupMemberSelection(nodeId)"
+                                               class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer">
+                                    </div>
+                                    <div class="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                                        <i :data-lucide="nodes.get(nodeId)?.type === 'C' ? 'building-2' : 'user'" class="w-3.5 h-3.5 text-slate-400"></i>
+                                    </div>
+                                    <span class="text-[11px] font-bold text-slate-700" x-text="nodes.get(nodeId)?.name || nodes.get(nodeId)?.label?.split('\n')[0] || nodeId"></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <template x-if="nodes.get(nodeId)?.isScreened">
+                                        <i data-lucide="lock" class="w-4 h-4 text-green-600" title="Screened"></i>
+                                    </template>
+                                    <template x-if="nodes.get(nodeId)?.isDuplicate">
+                                        <i data-lucide="copy" class="w-4 h-4 text-amber-500" title="Duplicate"></i>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-5 py-3 bg-slate-50 border-t flex items-center justify-between gap-3">
+                <!-- Delete Members (destructive) -->
+                <button @@click="deleteGroupNodes(activeGroupId)" 
+                        :disabled="selectedGroupMembers.length === 0"
+                        :class="selectedGroupMembers.length === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-rose-50 border-rose-100'"
+                        class="px-4 py-2 text-[11px] font-black text-rose-600 border border-transparent rounded-xl transition-all flex items-center gap-2">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    Delete Selected
+                </button>
+                <div class="flex items-center gap-3">
+                    <button @@click="isGroupModalOpen = false" 
+                            class="px-5 py-2 text-[11px] font-black text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Saved Drafts Manager Modal / Drawer -->
+    <div x-show="isDraftManagerOpen"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 backdrop-blur-none"
+         x-transition:enter-end="opacity-100 backdrop-blur-sm"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 backdrop-blur-sm"
+         x-transition:leave-end="opacity-0 backdrop-blur-none"
+         class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[10500] flex items-center justify-center p-4"
+         x-cloak>
+        
+        <div x-show="isDraftManagerOpen"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             @@click.away="isDraftManagerOpen = false"
+             class="bg-white rounded-[32px] shadow-2xl border border-slate-100 w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh]">
+             
+            <!-- Header -->
+            <div class="p-8 pb-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/50 via-slate-50/30 to-transparent">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 flex items-center justify-center shadow-sm">
+                        <i data-lucide="folders" class="w-7 h-7"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-black text-slate-800 tracking-tight">Saved Draft Sessions</h3>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">Switch between, rename, or restore your unsaved corporate hierarchy workspaces.</p>
+                    </div>
+                </div>
+                <button @@click="isDraftManagerOpen = false" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-8 space-y-6 bg-slate-50/50 flex-1 overflow-y-auto custom-scrollbar" x-init="$watch('isDraftManagerOpen', val => { if(val) $nextTick(() => lucide.createIcons()); })">
+                <!-- Latest Autosaved Draft Banner (Shown when opening studio with existing drafts) -->
+                <div x-show="savedDrafts.length > 0 && !activeDraftId" 
+                     class="p-6 rounded-3xl text-white shadow-xl shadow-blue-500/20 flex items-center justify-between"
+                     style="background: linear-gradient(135deg, #2563eb 0%, #4338ca 100%);">
+                    <div class="flex items-center gap-5">
+                        <div class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner">
+                            <i data-lucide="file-clock" class="w-7 h-7 animate-pulse"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-0.5 rounded-full bg-white/20 border border-white/30 text-[10px] font-black uppercase tracking-wider text-white">Latest Autosave</span>
+                                <span class="text-xs text-blue-100 font-medium" x-text="savedDrafts.length > 0 ? ('Updated ' + new Date(savedDrafts[0].updatedOn + (savedDrafts[0].updatedOn.endsWith('Z') ? '' : 'Z')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) : ''"></span>
+                            </div>
+                            <h4 class="text-lg font-black tracking-tight mt-1" x-text="savedDrafts.length > 0 ? savedDrafts[0].draftName : ''"></h4>
+                            <p class="text-xs text-blue-100 mt-0.5" x-text="savedDrafts.length > 0 ? (savedDrafts[0].nodeCount + ' entities · ' + savedDrafts[0].edgeCount + ' relationships') : ''"></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button @@click="if(savedDrafts.length > 0) restoreSpecificDraft(savedDrafts[0].draftId)" 
+                                class="px-6 py-3 bg-white hover:bg-blue-50 text-blue-600 rounded-xl font-bold text-xs shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
+                            <i data-lucide="play" class="w-4 h-4"></i> Resume Autosave
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Action Bar: Start New Draft -->
+                <div class="flex flex-col justify-between gap-4 p-6 bg-white rounded-3xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                            <i data-lucide="plus-circle" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-black text-slate-800">Start New Draft Session</h4>
+                            <p class="text-xs text-slate-400 mt-0.5">Begin a clean canvas workspace with a new draft ID.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3" x-data="{ newDraftName: '' }">
+                        <input type="text" x-model="newDraftName" placeholder="Custom Draft Name..." class="cc-input h-11 text-xs w-48 bg-slate-50 focus:bg-white transition-all pl-3 rounded-xl border border-slate-200">
+                        <button @@click="createNewDraft(newDraftName); newDraftName = '';" class="btn-studio btn-studio-primary px-6 h-11 rounded-xl text-xs font-bold shadow-sm">
+                            Create New
+                        </button>
+                    </div>
+                </div>
+
+                <div class="h-px bg-slate-200/60 w-full my-2"></div>
+
+                <!-- Saved Drafts List -->
+                <div>
+                    <div class="flex items-center justify-between mb-4 px-2">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Available Draft Workspaces</span>
+                        <span class="text-[10px] font-bold text-blue-600" x-text="savedDrafts.length + ' Draft(s) found'"></span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <template x-for="draft in savedDrafts" :key="draft.draftId">
+                            <div class="flex items-center justify-between p-6 bg-white rounded-3xl border transition-all group/draft"
+                                 :class="activeDraftId === draft.draftId ? 'border-blue-500 shadow-md ring-4 ring-blue-50' : 'border-slate-200 hover:border-blue-300 shadow-sm'">
+                                <div class="flex items-center gap-5">
+                                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center border transition-all"
+                                         :class="activeDraftId === draft.draftId ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-500 border-slate-200 group-hover/draft:bg-blue-50 group-hover/draft:text-blue-600'">
+                                        <i data-lucide="file-text" class="w-7 h-7"></i>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-3">
+                                            <!-- Normal / Deleting State Name -->
+                                            <div x-show="editingDraftId !== draft.draftId" class="flex items-center gap-3">
+                                                <span class="text-base font-black text-slate-800" :class="deletingDraftId === draft.draftId ? 'line-through opacity-60' : ''" x-text="draft.draftName"></span>
+                                                <span x-show="deletingDraftId === draft.draftId" class="text-xs font-bold text-rose-600 animate-pulse bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">Confirm delete?</span>
+                                                <span x-show="deletingDraftId !== draft.draftId" class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider"
+                                                      :class="activeDraftId === draft.draftId ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-50'"
+                                                      x-text="activeDraftId === draft.draftId ? 'Active Session' : 'Saved'"></span>
+                                            </div>
+                                            <!-- Editing State Name Input -->
+                                            <div x-show="editingDraftId === draft.draftId" class="flex items-center gap-2">
+                                                <input type="text" x-model="editDraftNameInput" @@keydown.enter="confirmInlineRename(draft.draftId)" class="cc-input h-10 px-4 text-sm rounded-xl border border-blue-400 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-inner w-64">
+                                                <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg uppercase tracking-wider border border-blue-200">Press Enter to save</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-4 mt-2 text-xs text-slate-500 font-medium">
+                                            <div class="flex items-center gap-1.5">
+                                                <i data-lucide="layers" class="w-3.5 h-3.5 text-slate-400"></i>
+                                                <span x-text="draft.nodeCount + ' Entities'"></span>
+                                            </div>
+                                            <div class="w-1 h-1 rounded-full bg-slate-300"></div>
+                                            <div class="flex items-center gap-1.5">
+                                                <i data-lucide="git-commit" class="w-3.5 h-3.5 text-slate-400"></i>
+                                                <span x-text="draft.edgeCount + ' Links'"></span>
+                                            </div>
+                                            <div class="w-1 h-1 rounded-full bg-slate-300"></div>
+                                            <div class="flex items-center gap-1.5">
+                                                <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+                                                <span x-text="'Updated ' + new Date(draft.updatedOn + (draft.updatedOn.endsWith('Z') ? '' : 'Z')).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-3">
+                                    <!-- NORMAL STATE BUTTONS -->
+                                    <button x-show="editingDraftId !== draft.draftId && deletingDraftId !== draft.draftId"
+                                            @@click="startInlineEdit(draft)" 
+                                            class="p-2.5 hover:bg-slate-100 text-slate-400 hover:text-blue-600 rounded-xl transition-colors" title="Rename Draft">
+                                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                    </button>
+
+                                    <button x-show="editingDraftId !== draft.draftId && deletingDraftId !== draft.draftId"
+                                            @@click="startInlineDelete(draft)" 
+                                            class="p-2.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl transition-colors" title="Delete Draft">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+
+                                    <!-- EDITING STATE BUTTONS -->
+                                    <button x-show="editingDraftId === draft.draftId"
+                                            @@click="confirmInlineRename(draft.draftId)" 
+                                            class="p-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl transition-colors" title="Save Changes">
+                                        <i data-lucide="check" class="w-4 h-4"></i>
+                                    </button>
+
+                                    <button x-show="editingDraftId === draft.draftId"
+                                            @@click="editingDraftId = null" 
+                                            class="p-2.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-xl transition-colors" title="Cancel">
+                                        <i data-lucide="x" class="w-4 h-4"></i>
+                                    </button>
+
+                                    <!-- DELETING STATE BUTTONS -->
+                                    <button x-show="deletingDraftId === draft.draftId"
+                                            @@click="confirmInlineDelete(draft.draftId)" 
+                                            class="p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-colors" title="Confirm Delete">
+                                        <i data-lucide="check" class="w-4 h-4"></i>
+                                    </button>
+
+                                    <button x-show="deletingDraftId === draft.draftId"
+                                            @@click="deletingDraftId = null" 
+                                            class="p-2.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-xl transition-colors" title="Cancel">
+                                        <i data-lucide="x" class="w-4 h-4"></i>
+                                    </button>
+
+                                    <!-- Restore / Switch -->
+                                    <button @@click="restoreSpecificDraft(draft.draftId)"
+                                            x-show="activeDraftId !== draft.draftId && editingDraftId !== draft.draftId && deletingDraftId !== draft.draftId"
+                                            class="btn-studio btn-studio-primary px-5 h-11 rounded-xl text-xs font-bold shadow-sm flex items-center gap-2">
+                                        <i data-lucide="external-link" class="w-4 h-4"></i> Resume
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="savedDrafts.length === 0">
+                            <div class="p-12 text-center bg-white rounded-3xl border border-slate-200">
+                                <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i data-lucide="inbox" class="w-8 h-8"></i>
+                                </div>
+                                <h4 class="text-base font-black text-slate-700 mb-1">No Saved Drafts</h4>
+                                <p class="text-xs text-slate-400">Your unsaved workspace sessions will appear here automatically.</p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-8 py-5 bg-white border-t border-slate-100 flex items-center justify-end gap-3">
+                <button @@click="isDraftManagerOpen = false" 
+                        class="px-6 py-3 text-xs font-black text-slate-600 hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-200">
+                    Close Manager
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script src="~/js/studio.js" asp-append-version="true"></script>

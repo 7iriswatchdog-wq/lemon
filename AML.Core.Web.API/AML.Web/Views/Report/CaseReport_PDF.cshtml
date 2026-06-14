@@ -1,0 +1,107 @@
+@using AML.ViewModel.ViewModels.Report
+@model List<CaseReportListModel>
+@functions {
+    public bool ShowColumn(string colId)
+    {
+        var selectedColumns = ViewBag.SelectedColumns as string;
+        if (string.IsNullOrEmpty(selectedColumns)) return true;
+        return selectedColumns.Split(',').Contains(colId);
+    }
+}
+@{
+    Layout = "~/Views/Shared/_PdfLayout.cshtml";
+    ViewData["Title"] = "Case Management Report";
+    ViewData["Orientation"] = ViewBag.Orientation ?? "portrait";
+}
+
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            @if (ShowColumn("customerID")) { <th>Customer ID</th> }
+            @if (ShowColumn("createdOn")) { <th>Created On</th> }
+            @if (ShowColumn("updatedOn")) { <th>Updated On</th> }
+            @if (ShowColumn("customerType")) { <th>Type</th> }
+            @if (ShowColumn("customerName")) { <th>Customer Name</th> }
+            @if (ShowColumn("nationality")) { <th>Nationality</th> }
+            @if (ShowColumn("status")) { <th>Status</th> }
+            @if (ShowColumn("screeningScore")) { <th>Score</th> }
+            @if (ShowColumn("riskRating")) { <th>Risk</th> }
+            @if (ShowColumn("user")) { <th>User</th> }
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            int index = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td>@index</td>
+                    @if (ShowColumn("customerID")) { <td>@item.CustomerID</td> }
+                    @if (ShowColumn("createdOn"))
+                    {
+                        <td>
+                            @if(DateTime.TryParse(item.CreatedOn, out DateTime dtCreate)) {
+                                @dtCreate.ToString("dd MMM yyyy")
+                            } else {
+                                @item.CreatedOn
+                            }
+                        </td>
+                    }
+                    @if (ShowColumn("updatedOn"))
+                    {
+                        <td>
+                            @{ var updateDateStr = !string.IsNullOrEmpty(item.UpdatedOn) ? item.UpdatedOn : item.UpdatedOnDB; }
+                            @if(!string.IsNullOrEmpty(updateDateStr))
+                            {
+                                if(DateTime.TryParse(updateDateStr, out DateTime dtUpdate)) {
+                                    @dtUpdate.ToString("dd MMM yyyy")
+                                } else {
+                                    @updateDateStr
+                                }
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </td>
+                    }
+                    @if (ShowColumn("customerType"))
+                    {
+                        <td>@(item.CustomerType == "I" || item.CustomerType == "Individual" ? "Individual" : "Corporate")</td>
+                    }
+                    @if (ShowColumn("customerName")) { <td>@(item.FirstName + " " + item.LastName)</td> }
+                    @if (ShowColumn("nationality")) { <td>@item.Nationality</td> }
+                    @if (ShowColumn("status"))
+                    {
+                        <td>
+                            @{
+                                var status = item.CaseStatus ?? "";
+                                if (status.Contains("| Shareholders:"))
+                                {
+                                    var parts = status.Split('|');
+                                    @parts[0].Trim()
+                                }
+                                else
+                                {
+                                    @status
+                                }
+                            }
+                        </td>
+                    }
+                    @if (ShowColumn("screeningScore")) { <td>@item.MatchScore</td> }
+                    @if (ShowColumn("riskRating")) { <td>@item.MatchScore</td> }
+                    @if (ShowColumn("user")) { <td>@item.CreatedUser</td> }
+                </tr>
+                index++;
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="11" style="text-align: center; color: #9CA3AF; padding: 20px;">No records found for this case report.</td>
+            </tr>
+        }
+    </tbody>
+</table>

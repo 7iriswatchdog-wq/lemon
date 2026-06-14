@@ -1,0 +1,120 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Individual Assessment";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+<script src="~/plugins/jquery/jquery.min.js"></script>
+
+<div class="w-full h-full">
+    <!-- Header -->
+    <nav class="flex items-center px-6 h-[72.8px] border-b border-gray-200 w-full bg-white">
+        <div class="flex items-center justify-between w-full">
+            <h2 class="text-xl font-bold text-gray-900 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
+                Risk Assessment for Individuals
+            </h2>
+            <div class="text-right flex items-center space-x-4">
+                <a href="@Url.Action("Create", "risk")" class="px-4 py-[8px] bg-[#2563EB] text-white text-sm font-medium rounded-lg hover:bg-[#1D4ED8] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2">
+                    Create New
+                </a>
+                <img src="@Clientlogo" alt="Client Logo" class="h-8 w-auto object-contain" />
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="p-6 bg-gray-50 min-h-[calc(100vh-72.8px)]">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Individuals List</h3>
+            </div>
+            
+            <div class="p-0">
+                <div class="table-responsive w-full">
+                    <table id="example" class="w-full text-sm text-left whitespace-nowrap" cellspacing="0">
+                        <thead class="text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4">Action</th>
+                                <th class="px-6 py-4">Customer Id</th>
+                                <th class="px-6 py-4">Customer Name</th>
+                                <th class="px-6 py-4">Created By</th>
+                                <th class="px-6 py-4">Created On</th>
+                                <th class="px-6 py-4">Match Score</th>
+                                <th class="px-6 py-4">Risk Score</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white tabular-nums">
+                            <!-- DataTables will populate this -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var table;
+    $(document).ready(function () {
+        table = $('#example').DataTable({
+            "serverSide": true, 
+            "processing": true,
+            "dom": '<"flex flex-col md:flex-row justify-between items-center p-4 border-b border-gray-200"<"text-sm text-gray-600"l><"flex items-center space-x-2"f>>rt<"flex flex-col md:flex-row justify-between items-center p-4 bg-gray-50 border-t border-gray-200"<"text-sm text-gray-600"i><"text-sm"p>>',
+            "language": {
+                "search": "",
+                "searchPlaceholder": "Search records...",
+                "lengthMenu": "Show _MENU_ entries"
+            },
+            ajax: {
+                url: '/case/custompagination',
+                type: 'POST'
+            },
+            columns: [
+                {
+                    "data": null,
+                    "className": "px-6 py-4",
+                    "render": function (data, type, full, meta) { 
+                        return '<a class="text-[#2563EB] hover:text-[#1D4ED8] font-medium text-sm transition-colors" href="/case/process/' + full.id + '">Process</a>'; 
+                    }
+                },
+                { 
+                    data: "customerId",
+                    "className": "px-6 py-4 font-mono text-gray-600"
+                },
+                {
+                    "data": null,
+                    "className": "px-6 py-4 font-medium text-gray-900",
+                    "render": function (data, type, full) {
+                        return full['firstName'] + ' ' + full['middleName']+ ' ' + full['lastName'];
+                    }
+                },
+                { 
+                    data: "createdUser",
+                    "className": "px-6 py-4 text-gray-600"
+                },
+                { 
+                    data: "createdOnDB",
+                    "className": "px-6 py-4 text-gray-600"
+                },
+                { 
+                    data: "matchScore",
+                    "className": "px-6 py-4 text-gray-600"
+                },
+                { 
+                    data: "riskScore",
+                    "className": "px-6 py-4 text-gray-600"
+                }
+            ],
+            "drawCallback": function(settings) {
+                // Tailwind styling for DataTables controls
+                $('.dataTables_filter input').addClass('h-9 px-3 py-1 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-shadow w-64');
+                $('.dataTables_length select').addClass('h-9 px-3 py-1 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-shadow');
+                $('.paginate_button').addClass('px-3 py-1 border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-md mx-1 transition-colors');
+                $('.paginate_button.current').removeClass('bg-white text-gray-700 hover:bg-gray-50').addClass('bg-[#2563EB] text-white hover:bg-[#1D4ED8] border-transparent');
+                $('.paginate_button.disabled').addClass('opacity-50 cursor-not-allowed hover:bg-white');
+            }
+        });
+    });
+</script>

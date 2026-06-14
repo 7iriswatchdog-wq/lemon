@@ -1,0 +1,420 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+}
+@model AML.ViewModel.ViewModels.EWRA.EWRAModel
+<style>
+    #table-scroll {
+        overflow: scroll;
+        margin-top: 20px;
+    }
+
+    .table {
+        width: 150%;
+    }
+
+    #FraudTable {
+        width: 120%;
+        margin-left: 1.8px;
+        overflow: scroll;
+    }
+
+    .table td, .table th {
+        padding: .65rem;
+    }
+
+    table, th {
+        text-align: center;
+    }
+
+    td {
+        vertical-align: bottom;
+        text-align: left !important;
+    }
+
+    .form-control {
+        width: 100%;
+    }
+</style>
+<input name="b_print" id="b_print" type="button" onClick="printdiv('printDetails');" value=" Print " style="float:right;margin:20px;width:50px;">
+<br />
+<div id="printDetails" style="width:100%">
+    <br />
+    <div style="width:100%;display:none" id="logodiv">
+        <div style="width:98%;text-align:center;">
+            <h2>@companyName</h2>
+            <img src="~/img/brand-logo.svg" style="width:8%;float:right;" />
+        </div>
+        <br />
+    </div>
+    <br />
+    <div class="card-primary" id="reportViewDetails" style="width:100%;padding-left:1%;">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card card-primary card-body">
+                    <div class="px-6 py-4 border-b border-bordercolor">
+                        <h3 class="card-title">EWRA Report Of @companyName</h3>
+                    </div>
+                    <br />
+                    <div class="px-6 py-4 border-b border-bordercolor" style="background-color: darkgrey;">
+                        <h3 class="card-title">
+                            @localizer["Counterparty Risk"]
+                        </h3>
+                    </div>
+                    <br />
+                    <div class="risk-assessment-div">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label>@localizer["Created By"]</label>
+                                    <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" asp-for="@Model.EWRAQualitativeModel[0].QCreatedBy" readonly />
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label>@localizer["Created On"]</label>
+                                    <input type="text" asp-for="@Model.EWRAQualitativeModel[0].QCreatedOn" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" style="height:8px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-primary card-body">
+                    <div class="px-6 py-4 border-b border-bordercolor">
+                        <h3 class="card-title">@localizer["Risk Assessment Rating"]</h3>
+                    </div>
+                    <br>
+                    <div class="col-sm">
+                        <label for="txtDateofAssessment">@localizer["Average Score"]</label><br />
+                        <input type="text" asp-for="@Model.EWRAQualitativeModel[0].QCounterOverallScore" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" style="text-align:center;" readonly />
+                        <br />
+                        <label for="txtDateofAssessment">@localizer["Risk Assessment Level"]</label><br />
+                        @if (@Model.EWRAQualitativeModel[0].QCounterOverallRisk == "Low")
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button btn-success" type="button">@Model.EWRAQualitativeModel[0].QCounterOverallRisk</button>
+                        }
+                        else if (@Model.EWRAQualitativeModel[0].QCounterOverallRisk == "Medium")
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button btn-warning" type="button">@Model.EWRAQualitativeModel[0].QCounterOverallRisk</button>
+                        }
+                        else if (@Model.EWRAQualitativeModel[0].QCounterOverallRisk == "High")
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button btn-danger" type="button">@Model.EWRAQualitativeModel[0].QCounterOverallRisk</button>
+                        }
+                        else
+                        {
+                            <button id="btnCustomerRiskLevel" disabled class="dt-button-info form-control risk-button" type="button">@Model.EWRAQualitativeModel[0].QCounterOverallRisk</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="customerVolume" class="card card-primary">
+            <div class="px-6 py-4 border-b border-bordercolor">
+                <div class="row">
+                    <div class="col">
+                        <b>@localizer["Inherent Risk"]</b>
+                    </div>
+                </div>
+            </div>
+            <div id="customerInherent" class="p-6" style="overflow-y:scroll;">
+                <table class="table" id="assessmentTable" style="width:100%;">
+                    <thead style="display:table-header-group;background-color: white;opacity: 100;" @*style="display:table-header-group;background-color: white;opacity: 100;position:sticky;top:0;"*@>
+                        <tr class="row" style="width:100%;background-color:white" @*style="width:100%;background-color:white;flex-wrap:nowrap"*@>
+                            <th style="vertical-align:middle;width:15% !important;align-items:center;display:flex;">
+                                @localizer["Risk Description"]
+                            </th>
+                            <th style="vertical-align:middle;width:15% !important;align-items:center;display:flex;">
+                                @localizer["Inherent Risk"]
+                            </th>
+                            <th style="vertical-align:middle;width:9% !important;align-items:center;display:flex;">
+                                @localizer["Inherent Impact"]
+                            </th>
+                            <th style="vertical-align:middle;width:9% !important;align-items:center;display:flex;">
+                                @localizer["Inherent Likelihood"]
+                            </th>
+                            <th style="vertical-align:middle;width:10% !important;align-items:center;display:flex;">
+                                @localizer["Inherent Risk Rating"]
+                            </th>
+                            <th style="vertical-align:middle;width:9% !important;align-items:center;display:flex;">
+                                @localizer["Inherent Risk Score"]
+                            </th>
+                            <th style="vertical-align:middle;width:15% !important;align-items:center;display:flex;">
+                                Key Control / Mitigation
+                            </th>
+                            <th style="vertical-align:middle;width:9% !important;align-items:center;display:flex;">
+                                Key Control Score
+                            </th>
+                            <th style="vertical-align:middle;width:9% !important;align-items:center;display:flex;">
+                                Residual Risk
+                            </th>
+
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-bordercolor">
+                        @for (var i = 0; i < Model.EWRAQualitativeModel.Count; i++)
+                        {
+                            @for (var j = 0; j < Model.EWRAQualitativeModel[i].EWRARiskModel.Count; j++)
+                            {
+                                @for (var k = 0; k < Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData.Count; k++)
+                                {
+
+                                    <tr class="row" style="width:100%;background-color:white">
+
+                                        @*Risk Description*@
+                                        <td style="width:15%;">
+                                            @Model.EWRAQualitativeModel[i].EWRARiskModel[j].RiskDescription
+                                            <input type="hidden" id="hdnDescriptionId_@(i)_@(j)" asp-for="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].DescriptionId" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].DescriptionId" />
+                                        </td>
+                                        @*Inherent Risk*@
+                                        <td style="width:15%;">
+                                            @Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskDescription
+                                            <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskDescription" placeholder="0" disabled />
+                                        </td>
+                                        @*Inherent Impact*@
+                                        @if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentImpact == "High" || @Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentImpact == "HIGH")
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-danger">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentImpact</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentImpact" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentImpact == "Medium" || @Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentImpact == "MEDIUM")
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-warning">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentImpact</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentImpact" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentImpact == "Low" || @Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentImpact == "LOW")
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-success">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentImpact</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentImpact" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td style="width:9%;">
+
+                                                <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentImpact" placeholder="0" disabled />
+                                            </td>
+                                        }
+
+                                        @*Inherent Likelihood*@
+
+                                        @if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentLikelihood == "High" || @Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentLikelihood == "HIGH")
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-danger">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentLikelihood</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentLikelihood" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentLikelihood == "Medium" || @Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentLikelihood == "MEDIUM")
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-warning">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentLikelihood</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentLikelihood" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentLikelihood == "Low" || @Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentLikelihood == "LOW")
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-success">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentLikelihood</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentLikelihood" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td style="width:9%;">
+
+                                                <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentLikelihood" placeholder="0" disabled />
+                                            </td>
+                                        }
+
+                                        @*Inherent Risk Rating*@
+
+
+                                        @if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskRating == "High" || @Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskRating == "HIGH")
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-danger">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskRating</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskRating" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskRating == "Medium" || @Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskRating == "MEDIUM")
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-warning">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskRating</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskRating" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskRating == "Low" || @Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskRating == "LOW")
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-success">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskRating</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskRating" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td style="width:9%;">
+
+                                                <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskRating" placeholder="0" disabled />
+                                            </td>
+                                        }
+
+
+                                        @*Inherent Risk Score*@
+                                        @if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore >= 1 && @Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore < 3)
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-success">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore >= 3 && @Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore < 6)
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-warning">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore >= 6)
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-danger">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore == 9)
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-danger">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td style="width:9%;">
+                                                <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].InherentRiskModelData[k].InherentRiskScore" placeholder="0" disabled />
+                                            </td>
+                                        }
+
+                                        @* Key Control / Mitigation*@
+                                        <td style="width:15%;">
+                                            @Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].KeyControl
+                                            <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].KeyControl" placeholder="0" disabled />
+                                        </td>
+                                        @*Key Control Score*@
+
+                                        @if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].SelectedKey == "High" || @Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].SelectedKey == "HIGH")
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-danger">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].SelectedKey</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].SelectedKey" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].SelectedKey == "Medium" || @Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].SelectedKey == "MEDIUM")
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-warning">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].SelectedKey</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].SelectedKey" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].SelectedKey == "Low" || @Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].SelectedKey == "LOW")
+                                        {
+                                            <td style="width:9%;">
+                                                <button type="button" class="btn btn-success">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].SelectedKey</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].SelectedKey" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td style="width:9%;">
+
+                                                <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].SelectedKey" placeholder="0" disabled />
+                                            </td>
+                                        }
+
+                                        @*Residual Risk Score*@
+
+                                        @if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore >= 1 && @Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore < 3)
+                                        {
+                                            <td style="width:9%;">
+                                                <button  type="button" class="btn btn-success">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore >= 3 && @Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore < 6)
+                                        {
+                                            <td style="width:9%;">
+                                                <button  type="button" class="btn btn-warning">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore >= 6)
+                                        {
+                                            <td style="width:9%;">
+                                                <button  type="button" class="btn btn-danger">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else if (@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore == 9)
+                                        {
+                                            <td style="width:9%;">
+                                                <button  type="button" class="btn btn-danger">@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore</button>
+                                                <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td style="width:9%;">
+                                                <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" value="@Model.EWRAQualitativeModel[i].EWRARiskModel[j].KeyControlModelData[k].ResidualRiskScore" placeholder="0" disabled />
+                                            </td>
+                                        }
+                                    </tr>
+
+
+                                }
+                            }
+
+
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+        <br />
+        <div style="width:90%;display:none;padding-left:2%;" id="footdiv">
+            <p>@localizer["Computer generated report; hence no signature is required."]</p>
+        </div>
+</div>
+<script type="text/javascript">
+    function printdiv(printpage) {
+        var headstr1 = "<html><head>";
+        var headstr2 = "<title></title></head><body class='printDiv'>";
+        var footstr = "</body>";
+        var newstr = document.all.item(printpage).innerHTML;
+        var oldstr = document.body.innerHTML;
+        document.body.innerHTML = headstr1 + headstr2 + newstr + footstr;
+        document.getElementById("logodiv").style.display = "";
+        document.getElementById("footdiv").style.display = "";
+        //document.getElementById("b_print").style.display = "none";
+        window.print();
+        document.body.innerHTML = oldstr;
+        return false;
+    }
+</script>

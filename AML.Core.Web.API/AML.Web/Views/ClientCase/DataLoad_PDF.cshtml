@@ -1,0 +1,59 @@
+@using AML.ViewModel.ViewModels.CustomerCase
+@model List<CaseModel>
+@functions {
+    public bool ShowColumn(string colId)
+    {
+        var selectedColumns = ViewBag.SelectedColumns as string;
+        if (string.IsNullOrEmpty(selectedColumns)) return true;
+        return selectedColumns.Split(',').Contains(colId);
+    }
+}
+@{
+    Layout = "~/Views/Shared/_PdfLayout.cshtml";
+    ViewData["Title"] = "Bulk Upload Customer List Report";
+    ViewData["Orientation"] = ViewBag.Orientation ?? "portrait";
+}
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            @if (ShowColumn("batchId")) { <th>Batch ID</th> }
+            @if (ShowColumn("customerId")) { <th>Customer ID</th> }
+            @if (ShowColumn("name")) { <th>Customer Name</th> }
+            @if (ShowColumn("nationality")) { <th>Nationality</th> }
+            @if (ShowColumn("dob")) { <th>Date of Birth</th> }
+            @if (ShowColumn("source")) { <th>Source</th> }
+            @if (ShowColumn("matched")) { <th>Matched</th> }
+            @if (ShowColumn("status")) { <th>Status</th> }
+            @if (ShowColumn("createdOn")) { <th>Created On</th> }
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            int index = 1;
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td>@index</td>
+                    @if (ShowColumn("batchId")) { <td>@item.CaseRefId</td> }
+                    @if (ShowColumn("customerId")) { <td>@item.CustomerId</td> }
+                    @if (ShowColumn("name")) { <td>@string.Join(" ", new[] { item.FirstName, item.MiddleName, item.LastName }.Where(s => !string.IsNullOrEmpty(s)))</td> }
+                    @if (ShowColumn("nationality")) { <td>@item.Nationality</td> }
+                    @if (ShowColumn("dob")) { <td>@((item.DOB != null && item.DOB.Contains("0001")) ? "NA" : (item.DOB?.Split(' ')[0] ?? "-"))</td> }
+                    @if (ShowColumn("source")) { <td>@item.Source</td> }
+                    @if (ShowColumn("matched")) { <td>@(item.IsMatched == 1 ? "Yes" : "No")</td> }
+                    @if (ShowColumn("status")) { <td>@item.CaseStatus</td> }
+                    @if (ShowColumn("createdOn")) { <td>@item.CreatedOn</td> }
+                </tr>
+                index++;
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="10" style="text-align: center; color: #9CA3AF; padding: 20px;">No bulk upload records found matching filters.</td>
+            </tr>
+        }
+    </tbody>
+</table>

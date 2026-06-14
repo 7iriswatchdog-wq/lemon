@@ -1,0 +1,67 @@
+@using AML.ViewModel.ViewModels.AmlTracker
+@model LeaderboardVM
+@{
+    ViewData["Title"] = "QA Reviewer Leaderboard";
+    ViewData["ActiveTab"] = "Leaderboard";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+
+<section class="content py-6 px-4">
+    <div class="max-w-[1300px] mx-auto">
+        <div class="flex items-start justify-between mb-3 gap-2 flex-wrap">
+            <div>
+                <h1 class="text-2xl font-semibold text-slate-800">QA Reviewer Leaderboard</h1>
+                <p class="text-sm text-slate-500">QA decisions made in the last @Model.DaysBack day(s) per reviewer.</p>
+            </div>
+            <div class="flex gap-2">
+                <a href="?days=7" class="px-3 py-2 text-sm border border-slate-300 hover:bg-slate-50 rounded @(Model.DaysBack == 7 ? "bg-blue-50 border-blue-300" : "")">7d</a>
+                <a href="?days=30" class="px-3 py-2 text-sm border border-slate-300 hover:bg-slate-50 rounded @(Model.DaysBack == 30 ? "bg-blue-50 border-blue-300" : "")">30d</a>
+                <a href="?days=90" class="px-3 py-2 text-sm border border-slate-300 hover:bg-slate-50 rounded @(Model.DaysBack == 90 ? "bg-blue-50 border-blue-300" : "")">90d</a>
+                <a href="?days=365" class="px-3 py-2 text-sm border border-slate-300 hover:bg-slate-50 rounded @(Model.DaysBack == 365 ? "bg-blue-50 border-blue-300" : "")">1y</a>
+            </div>
+        </div>
+
+        <partial name="_TrackerTabs" />
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-left">
+                        <th class="px-3 py-2">Rank</th>
+                        <th class="px-3 py-2">Reviewer</th>
+                        <th class="px-3 py-2 text-right">Cases Reviewed</th>
+                        <th class="px-3 py-2 text-right">Approved</th>
+                        <th class="px-3 py-2 text-right">Rejected</th>
+                        <th class="px-3 py-2 text-right">Approval %</th>
+                        <th class="px-3 py-2 text-right">Avg Turnaround (d)</th>
+                        <th class="px-3 py-2">Last Activity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Reviewers.Any())
+                    {
+                        <tr><td colspan="8" class="px-3 py-12 text-center text-slate-500">No QA decisions in the last @Model.DaysBack day(s).</td></tr>
+                    }
+                    else
+                    {
+                        var rank = 1;
+                        foreach (var r in Model.Reviewers)
+                        {
+                            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                <td class="px-3 py-2 font-mono">@rank</td>
+                                <td class="px-3 py-2 font-medium">@r.ReviewerName</td>
+                                <td class="px-3 py-2 text-right font-semibold">@r.CasesReviewed</td>
+                                <td class="px-3 py-2 text-right text-emerald-700">@r.Approved</td>
+                                <td class="px-3 py-2 text-right text-rose-700">@r.Rejected</td>
+                                <td class="px-3 py-2 text-right">@r.ApprovalRate%</td>
+                                <td class="px-3 py-2 text-right">@r.AvgTurnaroundDays</td>
+                                <td class="px-3 py-2 text-slate-600 text-xs">@(r.LastActivity?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                            </tr>
+                            rank++;
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

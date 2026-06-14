@@ -1,0 +1,242 @@
+﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@{
+    ViewData["Title"] = localizer["Transaction Monitor Case Report"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+}
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var companyName = HttpContextAccessor.HttpContext.Session.GetString("SessCompanyName");
+}
+@model AML.ViewModel.ViewModels.TransactionMonitor.TMSCaseModel
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="~/plugins/jquery/jquery.min.js"></script>
+<input name="b_print" type="button" onClick="printdiv('reportViewDetails');" value=@localizer["Print"] style="float:right;margin:20px;">
+<br />
+<div class="card-primary" id="reportViewDetails">
+    <br />
+    <div style="width:100%;display:none" id="logodiv">
+        <div style="width:98%;text-align:center;">
+            <h2>@companyName</h2>
+            <img src="~/img/brand-logo.svg" style="width:8%;float:right;" />
+        </div>
+        <br />
+    </div>
+    <br />
+    <form role="form" id="frmDocument" class="form-horizontal" enctype="multipart/form-data" method="post">
+        <div class="card card-primary">
+            <div class="px-6 py-4 border-b border-bordercolor">
+                <div class="row">
+                    <div class="col">
+                        <b>@localizer["CUSTOMER PROFILE"]</b>
+                        <input type="hidden" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="hdnCaseId" asp-for="Id" name="Id">
+                    </div>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="row">
+                    <div class="col-4">
+                        <div class="form-group">
+                            <label for="txtReportCode">@localizer["Customer Id"]</label>
+                            <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtReportCode" readonly asp-for="CustomerId" name="CustomerId" placeholder=@localizer["Customer Id"]>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-group">
+                            <label for="txtEntityReference">@localizer["Customer Name"]</label>
+                            <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtEntityReference" readonly asp-for="CustomerName" name="CustomerName" placeholder=@localizer["Customer Name"]>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-group">
+                            <label for="txtFiuRefNumber">@localizer["Customer Risk Score"]</label>
+                            <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtFiuRefNumber" readonly asp-for="CustomerRiskScore" name="CustomerRiskScore" placeholder=@localizer["Customer Risk Score"]>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-4">
+                        <div class="form-group">
+                            <label for="txtRentityId">@localizer["Entity ID"]</label>
+                            <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtRentityId" readonly asp-for="EntityId" name="EntityId" placeholder=@localizer["Entity ID"]>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-group">
+                            <label for="txtRentityBranch">@localizer["Entity Branch"]</label>
+                            <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtRentityBranch" readonly asp-for="EntityBranch" name="EntityBranch" placeholder=@localizer["Entity Branch"]>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-group">
+                            <label for="txtReportingPerson">@localizer["User Id"]</label>
+                            <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtReportingPerson" readonly asp-for="UserId" name="UserId" placeholder=@localizer["User ID"]>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-4">
+                        <div class="form-group">
+                            <label for="txtReportIndicators">@localizer["Rule Violations"]</label>
+                            <input type="text" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtReportIndicators" readonly asp-for="RuleViolated[0].RuleName" name="RuleViolated" placeholder=@localizer["Rule Violations"]>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="card card-primary">
+            <div class="px-6 py-4 border-b border-bordercolor">
+                <div class="row">
+                    <div class="col">
+                        <b>@localizer["TRANSACTION DETAILS"]</b>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6" style="overflow-y:scroll;">
+                <table class="table" id="customerVolumeTable" style="width:99%;">
+                    <thead style="display:table-header-group;background-color: white;opacity: 100;">
+                        <tr class="row" style="width:100%;background-color:white">
+                            <th style="vertical-align:middle;width:9% !important;align-items:center;display:flex;">
+                                @localizer["Transaction Number"]
+                            </th>
+                            <th style="vertical-align:middle;width:9% !important;align-items:center;display:flex;">
+                                @localizer["Internal Ref Number"]
+                            </th>
+                            <th style="vertical-align:middle;width:8% !important;align-items:center;display:flex;">
+                                @localizer["Transaction Location"]
+                            </th>
+                            <th style="vertical-align:middle;width:9% !important;align-items:center;display:flex;">
+                                @localizer["Transaction Description"]
+                            </th>
+                            <th style="vertical-align:middle;width:9% !important;align-items:center;display:flex;">
+                                @localizer["Date Of Transaction"]
+                            </th>
+                            <th style="vertical-align:middle;width:7% !important;align-items:center;display:flex;">
+                                @localizer["User"]
+                            </th>
+                            <th style="vertical-align:middle;width:7% !important;align-items:center;display:flex;">
+                                @localizer["Authorizer"]
+                            </th>
+                            <th style="vertical-align:middle;width:7% !important;align-items:center;display:flex;">
+                                @localizer["Currency"]
+                            </th>
+                            <th style="vertical-align:middle;width:7% !important;align-items:center;display:flex;">
+                                @localizer["Amount"]
+                            </th>
+                            <th style="vertical-align:middle;width:7% !important;align-items:center;display:flex;">
+                                @localizer["Product Code"]
+                            </th>
+                            <th style="vertical-align:middle;width:7% !important;align-items:center;display:flex;">
+                                @localizer["Product"]
+                            </th>
+                            <th style="vertical-align:middle;width:7% !important;align-items:center;display:flex;">
+                                @localizer["Beneficiary"]
+                            </th>
+                            <th style="vertical-align:middle;width:7% !important;align-items:center;display:flex;">
+                                @localizer["Goods/Services"]
+                            </th>
+                        </tr>
+                    </thead>
+                    @for (var i = 0; i < @Model.TmsTransactionModel.Count; i++)
+                    {
+                        <tr class="row" style="text-align:left !important">
+                            <td style="width:9%;">
+                                @Model.TmsTransactionModel[i].TransactionNumber
+                            </td>
+                            <td style="width:9%;">
+                                @Model.TmsTransactionModel[i].InternalRefNumber
+                            </td>
+                            <td style="width:8%;">
+                                @Model.TmsTransactionModel[i].TransactionLocation
+                            </td>
+                            <td style="width:9%;">
+                                @Model.TmsTransactionModel[i].TransactionDescription
+                            </td>
+                            <td style="width:9%;">
+                                @Model.TmsTransactionModel[i].TransactionDate
+                            </td>
+                            <td style="width:7%;">
+                                @Model.TmsTransactionModel[i].User
+                            </td>
+                            <td style="width:7%;">
+                                @Model.TmsTransactionModel[i].Authorizer
+                            </td>
+                            <td style="width:7%;">
+                                @Model.TmsTransactionModel[i].Currency
+                            </td>
+                            <td style="width:7%;">
+                                @Model.TmsTransactionModel[i].Amount
+                            </td>
+                            <td style="width:7%;">
+                                @Model.TmsTransactionModel[i].ProductCode
+                            </td>
+                            <td style="width:7%;">
+                                @Model.TmsTransactionModel[i].Product
+                            </td>
+                            <td style="width:7%;">
+                                @Model.TmsTransactionModel[i].Beneficiary
+                            </td>
+                            <td style="width:7%;">
+                                @Model.TmsTransactionModel[i].GoodServices
+                            </td>
+                        </tr>
+                    }
+                </table>
+            </div>
+        </div>
+        <div class="p-6">
+            <h3>@localizer["Case Action"]</h3>
+            <div class="row">
+                <div class="col-4">
+                    <div class="form-group">
+                        <label for="UpdatedStatus">@localizer["Status :"]</label>
+                        <input type="text" readonly class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="hdnStatus" asp-for="UpdatedStatus" name="UpdatedStatus" />
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="form-group">
+                        <label for="UpdatedByUSer">@localizer["Updated By :"]</label>
+                        <input type="text" readonly class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="hdnStatus" asp-for="UpdatedByUSer" name="UpdatedByUSer" />
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="form-group">
+                        <label for="UpdatedStatus">@localizer["Updated On :"]</label>
+                        <input type="text" readonly class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="hdnStatus" asp-for="UpdatedOn" name="UpdatedOn" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    <div class="form-group">
+                        <label for="txtDescription">@localizer["Remarks"]</label>
+                        <textarea rows="3" class="h-11 w-full rounded-lg border border-bordercolor px-3 text-[14px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" id="txtCaseActionRemarks" readonly asp-for="Remarks" name="Remarks" placeholder=@localizer["Remarks"]></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <br />
+    <div style="width:90%;display:none;padding-left:2%;" id="footdiv">
+        <p>Computer generated report; hence no signature is required.</p>
+    </div>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $(".se-pre-con").fadeOut("slow");
+    });
+    function printdiv(printpage) {
+        var headstr1 = "<html><head>";
+        var headstr2 = "<title></title></head><body class='printDiv'>";
+        var footstr = "</body>";
+        var newstr = document.all.item(printpage).innerHTML;
+        var oldstr = document.body.innerHTML;
+        document.body.innerHTML = headstr1 + headstr2 + newstr + footstr;
+        document.getElementById("logodiv").style.display = "";
+        document.getElementById("footdiv").style.display = "";
+        window.print();
+        document.body.innerHTML = oldstr;
+        return false;
+    }
+</script>

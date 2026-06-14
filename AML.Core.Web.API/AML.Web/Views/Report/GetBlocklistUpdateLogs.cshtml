@@ -1,0 +1,433 @@
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+
+@model AML.ViewModel.ViewModels.Report.ReportLogSearchModel
+
+@{
+    ViewData["Title"] = "Blocklist Update Logs";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .dt-loader {
+            position: relative;
+            width: 80px;
+            height: 20px;
+        }
+
+        .dt-loader div {
+            position: absolute;
+            top: 8px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #2563eb;
+            animation-timing-function: cubic-bezier(0,1,1,0);
+        }
+
+        .dt-loader div:nth-child(1) { left: 8px; animation: dt-anim1 0.6s infinite; }
+        .dt-loader div:nth-child(2) { left: 8px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(3) { left: 32px; animation: dt-anim2 0.6s infinite; }
+        .dt-loader div:nth-child(4) { left: 56px; animation: dt-anim3 0.6s infinite; }
+
+        @@keyframes dt-anim1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @@keyframes dt-anim2 { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+        @@keyframes dt-anim3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+
+        th.sortable {
+            cursor: pointer;
+            position: relative;
+            padding-right: 20px;
+        }
+
+        th.sortable::after {
+            content: "▲\A▼";
+            white-space: pre;
+            font-size: 10px;
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #bbb;
+            line-height: 1;
+            text-align: center;
+        }
+
+        th.sortable.active.asc::after { content: "▲"; color: #000; }
+        th.sortable.active.desc::after { content: '\A▼'; color: #000; }
+
+        /* Premium clickable rows */
+        #logsTableBody tr { cursor: pointer; transition: all .2s cubic-bezier(.25,.8,.25,1); position: relative; }
+        #logsTableBody tr:hover { background: linear-gradient(90deg, #eff6ff 0%, #f8fafc 100%) !important; transform: translateX(3px); box-shadow: 0 2px 12px rgba(59,130,246,.08), inset 4px 0 0 #3b82f6; }
+        #logsTableBody tr:hover td { color: #1e293b !important; }
+        #logsTableBody tr:hover td:first-child { color: #3b82f6 !important; }
+        #logsTableBody tr .row-arrow { opacity: 0; transform: translateX(-8px); transition: all .2s ease; color: #3b82f6; }
+        #logsTableBody tr:hover .row-arrow { opacity: 1; transform: translateX(0); }
+        #logsTableBody tr:active { transform: translateX(1px) scale(.998); }
+    </style>
+</head>
+
+<body class="bg-appbg min-h-screen text-textprimary">
+    @await Html.PartialAsync("_ExportModal")
+    <div id="loadingOverlay"
+         class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-[9999] hidden">
+        <div class="dt-loader">
+            <div></div><div></div><div></div><div></div>
+        </div>
+    </div>
+    
+    <div class="p-8 space-y-8 max-w-[1600px] mx-auto">
+        <div class="flex items-center gap-2 text-textmuted text-xs mb-2">
+            <span class="text-textprimary font-medium">Reports</span>
+            <i data-lucide="chevron-right" class="h-3 w-3"></i>
+            <span class="text-textprimary font-medium">Blocklist Update Logs</span>
+        </div>
+
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-textprimary tracking-tight">Blocklist Update Logs</h1>
+                <!-- <p class="text-textmuted text-sm mt-1">Review additions and updates to the internal blocklist.</p> -->
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="bg-surface rounded-xl border border-bordercolor p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-sm font-bold text-textprimary tracking-tight">Filter</h3>
+                <button type="button" onclick="clearFilters()" id="resetBtn" title="Reset filters" aria-label="Reset filters"
+                        class="bg-primary hover:bg-primary text-white font-bold h-10 w-10 inline-flex items-center justify-center rounded-md text-sm">
+                    <i data-lucide="rotate-ccw" class="h-4 w-4"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                <!-- Start Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Start Date</label>
+                    <input type="text" id="startDate" name="StartDate" placeholder="dd/MM/yyyy"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                </div>
+
+                <!-- End Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">End Date</label>
+                    <input type="text" id="endDate" name="EndDate" placeholder="dd/MM/yyyy"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                </div>
+
+                <!-- Source Dropdown -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Source</label>
+                    <select id="sourceFilter" name="Source"
+                            class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                        <option value="">Select</option>
+                        <option value="CBWL">Central Bank Watch List</option>
+                        <option value="BL">Black List</option>
+                        <option value="INTERNAL">Block List</option>
+                        <option value="UAE IEC LIST">UAE IEC LIST</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Apply Filters -->
+                    <button onclick="applyFilters()" id="applyBtn"
+                            class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white font-semibold h-10 px-5 rounded-md text-sm transition">
+                        Apply
+                    </button>
+
+                    <button type="button"
+                            onclick="showExportOptions()" title="Export" aria-label="Export"
+                            class="flex items-center justify-center border border-bordercolor bg-surface hover:bg-appbg text-textlabel font-semibold h-10 w-10 rounded-md text-sm transition focus:outline-none shadow-sm">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row gap-4 items-center w-full">
+                <!-- Search wrapper -->
+                <div class="relative flex-1 w-full">
+                    <i data-lucide="search" class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-textmuted"></i>
+                    <input type="text" id="searchInput" placeholder="Search"
+                           class="pl-10 h-11 w-full rounded-md border border-bordercolor bg-surface px-3 py-2 text-sm
+                                  ring-offset-white focus-visible:outline-none focus-visible:ring-2
+                                  focus-visible:ring-blue-500/20 focus-visible:border-blue-500
+                                  shadow-sm transition-all placeholder:text-textmuted">
+                </div>
+            </div>
+
+            <div class="bg-surface rounded-xl border border-bordercolor shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left whitespace-nowrap table-fixed">
+                        <thead class="text-[10px] text-textmuted bg-appbg border-b border-bordercolor">
+                            <tr>
+                                <th class="px-6 py-4 font-bold h-12">Created On</th>
+                                <th class="px-6 py-4 font-bold h-12">Customer Type</th>
+                                <th class="px-6 py-4 font-bold h-12">Customer Name</th>
+                                <th class="px-6 py-4 font-bold h-12">Nationality</th>
+                                <th class="px-6 py-4 font-bold h-12">DOB</th>
+                                @* <th class="px-6 py-4 font-bold h-12">ID Number</th> *@
+                                <th class="px-6 py-4 font-bold h-12">Datasets</th>
+                                
+                                <th class="px-6 py-4 font-bold h-12" style="width:40px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTableBody" class="divide-y divide-slate-100" style="font-size: 12px;">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-6 py-4 bg-appbg border-t border-bordercolor flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-bold text-textmuted uppercase tracking-wider">Show</label>
+                            <select id="pageSize" onchange="changePageSize()"
+                                    class="h-8 w-20 rounded-md border border-bordercolor bg-surface pl-3 pr-8 text-xs font-bold text-textlabel focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                        </div>
+                        <div class="h-4 w-px bg-slate-200"></div>
+                        <div class="text-xs font-bold text-textmuted uppercase tracking-wider">
+                            Showing <span id="showingStart" class="text-textprimary">0</span> - <span id="showingEnd" class="text-textprimary">0</span>
+                            <span class="mx-1 text-slate-300">of</span>
+                            <span id="totalRecords" class="text-textprimary">0</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button id="prevBtn" onclick="previousPage()" title="Previous page" aria-label="Previous page"
+                                class="h-8 w-8 flex items-center justify-center text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                            <i data-lucide="chevron-left" class="h-3.5 w-3.5"></i>
+                        </button>
+                        <button id="nextBtn" onclick="nextPage()" title="Next page" aria-label="Next page"
+                                class="h-8 w-8 flex items-center justify-center text-xs font-bold text-textlabel bg-surface border border-bordercolor rounded-md hover:bg-appbg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
+                            <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+        <iframe id="pdfExportFrame" style="position: absolute; left: -9999px; visibility: hidden; width: 1024px; height: 100%;"></iframe>
+    </div>
+
+    <script>
+        let pageSize = 10;
+        let currentPage = 1;
+        let totalRecords = 0;
+        let drawCounter = 1;
+
+        $(document).ready(function () {
+            lucide.createIcons();
+            
+            flatpickr("#startDate", { dateFormat: "d/m/Y", defaultDate: "@Model.StartDate.ToString("dd/MM/yyyy")" });
+            flatpickr("#endDate", { dateFormat: "d/m/Y", defaultDate: "@Model.EndDate.ToString("dd/MM/yyyy")" });
+
+            loadData();
+        });
+
+        function formatDate(dateString) {
+            if (!dateString) return { date: '', time: '' };
+
+            const date = new Date(dateString);
+
+            return {
+                date: date.toLocaleDateString('en-GB'),
+                time: date.toLocaleTimeString('en-GB', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                })
+            };
+        }
+        function formatDateTime(dateStr) {
+        if (!dateStr) return { date: '-', time: '-' };
+
+        const d = new Date(dateStr);
+
+        return {
+            date: d.toLocaleDateString('en-GB'), // 20/02/2026
+            time: d.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',   // ✅ added
+                hour12: true
+            }) // 06:43:15 PM
+        };
+    }
+
+        function applyFilters() {
+            currentPage = 1;
+            loadData();
+        }
+
+        function clearFilters() {
+            window.location.reload();
+        }
+
+        function formatDate(value) {
+            if (!value) return null;
+            if (value.includes('/')) {
+                let parts = value.split('/');
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            return value;
+        }
+
+        function loadData() {
+            $("#loadingOverlay").removeClass("hidden");
+            $.ajax({
+                url: '/Report/GetBlocklistUpdateList',
+                type: 'POST',
+                data: {
+                    draw: drawCounter++,
+                    start: (currentPage - 1) * pageSize,
+                    length: pageSize,
+                    search: { value: $('#searchInput').val() },
+                    startDate: formatDate($("#startDate").val()),
+                    endDate: formatDate($("#endDate").val()),
+                    source: $("#sourceFilter").val()
+                },
+                success: function (resp) {
+                    renderTable(resp.data);
+                    totalRecords = resp.recordsFiltered;
+                    updatePagination();
+                },
+                complete: function () {
+                    $("#loadingOverlay").addClass("hidden");
+                }
+            });
+        }
+
+        function renderTable(data) {
+            const tbody = $('#logsTableBody').empty();
+            if (!data || data.length === 0) {
+                tbody.append('<tr><td colspan="8" class="h-24 text-center text-textmuted">No client records found.</td></tr>');
+                return;
+            }
+            console.log(data);
+            data.forEach(row => {
+                const idNumber = row.iddetails && row.iddetails.length > 0 ? row.iddetails[0].idnumber : '-';
+                const dob = row.doblist && row.doblist.length > 0 ? row.doblist[0].dob : '-';
+                 const { date, time } = formatDate(row.createddate);
+            const created = formatDateTime(row.createddate);
+                
+                tbody.append(`
+                    <tr class="bg-surface border-b border-bordercolor transition-colors" onclick="window.location.href='/InternalWatchList/Edit/${row.uid}'" title="Click to edit ${row.fullname || 'entry'}">
+                        
+
+                        <td class="px-6 py-4 text-textmuted">
+                        <div class="text-xs text-textlabel">
+                                <div>${created?.date || '-'}</div>
+                                <div class="ml-2">
+                                    ${created?.time ? created.time.replace(/\s?(AM|PM)/i, '') : ''}
+                                </div>
+                            </div>
+                            </td>
+                         <td class="px-6 py-4">
+                           <span class="px-2 py-1 rounded-md text-[10px] tracking-wider">
+                                ${row.category 
+                                    ? row.category.charAt(0).toUpperCase() + row.category.slice(1).toLowerCase() 
+                                    : '-'}
+                            </span>
+                        </td>
+                            <td class="px-6 py-4 ">${row.fullname || '-'}</td>
+                            <td class="px-6 py-4 ">${row.nationality || '-'}</td>
+                            <td class="px-6 py-4 ">${dob}</td>
+                            <td class="px-6 py-4">${(row.type || '-').replace('UAE IEC LIST', 'UAE IEC')}</td>
+                        
+                        <td class="px-6 py-3 text-right">
+                            <svg class="row-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                        </td>
+                    </tr>
+                `);
+            });
+            lucide.createIcons();
+        }
+
+        function updatePagination() {
+            const start = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+            const end = Math.min(currentPage * pageSize, totalRecords);
+
+            $('#showingStart').text(start);
+            $('#showingEnd').text(end);
+            $('#totalRecords').text(totalRecords);
+
+            $('#prevBtn').prop('disabled', currentPage === 1);
+            $('#nextBtn').prop('disabled', end >= totalRecords);
+        }
+
+        function previousPage() { if (currentPage > 1) { currentPage--; loadData(); } }
+        function nextPage() { if (currentPage * pageSize < totalRecords) { currentPage++; loadData(); } }
+        function changePageSize() { pageSize = parseInt($('#pageSize').val()); currentPage = 1; loadData(); }
+
+        function showExportOptions() {
+            const columns = [
+                { id: "Type", label: "Type" },
+                { id: "Name", label: "Name" },
+                { id: "Nationality", label: "Nationality" },
+                { id: "DOB", label: "DOB" },
+                { id: "IDNumber", label: "ID Number" },
+                { id: "Source", label: "Source" },
+                { id: "CreatedOn", label: "Created On" }
+            ];
+
+            openExportModal({
+                getColumnsByActiveTab: () => columns,
+                onExport: (format, selectedColumns, orientation) => {
+                    if (format === 'pdf') {
+                        exportPDF(selectedColumns, orientation);
+                    } else {
+                        exportExcel(selectedColumns, orientation);
+                    }
+                }
+            });
+        }
+
+        function exportExcel(selectedColumns, orientation) {
+            const startDate = formatDate($("#startDate").val());
+            const endDate = formatDate($("#endDate").val());
+            const source = $("#sourceFilter").val();
+            const searchValue = $('#searchInput').val() || '';
+
+            toastr.info("Generating Excel report...");
+            window.location.href = `/Report/BlocklistUpdateLogsExportExcel?startDate=${startDate}&endDate=${endDate}&source=${source}&searchValue=${searchValue}&selectedColumns=${selectedColumns || ''}&orientation=${orientation || 'portrait'}`;
+        }
+
+        function exportPDF(selectedColumns, orientation) {
+            const startDate = formatDate($("#startDate").val());
+            const endDate = formatDate($("#endDate").val());
+            const source = $("#sourceFilter").val();
+            const searchValue = $('#searchInput').val() || '';
+
+            $("#loadingOverlay").removeClass("hidden").addClass("flex");
+            const url = `/Report/BlocklistUpdateLogs_PDF?startDate=${startDate}&endDate=${endDate}&source=${source}&searchValue=${searchValue}&selectedColumns=${selectedColumns || ''}&orientation=${orientation || 'portrait'}`;
+            $('#pdfExportFrame').attr('src', url);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+@using AML.ViewModel.ViewModels.ComplianceHub
+@using System.Linq
+@model SanctionsMatrixVM
+@{
+    ViewData["Title"] = "Sanctions Hit Matrix";
+    ViewData["ReportTitle"] = "Sanctions Hit Disposition Matrix";
+    ViewData["ReportSubtitle"] = "Cases broken down across the 8 hit categories. The heatmap intensity scales with the count.";
+    ViewData["Theme"] = "Screening";
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+
+    var max = new[] { Model.TruePepDomestic, Model.TruePepForeign, Model.TrueAdverseMedia, Model.TrueUaeUnSanction, Model.TrueOtherSanction, Model.PartialPepDomestic, Model.PartialPepForeign, Model.PartialAdverseMedia }.DefaultIfEmpty(0).Max();
+    string CellShade(int n) {
+        if (max == 0) return "#f8fafc";
+        var pct = n * 1.0 / max;
+        if (pct == 0) return "#f8fafc";
+        if (pct < .25) return "#fef3c7";
+        if (pct < .5)  return "#fde68a";
+        if (pct < .75) return "#fb923c";
+        return "#dc2626";
+    }
+    string CellTextColor(int n) {
+        if (max == 0) return "#64748b";
+        var pct = n * 1.0 / max;
+        return pct >= .5 ? "#fff" : "#0f172a";
+    }
+}
+
+<style>
+    .hm-grid { display:grid; grid-template-columns: 140px repeat(3, 1fr); gap:6px; background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; }
+    .hm-cell { padding:18px; border-radius:8px; text-align:center; font-weight:800; font-size:22px; }
+    .hm-axis { font-size:11px; text-transform:uppercase; font-weight:800; color:#475569; padding:18px; display:flex; align-items:center; justify-content:center; text-align:center; }
+    .hm-axis.row { justify-content:flex-end; padding-right:14px; }
+    .hm-cell .lbl { display:block; font-size:9px; text-transform:uppercase; font-weight:700; opacity:.8; margin-top:4px; letter-spacing:.04em; }
+</style>
+
+<section class="content py-6 px-4">
+    <div class="max-w-[1500px] mx-auto">
+        <partial name="_ReportShell" />
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            <div class="bg-white border border-slate-200 rounded-xl p-4 text-center"><div class="text-2xl font-extrabold text-slate-800">@Model.TotalCases</div><div class="text-xs uppercase font-bold text-slate-500 mt-1">Total cases</div></div>
+            <div class="bg-rose-50 border border-rose-200 rounded-xl p-4 text-center"><div class="text-2xl font-extrabold text-rose-700">@Model.CasesWithAnyHit</div><div class="text-xs uppercase font-bold text-rose-700 mt-1">Cases with any hit</div></div>
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center"><div class="text-2xl font-extrabold text-amber-700">@(Model.TruePepDomestic + Model.TruePepForeign)</div><div class="text-xs uppercase font-bold text-amber-700 mt-1">Confirmed PEP</div></div>
+            <div class="bg-purple-50 border border-purple-200 rounded-xl p-4 text-center"><div class="text-2xl font-extrabold text-purple-700">@(Model.TrueUaeUnSanction + Model.TrueOtherSanction)</div><div class="text-xs uppercase font-bold text-purple-700 mt-1">Confirmed sanction</div></div>
+        </div>
+
+        <div class="hm-grid mb-6">
+            <div></div>
+            <div class="hm-axis">PEP / Sanction / AM</div>
+            <div class="hm-axis">Sanctions specific</div>
+            <div class="hm-axis">Partial</div>
+            <!-- Row 1: PEP-Domestic -->
+            <div class="hm-axis row">PEP — Domestic</div>
+            <div class="hm-cell" style="background:@CellShade(Model.TruePepDomestic);color:@CellTextColor(Model.TruePepDomestic);">@Model.TruePepDomestic<span class="lbl">true</span></div>
+            <div class="hm-cell" style="background:#f8fafc;color:#cbd5e1;">—<span class="lbl">n/a</span></div>
+            <div class="hm-cell" style="background:@CellShade(Model.PartialPepDomestic);color:@CellTextColor(Model.PartialPepDomestic);">@Model.PartialPepDomestic<span class="lbl">partial</span></div>
+            <!-- Row 2: PEP-Foreign -->
+            <div class="hm-axis row">PEP — Foreign</div>
+            <div class="hm-cell" style="background:@CellShade(Model.TruePepForeign);color:@CellTextColor(Model.TruePepForeign);">@Model.TruePepForeign<span class="lbl">true</span></div>
+            <div class="hm-cell" style="background:#f8fafc;color:#cbd5e1;">—<span class="lbl">n/a</span></div>
+            <div class="hm-cell" style="background:@CellShade(Model.PartialPepForeign);color:@CellTextColor(Model.PartialPepForeign);">@Model.PartialPepForeign<span class="lbl">partial</span></div>
+            <!-- Row 3: Adverse Media -->
+            <div class="hm-axis row">Adverse Media</div>
+            <div class="hm-cell" style="background:@CellShade(Model.TrueAdverseMedia);color:@CellTextColor(Model.TrueAdverseMedia);">@Model.TrueAdverseMedia<span class="lbl">true</span></div>
+            <div class="hm-cell" style="background:#f8fafc;color:#cbd5e1;">—<span class="lbl">n/a</span></div>
+            <div class="hm-cell" style="background:@CellShade(Model.PartialAdverseMedia);color:@CellTextColor(Model.PartialAdverseMedia);">@Model.PartialAdverseMedia<span class="lbl">partial</span></div>
+            <!-- Row 4: UAE/UN Sanctions -->
+            <div class="hm-axis row">UAE / UN Sanction</div>
+            <div class="hm-cell" style="background:#f8fafc;color:#cbd5e1;">—<span class="lbl">n/a</span></div>
+            <div class="hm-cell" style="background:@CellShade(Model.TrueUaeUnSanction);color:@CellTextColor(Model.TrueUaeUnSanction);">@Model.TrueUaeUnSanction<span class="lbl">true</span></div>
+            <div class="hm-cell" style="background:#f8fafc;color:#cbd5e1;">—<span class="lbl">n/a</span></div>
+            <!-- Row 5: Other Sanctions -->
+            <div class="hm-axis row">Other Sanction</div>
+            <div class="hm-cell" style="background:#f8fafc;color:#cbd5e1;">—<span class="lbl">n/a</span></div>
+            <div class="hm-cell" style="background:@CellShade(Model.TrueOtherSanction);color:@CellTextColor(Model.TrueOtherSanction);">@Model.TrueOtherSanction<span class="lbl">true</span></div>
+            <div class="hm-cell" style="background:#f8fafc;color:#cbd5e1;">—<span class="lbl">n/a</span></div>
+        </div>
+
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">Recent cases with any hit</h3>
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50"><tr class="text-left text-xs uppercase font-bold text-slate-500"><th class="p-3">Case</th><th class="p-3">Customer</th><th class="p-3">Hit types</th><th class="p-3">Status</th><th class="p-3">Created</th></tr></thead>
+                <tbody>
+                @if (!Model.RecentCases.Any())
+                {
+                    <tr><td colspan="5" class="p-12 text-center text-slate-500">No screening hits recorded yet.</td></tr>
+                }
+                else
+                {
+                    foreach (var r in Model.RecentCases)
+                    {
+                        <tr class="border-t border-slate-100 hover:bg-slate-50">
+                            <td class="p-3 font-mono text-xs text-blue-700 font-semibold">#@r.CaseId</td>
+                            <td class="p-3"><div class="font-semibold text-slate-800">@r.FullName</div><div class="text-xs text-slate-500 font-mono">@r.CustomerCode</div></td>
+                            <td class="p-3"><div class="flex flex-wrap gap-1">@foreach(var h in (r.HitTypes ?? "").Split(", ")){<span class="text-[10px] px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-100 font-semibold">@h</span>}</div></td>
+                            <td class="p-3 text-xs text-slate-600">@r.Status</td>
+                            <td class="p-3 text-xs text-slate-500">@r.CreatedOn.ToString("yyyy-MM-dd")</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

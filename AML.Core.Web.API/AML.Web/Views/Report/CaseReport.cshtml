@@ -1,0 +1,1390 @@
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer localizer
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json;
+@inject IHttpContextAccessor HttpContextAccessor
+
+@model AML.ViewModel.ViewModels.Report.ReportLogSearchModel
+
+
+
+@{
+    ViewData["Title"] = localizer["Case Report"];
+    Layout = "~/Views/Shared/AdminLTE/_Layout.cshtml";
+    var Clientlogo = HttpContextAccessor.HttpContext.Session.GetString("SessLogoUrl");
+}
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Due Diligence - Search</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Premium page header */
+        .cr-header { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e293b 100%); border-radius: 16px; padding: 28px 32px; color: #fff; position: relative; overflow: hidden; }
+        .cr-header::before { content: ''; position: absolute; top: -50%; right: -20%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(59,130,246,.15) 0%, transparent 70%); }
+        .cr-header h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
+        .cr-header p { color: rgba(255,255,255,.6); font-size: 13px; margin-top: 4px; }
+        .cr-breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(255,255,255,.45); margin-bottom: 8px; }
+        .cr-breadcrumb span:last-child { color: rgba(255,255,255,.8); }
+        /* Stat pills in header */
+        .cr-stats { display: flex; gap: 12px; margin-top: 16px; }
+        .cr-stat { background: rgba(255,255,255,.08); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 8px 16px; display: flex; align-items: center; gap: 8px; }
+        .cr-stat .num { font-size: 18px; font-weight: 800; color: #fff; }
+        .cr-stat .lbl { font-size: 11px; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .04em; }
+        /* Filter card */
+        .cr-filter { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+        .cr-filter label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .03em; }
+        .cr-filter input, .cr-filter select { height: 40px; border-radius: 8px; border: 1px solid #e2e8f0; padding: 0 12px; font-size: 13px; transition: all .2s; background: #f8fafc; }
+        .cr-filter input:focus, .cr-filter select:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); outline: none; background: #fff; }
+        /* Premium table */
+        .cr-table-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+        .cr-table thead { background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%); }
+        .cr-table thead th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #64748b; padding: 14px 12px; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+        .cr-table tbody tr { transition: background .15s; }
+        .cr-table tbody tr:hover { background: #f0f7ff; }
+        .cr-table tbody td { padding: 14px 12px; font-size: 12.5px; color: #334155; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        /* Status badges */
+        .badge-status { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-approved { background: #d1fae5; color: #065f46; }
+        .badge-rejected { background: #fee2e2; color: #991b1b; }
+        .badge-onhold { background: #e0e7ff; color: #3730a3; }
+        .badge-closed { background: #f1f5f9; color: #475569; }
+        .badge-smr { background: #fae8ff; color: #86198f; }
+        /* View link */
+        .cr-view-link { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: #2563eb; padding: 4px 14px; border-radius: 6px; border: 1px solid #bfdbfe; background: #eff6ff; transition: all .2s; text-decoration: none; }
+        .cr-view-link:hover { background: #2563eb; color: #fff; border-color: #2563eb; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(37,99,235,.25); }
+        /* Search bar */
+        .cr-search { border-radius: 10px; border: 1px solid #e2e8f0; background: #f8fafc; height: 44px; padding-left: 40px; transition: all .2s; }
+        .cr-search:focus { background: #fff; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+        /* Score pill */
+        .score-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; padding: 2px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+        .score-high { background: #fee2e2; color: #dc2626; }
+        .score-mid { background: #ffedd5; color: #ea580c; }
+        .score-low { background: #d1fae5; color: #059669; }
+        /* Risk text */
+        .risk-high { color: #dc2626; font-weight: 700; }
+        .risk-medium { color: #f59e0b; font-weight: 700; }
+        .risk-low { color: #10b981; font-weight: 700; }
+        /* Buttons */
+        .cr-btn-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; font-weight: 600; height: 40px; padding: 0 20px; border-radius: 8px; font-size: 13px; border: none; cursor: pointer; transition: all .2s; box-shadow: 0 1px 3px rgba(37,99,235,.2); }
+        .cr-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,.3); }
+        .cr-btn-outline { background: #fff; color: #334155; font-weight: 600; height: 40px; padding: 0 20px; border-radius: 8px; font-size: 13px; border: 1px solid #e2e8f0; cursor: pointer; transition: all .2s; }
+        .cr-btn-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .cr-btn-reset { background: transparent; color: rgba(255,255,255,.7); font-weight: 600; height: 36px; padding: 0 16px; border-radius: 8px; font-size: 12px; border: 1px solid rgba(255,255,255,.2); cursor: pointer; transition: all .2s; }
+        .cr-btn-reset:hover { background: rgba(255,255,255,.1); color: #fff; }
+        /* Premium clickable rows */
+        .cr-table tbody tr { cursor: pointer; transition: all .2s cubic-bezier(.25,.8,.25,1); position: relative; }
+        .cr-table tbody tr:hover { background: linear-gradient(90deg, #eff6ff 0%, #f8fafc 100%) !important; transform: translateX(3px); box-shadow: 0 2px 12px rgba(59,130,246,.08), inset 4px 0 0 #3b82f6; }
+        .cr-table tbody tr:hover td { color: #1e293b !important; }
+        .cr-table tbody tr:hover td:first-child { color: #3b82f6 !important; }
+        .cr-table tbody tr .row-arrow { opacity: 0; transform: translateX(-8px); transition: all .2s ease; color: #3b82f6; }
+        .cr-table tbody tr:hover .row-arrow { opacity: 1; transform: translateX(0); }
+        .cr-table tbody tr:active { transform: translateX(1px) scale(.998); box-shadow: 0 1px 4px rgba(59,130,246,.06), inset 4px 0 0 #2563eb; }
+    </style>
+    <div id="loadingCaseDetails" class="fixed inset-0 bg-surface bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="dt-loader"><div></div><div></div><div></div><div></div></div>
+    </div>
+
+    <style>
+        .dt-loader {
+            position: relative;
+            width: 80px;
+            height: 20px;
+        }
+
+            .dt-loader div {
+                position: absolute;
+                top: 8px;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: #2563eb;
+                animation-timing-function: cubic-bezier(0,1,1,0);
+            }
+
+                .dt-loader div:nth-child(1) {
+                    left: 8px;
+                    animation: dt-anim1 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(2) {
+                    left: 8px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(3) {
+                    left: 32px;
+                    animation: dt-anim2 0.6s infinite;
+                }
+
+                .dt-loader div:nth-child(4) {
+                    left: 56px;
+                    animation: dt-anim3 0.6s infinite;
+                }
+
+        @@keyframes dt-anim1 {
+            0% {
+                transform: scale(0);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @@keyframes dt-anim2 {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(24px);
+            }
+        }
+
+        @@keyframes dt-anim3 {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(0);
+            }
+        }
+
+        #caseDetailsTbl, #caseDetailsTbl th, #caseDetailsTbl td {
+            border: none !important;
+            border-radius: 0 !important;
+        }
+
+        th.sortable {
+            cursor: pointer;
+            position: relative;
+            padding-right: 20px;
+        }
+
+            th.sortable::after {
+                content: "▲\A▼";
+                white-space: pre;
+                font-size: 10px;
+                position: absolute;
+                right: 6px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #bbb;
+                line-height: 1;
+                text-align: center;
+            }
+
+            th.sortable.active.asc::after {
+                content: "▲";
+                color: #000;
+            }
+
+            th.sortable.active.desc::after {
+                content: '\A▼';
+                color: #000;
+            }
+    </style>
+</head>
+
+<body class="bg-appbg min-h-screen text-textprimary">
+    @await Html.PartialAsync("_ExportModal")
+    <div class="p-6 md:p-8 space-y-6 max-w-[1600px] mx-auto">
+
+        <!-- Premium Header -->
+        <div class="cr-header">
+            <div class="cr-breadcrumb">
+                <span>Reports</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+                <span>Case Reports</span>
+            </div>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1>Case Reports</h1>
+                    <p>Manage and review all individual and corporate cases.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="clearFilters()" id="resetBtn" class="cr-btn-reset" title="Reset filters" aria-label="Reset filters"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+                </div>
+            </div>
+            <div class="cr-stats">
+                <div class="cr-stat"><div><div class="num" id="statTotal">0</div><div class="lbl">Total Cases</div></div></div>
+                <div class="cr-stat"><div><div class="num" id="statPending" style="color:#fbbf24">0</div><div class="lbl">Pending</div></div></div>
+                <div class="cr-stat"><div><div class="num" id="statApproved" style="color:#34d399">0</div><div class="lbl">Approved</div></div></div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <!-- Filters Section -->
+        <div class="cr-filter">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    <h3 class="text-sm font-bold text-textprimary tracking-tight">Filters</h3>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+
+                <!-- Start Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Start Date</label>
+                    @*  <input type="date" id="startDate" asp-for="StartDate" max="@(DateTime.Now.ToString("yyyy/MM/dd"))"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm"> *@
+
+                    <input type="text" id="startDate" name="StartDate"
+                           placeholder="dd/MM/yyyy"
+                           value="@Model.StartDate.ToString("yyyy-MM-dd")"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                    <span id="formattedDate" hidden></span>
+                </div>
+
+                <!-- End Date -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">End Date</label>
+                    <input type="text" id="endDate" name="EndDate"
+                           placeholder="dd/MM/yyyy"
+                           value="@Model.EndDate.ToString("yyyy-MM-dd")"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                    <span id="formattedEndDate" hidden></span>
+                    @*  <input type="date" id="endDate" asp-for="EndDate" max="@(DateTime.Now.ToString("yyyy/MM/dd"))"
+                           class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm"> *@
+                </div>
+
+                <!-- Customer Type -->
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Customer Type</label>
+                    <select id="customertype" asp-items="@Model.CustomerCategories"
+                            class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                        <option value="0">--SELECT--</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[12px] font-bold text-textmuted">Including Replace</label>
+                    <select id="includingDuplicate"
+                            class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                        <option value="0">--SELECT--</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+
+                <!-- Filter Type -->
+                <div id="extraFilters" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-textmuted">Filter Type</label>
+                    <select id="columnFilter"
+                            onchange="Colunmfilterfunction()"
+                            class="h-10 w-full rounded-md border border-bordercolor px-3 text-sm">
+                        <option value="">--Select--</option>
+                        @* <option value="CaseStatusChangeReason">Case Status Change Reason</option> *@
+                        <option value="ScreeningScore">Screening Score</option>
+                        <option value="RiskLevel">Risk Rating</option>
+                        <option value="User">User</option>
+                        <option value="Status">Status</option>
+                    </select>
+                </div>
+
+                <!-- Case Status Change -->
+                <div id="CaseStatusChangeReasonField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-textmuted">Case Status Change Reason</label>
+                    <input type="text" id="caseStatusChange"
+                           class="h-10 w-full border border-bordercolor rounded-md px-3 text-sm">
+                </div>
+
+                <!-- Screening Score -->
+                <div id="ScreeningScoreField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-textmuted">Screening Score</label>
+                    <select id="screeningScore"
+                            class="h-10 w-full border border-bordercolor rounded-md px-3 text-sm">
+                        <option value="">--Select--</option>
+                        <option value="70-80">70-80</option>
+                        <option value="80-90">80-90</option>
+                        <option value="90-100">90-100</option>
+                    </select>
+                </div>
+
+                <!-- User -->
+                <div id="UserField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-textmuted">User</label>
+                    <select id="user" asp-items="@Model.Users"
+                            class="h-10 w-full border border-bordercolor rounded-md px-3 text-sm">
+                        <option value="0">--SELECT--</option>
+                    </select>
+                </div>
+
+                <!-- Status -->
+                <div id="StatusField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-textmuted">Status</label>
+                    <select id="caseStatus" asp-items="@Model.CaseStatusList"
+                            class="h-10 w-full border border-bordercolor rounded-md px-3 text-sm">
+                        <option value="10">--SELECT--</option>
+                    </select>
+                </div>
+
+                <!-- Risk Level -->
+                <div id="RiskLevelField" class="space-y-2 hidden">
+                    <label class="text-[12px] font-bold text-textmuted">Risk Score</label>
+                    <select id="riskScore"
+                            class="h-10 w-full border border-bordercolor rounded-md px-3 text-sm">
+                        <option value="">--Select--</option>
+                        <option value="1">Low</option>
+                        <option value="2">Medium</option>
+                        <option value="3">High</option>
+                        <option value="4">Unclassified</option>
+                        @* <option value="3">High(O)</option> *@
+                    </select>
+                </div>
+
+                <!-- Buttons -->
+                @* <div class="flex gap-4 items-center">
+                    <button type="button" id="filterBtn"
+                            onclick="toggleExtraFilters()"
+                            class="h-10 w-10 flex items-center justify-center rounded-md border border-slate-300 hover:bg-slate-100 transition">
+                        <i data-lucide="filter" class="h-4 w-4 text-textlabel"></i>
+                    </button>
+                     
+                    <button onclick="applyFilters()"
+                            class="bg-primary hover:bg-primary-hover text-white font-bold h-10 px-4 rounded-md text-sm">
+                        Apply Filters
+                    </button>
+                    <button onclick="ExportList(false)"
+                            class="sm:ml-auto bg-surface border border-bordercolor shadow-sm
+                   hover:bg-appbg text-textlabel font-bold
+                   h-10 px-5 rounded-md flex items-center gap-2
+                   transition-colors text-sm">
+                        <i data-lucide="download" class="h-4 w-4"></i>
+                        Export
+                    </button>
+                </div> *@
+                <div class="flex items-end gap-3 md:col-span-2">
+
+    <!-- Filter Toggle -->
+    <button type="button"
+            id="filterBtn"
+            onclick="toggleExtraFilters()"
+            class="cr-btn-outline"
+            style="width: 120px; display:flex; align-items:center; justify-content:center; gap:6px;">
+        <i data-lucide="sliders-horizontal" class="h-4 w-4"></i>
+        More
+    </button>
+
+    <!-- Apply Filters -->
+    <button type="button"
+            onclick="applyFilters()"
+            id="applyBtn"
+            class="cr-btn-primary"
+            style="width: 120px; display:flex; align-items:center; justify-content:center; gap:6px;">
+        @* <i data-lucide="search" class="h-4 w-4"></i> *@
+        Apply
+    </button>
+
+    <!-- Export -->
+    <button type="button"
+            id="exportBtn"
+            onclick="showExportOptions()"
+            class="cr-btn-outline"
+            style="width: 120px; display:flex; align-items:center; justify-content:center; gap:6px;">
+        <i data-lucide="download" class="h-4 w-4"></i>
+        Export
+    </button>
+
+</div>
+
+            </div>
+        </div>
+        <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row gap-3 items-center w-full">
+
+                <!-- Search bar -->
+                <div class="relative flex-1 w-full">
+                    <i data-lucide="search"
+                       class="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-textmuted"></i>
+                    <input type="text"
+                           id="searchInput"
+                           placeholder="Search by Customer ID, Name..."
+                           onkeyup="filterTable()"
+                           class="pl-10 w-full cr-search text-sm placeholder:text-textmuted">
+                </div>
+                <input type="hidden" id="pageoption" name="option" value="@TempData["option"]" />
+                <input type="hidden" id="schedulerTrackerId" name="schedulerTrackerId" value="@TempData["schedulerTrackerId"]" />
+                <input type="hidden" id="tempCaseStatus" value="@TempData["caseStatus"]" />
+                <button onclick="searchCases()" id="searchButton" class="cr-btn-primary" style="height:44px;display:flex;align-items:center;gap:6px">
+                    <i data-lucide="search" class="h-4 w-4"></i> Search
+                </button>
+            </div>
+
+
+            <div class="cr-table-wrap">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left whitespace-nowrap cr-table">
+                        <thead>
+                            <tr>
+                                <th>Customer ID</th>
+                                <th>Created On</th>
+                                <th>Updated On</th>
+                                <th>Customer Type</th>
+                                <th>Customer Name</th>
+                                <th>Datasets</th>
+                                <th>Score</th>
+                                <th>Risk</th>
+                                <th>User</th>
+                                <th>Status</th>
+                                <th style="width:40px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="casesTableBody">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex items-center justify-between px-5 py-4 border-t border-slate-100" style="background:#fafbfc">
+                    <div class="flex items-center gap-2 text-xs text-slate-500">
+                        <span>Show</span>
+                        <select id="pageSize"
+                                style="height:30px;border-radius:6px;border:1px solid #e2e8f0;padding:0 8px;font-size:12px;background:#fff"
+                                onchange="changePageSize()">
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span>entries</span>
+                    </div>
+                    <div class="text-xs text-slate-400">
+                        Showing <span id="showingStart" class="font-semibold text-slate-700">0</span> to <span id="showingEnd" class="font-semibold text-slate-700">0</span> of <span id="totalCases" class="font-semibold text-slate-700">0</span> cases
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="prevBtn" onclick="previousPage()" title="Previous page" aria-label="Previous page" class="cr-btn-outline" style="height:30px;width:30px;padding:0;display:inline-flex;align-items:center;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+                        <button id="nextBtn" onclick="nextPage()" title="Next page" aria-label="Next page" class="cr-btn-outline" style="height:30px;width:30px;padding:0;display:inline-flex;align-items:center;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <iframe id="pdfExportFrame" style="position: absolute; left: -9999px; visibility: hidden; width: 1024px; height: 100%;"></iframe>
+</body>
+</html>
+
+<script type="text/javascript">
+  
+    lucide.createIcons();
+
+    let filteredCases = [];
+    let currentPage = 1;
+    let size = 10;
+    let totalRecords = 0;
+    let draw = 1;
+
+    /* ---------------------- Helpers ---------------------- */
+
+        function formatDate(dateString) {
+            if (!dateString) return { date: '', time: '' };
+
+            const date = new Date(dateString);
+
+            return {
+                date: date.toLocaleDateString('en-GB'),
+                time: date.toLocaleTimeString('en-GB', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                })
+            };
+        }
+
+
+            function toggleExtraFilters() {
+
+            const section = document.getElementById("extraFilters");
+            const icon = document.getElementById("filterIcon");
+
+            section.classList.toggle("hidden");
+
+            if (!section.classList.contains("hidden")) {
+                document.getElementById("filterBtn").classList.add("hidden");
+            }
+
+
+
+            // Reset column filter
+            document.getElementById("columnFilter").value = "";
+
+            // Hide all dynamic fields
+            // const dynamicFields = [
+            //     "CaseStatusChangeReasonField",
+            //     "ScreeningScoreField",
+            //     "UserField",
+            //     "StatusField",
+            //     "RiskLevelField"
+            // ];
+             const dynamicFields = [
+                "ScreeningScoreField",
+                "UserField",
+                "StatusField",
+                "RiskLevelField"
+            ];
+
+            dynamicFields.forEach(id => {
+                document.getElementById(id).classList.add("hidden");
+            });
+
+            resetFieldValues();
+        }
+        function resetFilters() {
+
+        document.getElementById("extraFilters").classList.add("hidden");
+
+        document.getElementById("filterBtn").classList.remove("hidden");
+        //document.getElementById("resetBtn").classList.hidden("hidden");
+
+        document.getElementById("columnFilter").value = "";
+
+        const dynamicFields = [
+            "ScreeningScoreField",
+            "UserField",
+            "StatusField",
+            "RiskLevelField"
+        ];
+
+        dynamicFields.forEach(id => {
+            document.getElementById(id).classList.add("hidden");
+        });
+
+        resetFieldValues();
+    }
+            function resetFieldValues(){
+
+            const fields = document.querySelectorAll("input, select");
+
+            fields.forEach(field => {
+
+                if (field.id === "user") {
+                    field.value = "0";
+                }
+                else if (field.id === "caseStatus") {
+                    field.value = "10";
+                }
+                else if (["screeningScore","caseStatusChange","riskScore"].includes(field.id)) {
+                    field.value = "";
+                }
+
+            });
+
+        }
+
+        function applyFilters() {
+        alert("Filters Applied");
+        // Your filter logic here
+    }
+        function Colunmfilterfunction() {
+
+        const selectedValue = document.getElementById("columnFilter").value;
+
+        // const fields = [
+        //     "CaseStatusChangeReasonField",
+        //     "ScreeningScoreField",
+        //     "UserField",
+        //     "StatusField",
+        //     "RiskLevelField"
+        // ];
+
+        const fields = [
+            "ScreeningScoreField",
+            "UserField",
+            "StatusField",
+            "RiskLevelField"
+        ];
+
+        // Hide and clear all fields
+        fields.forEach(fieldId => {
+
+            const field = document.getElementById(fieldId);
+
+            field.classList.add("hidden");
+
+            const inputs = field.querySelectorAll("input, select");
+
+            inputs.forEach(input => {
+
+                if (input.id === "user") {
+                    input.value = "0";
+                }
+                else if (input.id === "caseStatus") {
+                    input.value = "10";
+                }
+                else if (["screeningScore","caseStatusChange","riskScore"].includes(input.id)) {
+                    input.value = "";
+                }
+                else {
+                    input.value = "";
+                }
+
+            });
+
+        });
+
+        // Show selected field
+        if (selectedValue) {
+            document.getElementById(selectedValue + "Field").classList.remove("hidden");
+        }
+    }
+
+
+    function getStatusBadge(status) {
+        let styles = "";
+
+        switch ((status || '').toLowerCase()) {
+            case 'Approved': styles = "bg-blue-50 text-primary border-blue-100"; break;
+            case 'onhold': styles = "bg-orange-500 text-white border-orange-600"; break;
+            case 'waitlist': styles = "bg-indigo-600 text-white border-indigo-700"; break;
+            case 'white': styles = "bg-indigo-600 text-white border-indigo-700"; break;
+            case 'Rejected': styles = "bg-red-50 text-red-600 border-red-100"; break;
+            case 'transferred': styles = "bg-green-50 text-green-600 border-green-100"; break;
+            default: styles = "bg-appbg text-textmuted border-bordercolor";
+        }
+
+        return `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${styles}">${status || ''}</span>`;
+    }
+
+
+     function formatCaseStatus(statusText) {
+        if (!statusText) return '';
+
+        function getStatusClass(text) {
+            const t = text.toLowerCase().trim();
+
+            if (t.includes('pending')) return 'bg-yellow-100 text-yellow-800';
+            if (t.includes('hold')) return 'bg-orange-500 text-white';
+            if (t.includes('approved')) return 'bg-green-700 text-white';
+            if (t.includes('white')) return 'bg-indigo-600 text-white';
+            if (t.includes('wait')) return 'bg-indigo-600 text-white';
+            if (t.includes('auto')) return 'bg-green-100 text-green-800';
+            if (t.includes('transfer')) return 'bg-green-100 text-green-800';
+            if (t.includes('rejected')) return 'bg-red-100 text-red-800';
+
+            return 'bg-slate-100 text-textprimary';
+        }
+
+        // ✅ Corporate case
+        if (statusText.includes('| Shareholders:')) {
+
+            const [corpStatus, shInfo] = statusText.split('|');
+
+            const total = shInfo.match(/Total\s(\d+)/)?.[1] || 0;
+            const approved = shInfo.match(/Approved\s(\d+)/)?.[1] || 0;
+            const auto = shInfo.match(/Auto\s(\d+)/)?.[1] || 0;
+            const pending = shInfo.match(/Pending\s(\d+)/)?.[1] || 0;
+            const rejected = shInfo.match(/Rejected\s(\d+)/)?.[1] || 0;
+            const onhold = shInfo.match(/OnHold\s(\d+)/)?.[1] || 0;
+            const whitelist = shInfo.match(/Whitelist\s(\d+)/)?.[1] || 0;
+
+            const statusClass = getStatusClass(corpStatus);
+
+            // ✅ Build tooltip dynamically (hide 0 values)
+            const tooltipItems = [];
+
+            if (+auto > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">A:${auto}</span>`);
+            }
+            if (+approved > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-700 text-white">AP:${approved}</span>`);
+            }
+            if (+pending > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">P:${pending}</span>`);
+            }
+            if (+rejected > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">R:${rejected}</span>`);
+            }
+            if (+onhold > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-orange-500 text-white">OH:${onhold}</span>`);
+            }
+            if (+whitelist > 0) {
+                tooltipItems.push(`<span class="px-3 py-1.5 rounded-full text-xs font-semibold bg-indigo-600 text-white">W:${whitelist}</span>`);
+            }
+
+            const showTooltip = tooltipItems.length > 0;
+
+            return `
+                <div class="space-y-1 text-left">
+                    <div class="flex w-full items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+                        ${corpStatus.trim()}
+
+                        ${showTooltip ? `
+                        <div class="relative group">
+                            <svg class="w-5 h-5 text-gray-800 dark:text-white cursor-pointer"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 fill="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path fill-rule="evenodd"
+                                      d="M12 6a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-1.5 8a4 4 0 0 0-4 4 2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-3Zm6.82-3.096a5.51 5.51 0 0 0-2.797-6.293 3.5 3.5 0 1 1 2.796 6.292ZM19.5 18h.5a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-1.1a5.503 5.503 0 0 1-.471.762A5.998 5.998 0 0 1 19.5 18ZM4 7.5a3.5 3.5 0 0 1 5.477-2.889 5.5 5.5 0 0 0-2.796 6.293A3.501 3.501 0 0 1 4 7.5ZM7.1 12H6a4 4 0 0 0-4 4 2 2 0 0 0 2 2h.5a5.998 5.998 0 0 1 3.071-5.238A5.505 5.505 0 0 1 7.1 12Z"
+                                      clip-rule="evenodd"/>
+                            </svg>
+
+                            <div class="absolute left-1/2 top-full mt-2 -translate-x-1/2
+                                        hidden group-hover:flex gap-2
+                                        bg-surface p-2 rounded-lg shadow-lg border z-50">
+                                ${tooltipItems.join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ✅ Individual case
+        const statusClass = getStatusClass(statusText);
+
+        return `
+            <span class="flex w-full items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold ${statusClass}">
+                ${statusText}
+            </span>
+        `;
+    }
+    function getRiskScoreClass(riskScore) {
+             const score = (riskScore || '').toLowerCase().trim();
+
+        if (score.includes('low')) return 'text-green-500';
+        if (score.includes('medium')) return 'text-yellow-400';
+        if (score.includes('high')) return 'text-red-500';
+        if (!score || score === 'unclassified') return 'text-slate-400';
+
+            return 'text-black';
+    }
+
+    function getStatusBadgeClass(statusText) {
+        if (!statusText) return 'badge-closed';
+        const t = statusText.toLowerCase().trim();
+        if (t.includes('pending')) return 'badge-pending';
+        if (t.includes('approved') || t.includes('auto')) return 'badge-approved';
+        if (t.includes('rejected')) return 'badge-rejected';
+        if (t.includes('hold')) return 'badge-onhold';
+        if (t.includes('senior') || t.includes('smr') || t.includes('management')) return 'badge-smr';
+        if (t.includes('white')) return 'badge-approved';
+        return 'badge-closed';
+    }
+
+      function formatDateTime(dateStr) {
+        if (!dateStr) return { date: '-', time: '-' };
+
+        const d = new Date(dateStr);
+
+        return {
+            date: d.toLocaleDateString('en-GB'), // 20/02/2026
+            time: d.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',   // ✅ added
+                hour12: true
+            }) // 06:43:15 PM
+        };
+    }
+
+
+
+    /* ---------------------- SEARCH TRIGGER ---------------------- */
+
+    function searchCases() {
+        loadCases(1);
+    }
+
+    /* ---------------------- Load Data From Backend ---------------------- */
+
+
+        function loadCases(page = 1) {
+
+        $('#loadingCaseDetails').removeClass('hidden');
+
+        let searchValue = $('#searchInput').val() || '';
+
+        $.ajax({
+                url: '/Report/CaseReportCustompagination',
+            type: 'POST',
+            data: {
+                draw: draw,
+                start: (page - 1) * size,
+                length: size,
+
+                searchValue: searchValue,
+                search: { value: searchValue },
+
+                startDate: formatDate($('#startDate').val()),
+                endDate: formatDate($('#endDate').val()),
+                cust_type: $('#customertype').val(),
+                createdBy: $('#user').val(),
+                matchScore: $('#screeningScore').val(),
+                caseStatus: $('#caseStatus').val(),
+                caseStatusChange: $('#caseStatusChange').val(),
+                riskLevel: $('#riskScore').val(),
+                includingDuplicate :$('#includingDuplicate').val(),
+                option:$('#pageoption').val(),
+                schedulerTrackerId:$('#schedulerTrackerId').val()
+            },
+
+            success: function (res) {
+
+                console.log(res);
+
+                filteredCases = (res.data || []).map(r => ({
+                    id: r.id,
+                    customerId: r.customerID,
+                    customerName: `${r.firstName || ''} ${r.middleName || ''} ${r.lastName || ''}`.trim(),
+                    customerType: r.type,
+                    // customerType: r.customerType === 'I'
+                    //     ? 'Individual'
+                    //     : r.customerType === 'C'
+                    //         ? 'Corporate'
+                    //         : r.customerType === 'S'
+                    //             ? 'Shareholder'
+                    //             : '',
+
+                    cifNo: r.customerID,
+                    caseChangeStatus: r.caseChangeStatus || '',
+                    matchScore: r.matchScore || '',
+                    createdOn: r.createdOn,
+                    updatedOnDB: r.updatedOn,
+                    createdUser: r.createdUser,
+                    status: r.caseStatus || '',
+                    mainstatus:r.status || '',
+                    riskScore: r.customerType === 'I'
+                        ? r.individual_final_risk_score || ''
+                        : r.corporate_final_risk_score || '',
+
+                    riskSum: r.customerType === 'I'
+                        ? r.individual_final_risk_sum || ''
+                        : r.corporate_final_risk_sum || '',
+
+                    riskOverride: r.customerType === 'I'
+                        ? r.individual_Risk_Override || ''
+                        : r.corporate_Risk_Override || '',
+                    type: r.type || '',
+                    isDuplicate: r.isDuplicate || 0,
+                    replaceFlag:r.replaceFlag || 0,
+                    version:r.version
+                }));
+
+
+                /* -----------------------------
+                   ⭐ FRONTEND FILTER FOR High(O)
+                ----------------------------- */
+
+                    // let selectedRisk = $('#riskScore option:selected').text().trim();
+                    // console.log(selectedRisk);
+
+                    // if (selectedRisk === "High(O)") {
+                    //     filteredCases = filteredCases.filter(x =>
+                    //         x.riskScore?.toLowerCase().includes("high") &&
+                    //         x.riskOverride?.toLowerCase() === "override"
+                    //     );
+                    // }
+
+
+                totalRecords = res.recordsFiltered || 0;
+                currentPage = page;
+
+                renderTable();
+                updatePagination();
+
+                draw++;
+            },
+
+            complete: function () {
+                $('#loadingCaseDetails').addClass('hidden');
+            },
+
+            error: function () {
+                alert('Error loading data');
+            }
+        });
+    }
+
+        function formatDate(value) {
+        if (!value) return null;
+
+        // ✅ Already in yyyy-MM-dd
+        if (value.includes('-') && value.split('-')[0].length === 4) {
+            return value;
+        }
+
+        // ✅ Convert dd/MM/yyyy → yyyy-MM-dd
+        if (value.includes('/')) {
+            let parts = value.split('/');
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+
+        return null;
+    }
+
+    /* ---------------------- Render Table ---------------------- */
+
+    function renderTable() {
+
+        const tbody = document.getElementById('casesTableBody');
+         const option = '@TempData["option"]'; // ✅ get from Razor
+
+         console.log(option);
+
+        if (!filteredCases.length) {
+            tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="h-24 text-center">
+                    <div class="text-textmuted">No results found.</div>
+                </td>
+            </tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filteredCases.map(caseItem => {
+
+            const { date, time } = formatDate(caseItem.createdOn);
+            const created = formatDateTime(caseItem.createdOn);
+                const updated = formatDateTime(caseItem.updatedOnDB);
+                let baseStatus = "Pending"; // default
+            // const riskClass = getRiskScoreClass(caseItem.riskScore);
+                    const type = (caseItem.type || "").toLowerCase();
+                    let rowType = baseStatus.includes("Pending") ? 3 : 1;
+        // const processUrl =
+        //     (type === "individual" || type === "corporate")
+        //         ? `/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&type=${rowType}`
+        //         : `/report/ViewShareholderCaseDetails?id=${caseItem.customerId}&type=${rowType}`;
+            const optionValue = ('@TempData["option"]' || '').toLowerCase();
+    
+    const status = Number(caseItem.mainstatus);
+
+    // ✅ Fix condition
+    const isProcess = optionValue === "ongoing" && [6, 0, 7].includes(status);
+
+    // ✅ Dynamic URL
+    const url = isProcess
+        ? (type === "individual" || type === "corporate"
+            ? `/case/Process/${caseItem.id}`
+            : `/case/Shareholder/${caseItem.id}`)
+        : (type === "individual" || type === "corporate"
+            ? `/report/ViewIndividualCaseDetail?id=${caseItem.customerId}&version=${caseItem.version}&type=${rowType}`
+            : `/report/ViewShareholderCaseDetails?id=${caseItem.customerId}&version=${caseItem.version}&type=${rowType}`);
+
+    // ✅ Dynamic Text & Style
+    const linkText = isProcess ? "Process" : "View";
+    const linkClass = isProcess
+        ? "text-primary font-bold text-xs underline"
+        : "text-primary font-bold text-xs underline";
+
+            console.log("option:", optionValue);
+    console.log("status:", status);
+    console.log("type:", type);
+    console.log("isProcess:", isProcess);
+
+            return `
+            <tr onclick="setRowTypeAndNav(this, '${isProcess ? 'Process' : 'CaseReports'}', '${url}')">
+                <td class="font-semibold text-slate-700">${caseItem.customerId}</td>
+
+                        <td>
+                            <div class="text-xs text-slate-500">
+                                <div>${created?.date || '-'}</div>
+                                <div class="text-slate-400">${created?.time ? created.time.replace(/\s?(AM|PM)/i, '') : ''}</div>
+                            </div>
+                        </td>
+
+                        <td>
+                            ${updated ? `
+                                <div class="text-xs text-slate-500">
+                                    <div>${updated?.date || '-'}</div>
+                                    <div class="text-slate-400">${updated?.time ? updated.time.replace(/\s?(AM|PM)/i, '') : ''}</div>
+                                </div>
+                            ` : '<span class="text-slate-300">—</span>'}
+                        </td>
+
+                <td>
+                    <div class="flex items-center gap-2">
+                        <div style="width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:${caseItem.customerType === 'Individual' ? '#eff6ff' : '#f0fdf4'}">
+                            <i data-lucide="${caseItem.customerType === 'Individual' ? 'user' : 'building-2'}" style="width:12px;height:12px;color:${caseItem.customerType === 'Individual' ? '#3b82f6' : '#22c55e'}"></i>
+                        </div>
+                        <span style="font-size:12px">${caseItem.customerType}</span>
+                    </div>
+                </td>
+                <td class="font-medium">
+                        <div class="flex items-center gap-2">
+                            <span>${caseItem.customerName}</span>
+                            ${caseItem.isDuplicate == 1
+                                ? '<i class="w-4 h-4 text-red-600" data-lucide="copy" title="Duplicate"></i>'
+                                : ''}
+                            ${caseItem.replaceFlag == 1
+                                ? '<i class="w-4 h-4 text-blue-600" data-lucide="refresh-cw" title="Replaced"></i>'
+                                : ''}
+                        </div>
+                    </td>
+                
+
+                <td style="white-space:normal;max-width:120px;line-height:1.5">${caseItem.caseChangeStatus}</td>
+
+                <td>
+                    <span class="score-pill ${
+                        caseItem.matchScore < 70 ? 'score-low' :
+                        caseItem.matchScore < 85 ? 'score-mid' :
+                        'score-high'
+                    }">${caseItem.matchScore}</span>
+                </td>
+
+                <td>
+                    <span class="${
+                        caseItem.riskScore && caseItem.riskScore.toLowerCase().includes('high') ? 'risk-high' :
+                        caseItem.riskScore && caseItem.riskScore.toLowerCase().includes('medium') ? 'risk-medium' :
+                        caseItem.riskScore && caseItem.riskScore.toLowerCase().includes('low') ? 'risk-low' : 'text-slate-400'
+                    }">${
+                        caseItem.riskScore
+                            ? (caseItem.riskScore.toLowerCase().includes("high") && caseItem.riskOverride?.toLowerCase() === "override")
+                                ? "High(O)"
+                                : caseItem.riskScore.replace(" Risk", "").replace("High (O)", "High(O)")
+                            : "Unclassified"
+                    }</span>
+                </td>
+
+                <td><span style="font-size:12px">${caseItem.createdUser}</span></td>
+
+                <td>
+                    ${(() => {
+                        const status = formatCaseStatus(caseItem.status);
+                        if (status && status.includes('| Shareholders:')) {
+                            const parts = status.split('|');
+                            const mainStatus = parts[0].trim();
+                            const shInfo = parts[1].replace('Shareholders:', '').trim();
+                            const metrics = shInfo.split(',').map(m => m.trim()).filter(m => {
+                                const countMatch = m.match(/\d+$/);
+                                return countMatch && parseInt(countMatch[0]) > 0;
+                            });
+                            return `
+                                <span class="badge-status ${getStatusBadgeClass(mainStatus)}">${mainStatus}</span>
+                                ${metrics.length > 0 ? `<div style="font-size:9px;color:#94a3b8;margin-top:4px">${metrics.join(' · ')}</div>` : ''}
+                            `;
+                        }
+                        return `<span class="badge-status ${getStatusBadgeClass(status)}">${status}</span>`;
+                    })()}
+                </td>
+
+                <td class="text-right" style="padding-right:16px">
+                    <svg class="row-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                </td>
+
+            </tr>`;
+        }).join('');
+
+        lucide.createIcons();
+    }
+
+    /* ---------------------- Pagination ---------------------- */
+
+    function updatePagination() {
+
+        const start = totalRecords === 0 ? 0 : (currentPage - 1) * size + 1;
+        const end = Math.min(currentPage * size, totalRecords);
+
+        $('#showingStart').text(start);
+        $('#showingEnd').text(end);
+        $('#totalCases').text(totalRecords);
+
+        // Update header stats
+        $('#statTotal').text(totalRecords);
+        if (filteredCases && filteredCases.length) {
+            const pendingCount = filteredCases.filter(c => {
+                const s = formatCaseStatus(c.status);
+                return s && s.toLowerCase().includes('pending');
+            }).length;
+            const approvedCount = filteredCases.filter(c => {
+                const s = formatCaseStatus(c.status);
+                return s && s.toLowerCase().includes('approved');
+            }).length;
+            $('#statPending').text(pendingCount);
+            $('#statApproved').text(approvedCount);
+        }
+
+        $('#prevBtn').prop('disabled', currentPage === 1);
+        $('#nextBtn').prop('disabled', end >= totalRecords);
+    }
+
+    function previousPage() {
+        if (currentPage > 1)
+            loadCases(currentPage - 1);
+    }
+
+    function nextPage() {
+        if (currentPage * size < totalRecords)
+            loadCases(currentPage + 1);
+    }
+
+    /* ---------------------- Filters ---------------------- */
+
+    function applyFilters() {
+        loadCases(1);
+    }
+
+        function clearFilters() {
+
+            const today = new Date();
+            const lastYear = new Date();
+            lastYear.setFullYear(today.getFullYear() - 1);
+
+            function formatDate(date) {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                return `${dd}/${mm}/${yyyy}`;
+            }
+
+            // Reset values with defaults
+                 if (document.querySelector("#startDate")._flatpickr) {
+                document.querySelector("#startDate")._flatpickr.setDate(lastYear, true);
+            }
+
+            if (document.querySelector("#endDate")._flatpickr) {
+                document.querySelector("#endDate")._flatpickr.setDate(today, true);
+            }
+        $('#customertype').val(0);
+        $('#searchInput').val('');
+        $('#user').val(0);
+        $('#caseStatus').val(10);
+        $('#screeningScore').val('');
+        $('#columnFilter').val('');
+        $('#riskScore').val('');
+        $('#caseStatusChange').val('');
+
+        // Show filter icon again
+        document.getElementById("filterBtn").classList.remove("hidden");
+
+        // Hide extra filters section
+        document.getElementById("extraFilters").classList.add("hidden");
+
+        // Hide all dynamic filter fields
+        $('#CaseStatusChangeReasonField').addClass('hidden');
+        $('#ScreeningScoreField').addClass('hidden');
+        $('#UserField').addClass('hidden');
+        $('#StatusField').addClass('hidden');
+        $('#RiskLevelField').addClass('hidden');
+
+        checkFilterValues();
+
+        loadCases(1);
+
+        // ⭐ Clear table data
+    //     filteredCases = [];
+
+    //     const tbody = document.getElementById('casesTableBody');
+    //     tbody.innerHTML = `
+    //             <tr>
+    //                 <td colspan="8" class="h-24 text-center">
+    //                     <div class="text-textmuted">No results found.</div>
+    //                 </td>
+    //             </tr>`;
+
+    //     // ⭐ Reset pagination
+    //     $('#totalCases').text('0');
+    // $('#showingStart').text('0');
+    // $('#showingEnd').text('0');
+
+    }
+
+    /* ---------------------- Export ---------------------- */
+
+    function exportToExcel() {
+        alert('Export functionality here');
+    }
+
+    /* ---------------------- Initial Load ---------------------- */
+
+    $(document).ready(function () {
+
+        const savedSize = localStorage.getItem('pageSize');
+
+        if (savedSize) {
+            size = parseInt(savedSize);
+            $('#pageSize').val(savedSize);
+        }
+        loadCases(1);
+    });
+    function changePageSize() {
+        size = parseInt($('#pageSize').val());
+        localStorage.setItem('pageSize', size);
+        currentPage = 1;
+        loadCases(1);
+    }
+
+
+
+    function showExportOptions() {
+        const columns = [
+            { id: "customerID", label: "Customer ID" },
+            { id: "createdOn", label: "Created On" },
+            { id: "updatedOn", label: "Updated On" },
+            { id: "customerType", label: "Customer Type" },
+            { id: "customerName", label: "Customer Name" },
+            { id: "datasets", label: "Datasets" },
+            { id: "screeningScore", label: "Screening Score" },
+            { id: "riskRating", label: "Risk Rating" },
+            { id: "user", label: "User" },
+            { id: "status", label: "Status" }
+        ];
+
+        openExportModal({
+            getColumnsByActiveTab: () => columns,
+            onExport: (format, selectedColumns, orientation) => {
+                ExportList(format === 'pdf', selectedColumns, orientation);
+            }
+        });
+    }
+
+    function ExportList(isPDF, selectedColumns, orientation) {
+        const params = $.param({
+            startDate: formatDate($('#startDate').val()),
+            endDate: formatDate($('#endDate').val()),
+            cust_type: $('#customertype').val(),
+            createdBy: $('#user').val(),
+            matchScore: $('#screeningScore').val(),
+            caseStatus: $('#caseStatus').val(),
+            caseStatusChange: $('#caseStatusChange').val(),
+            riskLevel: $('#riskScore').val(),
+            includingDuplicate :$('#includingDuplicate').val(),
+            searchValue: ($('#searchInput').val() || ''),
+            selectedColumns: selectedColumns || '',
+            orientation: orientation || 'portrait'
+        });
+
+        if (isPDF) {
+            $('#loader').removeClass('hidden').addClass('flex');
+            const url = '/Report/CaseReport_PDF?' + params;
+            $('#pdfExportFrame').attr('src', url);
+        } else {
+            $("#loadingCaseDetails").show();
+            window.location = '/Report/ExportCaseReport?' + params;
+            $("#loadingCaseDetails").hide();
+        }
+    }
+
+        function checkFilterValues() {
+
+        const fields = [
+            document.getElementById("startDate"),
+            document.getElementById("endDate"),
+            document.getElementById("customertype"),
+            document.getElementById("columnFilter"),
+            document.getElementById("caseStatusChange"),
+            document.getElementById("screeningScore"),
+            document.getElementById("user"),
+            document.getElementById("caseStatus"),
+            document.getElementById("riskScore")
+        ];
+
+        const applyBtn = document.getElementById("applyBtn");
+        const exportBtn = document.getElementById("exportBtn");
+            const searchBtn = document.getElementById("searchButton");
+
+        let hasValue = false;
+
+        fields.forEach(field => {
+            if (!field) return;
+
+            if (field.tagName === "SELECT") {
+                if (field.value !== "" && field.value !== "0" && field.value !== "10") {
+                    hasValue = true;
+                }
+            } else {
+                if (field.value.trim() !== "") {
+                    hasValue = true;
+                }
+            }
+        });
+        if (applyBtn) applyBtn.disabled = !hasValue;
+        if (exportBtn) exportBtn.disabled = !hasValue;
+        if (searchBtn) searchBtn.disabled = !hasValue;
+
+        if (!hasValue) {
+            if (applyBtn) applyBtn.classList.add("opacity-50","cursor-not-allowed");
+            if (exportBtn) exportBtn.classList.add("opacity-50","cursor-not-allowed");
+            if (searchBtn) searchBtn.classList.add("opacity-50","cursor-not-allowed");
+        } else {
+            if (applyBtn) applyBtn.classList.remove("opacity-50","cursor-not-allowed");
+            if (exportBtn) exportBtn.classList.remove("opacity-50","cursor-not-allowed");
+            if (searchBtn) searchBtn.classList.remove("opacity-50","cursor-not-allowed");
+        }
+    }
+    
+    // Use more specific selectors for filter inputs to avoid conflicts
+    document.querySelectorAll("#filterSection input, #filterSection select").forEach(el => {
+        el.addEventListener("change", checkFilterValues);
+        el.addEventListener("input", checkFilterValues);
+    });
+    
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+        function initDatePicker(selector, defaultDate, isEndDate = false) {
+            return flatpickr(selector, {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                defaultDate: defaultDate,
+                allowInput: true,
+
+                // ✅ Conditional logic
+                // ...(isEndDate
+                //     ? { minDate: "today" }   // End Date → no past dates
+                //     : { maxDate: "today" }   // Start Date → no future dates
+                // )
+            });
+        }
+
+        // Get initial values from inputs (bound to Model)
+        const initialStartDate = document.querySelector("#startDate").value;
+        const initialEndDate = document.querySelector("#endDate").value;
+
+        // ✅ Start Date → Use model value or 1 year back
+        const startPicker = initDatePicker("#startDate", initialStartDate || new Date().fp_incr(-365));
+
+        // ✅ End Date → Use model value or today
+        const endPicker = initDatePicker("#endDate", initialEndDate || new Date(), true);
+
+        // ✅ Handle automated filtering from other pages (e.g. Scheduler Logs)
+        const tempStatus = document.getElementById("tempCaseStatus")?.value;
+        if (tempStatus && tempStatus !== "10" && tempStatus !== "") {
+            // Show the status field if it's hidden
+            document.getElementById("extraFilters").classList.remove("hidden");
+            document.getElementById("columnFilter").value = "Status";
+            Colunmfilterfunction();
+            
+            // Set the status value
+            document.getElementById("caseStatus").value = tempStatus;
+            
+            // Trigger search
+            setTimeout(() => {
+                searchCases();
+            }, 500);
+        }
+
+    });
+        function setRowType(element) {
+        const rowType = element.dataset.rowtype;
+        sessionStorage.setItem("rowType", rowType);
+    }
+    function setRowTypeAndNav(el, rowType, url) {
+        sessionStorage.setItem("rowType", rowType);
+        window.location.href = url;
+    }
+   
+    
+</script>
