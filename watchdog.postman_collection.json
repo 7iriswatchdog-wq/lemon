@@ -1,0 +1,1371 @@
+{
+  "info": {
+    "_postman_id": "42059ec5-c373-4f68-bfe9-adce034ecba4",
+    "name": "watchdog",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "29235985"
+  },
+  "item": [
+    {
+      "name": "Bearer Token",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": " {\r\n \"username\":\"digiuser\",\r\n \"password\":\"digiuser123\",\r\n \"CompanyName\":\"National\"\r\n} ",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{core_api_url}}/api/customer/authenticate",
+          "host": [
+            "{{core_api_url}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "authenticate"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData && jsonData.token) {",
+              "    pm.collectionVariables.set(\"bearer_token\", jsonData.token);",
+              "    console.log(\"Saved bearer_token:\", jsonData.token);",
+              "} else if (jsonData && jsonData.Token) {",
+              "    pm.collectionVariables.set(\"bearer_token\", jsonData.Token);",
+              "    console.log(\"Saved bearer_token:\", jsonData.Token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Screening Api",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{bearer_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n \"CustomerId\": \"Test{{customerId_num}}\",\r\n \"FirstName\": \"\",\r\n \"MiddleName\": \"\",\r\n \"LastName\": \"Dawood\",\r\n \"MatchCategory\": \"\",\r\n \"CustomerIdNumber\": \"\",\r\n \"Nationality\": \"India\",\r\n \"DOB\": \"\",\r\n \"CustomerType\": \"I\",\r\n \"Gender\":\"\",\r\n \"UserId\": \"Admin\",\r\n \"CompanyName\": \"National\",\r\n \"Threshold\":70\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{core_api_url}}/api/customer/Screening",
+          "host": [
+            "{{core_api_url}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "Screening"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var num = parseInt(pm.collectionVariables.get(\"customerId_num\")) || 6554;",
+              "    pm.collectionVariables.set(\"last_customerId\", \"Test\" + num);",
+              "    num++;",
+              "    pm.collectionVariables.set(\"customerId_num\", num.toString());",
+              "    console.log(\"Incremented customerId_num to:\", num);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Risk Api",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"CustomerId\": \"Test{{risk_customerId_num}}\",\r\n    \"CustomerName\": \"NMC healthcare\",\r\n    \"MainNationality\": \"\",\r\n    \"RiskCategory\": \"C\",\r\n    \"RiskTypeList\": [\r\n        {\r\n            \"Id\": \"187\",\r\n            \"RiskItemList\": [\r\n                {\r\n                    \"Id\": \"104591\",\r\n                    \"RiskItem\": \"Other Freezone entity\"\r\n                }\r\n            ]\r\n        },\r\n        {\r\n            \"Id\": \"1577\",\r\n            \"RiskItemList\": [\r\n                {\r\n                    \"Id\": \"104631\",\r\n                    \"RiskItem\": \"Aerospace, AirAirline/Aircraft,Airport, Harbor, Sea Port and Terminal Operations,Cruise Ship Operations, etc\"\r\n                }\r\n            ]\r\n        },\r\n        {\r\n            \"Id\": \"1583\",\r\n            \"RiskItemList\": [\r\n                {\r\n                    \"Id\": \"104744\",\r\n                    \"RiskItem\": \"LabGrown Diamond\"\r\n                }\r\n            ]\r\n        },\r\n         {\r\n            \"Id\": \"1585\",\r\n            \"RiskItemList\": [\r\n                {\r\n                    \"Id\": \"104597\",\r\n                    \"RiskItem\": \"Non face to face\"\r\n                }\r\n            ]\r\n        },\r\n        {\r\n            \"Id\": \"2524\",\r\n            \"RiskItemList\": [\r\n                {\r\n                    \"Id\": \"104736\",\r\n                    \"RiskItem\": \"Debit Card / Credit Card\"\r\n                }\r\n            ]\r\n\r\n        }\r\n\r\n\r\n    ],\r\n    \"UserId\": \"Admin\",\r\n    \"CompanyName\": \"National\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{core_api_url}}/api/risk/Assessment",
+          "host": [
+            "{{core_api_url}}"
+          ],
+          "path": [
+            "api",
+            "risk",
+            "Assessment"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var num = parseInt(pm.collectionVariables.get(\"risk_customerId_num\")) || 91;",
+              "    num++;",
+              "    var padded = num.toString().padStart(3, '0');",
+              "    pm.collectionVariables.set(\"risk_customerId_num\", padded);",
+              "    console.log(\"Incremented risk_customerId_num to:\", padded);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "corporate screening with share holders",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{bearer_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"CustomerId\": \"Test{{corporate_customerId_num}}\",\r\n    \"FirstName\": \"\",\r\n    \"MiddleName\": \"\",\r\n    \"LastName\": \"NMC healthcare\",\r\n    \"MatchCategory\": \"\",\r\n    \"CustomerIdNumber\": \"\",\r\n    \"Nationality\": \"India\",\r\n    \"DOB\": \"\",\r\n    \"CustomerType\": \"C\",\r\n    \"Gender\": \"\",\r\n    \"UserId\": \"Admin\",\r\n    \"CompanyName\": \"National\",\r\n    \"Threshold\": 90,\r\n    \"Shareholders\": [\r\n        {\r\n            \"FirstName\": \"\",\r\n            \"MiddleName\": \"\",\r\n            \"LastName\": \"dawood ibrahim\",\r\n            \"Nationality\": \"\",\r\n            \"DOB\": \"\",\r\n            \"Gender\": \"Male\"\r\n        },\r\n        {\r\n            \"FirstName\": \"\",\r\n            \"MiddleName\": \"\",\r\n            \"LastName\": \"donald\",\r\n            \"Nationality\": \"\",\r\n            \"DOB\": \"\",\r\n            \"Gender\": \"Female\"\r\n        }\r\n    ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{core_api_url}}/api/customer/Screening/withShareholder",
+          "host": [
+            "{{core_api_url}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "Screening",
+            "withShareholder"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var num = parseInt(pm.collectionVariables.get(\"corporate_customerId_num\")) || 1678;",
+              "    num++;",
+              "    pm.collectionVariables.set(\"corporate_customerId_num\", num.toString());",
+              "    console.log(\"Incremented corporate_customerId_num to:\", num);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "finding status api",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{bearer_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"CustomerId\": \"{{last_customerId}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{core_api_url}}/api/customer/status",
+          "host": [
+            "{{core_api_url}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "SirajTransactionmonitorFunded",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{bearer_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"CustomerId\": \"\",\r\n  \"TransactionNo\": \"0001234567\",\r\n  \"PartyNo\": \"00580849\",\r\n  \"CIF\": \"580849\",\r\n  \"DealNo\": \"000000003275\",\r\n  \"DealDate\": \"2024-08-05\",\r\n  \"TransactionDate\": \"2024-08-05\",\r\n  \"ProductClass\": \"SME Non Secured Mur\",\r\n  \"AccountName\": \"SKYLINE INTERIORS LL\",\r\n  \"AccountType\": \"Inventory CM - SME\",\r\n  \"Country\": \"UAE\",\r\n  \"Currency\": \"784\",\r\n  \"DealCY\": \"784\",\r\n  \"Amount\": 2000000,\r\n  \"EcoSector\": \"Construction\",\r\n  \"Email\": \"skyline@gmail.com\",\r\n  \"PaymentVia\": \"S.W.I.F.T\",\r\n  \"Method\": \"Fund Transfer\",\r\n  \"ProductType\": \"SME Non Secured Mur\",\r\n  \"PartyName\": \"SKYLINE INTERIORS LL\",\r\n  \"User\": \"NAH0170\",\r\n  \"CustomizedDeal\": \"3275/2024\",\r\n  \"Category\": \"MURABAHA\",\r\n  \"CYRate\": 1,\r\n  \"CVAmount\": 142500,\r\n  \"ValueDate\": \"2024-08-05\",\r\n  \"Tenure\": \"365 days\",\r\n  \"MaturityDate\": \"2025-08-05\",\r\n  \"DownPayment\": \"0.00\",\r\n  \"RelationOfficer\": \"0 - Mohammed Fazmie\",\r\n  \"ForexTransactionMethod\": \"Forex Confirmation\",\r\n  \"AccountNo\": \"000178411510600000000000\",\r\n  \"Plan\": \"000000003175\",\r\n  \"Periodfrom\": \"2024-08-05\",\r\n  \"To\": \"2025-08-05\",\r\n  \"XIRR\": \"13.431743276000\",\r\n  \"PlanPrincipal\": \"142500\",\r\n  \"DueDate\": \"2025-12-05\",\r\n  \"DueDateAction\": \"Settle Principal + Profit\",\r\n  \"PrincipalAmount\": 60,\r\n  \"ChargeAmount\": 0,\r\n  \"InsuranceAmount\": 0,\r\n  \"InstallmentAmount\": 12,\r\n  \"ProfitAmount\": 10.93,\r\n  \"RemainingAmount\": 0,\r\n  \"SettledAmount\": 0,\r\n  \"Status\": \"Approved\",\r\n  \"ClassName\": \"Harisha\",\r\n  \"CategoryName\": \"Bachi\",\r\n  \"UserId\": \"Compliance\",\r\n  \"CompanyName\": \"Dummy\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{scheduler_api_url_5005}}/api/transScreen/monitorfunded",
+          "host": [
+            "{{scheduler_api_url_5005}}"
+          ],
+          "path": [
+            "api",
+            "transScreen",
+            "monitorfunded"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Transaction screening",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{bearer_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "[\r\n    {\r\n        \"TranRefNo\": \"01-Test-TRN-12983\",\r\n        \"Branch\": \"10\",\r\n        \"BranchName\": \"BARKA\",\r\n        \"Remitter\": {\r\n            \"TranRefNo\": null,\r\n            \"Threshold\": 85,\r\n            \"CustomerId\": \"NAT2\",\r\n            \"Name\": \"foad salehi\",\r\n            \"Nationality\": \"INDIA\",\r\n            \"Dob\": \"\",\r\n            \"CustomerIdType\": \"CIVIL ID\",\r\n            \"CustomerIdNumber\": \"13689182\",\r\n            \"RemitterId\": null,\r\n            \"RemitterName\": null,\r\n            \"Bank\": {\r\n                \"TranRefNo\": null,\r\n                \"Bankname\": \"Remitter Bank\",\r\n                \"CountryOfIncorporation\": null,\r\n                \"Id\": \"Remitter Bank - 1\"\r\n            }\r\n        },\r\n        \"Beneficiary\": {\r\n            \"TranRefNo\": null,\r\n            \"Threshold\": 100,\r\n            \"CustomerId\": \"NAT2\",\r\n            \"Name\": \"Murthy\",\r\n            \"Nationality\": \"\",\r\n            \"Dob\": null,\r\n            \"CustomerIdType\": null,\r\n            \"CustomerIdNumber\": null,\r\n            \"RemitterId\": \"Test-C-12983\",\r\n            \"RemitterName\": \"Krishna Murthy\",\r\n            \"Bank\": {\r\n                \"TranRefNo\": null,\r\n                \"Bankname\": \"Beneficiary Bank\",\r\n                \"CountryOfIncorporation\": \"SRI LANKA\",\r\n                \"Id\": \"Test-BNK-001\"\r\n            }\r\n        },\r\n        \"Vendor\": {\r\n            \"TranRefNo\": null,\r\n            \"Name\": \"Vendor\",\r\n            \"CountryOfIncorporation\": null\r\n        },\r\n        \"Threshold\": 100,\r\n        \"CompanyName\":\"National\",\r\n        \"UserId\":\"Admin\"\r\n    }\r\n]",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{scheduler_api_url_5004}}/api/transScreen/screen",
+          "host": [
+            "{{scheduler_api_url_5004}}"
+          ],
+          "path": [
+            "api",
+            "transScreen",
+            "screen"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "middlewareAuthentication",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"username\":\"watchdog\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{middleware_api_url_18}}/users/authenticate",
+          "host": [
+            "{{middleware_api_url_18}}"
+          ],
+          "path": [
+            "users",
+            "authenticate"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData && (jsonData.token || jsonData.tokenString || jsonData.Token)) {",
+              "    var tok = jsonData.token || jsonData.tokenString || jsonData.Token;",
+              "    pm.collectionVariables.set(\"middleware_bearer_token_18\", tok);",
+              "    console.log(\"Saved middleware_bearer_token_18:\", tok);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Middlewarecorporatecollection",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"Username\": \"kycdigi\",\r\n    \"CompanyID\": \"645bb15673d814e5c4e9d19e\",\r\n    \"name\": \"KOREA NATIONAL INSURANCE   \",\r\n    \"threshold\": 70,\r\n    \"gender\": null,\r\n    \"countries\": null,\r\n    \"datasets\": [\r\n        \"PEP\",\r\n        \"SAN\",\r\n        \"RRE\",\r\n        \"INS\",\r\n        \"POI\",\r\n        \"REL\"\r\n    ],\r\n    \"dob\": null,\r\n    \"dobMatching\": null\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{middleware_api_url_3}}/business/ScreenBusiness",
+          "host": [
+            "{{middleware_api_url_3}}"
+          ],
+          "path": [
+            "business",
+            "ScreenBusiness"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "kycscreening&risk",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{bearer_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n\"CustomerId\": \"Test{{kyc_customerId_num}}\",\r\n\"FirstName\": \"\",\r\n\"MiddleName\": \"\",\r\n\"LastName\": \"Narendra Modi\",\r\n\"MatchCategory\": \"\",\r\n\"CustomerIdNumber\": \"784-1984-8686837-8\",\r\n\"CustomerIdType\": \"Emirates ID\",\r\n\"Nationality\": \"India\",\r\n\"DOB\": \"\",\r\n\"CustomerType\": \"I\",\r\n\"Gender\": \"\",\r\n\"UserId\": \"shadmin\",\r\n\"CompanyName\": \"siraj\",\r\n\"Threshold\": 70,\r\n\"OccupatinTypeTxt\": \"Salaried in public sector\",\r\n\"ResidenceStatus\": \"Resident\",\r\n\"ProductName\": \"Personal Finance\",\r\n\"HighestRiskProduct\": \"\",\r\n\"DeliveryChannelName\": \"Face to face\",\r\n\"Domesticpep\": \"No\",\r\n\"ForeignPep\": \"Yes\",\r\n\"RedFlags\": \"No\",\r\n\"SanctionMatch\": \"Yes\",\r\n\"UAEORUNSC\": \"No\",\r\n\"ModeOfPayment\": \"Cash (less than AED 15k)\",\r\n\"EntityTypeTxt\": \"\",\r\n\"BusinessType\": \"\",\r\n\"FATF\": \"\",\r\n\"PlaceofIncorporation\": \"\",\r\n\"HighNetworkIndividual\": \"\",\r\n\"Address\": \"testing\",\r\n\"EstablishmentDate\":\"2019-06-09\",\r\n\"PassportDetails\": [\r\n{\r\n\"PassportNo\": \"NHKP06937\",\r\n\"PassportIssusePlace\": \"DUBAI\",\r\n\"PassportIssuesDate\": \"2021-05-27\",\r\n\"PassportExpiryDate\": \"2026-05-26\"\r\n},\r\n{\r\n\"PassportNo\": \"LR1763656\",\r\n\"PassportIssusePlace\": \"BEYROUTH\",\r\n\"PassportIssuesDate\": \"2020-02-12\",\r\n\"PassportExpiryDate\":\"3030-02-11\"\r\n}\r\n]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{scheduler_api_url_5005}}/api/Kyc/kycScreening",
+          "host": [
+            "{{scheduler_api_url_5005}}"
+          ],
+          "path": [
+            "api",
+            "Kyc",
+            "kycScreening"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var num = parseInt(pm.collectionVariables.get(\"kyc_customerId_num\")) || 3658612;",
+              "    num++;",
+              "    pm.collectionVariables.set(\"kyc_customerId_num\", num.toString());",
+              "    console.log(\"Incremented kyc_customerId_num to:\", num);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactionmonitor",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n        \"CustomerId\":\"NAT2348\",\r\n        \"TranRefno\": \"Test821614\",\r\n        \"TranDate\": \"2023-07-16\",\r\n        \"TranType\": \"C\",\r\n        \"RemitterId\": \"Test762\",\r\n        \"RemitterName\": \"Sanjana Siri\",\r\n        \"RemitterType\": \"C\",\r\n        \"RemitterNationCode\": \"\",\r\n        \"RemitterCountryCode\": \"IR\",\r\n        \"Currency\": \"\",\r\n        \"Amount\": 0,\r\n        \"RemittancePurpose\": \"\",\r\n        \"BeneficiaryId\": \"\",\r\n        \"BeneficiaryName\": \"\",\r\n        \"BeneficiaryType\": \"C\",\r\n        \"BeneficiaryNationCode\": \"AE\",\r\n        \"BeneficiaryCountryCode\": \"LB\",\r\n        \"BeneficiaryCurrencyCode\": \"AUD\",\r\n        \"BeneficiaryBankname\": \"\",\r\n        \"BeneficiaryAccountNo\": \"\",\r\n        \"FCYAmount\": 0,\r\n        \"IPAddress\": null,\r\n        \"KioskID\": null,\r\n        \"RemitterCountry\": null,\r\n        \"BeneficiaryCountry\": null,\r\n        \"IsHighRiskCountry\":\"IR\",\r\n        \"IsHighRiskCountry\": \"\",\r\n        \"BeneficiaryBankCOI\": \"\",\r\n        \"status\": 0,\r\n        \"batchno\": 0,\r\n        \"tmsstatus\": 0,\r\n        \"createdby\": 0,\r\n        \"createdon\": \"2024-07-16\",\r\n        \"updatedby\": 0,\r\n        \"updatedon\": \"2023-02-17\",\r\n        \"sendmail\": 0,\r\n        \"DebitAmount\": 0,\r\n        \"RemitterMobile\": \"562412236\",\r\n        \"CreditAmount\": 0,\r\n        \"RemitterEmail\": \"\",\r\n        \"BeneficiaryCountryRisk\": 0,\r\n        \"BeneficiaryCreatedDate\": \"2023-02-22\",\r\n        \"EmailOrMobileChangedOn\": \"2023-03-17\",\r\n        \"RemittanceChannel\": null,\r\n        \"RemittanceType\": null,\r\n        \"ArticleNumber\": null,\r\n        \"IsWUTransaction\": false,\r\n        \"RemitterCountryRisk\": 0,\r\n        \"TranRisk\": null,\r\n        \"CustomerRisk\": null,\r\n        \"ServiceType\": null,\r\n        \"UserId\":\"Admin\",\r\n        \"CompanyName\":\"National\"\r\n    }\r\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{scheduler_api_url_5005}}/api/transScreen/monitor",
+          "host": [
+            "{{scheduler_api_url_5005}}"
+          ],
+          "path": [
+            "api",
+            "transScreen",
+            "monitor"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "SirajTransactionmonitorNonFunded",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{bearer_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"CustomerId\": \"\",\r\n    \"TransactionNo\": \"000LG/003/76214/2467\",\r\n    \"ApplicationNo\": \"04948792\",\r\n    \"CIF\": \"4944072\",\r\n    \"LGNBr\": \"000LG/003/76214/2467\",\r\n    \"ApplicationDate\": \"2023-12-32\",\r\n    \"LGType\": \"Performance\",\r\n    \"AccountName\": \"CIVELE CONTRACTING\",\r\n    \"Name\": \"CIVELE\",\r\n    \"Currency\": \"784\",\r\n    \"Amount\": 35000,\r\n    \"UltimateBeneficiary\": \"testing abu\",\r\n    \"Currency1\": \"784\",\r\n    \"UltimateBeneficiaryAddress\": \"ABU DHABI\",\r\n    \"Status\": \"Approved\",\r\n    \"ProductType\": \"Performance\",\r\n    \"AccountName1\": \"CIVELE CONTRACTING\",\r\n    \"LGRequestNo\": \"00000298210\",\r\n    \"Reference\": \"AUTO RENEWABLE\",\r\n    \"Domiciliation\": \"UAE\",\r\n    \"CYRate\": 1,\r\n    \"CVAmount\": 95330,\r\n    \"OriginalAmount\": 95330,\r\n    \"OriginalCVAmount\": 95330,\r\n    \"EffectiveDate\": \"2023-12-25\",\r\n    \"ClaimEndDate\": \"2025-04-29\",\r\n    \"Period\": \"366\",\r\n    \"ExpiryDate\": \"2025-02-22\",\r\n    \"ExtendedExpiryDate\": \"2024-12-15\",\r\n    \"UserId\": \"shadmin\",\r\n    \"CompanyName\": \"siraj\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{scheduler_api_url_5005}}/api/transScreen/monitornonfunded",
+          "host": [
+            "{{scheduler_api_url_5005}}"
+          ],
+          "path": [
+            "api",
+            "transScreen",
+            "monitornonfunded"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "SirajUpdateCIFNumber",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"ReferenceNumber\":\"SRI37411\",\r\n    \"CIFNumber\":\"8765432\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{scheduler_api_url_5005}}/api/customer/UpdateCIFNumber",
+          "host": [
+            "{{scheduler_api_url_5005}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "UpdateCIFNumber"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Individual Screening Api",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{individual_api_url}}/auth/Forgot",
+          "host": [
+            "{{individual_api_url}}"
+          ],
+          "path": [
+            "auth",
+            "Forgot"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Individual Bearer Token",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": " {\r\n \"username\":\"digiuser\",\r\n \"password\":\"digiuser123\"\r\n} ",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{individual_api_url}}/api/customer/authenticate",
+          "host": [
+            "{{individual_api_url}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "authenticate"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData && jsonData.token) {",
+              "    pm.collectionVariables.set(\"individual_bearer_token\", jsonData.token);",
+              "    console.log(\"Saved individual_bearer_token:\", jsonData.token);",
+              "} else if (jsonData && jsonData.Token) {",
+              "    pm.collectionVariables.set(\"individual_bearer_token\", jsonData.Token);",
+              "    console.log(\"Saved individual_bearer_token:\", jsonData.Token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "provident backend Api",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{provident_api_url}}/users/getUserById/86d13ba7-0d24-4cc4-996e-c79f5ec7ce13",
+          "host": [
+            "{{provident_api_url}}"
+          ],
+          "path": [
+            "users",
+            "getUserById",
+            "86d13ba7-0d24-4cc4-996e-c79f5ec7ce13"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "RequestedDocumentsupdateNotification ",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"UserId\": 21,\r\n    \"date\": \"231224\",\r\n    \"message\": \"Hii,Please upload the additional documents\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{provident_api_url}}/updateNotification ",
+          "host": [
+            "{{provident_api_url}}"
+          ],
+          "path": [
+            "updateNotification "
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "RequestDocumentsGetNotification",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{provident_api_url}}/getnotifications/67316add3c7c66cb254873be ",
+          "host": [
+            "{{provident_api_url}}"
+          ],
+          "path": [
+            "getnotifications",
+            "67316add3c7c66cb254873be "
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "MiddlewareIndividualCollection",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"Username\": \"kycdigi\",\r\n    \"CompanyID\": \"645bb15673d814e5c4e9d19e\",\r\n    \"name\": \"Dawood Ibrahim  \",\r\n    \"threshold\": 70,\r\n    \"gender\": null,\r\n    \"countries\": null,\r\n    \"datasets\": [\r\n        \"PEP\",\r\n        \"SAN\",\r\n        \"RRE\",\r\n        \"INS\",\r\n        \"POI\",\r\n        \"REL\"\r\n    ],\r\n    \"dob\": null,\r\n    \"dobMatching\": null\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{middleware_api_url_3_29}}/personal/newIndividual",
+          "host": [
+            "{{middleware_api_url_3_29}}"
+          ],
+          "path": [
+            "personal",
+            "newIndividual"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Provident kyc",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{provident_api_url}}/users/getUserById/67cf0b557beae2bc6e71ae4b ",
+          "host": [
+            "{{provident_api_url}}"
+          ],
+          "path": [
+            "users",
+            "getUserById",
+            "67cf0b557beae2bc6e71ae4b "
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "provident kyc saving deatils",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"userId\":\"67cf0b557beae2bc6e71ae4b\",\r\n    \"userType\":\"Individual\",\r\n    \"branchRef\":\"Dubai\",\r\n    \"propertyRef\":\"syam\",\r\n    \"agentName\":\"ranga\",\r\n    \"fullName\":\"Venkata syam vakkalanka\",\r\n    \"placeOfBirth\":\"vizag\",\r\n    \"gender\":\"Male\",\r\n    \"nationality\":\"Indian\",\r\n    \"martialStatus\":\"single\",\r\n    \"passportNo\":\"z5560535\",\r\n    \"passportExpiry\":\"date\",\r\n    \"emiratesIDNo\":\"123456\",\r\n    \"dualPassport\":\"yes\",\r\n    \"UAEResidency\":\"yes\",\r\n    \"addUnitNo\":\"102\",\r\n    \"addCity\":\"vizag\",\r\n    \"uboDeclaration\":\"yes\",\r\n    \"isFATF\":\"yes\",\r\n    \"isUNSC\":\"yes\",\r\n    \"isSanction\":\"yes\",\r\n    \"sanctionDetails\":\"yes\",\r\n    \"clientSignature\":\"vvsyam\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{provident_api_url}}/kyc/kyc",
+          "host": [
+            "{{provident_api_url}}"
+          ],
+          "path": [
+            "kyc",
+            "kyc"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ScreeningDatabaseLogs",
+      "protocolProfileBehavior": {
+        "disabledSystemHeaders": {
+          "content-length": true,
+          "host": true
+        }
+      },
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text",
+            "disabled": true
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"Individual\": 103,\r\n  \"corporate\": 11,\r\n  \"deleted\": 0,\r\n  \"updatedDate\": \"2025-05-13\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{scheduler_api_url_5004}}/api/customer/ScreeningDatabaselogs",
+          "host": [
+            "{{scheduler_api_url_5004}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "ScreeningDatabaselogs"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Individual Corporate with Shareholder",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"CustomerId\": \"Test{{corp_with_sh_customerId_num}}\",\r\n    \"FirstName\": \"\",\r\n    \"MiddleName\": \"\",\r\n    \"LastName\": \"Light Moon\",\r\n    \"MatchCategory\": \"\",\r\n    \"CustomerIdNumber\": \"\",\r\n    \"Nationality\": \"India\",\r\n    \"DOB\": \"\",\r\n    \"CustomerType\": \"C\",\r\n    \"Gender\": \"\",\r\n    \"UserId\": \"Admin\",\r\n    \"Threshold\": 90,\r\n    \"Shareholders\": [\r\n        {\r\n            \"FirstName\": \"\",\r\n            \"MiddleName\": \"\",\r\n            \"LastName\": \"Sanjana Siri\",\r\n            \"Nationality\": \"\",\r\n            \"DOB\": \"\",\r\n            \"Gender\": \"\"\r\n        },\r\n        {\r\n            \"FirstName\": \"\",\r\n            \"MiddleName\": \"\",\r\n            \"LastName\": \"Narendra Modi\",\r\n            \"Nationality\": \"\",\r\n            \"DOB\": \"\",\r\n            \"Gender\": \"\"\r\n        }\r\n    ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{scheduler_api_url_5005}}/api/customer/Screening/withShareholder",
+          "host": [
+            "{{scheduler_api_url_5005}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "Screening",
+            "withShareholder"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var num = parseInt(pm.collectionVariables.get(\"corp_with_sh_customerId_num\")) || 9019;",
+              "    num++;",
+              "    pm.collectionVariables.set(\"corp_with_sh_customerId_num\", num.toString());",
+              "    console.log(\"Incremented corp_with_sh_customerId_num to:\", num);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AmlTracker Authenticate",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": " {\r\n \"username\":\"digiuser\",\r\n \"password\":\"digiuser123\",\r\n \"CompanyName\":\"National\"\r\n} ",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{scheduler_api_url_5004}}/api/Aml/authenticate",
+          "host": [
+            "{{scheduler_api_url_5004}}"
+          ],
+          "path": [
+            "api",
+            "Aml",
+            "authenticate"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData && jsonData.token) {",
+              "    pm.collectionVariables.set(\"amltracker_bearer_token\", jsonData.token);",
+              "    console.log(\"Saved amltracker_bearer_token:\", jsonData.token);",
+              "} else if (jsonData && jsonData.Token) {",
+              "    pm.collectionVariables.set(\"amltracker_bearer_token\", jsonData.Token);",
+              "    console.log(\"Saved amltracker_bearer_token:\", jsonData.Token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AmlTracker bulk upload",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{amltracker_bearer_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"DateOfReceipt\": null,\r\n    \"DateOfResponse\": \"2025-01-20\",\r\n    \"TATDays\": \"10\",\r\n    \"ClientStatus\": \"NewClient\",\r\n    \"CustType\": \"CORPORATE\",\r\n    \"WDSCusId\": \"Est56247\",\r\n    \"EIIDCustId\": \"FG764\",\r\n    \"CustomerName\": \"Sanjana siri\",\r\n    \"Nationality\": \"AMERICAN SAMOA\",\r\n    \"PolicyType\": \"Business Secure\",\r\n    \"BusinessTeamRM\": \"Busin37426\",\r\n    \"ProductValueAED\": 87873,\r\n    \"IncomeAED\": 7647,\r\n    \"kyccheck\": \"YES\",\r\n    \"CommentsKYC\": \"testing\",\r\n    \"IDType\": \"corporate\",\r\n    \"IdNumber\": \"767576\",\r\n    \"DocumentExpiryDate\": \"2025-01-20\",\r\n    \"Pep\": \"NO\",\r\n    \"CommentsPep\": \"testing\",\r\n    \"UAEUSNCSanctions\": \"NO\",\r\n    \"CommentsUAEUSNC\": \"testing\",\r\n    \"AdverseMedia\": \"NO\",\r\n    \"CommentsAdverseMedia\": \"testing\",\r\n    \"OtherComments\": \"Other comments\",\r\n    \"RiskRating\": \"Medium\",\r\n    \"SRStatus\": \"NO\",\r\n    \"DateOfSRApproval\": \"2025-01-20\",\r\n    \"ComplianceApproved\": \"NO\",\r\n    \"SanctionScreeningDate\": \"2025-01-20\",\r\n    \"RiskAssessmentDate\": \"2025-01-20\",\r\n    \"Whitelisted\": \"YES\",\r\n    \"DateOfWhitelisting\": \"2025-01-20\",\r\n    \"CaseStatus\": \"Close\",\r\n    \"PaymentMode\": \"Bank Transfer\",\r\n    \"DeliveryChannel\": \"Non Face to Face\",\r\n    \"QcComments\": \"testeing comments\",\r\n    \"Profession\": \"Profession\",\r\n    \"ResidentStatus\": \"Non Resident\",\r\n    \"clientName\": \"National\",\r\n    \"UserName\": \"Sanjana\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{scheduler_api_url_5004}}/api/Aml/AmlTracker",
+          "host": [
+            "{{scheduler_api_url_5004}}"
+          ],
+          "path": [
+            "api",
+            "Aml",
+            "AmlTracker"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "user middle auth",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"username\":\"TBF\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{middleware_api_url_3}}/users/authenticate",
+          "host": [
+            "{{middleware_api_url_3}}"
+          ],
+          "path": [
+            "users",
+            "authenticate"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData && (jsonData.token || jsonData.tokenString || jsonData.Token)) {",
+              "    var tok = jsonData.token || jsonData.tokenString || jsonData.Token;",
+              "    pm.collectionVariables.set(\"middleware_bearer_token_3\", tok);",
+              "    console.log(\"Saved middleware_bearer_token_3:\", tok);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "user creation middleware",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{middleware_bearer_token_3}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"userLimit\": 500000,\r\n    \"username\": \"National\",\r\n    \"expiryDate\": \"2030-12-31\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{middleware_api_url_3}}/users/create",
+          "host": [
+            "{{middleware_api_url_3}}"
+          ],
+          "path": [
+            "users",
+            "create"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "User Updation Middleware",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{middleware_bearer_token_3}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"userLimit\": 500002,\r\n    \"username\": \"National\",\r\n    \"expiryDate\": \"2026-02-28\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{middleware_api_url_3}}/users/reset",
+          "host": [
+            "{{middleware_api_url_3}}"
+          ],
+          "path": [
+            "users",
+            "reset"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Personal details with id from Middleware Individual",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{middleware_api_url_3_29}}/personal/person/4387410",
+          "host": [
+            "{{middleware_api_url_3_29}}"
+          ],
+          "path": [
+            "personal",
+            "person",
+            "4387410"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Personal details with id  from Middleware corporate",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{middleware_api_url_3_29}}/business/person/904434",
+          "host": [
+            "{{middleware_api_url_3_29}}"
+          ],
+          "path": [
+            "business",
+            "person",
+            "904434"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "AllClientUsersMiddleware",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{middleware_bearer_token_18}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{middleware_api_url_18}}/users",
+          "host": [
+            "{{middleware_api_url_18}}"
+          ],
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Iman Developers Bearer tokern",
+      "request": {
+        "auth": {
+          "type": "inherit"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": " {\r\n \"username\":\"imanuser\",\r\n \"password\":\"imanuser@123\",\r\n \"CompanyName\":\"Iman Developers\"\r\n} ",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{iman_api_url}}/api/customer/authenticate",
+          "host": [
+            "{{iman_api_url}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "authenticate"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData && jsonData.token) {",
+              "    pm.collectionVariables.set(\"iman_bearer_token\", jsonData.token);",
+              "    console.log(\"Saved iman_bearer_token:\", jsonData.token);",
+              "} else if (jsonData && jsonData.Token) {",
+              "    pm.collectionVariables.set(\"iman_bearer_token\", jsonData.Token);",
+              "    console.log(\"Saved iman_bearer_token:\", jsonData.Token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Iman Developers screening with risk",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{iman_bearer_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": " {\"UserId\":\"Iman Developers\",\"Threshold\":85,\"ResidenceStatus\":\"FATF Jurisdiction & goods standing with FATF rating\",\"ProductName\":\"Buy / Sell Residential property (less than AED 10m)\",\"PlaceofIncorporation\":null,\"Nationality\":\"Indonesia\",\"ModeOfPayment\":\"Debit Card / Credit Card\",\"MatchCategory\":null,\"LastName\":\"Irvinna Tirta Kartadinata\",\"Gender\":\"Female\",\"FirstName\":null,\"DOB\":\"1977-10-28\",\"DeliveryChannelName\":\"Face to face\",\"CustomerType\":\"I\",\"CustomerIdType\":\"Passport\",\"CustomerIdNumber\":\"X1479370\",\"CustomerId\":\"a0MPm000006d5AsMAI5\",\"CompanyName\":\"Iman Developers\"}\r\n ",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{iman_api_url}}/api/Kyc/kycScreening",
+          "host": [
+            "{{iman_api_url}}"
+          ],
+          "path": [
+            "api",
+            "Kyc",
+            "kycScreening"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "SirajTransactionsScreening",
+      "request": {
+        "auth": {
+          "type": "inherit"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "[\r\n  {\r\n    \"TranRefNo\": \"01-Test-TRN-00008\",\r\n    \"Branch\": \"10\",\r\n    \"BranchName\": \"BARKA\",\r\n    \"Remitter\": {\r\n      \"Threshold\": 85,\r\n      \"CustomerId\": \"SRI1\",\r\n      \"Name\": \"Dawood\",\r\n      \"Nationality\": \"INDIA\",\r\n      \"Dob\": \"\",\r\n      \"CustomerIdType\": \"CIVIL ID\",\r\n      \"CustomerIdNumber\": \"13689182\",\r\n      \"RemitterId\": null,\r\n      \"RemitterName\": null,\r\n      \"Bank\": {\r\n        \"Bankname\": null,\r\n        \"CountryOfIncorporation\": null,\r\n        \"Id\": null\r\n      }\r\n    },\r\n    \"UserId\": \"Shadmin\",\r\n    \"CompanyName\": \"siraj\"\r\n  }\r\n]",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{scheduler_api_url_5005}}/api/transScreen/screen",
+          "host": [
+            "{{scheduler_api_url_5005}}"
+          ],
+          "path": [
+            "api",
+            "transScreen",
+            "screen"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "core_api_url",
+      "value": "https://localhost:5007",
+      "type": "string"
+    },
+    {
+      "key": "scheduler_api_url_5005",
+      "value": "https://localhost:5010",
+      "type": "string"
+    },
+    {
+      "key": "scheduler_api_url_5004",
+      "value": "https://localhost:5010",
+      "type": "string"
+    },
+    {
+      "key": "individual_api_url",
+      "value": "https://localhost:44374",
+      "type": "string"
+    },
+    {
+      "key": "middleware_api_url_18",
+      "value": "http://18.188.33.86:5091",
+      "type": "string"
+    },
+    {
+      "key": "middleware_api_url_3",
+      "value": "http://18.188.33.86:5091",
+      "type": "string"
+    },
+    {
+      "key": "middleware_api_url_3_29",
+      "value": "http://18.188.33.86:5091",
+      "type": "string"
+    },
+    {
+      "key": "provident_api_url",
+      "value": "https://provident.nationalcompliance.ae:5053",
+      "type": "string"
+    },
+    {
+      "key": "iman_api_url",
+      "value": "https://imandevelopers.watchdog.ae",
+      "type": "string"
+    },
+    {
+      "key": "bearer_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "individual_bearer_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "amltracker_bearer_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "iman_bearer_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "middleware_bearer_token_18",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "middleware_bearer_token_3",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customerId_num",
+      "value": "6554",
+      "type": "string"
+    },
+    {
+      "key": "corporate_customerId_num",
+      "value": "1678",
+      "type": "string"
+    },
+    {
+      "key": "risk_customerId_num",
+      "value": "091",
+      "type": "string"
+    },
+    {
+      "key": "kyc_customerId_num",
+      "value": "3658612",
+      "type": "string"
+    },
+    {
+      "key": "corp_with_sh_customerId_num",
+      "value": "9019",
+      "type": "string"
+    },
+    {
+      "key": "last_customerId",
+      "value": "NAT331",
+      "type": "string"
+    }
+  ]
+}

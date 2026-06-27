@@ -1,0 +1,596 @@
+{
+  "meta": {
+    "project": "lemon (Watchdog AML)",
+    "created_at": "2026-04-16T11:33:00Z",
+    "last_updated": "2026-05-26T16:41:53Z",
+    "last_checked_commit": "abc6743f16ddaa3b71856c515f63ef5a649fd96b",
+    "version": "1.0"
+  },
+  "architecture": {
+    "layers": ["presentation", "service", "repository", "data"],
+    "stack": [
+      "ASP.NET Core MVC (.NET 8)",
+      "MySQL (watchdog_uat_new_design_09032026)",
+      "MongoDB (AMLScreening)",
+      "AutoMapper",
+      "NLog",
+      "EPPlus",
+      "JWT (custom middleware)",
+      "NToastNotify"
+    ],
+    "patterns": [
+      "Layered Architecture (Controller → Service → Repository → DB)",
+      "Dependency Injection (Startup.ConfigureDependencyInjection)",
+      "Repository Pattern",
+      "DTO Pattern",
+      "AutoMapper Profiles",
+      "Custom JWT Middleware",
+      "Razor Views (MVC)",
+      "Session-based auth"
+    ],
+    "external_apis": [
+      "C6 Screening API (http://3.29.35.41:5090/)",
+      "AML Screening API (https://localhost:5010/api/)",
+      "Ollama AI (http://localhost:11434/)",
+      "RunPod AI API"
+    ]
+  },
+  "entities": [
+    {
+      "id": "aml-web",
+      "type": "app",
+      "name": "AML.Web (Main MVC App)",
+      "path": "AML.Core.Web.API/AML.Web",
+      "description": "ASP.NET Core MVC entry point. Hosts all Razor views, controllers, DI config, JWT middleware, session, localization (en/ar), and file upload.",
+      "dependencies": [
+        "aml-core-service",
+        "aml-core-repository",
+        "aml-dto",
+        "aml-viewmodel",
+        "aml-core-common"
+      ],
+      "exports": ["Startup", "Program", "JwtMiddleware"],
+      "tags": ["mvc", "entry-point", "auth", "session"]
+    },
+    {
+      "id": "aml-core-service",
+      "type": "layer",
+      "name": "AML.Core.Service",
+      "path": "AML.Core.Web.API/AML.Core.Service",
+      "description": "Business logic layer. One service class per domain module. Implements IService contracts.",
+      "dependencies": ["aml-core-repository", "aml-dto"],
+      "exports": [
+        "CustomerCaseService", "InternalWatchListService", "RiskService", "RiskV2Service",
+        "KycService", "ProliferationFinanceService", "EWRAService", "TransactionMonitorService",
+        "TransactionScreeningService", "ReportService", "UserService", "AuthenticationService",
+        "LovMasterService", "LovMasterV2Service", "CommonService", "CustomerMasterService",
+        "CustomerScreeningService", "SanctionService", "MockAIService", "ChatDataService",
+        "ChatHistoryService", "ProdMasterService"
+      ],
+      "tags": ["service", "business-logic"]
+    },
+    {
+      "id": "aml-core-repository",
+      "type": "layer",
+      "name": "AML.Core.Repository",
+      "path": "AML.Core.Web.API/AML.Core.Repository",
+      "description": "Data access layer. Raw SQL/stored procedure calls via BaseRepository (MySQL + MongoDB). One repository per domain module.",
+      "dependencies": ["aml-dto", "mysql", "mongodb"],
+      "exports": [
+        "CustomerCaseRepository", "InternalWatchListRepository", "WatchListRepository",
+        "RiskRepository", "RiskV2Repository", "KycRepository", "ProliferationFinanceRepository",
+        "ProliferationFinanceMongoRepository", "InternalWatchListMongoRepository",
+        "EWRARepository", "TransactionMonitorRepository", "TransactionScreeningRepository",
+        "ReportRepository", "UserRepository", "AuthenticationRepository", "CommonRepository",
+        "LovMasterRepository", "LovMasterV2Repository", "ProdMasterRepository",
+        "CustomerMasterRepository", "CorporateShareholderRepository", "BaseRepository",
+        "MongoRepository"
+      ],
+      "tags": ["repository", "data-access", "mysql", "mongodb"]
+    },
+    {
+      "id": "aml-dto",
+      "type": "layer",
+      "name": "AML.DTO",
+      "path": "AML.Core.Web.API/AML.DTO",
+      "description": "Data Transfer Objects shared across all layers. Contains domain DTOs organized by module.",
+      "dependencies": [],
+      "exports": ["All domain DTOs (CustomerCase, Risk, InternalWatchList, Kyc, etc.)"],
+      "tags": ["dto", "shared", "model"]
+    },
+    {
+      "id": "aml-viewmodel",
+      "type": "layer",
+      "name": "AML.ViewModel",
+      "path": "AML.Core.Web.API/AML.ViewModel",
+      "description": "View Models used to pass data from controllers to Razor views.",
+      "dependencies": ["aml-dto"],
+      "exports": ["View model classes per module"],
+      "tags": ["viewmodel", "presentation"]
+    },
+    {
+      "id": "aml-core-common",
+      "type": "layer",
+      "name": "AML.Core.Common",
+      "path": "AML.Core.Web.API/AML.Core.Common",
+      "description": "Shared utilities, constants, extensions used across layers.",
+      "dependencies": [],
+      "exports": ["Utility helpers, enums, constants"],
+      "tags": ["common", "shared"]
+    },
+    {
+      "id": "aml-ofac",
+      "type": "module",
+      "name": "AML.OFAC",
+      "path": "AML.Core.Web.API/AML.OFAC",
+      "description": "OFAC sanction list helpers and processing logic.",
+      "dependencies": ["aml-dto"],
+      "exports": ["OFAC helpers"],
+      "tags": ["ofac", "sanction", "compliance"]
+    },
+    {
+      "id": "screening-api",
+      "type": "app",
+      "name": "AML Screening API (APIScheduler)",
+      "path": "APIScheduler/AML.Screening.API",
+      "description": "Standalone ASP.NET Core API running on port 5010. Handles name screening, AML checks, and scheduled jobs. Separate solution.",
+      "dependencies": ["screening-services", "screening-data-contracts"],
+      "exports": ["Screening endpoints on https://localhost:5010/api/"],
+      "tags": ["api", "screening", "scheduler", "standalone"]
+    },
+    {
+      "id": "screening-services",
+      "type": "layer",
+      "name": "Aml.Screening.Services",
+      "path": "APIScheduler/AML.Screening.API/Aml.Screening.Services",
+      "description": "Business logic for screening (name match, sanction checks).",
+      "dependencies": ["screening-data-contracts"],
+      "exports": ["Screening service implementations"],
+      "tags": ["service", "screening"]
+    },
+    {
+      "id": "screening-data-contracts",
+      "type": "layer",
+      "name": "Aml.Screening.DataContracts",
+      "path": "APIScheduler/AML.Screening.API/Aml.Screening.DataContracts",
+      "description": "Data contracts/DTOs for the screening API.",
+      "dependencies": [],
+      "exports": ["Screening DTOs"],
+      "tags": ["dto", "screening"]
+    },
+    {
+      "id": "watchdog-ui",
+      "type": "module",
+      "name": "WatchDog UI Prototypes",
+      "path": "WatchDog",
+      "description": "Static HTML/CSS prototype files used as UI design references. Not production code.",
+      "dependencies": [],
+      "exports": ["HTML mockup screens"],
+      "tags": ["ui", "prototype", "design"]
+    },
+    {
+      "id": "controller-case",
+      "type": "controller",
+      "name": "CaseController",
+      "path": "AML.Core.Web.API/AML.Web/Controllers/Case",
+      "description": "Handles AML case creation, processing, submission, and case lifecycle management for individual/corporate clients.",
+      "dependencies": ["aml-core-service", "service-customer-case", "service-kyc", "service-risk"],
+      "exports": ["Create (GET/POST)", "Process (GET/POST)", "Submit", "ViewCaseDetails"],
+      "tags": ["controller", "case", "aml"]
+    },
+    {
+      "id": "controller-internal-watchlist",
+      "type": "controller",
+      "name": "InternalWatchListController",
+      "path": "AML.Core.Web.API/AML.Web/Controllers/InternalWatchList",
+      "description": "Manages internal blocklist (watchlist) CRUD, bulk upload (Excel), filter, and MongoDB-based record management.",
+      "dependencies": ["service-internal-watchlist"],
+      "exports": ["Index", "Create", "Edit", "BulkUpload", "BlockListUpload", "Filter", "Delete"],
+      "tags": ["controller", "watchlist", "blocklist", "bulk-upload"]
+    },
+    {
+      "id": "controller-risk",
+      "type": "controller",
+      "name": "RiskController / RiskV2Controller",
+      "path": "AML.Core.Web.API/AML.Web/Controllers/Risk",
+      "description": "Risk assessment configuration and scoring. RiskV2 is the current active version with override support.",
+      "dependencies": ["service-risk", "service-riskv2"],
+      "exports": ["Index", "GetRiskScore", "UpdateRisk", "OverrideRisk"],
+      "tags": ["controller", "risk", "compliance"]
+    },
+    {
+      "id": "controller-proliferation-finance",
+      "type": "controller",
+      "name": "ProliferationFinanceController",
+      "path": "AML.Core.Web.API/AML.Web/Controllers/ProliferationFinance",
+      "description": "Handles PF (Proliferation Finance) case processing, UN and local control list checks.",
+      "dependencies": ["service-proliferation-finance"],
+      "exports": ["Index", "Process", "Submit"],
+      "tags": ["controller", "proliferation-finance", "compliance"]
+    },
+    {
+      "id": "controller-kyc",
+      "type": "controller",
+      "name": "KycController",
+      "path": "AML.Core.Web.API/AML.Web/Controllers/Kyc",
+      "description": "Know Your Customer document management, KYC report generation.",
+      "dependencies": ["service-kyc"],
+      "exports": ["Index", "Create", "Edit", "Report"],
+      "tags": ["controller", "kyc"]
+    },
+    {
+      "id": "controller-ewra",
+      "type": "controller",
+      "name": "EWRAController",
+      "path": "AML.Core.Web.API/AML.Web/Controllers/EWRA",
+      "description": "Enterprise-Wide Risk Assessment screens.",
+      "dependencies": ["service-ewra"],
+      "exports": ["Index", "Create", "Edit"],
+      "tags": ["controller", "ewra", "risk"]
+    },
+    {
+      "id": "controller-transaction-monitor",
+      "type": "controller",
+      "name": "TransactionMonitorController",
+      "path": "AML.Core.Web.API/AML.Web/Controllers/TransactionMonitor",
+      "description": "Transaction Monitoring screens (TM-1 through TM-4 scenarios).",
+      "dependencies": ["service-transaction-monitor"],
+      "exports": ["Index", "Detail", "Process"],
+      "tags": ["controller", "transaction-monitoring"]
+    },
+    {
+      "id": "controller-customer",
+      "type": "controller",
+      "name": "CustomerController / CustomerMasterController",
+      "path": "AML.Core.Web.API/AML.Web/Controllers",
+      "description": "Large controller (51KB) handling customer master, individual, corporate, CDD, bulk upload.",
+      "dependencies": ["service-customer-case", "aml-core-service"],
+      "exports": ["Index", "Individual", "Corporate", "BulkUpload", "BulkUploadSave"],
+      "tags": ["controller", "customer", "bulk-upload"]
+    },
+    {
+      "id": "controller-kyc-screening-api",
+      "type": "controller",
+      "name": "KycScreeningAPIController",
+      "path": "AML.Core.Web.API/AML.Web/Controllers/KycScreeningAPIController.cs",
+      "description": "Internal API controller bridging KYC checks with external C6 screening API and local screening API.",
+      "dependencies": ["aml-core-service", "screening-api"],
+      "exports": ["ScreeningCheck", "GetResults"],
+      "tags": ["controller", "api", "screening", "kyc"]
+    },
+    {
+      "id": "controller-user-access",
+      "type": "controller",
+      "name": "UserAccessController",
+      "path": "AML.Core.Web.API/AML.Web/Controllers/UserAccess",
+      "description": "Login, logout, forgot password, change password. Default route landing page.",
+      "dependencies": ["service-auth"],
+      "exports": ["Login", "Logout", "ForgotPassword", "ChangePassword"],
+      "tags": ["controller", "auth", "login"]
+    },
+    {
+      "id": "controller-home",
+      "type": "controller",
+      "name": "HomeController / DashboardController",
+      "path": "AML.Core.Web.API/AML.Web/Controllers/Dashboard",
+      "description": "Dashboard (main landing after login). Shows KPIs, case counts, alerts.",
+      "dependencies": ["aml-core-service"],
+      "exports": ["Index", "GetStats"],
+      "tags": ["controller", "dashboard", "home"]
+    },
+    {
+      "id": "service-customer-case",
+      "type": "service",
+      "name": "CustomerCaseService",
+      "path": "AML.Core.Web.API/AML.Core.Service/CustomerCase",
+      "description": "Core business logic for AML case lifecycle: creation, assignment, status transitions, Senior Management submission.",
+      "dependencies": ["repo-customer-case", "aml-dto"],
+      "exports": ["CreateCase", "GetCase", "UpdateCase", "SubmitCase", "GetAllCases"],
+      "tags": ["service", "case", "aml"]
+    },
+    {
+      "id": "service-internal-watchlist",
+      "type": "service",
+      "name": "InternalWatchListService",
+      "path": "AML.Core.Web.API/AML.Core.Service/InternalWatchList",
+      "description": "Service for blocklist management including Excel bulk upload parsing (EPPlus), CRUD, MongoDB sync.",
+      "dependencies": ["repo-watchlist", "repo-watchlist-mongo"],
+      "exports": ["GetAll", "Create", "Edit", "BulkUpload", "Delete", "Filter"],
+      "tags": ["service", "watchlist", "bulk-upload", "mongodb"]
+    },
+    {
+      "id": "service-risk",
+      "type": "service",
+      "name": "RiskService / RiskV2Service",
+      "path": "AML.Core.Web.API/AML.Core.Service/Risk",
+      "description": "Risk scoring logic. V2 adds override capability (Senior Management only) with audit trail.",
+      "dependencies": ["repo-risk", "repo-riskv2"],
+      "exports": ["GetRiskScore", "SaveRisk", "OverrideRisk", "GetRiskConfig"],
+      "tags": ["service", "risk", "scoring"]
+    },
+    {
+      "id": "service-kyc",
+      "type": "service",
+      "name": "KycService",
+      "path": "AML.Core.Web.API/AML.Core.Service/Kyc",
+      "description": "KYC document management and report generation.",
+      "dependencies": ["repo-kyc"],
+      "exports": ["GetKyc", "SaveKyc", "GenerateReport"],
+      "tags": ["service", "kyc"]
+    },
+    {
+      "id": "service-proliferation-finance",
+      "type": "service",
+      "name": "ProliferationFinanceService",
+      "path": "AML.Core.Web.API/AML.Core.Service/ProliferationFinance",
+      "description": "PF case management, UN/UAE local control list cross-checks (PDF-based).",
+      "dependencies": ["repo-proliferation-finance"],
+      "exports": ["GetCases", "Process", "Submit"],
+      "tags": ["service", "proliferation-finance"]
+    },
+    {
+      "id": "service-auth",
+      "type": "service",
+      "name": "AuthenticationService",
+      "path": "AML.Core.Web.API/AML.Core.Service/User",
+      "description": "JWT token generation, session management, login/logout, role-based access.",
+      "dependencies": ["repo-auth"],
+      "exports": ["Login", "GenerateToken", "ValidateToken", "GetUserRoles"],
+      "tags": ["service", "auth", "jwt"]
+    },
+    {
+      "id": "service-ai",
+      "type": "service",
+      "name": "MockAIService / ChatDataService / ChatHistoryService",
+      "path": "AML.Core.Web.API/AML.Core.Service/AI",
+      "description": "AI chat feature backed by Ollama (Mistral 7B) and RunPod API. Mock implementation currently active.",
+      "dependencies": ["aml-dto"],
+      "exports": ["Chat", "GetHistory", "SaveSession"],
+      "tags": ["service", "ai", "chat", "ollama"]
+    },
+    {
+      "id": "repo-customer-case",
+      "type": "repository",
+      "name": "CustomerCaseRepository",
+      "path": "AML.Core.Web.API/AML.Core.Repository/CustomerCase",
+      "description": "MySQL stored procedure calls for customer case CRUD, status management, bulk case assignment.",
+      "dependencies": ["mysql", "base-repository"],
+      "exports": ["CreateCase", "GetCase", "UpdateCase", "GetAllCases"],
+      "tags": ["repository", "case", "mysql"]
+    },
+    {
+      "id": "repo-watchlist",
+      "type": "repository",
+      "name": "WatchListRepository / InternalWatchListRepository",
+      "path": "AML.Core.Web.API/AML.Core.Repository/InternalWatchList",
+      "description": "MySQL + MongoDB dual-write for blocklist records. Supports filter, CRUD, Excel import.",
+      "dependencies": ["mysql", "mongodb", "base-repository"],
+      "exports": ["GetAll", "Create", "Edit", "Delete", "BulkInsert"],
+      "tags": ["repository", "watchlist", "mysql", "mongodb"]
+    },
+    {
+      "id": "repo-risk",
+      "type": "repository",
+      "name": "RiskRepository / RiskV2Repository",
+      "path": "AML.Core.Web.API/AML.Core.Repository/Risk",
+      "description": "MySQL calls for risk configuration (parameters, weights) and risk score persistence.",
+      "dependencies": ["mysql", "base-repository"],
+      "exports": ["GetRiskParams", "SaveRisk", "GetRiskScore"],
+      "tags": ["repository", "risk", "mysql"]
+    },
+    {
+      "id": "repo-kyc",
+      "type": "repository",
+      "name": "KycRepository",
+      "path": "AML.Core.Web.API/AML.Core.Repository/Kyc",
+      "description": "MySQL calls for KYC document storage and retrieval.",
+      "dependencies": ["mysql", "base-repository"],
+      "exports": ["GetKyc", "SaveKyc"],
+      "tags": ["repository", "kyc", "mysql"]
+    },
+    {
+      "id": "repo-auth",
+      "type": "repository",
+      "name": "AuthenticationRepository",
+      "path": "AML.Core.Web.API/AML.Core.Repository/User",
+      "description": "MySQL calls for user authentication, role/group resolution.",
+      "dependencies": ["mysql", "base-repository"],
+      "exports": ["Login", "GetUserRoles", "GetUserGroups"],
+      "tags": ["repository", "auth", "mysql"]
+    },
+    {
+      "id": "base-repository",
+      "type": "util",
+      "name": "BaseRepository",
+      "path": "AML.Core.Web.API/AML.Core.Repository/BaseRepository.cs",
+      "description": "Core data access utility (19KB). Wraps MySQL stored procedure + query execution. All repositories extend this.",
+      "dependencies": ["mysql"],
+      "exports": ["ExecuteProc", "ExecuteQuery", "ExecuteScalar"],
+      "tags": ["repository", "base", "mysql", "core"]
+    },
+    {
+      "id": "repo-proliferation-finance",
+      "type": "repository",
+      "name": "ProliferationFinanceRepository + MongoRepository",
+      "path": "AML.Core.Web.API/AML.Core.Repository/ProliferationFinance",
+      "description": "Dual MySQL+MongoDB storage for PF cases.",
+      "dependencies": ["mysql", "mongodb", "base-repository"],
+      "exports": ["GetCases", "ProcessCase", "Submit"],
+      "tags": ["repository", "proliferation-finance", "mongodb"]
+    },
+    {
+      "id": "view-case-process",
+      "type": "view",
+      "name": "Case/Process.cshtml",
+      "path": "AML.Core.Web.API/AML.Web/Views/Case/Process.cshtml",
+      "description": "Main case processing screen. Shows risk assessment, comments, document log, shareholder details, submission flow. Read-only for status=4 (Senior Management). Contains risk override dropdown (#type).",
+      "dependencies": ["controller-case"],
+      "exports": [],
+      "tags": ["view", "case", "risk", "read-only", "senior-management"]
+    },
+    {
+      "id": "view-blocklist-upload",
+      "type": "view",
+      "name": "InternalWatchList/BlockListUpload.cshtml",
+      "path": "AML.Core.Web.API/AML.Web/Views/InternalWatchList/BlockListUpload.cshtml",
+      "description": "Bulk upload screen for internal blocklist. Uses Excel template (EPPlus-generated). Currently active open file.",
+      "dependencies": ["controller-internal-watchlist"],
+      "exports": [],
+      "tags": ["view", "watchlist", "bulk-upload", "excel"]
+    },
+    {
+      "id": "view-internal-watchlist-edit",
+      "type": "view",
+      "name": "InternalWatchList/Edit.cshtml",
+      "path": "AML.Core.Web.API/AML.Web/Views/InternalWatchList/Edit.cshtml",
+      "description": "Edit form for a single blocklist record. Bound to WatchListModel. UID param passed from index.",
+      "dependencies": ["controller-internal-watchlist"],
+      "exports": [],
+      "tags": ["view", "watchlist", "edit"]
+    },
+    {
+      "id": "view-shareholder-case-details",
+      "type": "view",
+      "name": "ViewShareholderCaseDetails.cshtml",
+      "path": "AML.Core.Web.API/AML.Web/Views/Case/ViewShareholderCaseDetails.cshtml",
+      "description": "View for shareholder case details including passport and Emirates ID fields added in recent enhancement.",
+      "dependencies": ["controller-case"],
+      "exports": [],
+      "tags": ["view", "case", "shareholder", "id-fields"]
+    },
+    {
+      "id": "layout-shared",
+      "type": "view",
+      "name": "_Layout.cshtml",
+      "path": "AML.Core.Web.API/AML.Web/Views/Shared/_Layout.cshtml",
+      "description": "Master layout with sidebar accordion navigation, auth session checks, role-based menu visibility, Socratic Gate logic.",
+      "dependencies": ["controller-user-access", "controller-home"],
+      "exports": [],
+      "tags": ["view", "layout", "sidebar", "navigation"]
+    },
+    {
+      "id": "jwt-middleware",
+      "type": "middleware",
+      "name": "JwtMiddleware",
+      "path": "AML.Core.Web.API/AML.Web/Helper",
+      "description": "Custom JWT validation middleware. Validates token from Session on every request. Registered in Startup.Configure.",
+      "dependencies": ["service-auth"],
+      "exports": ["JwtMiddleware.InvokeAsync"],
+      "tags": ["middleware", "auth", "jwt", "security"]
+    },
+    {
+      "id": "infra-mysql",
+      "type": "infrastructure",
+      "name": "MySQL Database",
+      "path": "sql/",
+      "description": "Primary relational DB. Database: watchdog_uat_new_design_09032026. Port 3306. All business data stored as stored procedures.",
+      "dependencies": [],
+      "exports": ["Stored Procedures for all modules"],
+      "tags": ["database", "mysql", "infrastructure"]
+    },
+    {
+      "id": "infra-mongodb",
+      "type": "infrastructure",
+      "name": "MongoDB",
+      "path": "mongodb/",
+      "description": "Used for watchlist and PF case document/supplementary data. Connection: mongodb://localhost:27017/AMLScreening.",
+      "dependencies": [],
+      "exports": ["WatchList collection", "ProliferationFinance collection"],
+      "tags": ["database", "mongodb", "infrastructure"]
+    },
+    {
+      "id": "infra-c6-api",
+      "type": "infrastructure",
+      "name": "C6 External Screening API",
+      "path": "external",
+      "description": "Third-party AML name screening engine at http://3.29.35.41:5090/. Threshold 75. CallC6Screening flag controls activation.",
+      "dependencies": [],
+      "exports": ["Screening results"],
+      "tags": ["external-api", "screening", "c6"]
+    },
+    {
+      "id": "infra-ollama",
+      "type": "infrastructure",
+      "name": "Ollama AI (Local LLM)",
+      "path": "external",
+      "description": "Local LLM at http://localhost:11434/. Model: mistral:7b-instruct-v0.3-q4_K_M. Context: 8000 tokens. Powers AI chat feature.",
+      "dependencies": [],
+      "exports": ["Chat completions"],
+      "tags": ["ai", "ollama", "llm", "infrastructure"]
+    }
+  ],
+  "relationships": [
+    { "from": "aml-web", "to": "aml-core-service", "type": "uses" },
+    { "from": "aml-web", "to": "jwt-middleware", "type": "uses" },
+    { "from": "aml-core-service", "to": "aml-core-repository", "type": "calls" },
+    { "from": "aml-core-repository", "to": "base-repository", "type": "extends" },
+    { "from": "aml-core-repository", "to": "infra-mysql", "type": "uses" },
+    { "from": "repo-watchlist", "to": "infra-mongodb", "type": "uses" },
+    { "from": "repo-proliferation-finance", "to": "infra-mongodb", "type": "uses" },
+    { "from": "controller-case", "to": "service-customer-case", "type": "calls" },
+    { "from": "controller-internal-watchlist", "to": "service-internal-watchlist", "type": "calls" },
+    { "from": "controller-risk", "to": "service-risk", "type": "calls" },
+    { "from": "controller-kyc", "to": "service-kyc", "type": "calls" },
+    { "from": "controller-proliferation-finance", "to": "service-proliferation-finance", "type": "calls" },
+    { "from": "controller-user-access", "to": "service-auth", "type": "calls" },
+    { "from": "controller-kyc-screening-api", "to": "screening-api", "type": "calls" },
+    { "from": "controller-kyc-screening-api", "to": "infra-c6-api", "type": "calls" },
+    { "from": "service-customer-case", "to": "repo-customer-case", "type": "calls" },
+    { "from": "service-internal-watchlist", "to": "repo-watchlist", "type": "calls" },
+    { "from": "service-risk", "to": "repo-risk", "type": "calls" },
+    { "from": "service-kyc", "to": "repo-kyc", "type": "calls" },
+    { "from": "service-proliferation-finance", "to": "repo-proliferation-finance", "type": "calls" },
+    { "from": "service-auth", "to": "repo-auth", "type": "calls" },
+    { "from": "service-ai", "to": "infra-ollama", "type": "calls" },
+    { "from": "view-case-process", "to": "controller-case", "type": "uses" },
+    { "from": "view-blocklist-upload", "to": "controller-internal-watchlist", "type": "uses" },
+    { "from": "view-internal-watchlist-edit", "to": "controller-internal-watchlist", "type": "uses" },
+    { "from": "view-shareholder-case-details", "to": "controller-case", "type": "uses" },
+    { "from": "layout-shared", "to": "jwt-middleware", "type": "uses" },
+    { "from": "screening-api", "to": "infra-mysql", "type": "uses" }
+  ],
+  "decisions": [
+    {
+      "id": "adr-001",
+      "title": "Dual MySQL + MongoDB storage for Watchlist and PF",
+      "rationale": "MySQL for structured queries and reporting; MongoDB for flexible document storage and supplementary metadata.",
+      "date": "2026-01-01"
+    },
+    {
+      "id": "adr-002",
+      "title": "Custom JWT middleware instead of ASP.NET Core Identity",
+      "rationale": "Session-based token storage + custom role resolution from MySQL user_group tables.",
+      "date": "2026-01-01"
+    },
+    {
+      "id": "adr-003",
+      "title": "BaseRepository pattern for all data access",
+      "rationale": "Centralizes MySQL connection management and stored procedure execution. All repositories extend BaseRepository.",
+      "date": "2026-01-01"
+    },
+    {
+      "id": "adr-004",
+      "title": "RiskV2 replaces Risk for active risk scoring",
+      "rationale": "RiskV2 adds Senior Management override capability with audit trail. Both exist but V2 is the active version.",
+      "date": "2026-04-14"
+    },
+    {
+      "id": "adr-005",
+      "title": "C6 external API gated by CallC6Screening flag",
+      "rationale": "Allows toggling external paid screening on/off. When off, local Screening API (localhost:5010) is used.",
+      "date": "2026-01-01"
+    },
+    {
+      "id": "adr-006",
+      "title": "EPPlus for dynamic Excel template generation",
+      "rationale": "Replaced static Excel templates with EPPlus-generated templates that include data validation dropdowns, synchronized with manual entry UI.",
+      "date": "2026-04-16"
+    },
+    {
+      "id": "adr-007",
+      "title": "Case status=4 forces read-only in Process.cshtml",
+      "rationale": "When case is submitted to Senior Management (status 4), all inputs are disabled. Compliance Officers can view but not modify.",
+      "date": "2026-04-15"
+    }
+  ]
+}
